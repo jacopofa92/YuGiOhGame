@@ -34,6 +34,25 @@ module.exports = {
         assert(desktop.transformStyle === 'preserve-3d', `Prospettiva 3D non attiva: ${desktop.transformStyle}`);
         assert(desktop.role === 'status', 'Il loader deve comunicare lo stato alle tecnologie assistive');
 
+        // Dopo la prima chiusura il nodo resta riutilizzabile dalle viste SPA:
+        // Negozio e Cartoteca non cambiano pagina e devono poterlo riaccendere.
+        const riuso = await page.evaluate(async () => {
+            PageLoader.hide();
+            const stessoNodo = document.querySelector('#pageLoader');
+            PageLoader.show();
+            const visibile = !stessoNodo.classList.contains('page-loader-hidden');
+            PageLoader.hideWhenReady();
+            await new Promise((resolve) => setTimeout(resolve, 1100));
+            return {
+                stessoNodo: stessoNodo === document.querySelector('#pageLoader'),
+                visibile,
+                poiNascosto: stessoNodo.classList.contains('page-loader-hidden')
+            };
+        });
+        assert(riuso.stessoNodo, 'Il loader deve restare nel DOM per le navigazioni SPA successive');
+        assert(riuso.visibile, 'PageLoader.show() deve riaprire il loader');
+        assert(riuso.poiNascosto, 'Il loader SPA deve richiudersi dopo il minimo previsto');
+
         for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }]) {
             await page.setViewportSize(viewport);
             const bounds = await page.locator('#pageLoader .page-loader-stage').boundingBox();

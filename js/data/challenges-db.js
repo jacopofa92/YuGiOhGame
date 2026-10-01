@@ -741,6 +741,101 @@ const challengesDatabase = [
     },
 
     // =================================================================
+    // SECONDA ONDATA DI SFIDE GENERICHE
+    // =================================================================
+    // Queste voci usano esclusivamente tipi già registrati dal motore.
+    // Sono generate da tabelle per mantenere leggibili catalogo e premi:
+    // ogni elemento produce comunque una Sfida indipendente e persistente.
+    ...[
+        ['solomonMuto', 'solomon', '📖', 'La Lezione del Nonno', 'Sconfiggi Solomon Muto 3 volte', 3, 300],
+        ['tea', 'tea', '🌸', 'La Forza dell’Amicizia', 'Sconfiggi Téa Gardner 3 volte', 3, 250],
+        ['tristan', 'tristan', '🤝', 'Amici e Rivali', 'Sconfiggi Tristan Taylor 3 volte', 3, 250],
+        ['duke', 'duke', '🎲', 'Il Re dei Dadi', 'Sconfiggi Duke Devlin 3 volte', 3, 300],
+        ['espaRoba', 'espa-roba', '🔮', 'Oltre la Lettura della Mente', 'Sconfiggi Espa Roba 5 volte', 5, 350],
+        ['arkana', 'arkana', '🎭', 'Il Prestigiatore Smascherato', 'Sconfiggi Arkana 5 volte', 5, 350],
+        ['seeker', 'seeker', '🧩', 'Il Cacciatore Cacciato', 'Sconfiggi Seeker 5 volte', 5, 400],
+        ['strings', 'strings', '🕸️', 'Taglia i Fili', 'Sconfiggi Strings 5 volte', 5, 400],
+        ['lumis', 'lumis', '☀️', 'Spezza la Maschera della Luce', 'Sconfiggi Lumis 5 volte', 5, 400],
+        ['umbra', 'umbra', '🌑', 'Spezza la Maschera dell’Oscurità', 'Sconfiggi Umbra 5 volte', 5, 400],
+        ['odion', 'odion', '⚱️', 'Il Guardiano Caduto', 'Sconfiggi Odion 5 volte', 5, 400],
+        ['noah', 'noah', '💾', 'Disconnesso', 'Sconfiggi Noah Kaiba 5 volte', 5, 450],
+        ['gansley', 'gansley', '🧠', 'Il Primo dei Cinque', 'Sconfiggi Gansley 3 volte', 3, 300],
+        ['johnson', 'johnson', '⚖️', 'Sentenza Ribaltata', 'Sconfiggi Johnson 3 volte', 3, 300],
+        ['nesbitt', 'nesbitt', '🔧', 'Macchina Fuori Uso', 'Sconfiggi Nesbitt 3 volte', 3, 300],
+        ['crump', 'crump', '🐧', 'Gelo Spezzato', 'Sconfiggi Crump 3 volte', 3, 300],
+        ['lector', 'lector', '🕴️', 'L’Ultimo dei Cinque', 'Sconfiggi Lector 3 volte', 3, 300],
+        ['gozaburo', 'gozaburo', '🏢', 'Caduta della KaibaCorp', 'Sconfiggi Gozaburo Kaiba 5 volte', 5, 500]
+    ].map(([characterId, slug, icon, label, description, target, credits]) => ({
+        id: `defeat-${slug}-${target}`,
+        icon, label, description,
+        type: 'defeatCharacter', match: { characterId }, target,
+        reward: { credits }
+    })),
+
+    ...[
+        [13, 'summoned-skull', '💀', 'Fulmine Demoniaco', 'Evoca Teschio Evocato 5 volte', 5, 300],
+        [16, 'gearfried', '⚔️', 'Il Cavaliere di Ferro', 'Evoca Gearfried il Cavaliere di Ferro 5 volte', 5, 300],
+        [20, 'buster-blader', '🗡️', 'Distruttore di Draghi', 'Evoca Buster Blader 5 volte', 5, 350],
+        [33, 'gate-guardian', '🚪', 'Il Guardiano Riunito', 'Evoca Il Guardiano del Cancello', 1, 500],
+        [52, 'great-moth', '🦋', 'Metamorfosi Completa', 'Evoca Grande Falena 3 volte', 3, 350],
+        [123, 'toon-blue-eyes', '📺', 'Drago da Fumetto', 'Evoca Drago Toon Occhi Blu 3 volte', 3, 350],
+        [167, 'masked-beast', '🎭', 'La Bestia dietro la Maschera', 'Evoca La Bestia Mascherata 3 volte', 3, 350],
+        [172, 'cyber-harpie', '🪶', 'Arpia Potenziata', 'Evoca Arpia Cyber 5 volte', 5, 300],
+        [290, 'harpie-sisters', '🪽', 'Tre Arpie, un Solo Attacco', 'Evoca Sorelle Lady Arpia 3 volte', 3, 350],
+        [512, 'xyz-dragon-cannon', '🤖', 'X, Y e Z', 'Evoca Cannone Drago XYZ 3 volte', 3, 450],
+        [857, 'wall-shadow', '🧱', 'Ombra nel Labirinto', 'Evoca Wall Shadow 3 volte', 3, 350],
+        [879, 'legendary-fisherman', '🎣', 'Leggenda del Mare', 'Evoca Il Pescatore Leggendario 5 volte', 5, 300]
+    ].map(([cardId, slug, icon, label, description, target, credits]) => ({
+        id: `summon-${slug}-${target}`,
+        icon, label, description,
+        type: 'summonMonster', match: { cardId }, target,
+        reward: { credits }
+    })),
+
+    ...[
+        [8, 'swords-revealing', '⚔️', 'Luce che Ferma il Tempo', 'Attiva Spada Rivelatrice 5 volte', 5, 300],
+        [38, 'fusion', '🌀', 'Due Mostri, una Leggenda', 'Attiva Fusione 10 volte', 10, 400],
+        [40, 'trap-hole', '🕳️', 'Caduta Improvvisa', 'Attiva Buco Trappola 5 volte', 5, 250],
+        [128, 'bottomless-trap-hole', '⬛', 'Senza Fondo', 'Attiva Buco Trappola senza Fondo 5 volte', 5, 300],
+        [136, 'call-haunted', '👻', 'Richiamo dall’Oltretomba', 'Attiva Richiamo degli Infestati 5 volte', 5, 300],
+        [219, 'dust-tornado', '🌪️', 'Vento di Distruzione', 'Attiva Tornado di Polvere 5 volte', 5, 300],
+        [291, 'harpies-duster', '🪶', 'Un Campo Immacolato', 'Attiva Piumino delle Arpie 5 volte', 5, 350],
+        [409, 'raigeki', '⚡', 'Giudizio del Fulmine', 'Attiva Raigeki 10 volte', 10, 400],
+        [503, 'waboku', '🛡️', 'Nessun Danno', 'Attiva Waboku 5 volte', 5, 300],
+        [448, 'solemn-judgment', '⚖️', 'Giudizio Solenne', 'Attiva Giudizio Solenne 5 volte', 5, 400]
+    ].map(([cardId, slug, icon, label, description, target, credits]) => ({
+        id: `activate-${slug}-${target}`,
+        icon, label, description,
+        type: 'activateCard', match: { cardId }, target,
+        reward: { credits }
+    })),
+
+    {
+        id: 'perfect-win-50', icon: '✨', label: 'Duel Disk Immacolato',
+        description: 'Vinci 50 Duelli senza perdere un solo Life Point',
+        type: 'perfectWin', match: {}, target: 50,
+        reward: { credits: 1200, starChips: 5 }
+    },
+    {
+        id: 'win-instantly-10', icon: '🌠', label: 'Maestro delle Vittorie Alternative',
+        description: 'Vinci 10 Duelli per condizione alternativa',
+        type: 'winInstantly', match: {}, target: 10,
+        reward: { credits: 1600, millenniumCards: 3 }
+    },
+    {
+        id: 'tournament-any-30', icon: '🏟️', label: 'Veterano dei Tornei',
+        description: 'Completa 30 tornei',
+        type: 'completeTournament', match: {}, target: 30,
+        reward: { credits: 3000, starChips: 8, locatorCards: 5 }
+    },
+    {
+        id: 'win-500', icon: '👑', label: 'Re dei Cinquecento Duelli',
+        description: 'Vinci 500 Duelli',
+        type: 'winDuels', match: {}, target: 500,
+        reward: { credits: 6000, starChips: 15, locatorCards: 10, millenniumCards: 8 }
+    },
+
+    // =================================================================
     // SFIDE DELLE STORIE — una sezione per campagna
     // =================================================================
     // Hanno `sezione: 'storia'` e un `campaignId`: sfide.html le raggruppa

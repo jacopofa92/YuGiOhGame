@@ -42,8 +42,15 @@ module.exports = {
                 ].includes(entry.id)).map((entry) => entry.id)
             };
         }, ids);
-        t.assert(story.ids.join(',') === ids.join(','),
+        // Seeker compare due volte di proposito: prima nel ramo parallelo
+        // Joey vs Seeker e poi nel percorso di Yugi. Per verificare l'ordine
+        // del roster si confrontano le prime occorrenze, senza cancellare un
+        // duello canonico solo per far tornare il conteggio del test.
+        const uniqueStoryIds = story.ids.filter((id, index, all) => all.indexOf(id) === index);
+        t.assert(uniqueStoryIds.join(',') === ids.join(','),
             `Ordine Rare Hunter incoerente nella Storia: ${story.ids.join(', ')}`);
+        t.assert(story.ids.filter((id) => id === 'seeker').length >= 2,
+            'La Storia deve conservare sia Yugi vs Seeker sia il ramo parallelo Joey vs Seeker');
         t.assert(story.dialogues, 'Ogni Rare Hunter deve avere un dialogo introduttivo nella Storia');
         t.assert(story.migrations.length === 3, 'Le nuove tappe di Battle City devono migrare i vecchi salvataggi');
 

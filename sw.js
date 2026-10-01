@@ -353,7 +353,16 @@
 // v114: nuove cinematiche Rituale/Tornado/Piumino e relativi aggiornamenti
 // di motore e stile. Il cambio forza browser e WebView dell'APK a scartare
 // le copie precedenti di effects.js/effects.css e dei moduli delle carte.
-const CACHE_NAME = 'ygo-duel-arena-v114';
+// v115: nuovo font locale del logo e loader riutilizzabile nelle viste SPA
+// Negozio/Cartoteca.
+// v116: il carattere decorativo è sostituito da un'iscrizione romana
+// geometrica, più vicina all'immaginario monumentale dell'Antico Egitto.
+// v117: trattamento del titolo semplificato — niente cornici o rilievi
+// metallici multipli, solo oro caldo e ombra morbida.
+// v118: Rare Hunter estratti soltanto entrando nel relativo nodo.
+// v119: la struttura logica della mappa Battle City torna invisibile; i nodi
+// restano persistenti e soltanto il segnalino scorre fra gli isolati.
+const CACHE_NAME = 'ygo-duel-arena-v119';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -400,6 +409,8 @@ const APP_SHELL = [
     'js/ui/challenge-banner.css',
     'js/ui/page-loader.css',
     'js/ui/game-logo.css',
+    'assets/fonts/cinzel/Cinzel-Variable.ttf',
+    'assets/fonts/cinzel/OFL.txt',
     'js/ui/sfide-view.css',
     'js/engine/actions.js',
     'js/engine/duel-engine.js',

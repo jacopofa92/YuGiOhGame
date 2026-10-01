@@ -17,9 +17,9 @@
  *     grandezza (lo stesso disegno fa da emblema di 190px nello splash e
  *     di 60px nel menu) e ogni pezzo si anima per conto suo.
  *   - La scritta resta "YU-GI-OH! / DUEL ARENA", in un carattere con le
- *     grazie (quelli di sistema: il gioco gira anche offline, su file:// e
- *     nell'APK, quindi niente font scaricati) e con un riflesso di luce
- *     che le passa sopra ogni pochi secondi.
+ *     monumentali: `Duel Arena Inscription` è incluso localmente sotto assets/fonts
+ *     (licenza OFL), quindi funziona offline, da file:// e nell'APK senza
+ *     richieste esterne. Un riflesso di luce lo attraversa ogni pochi secondi.
  *
  * VARIANTI. Il disegno è lo stesso; cambia solo cosa si muove, e lo
  * decide il CSS (js/ui/game-logo.css) leggendo l'attributo:

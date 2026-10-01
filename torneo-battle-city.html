@@ -276,6 +276,7 @@
     .sector-hint { color: var(--ink-dim); font-size: 0.75rem; text-align: right; }
 
     .city-grid {
+        position: relative;
         display: grid;
         width: min(calc(100vw - clamp(20px, 4vw, 56px)), calc(100dvh - 225px));
         min-width: min(92vw, 320px);
@@ -289,8 +290,11 @@
     .city-cell {
         position: relative;
         aspect-ratio: 1;
+        appearance: none;
+        font-family: inherit;
         border-radius: 50%;
         border: 0;
+        padding: 0;
         background: transparent;
         display: flex;
         flex-direction: column;
@@ -300,20 +304,24 @@
         font-size: 1.25rem;
         color: var(--ink-dim);
         cursor: default;
-        overflow: hidden;
-        transition: transform 0.12s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        overflow: visible;
+        left: var(--node-x, 0px);
+        top: var(--node-y, 0px);
+        transition: transform .22s cubic-bezier(.2,.85,.2,1), filter .25s ease, opacity .25s ease;
     }
     .city-cell::before {
         content: '';
         position: absolute;
-        width: 58%;
+        left: 50%; top: 50%;
+        width: var(--node-size, 56%);
         aspect-ratio: 1;
         border-radius: 50%;
         border: 1px solid rgba(144, 210, 235, 0.14);
-        background: radial-gradient(circle, rgba(6, 18, 34, 0.34), rgba(6, 18, 34, 0.08) 58%, transparent 72%);
-        transition: transform 0.16s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+        background: radial-gradient(circle, rgba(6,18,34,.48), rgba(6,18,34,.13) 58%, transparent 72%);
+        transform: translate(-50%, -50%);
+        transition: transform .2s ease, border-color .25s ease, background .25s ease, box-shadow .25s ease;
     }
-    .city-cell > * { position: relative; z-index: 1; }
+    .city-cell > * { position: relative; z-index: 2; text-shadow: 0 2px 5px rgba(0,0,0,.8); }
     .city-cell .cell-label {
         font-size: 0.5rem;
         letter-spacing: 0.4px;
@@ -330,9 +338,9 @@
     .city-cell.revealed { color: #fff; }
     .city-cell.revealed::before {
         border-color: rgba(34, 211, 238, 0.38);
-        background: radial-gradient(circle, rgba(5, 24, 42, 0.7), rgba(5, 24, 42, 0.22) 58%, transparent 72%);
+        background: radial-gradient(circle, rgba(5,24,42,.7), rgba(5,24,42,.22) 58%, transparent 72%);
     }
-    .city-cell.resolved { opacity: 0.38; filter: saturate(0.3); }
+    .city-cell.resolved { opacity: 0.34; filter: saturate(0.25); }
     /* Solo le celle ortogonalmente adiacenti al segnalino sono raggiungibili:
        evidenziate e cliccabili, tutte le altre restano inerti. */
     .city-cell.reachable {
@@ -340,21 +348,48 @@
     }
     .city-cell.reachable::before {
         border-color: var(--bc-cyan);
-        box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.32), 0 0 18px rgba(34, 211, 238, 0.42);
+        box-shadow: 0 0 0 1px rgba(34,211,238,.3), 0 0 18px rgba(34,211,238,.4);
         animation: cellPulse 1.8s ease-in-out infinite;
     }
+    @media (hover: hover) and (pointer: fine) {
+        .city-cell.reachable:hover { transform: scale(1.09); z-index: 8; filter: brightness(1.16); }
+        .city-cell.reachable:hover::before { transform: translate(-50%, -50%) scale(1.08); }
+    }
+    .city-cell.reachable:focus-visible { outline: 2px solid #fff; outline-offset: -5px; }
     .city-cell.reachable:active { transform: scale(0.94); }
     @keyframes cellPulse {
         0%, 100% { box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.3), 0 0 12px rgba(34, 211, 238, 0.2); }
         50%      { box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.6), 0 0 24px rgba(34, 211, 238, 0.42); }
     }
-    .city-cell.player {
+    .city-cell.player::before { border-color: rgba(251,191,36,.34); }
+    .city-player-token {
+        position: absolute;
+        z-index: 20;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
         color: #fff;
+        font-size: 1.3rem;
+        pointer-events: none;
+        transform: translate(-50%, -50%);
+        transition: left .46s cubic-bezier(.22,.8,.22,1), top .46s cubic-bezier(.22,.8,.22,1), filter .3s ease;
+        filter: drop-shadow(0 0 9px rgba(251,191,36,.9));
     }
-    .city-cell.player::before {
-        border-color: var(--bc-amber);
-        background: radial-gradient(circle, rgba(95, 62, 5, 0.66), rgba(95, 62, 5, 0.18) 58%, transparent 72%);
-        box-shadow: 0 0 22px rgba(251, 191, 36, 0.48);
+    .city-player-token::before {
+        content: '';
+        position: absolute;
+        width: 52%; aspect-ratio: 1;
+        z-index: -1;
+        border-radius: 50%;
+        border: 1px solid var(--bc-amber);
+        background: radial-gradient(circle, rgba(95,62,5,.72), rgba(95,62,5,.16) 65%, transparent 72%);
+        animation: playerTokenPulse 1.6s ease-in-out infinite;
+    }
+    .city-player-token small { font-size: .45rem; margin-top: 1px; text-transform: uppercase; color: #ffe7a0; }
+    @keyframes playerTokenPulse {
+        0%,100% { transform: scale(.92); box-shadow: 0 0 12px rgba(251,191,36,.3); }
+        50% { transform: scale(1.08); box-shadow: 0 0 22px rgba(251,191,36,.55); }
     }
     .city-cell.heliport {
         color: #fff;
@@ -591,6 +626,10 @@
         .panel { padding: 20px 16px; }
         .fighter { font-size: 0.7rem; }
         .fighter .avatar { width: 22px; height: 22px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .city-cell, .city-cell::before, .city-player-token { transition-duration: .01ms; }
+        .city-cell.reachable::before, .city-player-token::before { animation: none; }
     }
 </style>
 </head>
@@ -1075,9 +1114,9 @@
         const usedCharacters = new Set();
         const cells = kinds.map((kind, index) => {
             const cell = { kind: kind, revealed: false, resolved: false };
-            if (kind === 'duelist' || kind === 'hunter') {
-                const pool = (kind === 'hunter' ? HUNTER_IDS : PRELIM_IDS).filter((id) => !usedCharacters.has(id));
-                const characterId = pickRandom(pool.length ? pool : (kind === 'hunter' ? HUNTER_IDS : PRELIM_IDS));
+            if (kind === 'duelist') {
+                const pool = PRELIM_IDS.filter((id) => !usedCharacters.has(id));
+                const characterId = pickRandom(pool.length ? pool : PRELIM_IDS);
                 usedCharacters.add(characterId);
                 cell.characterId = characterId;
             }
@@ -1087,6 +1126,22 @@
 
         state.grid = { w: GRID_W, h: GRID_H, cells: cells, playerIndex: startIndex };
         revealAround(state, startIndex);
+    }
+
+    /** Una cella Rare Hunter è una pattuglia anonima: l'identità viene
+     * estratta soltanto quando il giocatore vi entra. Nessun doppione finché
+     * il pool non è esaurito; il pendingEncounter conserva poi l'estrazione. */
+    function pickRareHunter(state) {
+        const seen = Array.isArray(state.rareHuntersSeen) ? state.rareHuntersSeen : [];
+        let available = HUNTER_IDS.filter((id) => seen.indexOf(id) === -1);
+        if (available.length === 0) {
+            seen.length = 0;
+            available = HUNTER_IDS.slice();
+        }
+        const selected = pickRandom(available);
+        seen.push(selected);
+        state.rareHuntersSeen = seen;
+        return selected;
     }
 
     /** Indici ortogonalmente adiacenti a `index` (mai in diagonale: il movimento è a croce, come su una scacchiera di isolati). */
@@ -1397,35 +1452,60 @@
         const reachable = new Set(neighborsOf(grid, grid.playerIndex));
         const exhausted = sectorExhausted(state);
 
-        content.innerHTML = `
-            <div class="sector-head">
-                <div class="sector-title">Distretto ${state.sector}</div>
-                <div class="sector-hint" id="sectorHint"></div>
-            </div>
-            <div class="city-grid" id="cityGrid" style="grid-template-columns: repeat(${grid.w}, 1fr);"></div>
-            <div class="legend">
-                <span>📍 Sei qui</span><span>🧑‍🎤 Duellante</span><span>🕶️ Rare Hunter</span>
-                <span>🃏 Carta Locazione</span><span>❗ Evento</span><span>🏪 Negozio</span><span>❓ Ignoto</span>
-            </div>
-            <div class="sector-actions" id="sectorActions"></div>`;
+        let gridEl = document.getElementById('cityGrid');
+        const sameSector = gridEl && gridEl.dataset.sector === String(state.sector)
+            && gridEl.querySelectorAll('.city-cell').length === grid.cells.length;
+        if (!sameSector) {
+            content.innerHTML = `
+                <div class="sector-head">
+                    <div class="sector-title">Distretto ${state.sector}</div>
+                    <div class="sector-hint" id="sectorHint"></div>
+                </div>
+                <div class="city-grid" id="cityGrid" data-sector="${state.sector}" style="grid-template-columns: repeat(${grid.w}, 1fr);"></div>
+                <div class="legend">
+                    <span>📍 Sei qui</span><span>🧑‍🎤 Duellante</span><span>🕶️ Rare Hunter</span>
+                    <span>🃏 Carta Locazione</span><span>❗ Evento</span><span>🏪 Negozio</span><span>❓ Ignoto</span>
+                </div>
+                <div class="sector-actions" id="sectorActions"></div>`;
+            gridEl = document.getElementById('cityGrid');
+            grid.cells.forEach((cell, index) => {
+                const el = document.createElement('button');
+                el.type = 'button';
+                el.className = 'city-cell';
+                el.dataset.index = index;
+                // Piccole deviazioni visive: la logica resta una griglia, ma
+                // i punti seguono gli isolati della foto invece di sembrare
+                // pedine perfettamente allineate su una scacchiera.
+                const offsets = [[-4,-2],[2,3],[5,-3],[-2,4],[3,1],[4,-4],[-5,2],[1,-2],[-3,3],[5,2]];
+                const drift = offsets[index % offsets.length];
+                el.style.setProperty('--node-x', `${drift[0]}%`);
+                el.style.setProperty('--node-y', `${drift[1]}%`);
+                el.style.setProperty('--node-size', `${52 + ((index * 7) % 9)}%`);
+                gridEl.appendChild(el);
+            });
+            const token = document.createElement('div');
+            token.className = 'city-player-token';
+            token.setAttribute('aria-hidden', 'true');
+            token.innerHTML = '<span>📍</span><small>Sei qui</small>';
+            gridEl.appendChild(token);
+        }
 
         document.getElementById('sectorHint').textContent = state.locators >= FINALS_THRESHOLD
             ? 'Zona di decollo aperta 🚁'
             : `Ti servono ancora ${FINALS_THRESHOLD - state.locators} Carta Locazione`;
 
-        const gridEl = document.getElementById('cityGrid');
         grid.cells.forEach((cell, index) => {
-            const el = document.createElement('div');
+            const el = gridEl.querySelector(`.city-cell[data-index="${index}"]`);
             el.className = 'city-cell';
             const isPlayer = index === grid.playerIndex;
             const meta = CELL_META[cell.kind] || CELL_META.empty;
 
-            if (isPlayer) {
-                el.classList.add('player');
-                el.innerHTML = `<div>📍</div><div class="cell-label">Sei qui</div>`;
-            } else if (!cell.revealed) {
+            if (!cell.revealed) {
                 el.classList.add('hidden-cell');
-                el.innerHTML = `<div>❓</div>`;
+                if (el.dataset.content !== 'hidden') {
+                    el.innerHTML = `<div>❓</div>`;
+                    el.dataset.content = 'hidden';
+                }
             } else {
                 el.classList.add('revealed');
                 if (cell.resolved) el.classList.add('resolved');
@@ -1433,8 +1513,13 @@
                 if (cell.justRevealed) el.classList.add('just-revealed');
                 const icon = cell.resolved ? '✓' : meta.icon;
                 const label = cell.resolved ? '' : meta.label;
-                el.innerHTML = `<div>${icon}</div>${label ? `<div class="cell-label">${label}</div>` : ''}`;
+                const signature = `${icon}|${label}`;
+                if (el.dataset.content !== signature) {
+                    el.innerHTML = `<div>${icon}</div>${label ? `<div class="cell-label">${label}</div>` : ''}`;
+                    el.dataset.content = signature;
+                }
             }
+            if (isPlayer) el.classList.add('player');
 
             // Una cella è cliccabile solo se adiacente al segnalino. Le
             // celle già risolte restano attraversabili (non si resta mai
@@ -1442,8 +1527,29 @@
             if (!isPlayer && reachable.has(index)) {
                 el.classList.add('reachable');
                 el.onclick = () => moveToCell(index);
+                el.tabIndex = 0;
+                el.removeAttribute('aria-disabled');
+                el.setAttribute('aria-label', cell.revealed ? (meta.label || 'Isolato libero') : 'Isolato sconosciuto');
+            } else {
+                el.onclick = null;
+                el.tabIndex = -1;
+                el.setAttribute('aria-disabled', 'true');
             }
-            gridEl.appendChild(el);
+        });
+        // Il segnalino è un solo nodo persistente: cambia coordinate con una
+        // transizione, mentre le 25 celle non vengono distrutte e ricreate.
+        const token = gridEl.querySelector('.city-player-token');
+        const playerCell = gridEl.querySelector(`.city-cell[data-index="${grid.playerIndex}"]`);
+        requestAnimationFrame(() => {
+            const gridRect = gridEl.getBoundingClientRect();
+            const cellRect = playerCell.getBoundingClientRect();
+            if (!token.dataset.positioned) token.style.transition = 'none';
+            token.style.left = `${cellRect.left - gridRect.left + cellRect.width / 2}px`;
+            token.style.top = `${cellRect.top - gridRect.top + cellRect.height / 2}px`;
+            if (!token.dataset.positioned) {
+                token.dataset.positioned = '1';
+                requestAnimationFrame(() => { token.style.transition = ''; });
+            }
         });
         // Consumata: l'animazione di comparsa del radar deve giocare una
         // volta sola, non ad ogni render successivo dello stesso settore.
@@ -1451,6 +1557,7 @@
         saveState(state);
 
         const actions = document.getElementById('sectorActions');
+        actions.innerHTML = '';
         if (exhausted) {
             const btn = document.createElement('button');
             btn.type = 'button';
@@ -1537,8 +1644,9 @@
             }
             case 'duelist':
             case 'hunter': {
+                const characterId = cell.kind === 'hunter' ? pickRareHunter(state) : cell.characterId;
                 state.pendingEncounter = {
-                    characterId: cell.characterId,
+                    characterId: characterId,
                     stage: cell.kind === 'hunter' ? 'hunter' : 'street',
                     cellIndex: index,
                     wager: null

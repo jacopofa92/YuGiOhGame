@@ -1135,6 +1135,11 @@
          * da un'app vera.
          */
         function showView(name) {
+            // Negozio e Cartoteca sono viste SPA ma caricano al primo ingresso
+            // molti asset in modo lazy. Non avviene una navigazione HTML, quindi
+            // il loader globale va riattivato esplicitamente dal router.
+            const usaLoader = name === 'negozio' || name === 'cartoteca';
+            if (usaLoader && window.PageLoader && typeof PageLoader.show === 'function') PageLoader.show();
             hideAllShells();
             const el = document.getElementById('view-' + name);
             if (!el) return;
@@ -1143,18 +1148,24 @@
             // scorre mai) — una vista fusa invece è spesso una pagina
             // lunga (griglia carte, elenco deck...), deve poter scorrere.
             document.body.style.overflow = 'auto';
+            let ready = null;
             if (!viewsAlreadyInitialized.has(name)) {
                 viewsAlreadyInitialized.add(name);
                 const init = VIEW_INITIALIZERS[name];
-                if (typeof init === 'function') init();
+                if (typeof init === 'function') ready = init();
             } else if (typeof VIEW_REENTRY[name] === 'function') {
                 // Vista già costruita: si rientra soltanto, ma i dati che
                 // mostra possono essere cambiati altrove nel frattempo.
-                VIEW_REENTRY[name]();
+                ready = VIEW_REENTRY[name]();
             }
             if (window.Icons) Icons.hydrate(el);
             applyViewTrack(name);
             el.scrollTop = 0;
+            if (usaLoader && window.PageLoader) {
+                Promise.resolve(ready).catch((error) => {
+                    console.error(`[${name}] caricamento vista fallito:`, error);
+                }).finally(() => PageLoader.hideWhenReady());
+            }
         }
 
         /** "Indietro" da una vista fusa al menu principale — passata come opts.onBack a PageTopbar.render() di ogni vista invece del normale backHref (che farebbe una vera navigazione). Definita qui (non dove sta showMenu()) perché ogni vista la referenzia già al proprio caricamento; showMenu() viene invece chiamata solo più tardi, quando l'utente clicca davvero Indietro — la referenzia lazy dentro il corpo della funzione basta, non serve che showMenu() esista già ORA. Passa da hideAllShells() (non solo showMenu(), che non tocca .app-view) altrimenti la vista appena lasciata resterebbe visibile SOTTO il menu. */
@@ -2938,7 +2949,7 @@
             // dei file dell'economia: pesanti e inutili finché non si
             // apre questa vista, quindi caricati alla prima apertura con
             // ensureViewScripts (sequenziale e una volta sola).
-            ensureViewStyles(['js/ui/card.css', 'js/ui/card-detail.css', 'js/economy/shop.css', 'js/economy/pack-opening.css']);
+            const stylesReady = ensureViewStyles(['js/ui/card.css', 'js/ui/card-detail.css', 'js/economy/shop.css', 'js/economy/pack-opening.css']);
             // NON rielencare qui gli script che index.html carica già in
             // fondo al documento (cards-db.js, starter-structure-decks.js,
             // ...): ricaricarli rieseguirebbe le loro dichiarazioni `const`
@@ -2946,7 +2957,7 @@
             // SyntaxError ("Identifier ... has already been declared") e
             // azzera l'intero file. Qui vanno SOLO quelli che il menu non
             // ha mai caricato.
-            ensureViewScripts([
+            const scriptsReady = ensureViewScripts([
                 'js/data/cards-data.generated.js',
                 'js/ui/card-renderer.js',
                     'js/ui/card-detail.js',
@@ -2956,7 +2967,8 @@
                 'js/economy/shop-catalog.js',
                 'js/economy/pack-opening.js',
                 'js/economy/shop-ui.js'
-            ]).then(() => {
+            ]);
+            return Promise.all([stylesReady, scriptsReady]).then(() => {
                 shop = ShopUI.mount(document.getElementById('negozio-shopMount'));
             });
         }
@@ -4774,8 +4786,9 @@
             // entra in scena. Resta acceso anche dopo: le uniche carte
             // renderizzate in questo documento sono le sue.
             document.body.setAttribute('data-card-badges', '');
-            ensureViewScripts(SCRIPT_CARTOTECA).then(avviaCartoteca).catch((e) => {
+            return ensureViewScripts(SCRIPT_CARTOTECA).then(avviaCartoteca).catch((e) => {
                 console.error('[Cartoteca] script non caricati:', e);
+                throw e;
             });
         }
 

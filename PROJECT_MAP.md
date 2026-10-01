@@ -1,6 +1,6 @@
 # YuGiOhGame — mappa tecnica persistente
 
-Ultimo aggiornamento verificato: 2026-09-30.
+Ultimo aggiornamento verificato: 2026-10-02.
 
 Questo file è la memoria breve e stabile del progetto. Va letto all'inizio di
 una nuova sessione prima di scandire di nuovo l'intero repository. Per la
@@ -18,7 +18,7 @@ valido `CLAUDE.md`; per la separazione e il possibile riuso del motore vedere
 - PWA tramite `manifest.json`, `sw.js` e `js/pwa-register.js`.
 - App Android/Capacitor: nel repository è presente un vecchio APK beta.21;
   non coincide con la versione sorgente 1.0.6; la cache WebView/PWA corrente
-  è `ygo-duel-arena-v114`.
+  è `ygo-duel-arena-v119`.
 - Cloud tramite Supabase; multiplayer tramite relay WebSocket Node nativo.
 - Le preferenze utente (`save.settings`: dettagli video, ologrammi, aptica,
   volume e mute musica/SFX) fanno parte del salvataggio unificato e quindi di
@@ -46,12 +46,14 @@ valido `CLAUDE.md`; per la separazione e il possibile riuso del motore vedere
 - Battle City apre il proprio `prologue` su
   `images/maps/storia_anime_battlecity1.jpeg`; la fase `city` usa una main
   full-viewport e il fondale `images/fields/citta.jpg` (con variante mobile).
+  Le 25 celle logiche non disegnano alcun pannello o reticolo: solo i punti
+  d'interesse, leggermente sfalsati, galleggiano sul fondale. I nodi DOM
+  restano persistenti durante gli spostamenti e un unico segnalino animato
+  scorre fra gli isolati; su movimento ridotto la transizione viene rimossa.
 - Le campagne narrative non belliche hanno ulteriori raccordi: 2 scene in
   `anime`, 3 in `forbiddenMemories` e 4 in `freedom`. Le separazioni
   `dalla: 'tappe'` migrano i vecchi contatori lineari senza spostare il punto
   narrativo; WW1 resta deliberatamente esclusa.
-  Le 25 celle non hanno pannello o tasselli opachi: restano solo indicatori
-  circolari traslucidi sopra la piazza, più marcati se attivi o raggiungibili.
 - Nel tabellone di Battle City `resolvePendingEncounterIfDone()` tratta anche
   `r32` e `r16` come turni a eliminazione: una vittoria, compreso l'autowin,
   scrive `player` nel relativo array dei vincitori e apre il turno successivo.
@@ -60,6 +62,9 @@ valido `CLAUDE.md`; per la separazione e il possibile riuso del motore vedere
   partecipano agli incontri `hunter` di Battle City, quindi una vittoria nel
   torneo li sblocca nel Duello Libero. Finché mancano i relativi JPG sotto
   `images/characters/`, il renderer usa automaticamente il proprio fallback.
+  I nodi `hunter` della città restano anonimi: l'avversario viene estratto
+  entrando nel nodo, senza ripetizioni finché il pool Rare Hunter non è stato
+  esaurito; l'estrazione viene poi conservata nel `pendingEncounter`.
 - Nella campagna anime i quattro Rare Hunter compaiono in Battle City Parte 1
   nell'ordine Seeker, Strings, Lumis e Umbra, con dialoghi introduttivi. Tre
   migrazioni `inserite` mantengono allineati i progressi salvati prima della
@@ -220,6 +225,12 @@ precedenti.
   collega il bordo del box al lato di chi parla e mostra il progresso della
   conversazione; narratore e layout mobile/orizzontale restano dedicati.
 - `sfide.html` + `js/challenges/challenge-tracker.js`: sfide e progressi.
+  Il catalogo `js/data/challenges-db.js` contiene 128 sfide persistenti:
+  l'ultima espansione ne aggiunge 44 per duellanti dell'anime (inclusi Rare
+  Hunters e Mondo Virtuale), mostri iconici, Magie/Trappole e traguardi di
+  lungo periodo. Le voci usano soltanto i tipi generici già agganciati al
+  motore (`defeatCharacter`, `summonMonster`, `activateCard`, `perfectWin`,
+  `winInstantly`, `completeTournament`, `winDuels`).
 
 ### Economia e collezione
 
@@ -263,8 +274,16 @@ precedenti.
   retro a vortice, fronte con sigillo, rune orbitali, scintille e ombra
   dinamica. È interamente CSS (nessun asset da attendere), è adattato al
   landscape mobile e rispetta `prefers-reduced-motion`. API pubblica:
-  `PageLoader.hide()` / `PageLoader.hideWhenReady()`; opzioni globali:
+  `PageLoader.show()` / `PageLoader.hide()` / `PageLoader.hideWhenReady()`;
+  Negozio e Cartoteca lo riattivano dal router SPA mentre attendono gli asset
+  lazy. Opzioni globali:
   `PAGE_LOADER_SKIP` / `PAGE_LOADER_MANUAL_HIDE`.
+- `js/ui/game-logo.js` + `js/ui/game-logo.css`: logo condiviso di splash,
+  accesso e menu. Il titolo usa Cinzel in forma monumentale e geometrica,
+  incluso localmente in `assets/fonts/cinzel/` con licenza OFL e
+  inserito nell'app shell del service worker: funziona offline e nell'APK.
+  Il trattamento è volutamente sobrio: oro caldo opaco e ombra morbida,
+  senza cornici, fregi o rilievi metallici stratificati.
 - `js/audio/`: musica ed effetti; vendor Howler incluso localmente.
 - `js/native/`: back button, aptica, keep-awake e backup Android.
 - Asset: `images/`, `audio/`, `video/`.

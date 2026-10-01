@@ -96,19 +96,32 @@
 
     var MIN_MS = 1000; // richiesta esplicita dell'utente: 1s invece di 2s
     var hidden = false;
+    var hideTimer = null;
+    var safetyTimer = null;
     function hide() {
         if (hidden) return;
         hidden = true;
         el.classList.add('page-loader-hidden');
-        setTimeout(function () { el.remove(); }, 550);
+        clearTimeout(hideTimer);
+        clearTimeout(safetyTimer);
     }
     function hideWhenReady() {
         var elapsed = performance.now() - window.__pageLoaderStart;
         var remaining = Math.max(0, MIN_MS - elapsed);
-        setTimeout(hide, remaining);
+        clearTimeout(hideTimer);
+        hideTimer = setTimeout(hide, remaining);
+    }
+    // Le viste fuse di index.html non cambiano documento: riusano questa
+    // stessa istanza del loader quando devono caricare moduli lazy pesanti.
+    function show() {
+        clearTimeout(hideTimer);
+        clearTimeout(safetyTimer);
+        window.__pageLoaderStart = performance.now();
+        hidden = false;
+        el.classList.remove('page-loader-hidden');
     }
 
-    window.PageLoader = { hide: hide, hideWhenReady: hideWhenReady };
+    window.PageLoader = { show: show, hide: hide, hideWhenReady: hideWhenReady };
 
     if (!window.PAGE_LOADER_MANUAL_HIDE) {
         // Se js/cloud/auth-gate.js è caricato in questa pagina e sta ancora
@@ -141,6 +154,6 @@
         // gioco rotto, non un caricamento lento. Tempo generoso apposta
         // (10s): non deve MAI scattare nel percorso normale, è solo
         // un'ultima ancora di salvezza.
-        setTimeout(hide, 10000);
+        safetyTimer = setTimeout(hide, 10000);
     }
 })();

@@ -40,6 +40,8 @@ module.exports = {
                     background: document.body.style.backgroundImage,
                     gridBackground: getComputedStyle(grid).backgroundColor,
                     gridBorder: getComputedStyle(grid).borderTopWidth,
+                    buttons: grid.querySelectorAll('button.city-cell').length,
+                    token: !!grid.querySelector('.city-player-token'),
                     modalitaCitta: document.body.classList.contains('city-map-active')
                 };
             });
@@ -50,7 +52,45 @@ module.exports = {
             t.assert(/citta\.jpg/i.test(layout.background),
                 `Lo sfondo della fase urbana deve essere citta.jpg: ${layout.background}`);
             t.assert(layout.gridBackground === 'rgba(0, 0, 0, 0)' && layout.gridBorder === '0px' && layout.modalitaCitta,
-                `La città deve fare da base, senza pannello opaco della griglia: ${JSON.stringify(layout)}`);
+                `La struttura della griglia non deve essere percepibile sopra la città: ${JSON.stringify(layout)}`);
+            t.assert(layout.buttons === 25, `Le 25 celle devono essere controlli interattivi accessibili (${layout.buttons})`);
+            t.assert(layout.token, 'Il giocatore deve avere un segnalino persistente separato dalle celle');
+
+            const fluidita = await page.evaluate(async () => {
+                const grid = document.getElementById('cityGrid');
+                const firstCell = grid.querySelector('.city-cell');
+                const token = grid.querySelector('.city-player-token');
+                const oldLeft = token.style.left;
+                const state = SaveManager.getTournamentState('battleCity');
+                const target = neighborsOf(state.grid, state.grid.playerIndex)[0];
+                state.grid.cells[target].kind = 'empty';
+                state.grid.cells[target].revealed = true;
+                state.grid.cells[target].resolved = true;
+                SaveManager.setTournamentState('battleCity', state);
+                moveToCell(target);
+                await new Promise((resolve) => setTimeout(resolve, 520));
+                return {
+                    sameCell: firstCell === grid.querySelector('.city-cell'),
+                    sameToken: token === grid.querySelector('.city-player-token'),
+                    moved: oldLeft !== token.style.left
+                };
+            });
+            t.assert(fluidita.sameCell && fluidita.sameToken,
+                'Muovendosi la mappa e i suoi nodi devono restare gli stessi elementi DOM');
+            t.assert(fluidita.moved, 'Il segnalino del giocatore deve scorrere verso la nuova posizione');
+
+            const hunters = await page.evaluate(() => {
+                const state = SaveManager.getTournamentState('battleCity');
+                const preassigned = state.grid.cells.filter((c) => c.kind === 'hunter').some((c) => !!c.characterId);
+                state.rareHuntersSeen = [];
+                const firstCycle = Array.from({ length: HUNTER_IDS.length }, () => pickRareHunter(state));
+                const afterReset = pickRareHunter(state);
+                return { preassigned, pool: HUNTER_IDS.slice(), firstCycle, afterReset };
+            });
+            t.assert(!hunters.preassigned, 'I nodi Rare Hunter devono restare anonimi fino a quando vengono affrontati');
+            t.assert(new Set(hunters.firstCycle).size === hunters.pool.length,
+                `Il primo ciclo Rare Hunter non deve avere doppioni: ${hunters.firstCycle.join(', ')}`);
+            t.assert(hunters.pool.includes(hunters.afterReset), 'Dopo avere esaurito il pool deve iniziare un nuovo sorteggio valido');
         } finally {
             await page.close();
         }

@@ -1,3 +1,11 @@
+@font-face {
+    font-family: 'Duel Arena Inscription';
+    src: url('../../assets/fonts/cinzel/Cinzel-Variable.ttf') format('truetype');
+    font-weight: 400 900;
+    font-style: normal;
+    font-display: swap;
+}
+
 /* ============================================================
    game-logo.css — il logo del gioco (vedi js/ui/game-logo.js)
    ============================================================
@@ -75,7 +83,7 @@ game-logo[variante="splash"] {
     flex-direction: column;
     align-items: center;
     gap: clamp(4px, 0.8vh, 8px);
-    font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, 'URW Palladio L', 'Noto Serif', Georgia, serif;
+    font-family: 'Duel Arena Inscription', 'Times New Roman', serif;
     font-weight: 700;
 }
 .gl-riga1 {
@@ -83,22 +91,22 @@ game-logo[variante="splash"] {
     align-items: center;
     gap: 0.55em;
     font-size: var(--gl-riga1);
-    letter-spacing: 0.5em;
-    color: #f3ead2;
-    text-shadow: 0 0 12px rgba(247, 215, 116, 0.45);
+    letter-spacing: 0.31em;
+    color: #e8cf8a;
+    font-weight: 700;
+    transform: scaleX(1.04);
+    text-shadow: 0 0 10px rgba(210, 160, 62, 0.22);
     /* Il letter-spacing lascia uno spazio anche DOPO l'ultima lettera:
        senza compensarlo la riga starebbe mezza lettera a sinistra del
        centro. */
-    margin-right: -0.5em;
+    margin-right: -0.31em;
 }
-/* Due filetti d'oro ai lati della prima riga. */
+/* Nessuna cornice: il titolo deve leggere come un'iscrizione, non come
+   una targa metallica. Gli pseudo-elementi restano spenti per non dover
+   cambiare il markup condiviso del logo. */
 .gl-riga1::before, .gl-riga1::after {
-    content: '';
-    width: 2.4em;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, #f7d774);
+    content: none;
 }
-.gl-riga1::after { background: linear-gradient(90deg, #f7d774, transparent); margin-left: -0.5em; }
 .gl-lettera { display: inline-block; }
 .gl-riga2 {
     position: relative;
@@ -109,14 +117,16 @@ game-logo[variante="splash"] {
        bordi, rendendo la pagina scorrevole di lato. 10,5vw è la
        grandezza a cui "DUEL ARENA" occupa circa il 90% della larghezza. */
     font-size: min(var(--gl-riga2), 10.5vw);
-    letter-spacing: 0.12em;
-    margin-right: -0.12em;
+    font-weight: 900;
+    letter-spacing: 0.115em;
+    margin-right: -0.115em;
     white-space: nowrap;
-    background: linear-gradient(180deg, #fff6dc 0%, #f7d774 36%, #f39c12 70%, #b8680a 100%);
+    background: linear-gradient(180deg, #f1dda2 0%, #d4aa4d 58%, #a66d1d 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    filter: drop-shadow(0 2px 0 #4a2a03) drop-shadow(0 0 16px rgba(243, 156, 18, 0.45));
+    -webkit-text-stroke: 0;
+    filter: drop-shadow(0 2px 2px rgba(35, 20, 5, 0.72)) drop-shadow(0 0 10px rgba(205, 151, 50, 0.18));
 }
 /* Il riflesso: una copia della stessa scritta sopra la prima, colorata da
    una banda di luce che scorre. Stessa larghezza e stessa spaziatura per
@@ -213,7 +223,7 @@ game-logo[variante="splash"] .gl-riga2 { animation: glSvela 0.55s cubic-bezier(.
    fine svelamento la scritta resterebbe con l'alone mozzato. */
 @keyframes glSvela {
     from { clip-path: inset(-60% 100% -60% -20%); letter-spacing: 0.34em; opacity: 0.2; }
-    to   { clip-path: inset(-60% -20% -60% -20%); letter-spacing: 0.12em; opacity: 1; }
+    to   { clip-path: inset(-60% -20% -60% -20%); letter-spacing: 0.115em; opacity: 1; }
 }
 
 /* Chi chiede meno movimento vede il logo già composto e fermo. */
