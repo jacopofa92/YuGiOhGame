@@ -54,11 +54,25 @@
     var el = document.createElement('div');
     el.id = 'pageLoader';
     el.className = 'page-loader';
+    el.setAttribute('role', 'status');
+    el.setAttribute('aria-live', 'polite');
+    el.setAttribute('aria-label', 'Caricamento della schermata');
     el.innerHTML =
-        '<div class="page-loader-disk">' +
-            '<div class="page-loader-disk-ring"></div>' +
-            '<div class="page-loader-disk-ring2"></div>' +
-            '<div class="page-loader-disk-glyph">🎴</div>' +
+        '<div class="page-loader-stage" aria-hidden="true">' +
+            '<div class="page-loader-aura page-loader-aura--outer"></div>' +
+            '<div class="page-loader-aura page-loader-aura--inner"></div>' +
+            '<div class="page-loader-spark page-loader-spark--1"></div>' +
+            '<div class="page-loader-spark page-loader-spark--2"></div>' +
+            '<div class="page-loader-spark page-loader-spark--3"></div>' +
+            '<div class="page-loader-card">' +
+                '<div class="page-loader-face page-loader-card-back"><span></span></div>' +
+                '<div class="page-loader-face page-loader-card-front">' +
+                    '<div class="page-loader-card-title"></div>' +
+                    '<div class="page-loader-card-art"><i></i></div>' +
+                    '<div class="page-loader-card-lines"></div>' +
+                '</div>' +
+            '</div>' +
+            '<div class="page-loader-shadow"></div>' +
         '</div>' +
         '<div class="page-loader-bar"><div class="page-loader-bar-fill"></div></div>' +
         '<p class="page-loader-text">Caricamento…</p>';

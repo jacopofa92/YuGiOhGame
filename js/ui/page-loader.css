@@ -7,7 +7,9 @@
  * usato in una sessione precedente per distinguerla dallo splash è stato
  * segnalato dall'utente come stonato rispetto al resto del gioco, quindi
  * tolto: restano diverse per FORMA (disco vs anello) e frequenza (ad
- * ogni cambio pagina, non solo all'apertura), non per colore.
+ * ogni cambio pagina, non solo all'apertura), non per colore. La carta
+ * CSS a due facce sostituisce il vecchio glifo statico: non richiede asset
+ * e quindi resta disponibile anche mentre immagini e cache si caricano.
  */
 .page-loader {
     position: fixed;
@@ -24,43 +26,195 @@
     opacity: 0;
     pointer-events: none;
 }
-.page-loader-disk {
+.page-loader-stage {
     position: relative;
-    width: 92px;
-    height: 92px;
+    width: 150px;
+    height: 184px;
+    perspective: 760px;
+    transform-style: preserve-3d;
 }
-.page-loader-disk-ring {
+.page-loader-aura {
+    position: absolute;
+    left: 50%;
+    top: 45%;
+    border-radius: 50%;
+    pointer-events: none;
+    transform-style: preserve-3d;
+}
+.page-loader-aura--outer {
+    width: 142px;
+    height: 142px;
+    margin: -71px;
+    border: 1px solid rgba(247, 215, 116, 0.28);
+    box-shadow: 0 0 24px rgba(243, 156, 18, 0.16), inset 0 0 20px rgba(247, 215, 116, 0.08);
+    animation: pageLoaderRuneOrbit 3.8s linear infinite;
+}
+.page-loader-aura--outer::before,
+.page-loader-aura--outer::after {
+    content: '◆  ◇  ◆  ◇  ◆  ◇';
+    position: absolute;
+    inset: -8px;
+    color: rgba(247, 215, 116, 0.58);
+    font-size: 10px;
+    letter-spacing: 8px;
+    text-align: center;
+    text-shadow: 0 0 8px #f39c12;
+}
+.page-loader-aura--outer::after { transform: rotate(180deg); }
+.page-loader-aura--inner {
+    width: 105px;
+    height: 105px;
+    margin: -52px;
+    border: 1px dashed rgba(247, 215, 116, 0.3);
+    animation: pageLoaderRuneOrbitReverse 2.5s linear infinite;
+}
+.page-loader-card {
+    position: absolute;
+    left: 39px;
+    top: 20px;
+    width: 72px;
+    height: 105px;
+    transform-style: preserve-3d;
+    animation: pageLoaderCardTurn 1.75s cubic-bezier(.55,.08,.35,.95) infinite;
+    filter: drop-shadow(0 0 12px rgba(243, 156, 18, 0.32));
+}
+.page-loader-face {
     position: absolute;
     inset: 0;
-    border-radius: 50%;
-    border: 3px solid transparent;
-    border-top-color: #f39c12;
-    border-right-color: #f7d774;
-    filter: drop-shadow(0 0 10px rgba(243, 156, 18, 0.55));
-    animation: pageLoaderSpin 1.1s linear infinite;
+    overflow: hidden;
+    border: 3px solid #b87927;
+    border-radius: 4px;
+    backface-visibility: hidden;
+    box-shadow: inset 0 0 0 2px #15100a, inset 0 0 0 3px rgba(255, 223, 135, 0.4);
 }
-.page-loader-disk-ring2 {
+.page-loader-card-back {
+    background: radial-gradient(ellipse at center, #050506 0 12%, #d67620 13% 15%, #1b0b06 17% 23%, #b94c18 25% 29%, #180906 32% 39%, #8d2e14 42% 48%, #110806 52% 100%);
+}
+.page-loader-card-back::before {
+    content: '';
     position: absolute;
-    inset: 13px;
-    border-radius: 50%;
-    border: 2px dashed rgba(247, 215, 116, 0.4);
-    animation: pageLoaderSpin 2.6s linear infinite reverse;
+    inset: -35%;
+    background: repeating-conic-gradient(from 15deg, rgba(255, 137, 35, 0.74) 0 5deg, rgba(25, 7, 3, 0.94) 7deg 15deg);
+    mix-blend-mode: screen;
+    animation: pageLoaderVortex 3.2s linear infinite;
 }
-@keyframes pageLoaderSpin {
-    to { transform: rotate(360deg); }
-}
-.page-loader-disk-glyph {
+.page-loader-card-back span {
     position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.9rem;
-    filter: drop-shadow(0 0 6px rgba(247, 215, 116, 0.4));
+    inset: 8px;
+    z-index: 1;
+    border: 1px solid rgba(255, 207, 116, 0.38);
+    border-radius: 50%;
+}
+.page-loader-card-front {
+    padding: 7px 6px;
+    box-sizing: border-box;
+    transform: rotateY(180deg);
+    background: linear-gradient(145deg, #bf8339, #e5b968 42%, #9c5b21);
+}
+.page-loader-card-title {
+    height: 6px;
+    border-radius: 1px;
+    background: rgba(47, 25, 9, 0.62);
+    box-shadow: 0 9px 0 -2px rgba(47, 25, 9, 0.26);
+}
+.page-loader-card-art {
+    position: relative;
+    height: 55px;
+    margin-top: 8px;
+    overflow: hidden;
+    border: 2px solid rgba(45, 25, 8, 0.85);
+    background: radial-gradient(circle, #ffe9a0 0 7%, #e8a62f 8% 15%, #57300e 17% 19%, #17111e 21% 42%, #5d2f67 68%, #120b17 100%);
+    box-shadow: inset 0 0 12px rgba(0,0,0,.8), 0 0 8px rgba(255, 214, 106, .38);
+}
+.page-loader-card-art::before,
+.page-loader-card-art::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) rotate(45deg);
+    width: 26px;
+    height: 26px;
+    border: 2px solid rgba(255, 226, 135, .8);
+}
+.page-loader-card-art::after { transform: translate(-50%, -50%) rotate(45deg) scale(.55); }
+.page-loader-card-art i {
+    position: absolute;
+    z-index: 2;
+    left: 50%;
+    top: 50%;
+    width: 15px;
+    height: 8px;
+    transform: translate(-50%, -50%);
+    border: 2px solid #fff0aa;
+    border-radius: 50% 50% 45% 45%;
+    box-shadow: 0 0 7px #fff0aa;
+}
+.page-loader-card-art i::after {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 1px;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #fff8d4;
+}
+.page-loader-card-lines {
+    height: 16px;
+    margin-top: 6px;
+    background: repeating-linear-gradient(to bottom, rgba(45,25,8,.5) 0 1px, transparent 1px 4px);
+}
+.page-loader-shadow {
+    position: absolute;
+    left: 43px;
+    bottom: 19px;
+    width: 64px;
+    height: 13px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.72);
+    filter: blur(6px);
+    animation: pageLoaderShadow 1.75s ease-in-out infinite;
+}
+.page-loader-spark {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: #fff3bd;
+    box-shadow: 0 0 9px 2px #f39c12;
+    animation: pageLoaderSpark 1.8s ease-in-out infinite;
+}
+.page-loader-spark--1 { left: 20px; top: 52px; }
+.page-loader-spark--2 { right: 17px; top: 87px; animation-delay: -.65s; }
+.page-loader-spark--3 { left: 37px; top: 132px; animation-delay: -1.15s; }
+@keyframes pageLoaderCardTurn {
+    0% { transform: translateY(7px) rotateX(-7deg) rotateY(0deg); }
+    45% { transform: translateY(-7px) rotateX(5deg) rotateY(180deg); }
+    55% { transform: translateY(-7px) rotateX(5deg) rotateY(180deg); }
+    100% { transform: translateY(7px) rotateX(-7deg) rotateY(360deg); }
+}
+@keyframes pageLoaderRuneOrbit {
+    from { transform: rotateZ(0deg) rotateX(64deg); }
+    to { transform: rotateZ(360deg) rotateX(64deg); }
+}
+@keyframes pageLoaderRuneOrbitReverse {
+    from { transform: rotateZ(0deg) rotateX(64deg); }
+    to { transform: rotateZ(-360deg) rotateX(64deg); }
+}
+@keyframes pageLoaderVortex { to { transform: rotate(360deg); } }
+@keyframes pageLoaderShadow {
+    0%, 100% { transform: scale(.76); opacity: .46; }
+    50% { transform: scale(1.08); opacity: .8; }
+}
+@keyframes pageLoaderSpark {
+    0%, 100% { transform: translateY(8px) scale(.4); opacity: 0; }
+    45% { opacity: 1; }
+    70% { transform: translateY(-13px) scale(1); opacity: .65; }
 }
 .page-loader-bar {
     position: relative;
-    margin-top: 24px;
+    margin-top: 5px;
     width: 172px;
     height: 3px;
     border-radius: 2px;
@@ -85,4 +239,19 @@
     letter-spacing: 0.32em;
     text-transform: uppercase;
     color: #9aa5bd;
+}
+
+@media (max-height: 480px) and (orientation: landscape) {
+    .page-loader-stage { transform: scale(.78); margin: -18px 0; }
+    .page-loader-bar { margin-top: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .page-loader-card { animation: pageLoaderCardFloat 1.8s ease-in-out infinite; }
+    .page-loader-aura, .page-loader-card-back::before, .page-loader-spark { animation: none; }
+    .page-loader-shadow { animation-duration: 2.2s; }
+    .page-loader-bar-fill { animation-duration: 1.8s; }
+}
+@keyframes pageLoaderCardFloat {
+    0%, 100% { transform: translateY(4px) rotateY(-12deg); }
+    50% { transform: translateY(-4px) rotateY(12deg); }
 }

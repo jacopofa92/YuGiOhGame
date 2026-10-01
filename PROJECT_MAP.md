@@ -258,6 +258,13 @@ precedenti.
 
 - `js/ui/`: rendering carte, topbar, deck switcher, cinematiche, mappe,
   onboarding, effetti visivi e recupero errori.
+- `js/ui/page-loader.js` + `js/ui/page-loader.css`: overlay comune durante i
+  cambi pagina. Mostra una carta a due facce che ruota in prospettiva 3D, con
+  retro a vortice, fronte con sigillo, rune orbitali, scintille e ombra
+  dinamica. È interamente CSS (nessun asset da attendere), è adattato al
+  landscape mobile e rispetta `prefers-reduced-motion`. API pubblica:
+  `PageLoader.hide()` / `PageLoader.hideWhenReady()`; opzioni globali:
+  `PAGE_LOADER_SKIP` / `PAGE_LOADER_MANUAL_HIDE`.
 - `js/audio/`: musica ed effetti; vendor Howler incluso localmente.
 - `js/native/`: back button, aptica, keep-awake e backup Android.
 - Asset: `images/`, `audio/`, `video/`.
