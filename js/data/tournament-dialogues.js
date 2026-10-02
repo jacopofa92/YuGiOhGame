@@ -82,9 +82,9 @@
                 sottotitolo: 'Semifinali',
                 // La Torre non ha ancora un'arena tutta sua: si ripiega
                 // sull'Arena Kaiba notturna, che è lo stesso mondo. Il
-                // giorno in cui arriverà torreKaiba.jpg, questa riga la
+                // giorno in cui arriverà storia_anime_battlecity2.jpg, questa riga la
                 // userà da sola.
-                sfondo: ['images/fields/torreKaiba.jpg', 'images/fields/stadioKaiba.jpg'],
+                sfondo: ['images/maps/storia_anime_battlecity2.jpg', 'images/maps/storia_anime_battlecity2.jpg'],
                 // `ctx` arriva da torneo-battle-city.html: chi affronti in
                 // semifinale, e chi si gioca l'altra metà del tabellone.
                 battute: (ctx) => [
@@ -110,7 +110,7 @@
             final: {
                 titolo: 'Ultimo Piano',
                 sottotitolo: 'La finale',
-                sfondo: ['images/fields/torreKaiba.jpg', 'images/fields/stadioKaiba.jpg'],
+                sfondo: ['images/fields/torreDeiDuelli.jpg', 'images/fields/torreDeiDuelli.jpg'],
                 battute: (ctx) => [
                     { testo: 'L\'ascensore sale l\'ultimo tratto in silenzio. Sopra la città non è rimasto nessun altro piano.' },
                     {
@@ -125,7 +125,7 @@
             champion: {
                 titolo: 'Campione',
                 sottotitolo: 'Battle City',
-                sfondo: ['images/fields/torreKaiba.jpg', 'images/fields/stadioKaiba.jpg'],
+                sfondo: ['images/fields/torreDeiDuelli.jpg', 'images/fields/torreDeiDuelli.jpg'],
                 battute: [
                     { testo: 'L\'ultima carta si posa. In cima alla Torre Kaiba resti in piedi tu, e nessun altro.' },
                     { chi: 'kaiba', testo: 'Non credere di aver vinto per sempre. Il prossimo torneo lo organizzo io, e ti aspetterò in finale.' },
