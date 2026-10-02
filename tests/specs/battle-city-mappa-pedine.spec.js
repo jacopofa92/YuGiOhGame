@@ -88,12 +88,12 @@ module.exports = {
             t.assert(dopo.segnalinoCentrato, 'Il segnalino deve aver raggiunto la casella cliccata');
 
             // Fallback: un Duellante senza PNG ritagliato ripiega da solo
-            // sulla pedina standard; uno col PNG (Kaiba) ne mostra il ritaglio.
+            // sulla pedina standard; uno col PNG (darkNite) ne mostra il ritaglio.
             await page.evaluate(() => {
                 const box = document.createElement('div');
                 box.id = 'provaRitratti';
                 box.innerHTML = '<div id="mancante">' + BoardPieces.markup('duelist', null, { image: 'images/characters/pedine/nonEsiste.png' }) + '</div>'
-                    + '<div id="presente">' + BoardPieces.markup('duelist', null, { image: 'images/characters/pedine/kaiba.png' }) + '</div>';
+                    + '<div id="presente">' + BoardPieces.markup('duelist', null, { image: 'images/characters/pedine/darkNite.png' }) + '</div>';
                 document.body.appendChild(box);
             });
             await page.waitForFunction(() => !document.querySelector('#mancante image'), null, { timeout: 5000 });
@@ -106,6 +106,18 @@ module.exports = {
             t.assert(!ritratti.mancanteHaImmagine && ritratti.mancanteHaPedina, 'Senza il PNG la pedina deve ripiegare su quella standard, non restare vuota');
             t.assert(ritratti.presenteHaImmagine, 'Con il PNG presente deve restare il ritaglio del personaggio');
             t.assert(ritratti.markupDiNuovo, 'Un ritratto già risultato mancante non va richiesto di nuovo ad ogni render');
+
+            // Nome del PNG = nome del file avatar: Joey -> joeyWheeler.png.
+            const abbinamento = await page.evaluate(() => PRELIM_IDS.map((id) => {
+                const nome = getCharacter(id).image.split('/').pop().replace(/\.[^.]+$/, '');
+                return { id, nome };
+            }));
+            const fs = require('fs');
+            const cartella = path.join(RADICE, 'images', 'characters', 'pedine');
+            const presenti = abbinamento.filter((a) => fs.existsSync(path.join(cartella, a.nome + '.png')));
+            t.assert(presenti.length >= 4, `Almeno 4 Duellanti della città devono avere il PNG col nome dell'avatar: ${presenti.map((a) => a.nome)}`);
+            t.assert(!fs.existsSync(path.join(cartella, 'joey.png')) && !fs.existsSync(path.join(cartella, 'duke.png')),
+                'I PNG si chiamano come gli avatar (dukeDevlin.png), non come l\'id (duke.png)');
 
             t.assert(erroriPagina.length === 0, 'Nessun errore JS deve comparire in pagina: ' + erroriPagina.join(' | '));
         } finally {

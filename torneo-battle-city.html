@@ -1740,8 +1740,12 @@
             // solo entrandoci. Ogni Duellante PROVA il suo PNG: se il file
             // non c'è, BoardPieces ripiega da solo sulla pedina standard
             // (niente elenco da tenere: basta mettere o togliere il file).
-            const faccia = (piece === 'duelist' && cell.characterId)
-                ? `images/characters/pedine/${cell.characterId}.png` : null;
+            // Il PNG ha lo stesso nome del file avatar del personaggio
+            // (es. joeyWheeler.jpg -> pedine/joeyWheeler.png), NON il suo id.
+            const avatarDelDuellante = (piece === 'duelist' && cell.characterId) ? getCharacter(cell.characterId) : null;
+            const nomeAvatar = avatarDelDuellante && avatarDelDuellante.image
+                ? avatarDelDuellante.image.split('/').pop().replace(/\.[^.]+$/, '') : null;
+            const faccia = nomeAvatar ? `images/characters/pedine/${nomeAvatar}.png` : null;
             const signature = `${piece || '-'}|${label}|${faccia || ''}`;
             if (el.dataset.content !== signature) {
                 el.innerHTML = `${piece ? BoardPieces.markup(piece, null, faccia ? { image: faccia } : null) : ''}<div class="cell-label">${label}</div>`;

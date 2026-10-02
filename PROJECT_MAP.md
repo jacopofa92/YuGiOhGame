@@ -295,17 +295,16 @@ precedenti.
   dal segnalino (`layoutCityOverlay`, ricalcolato anche al resize) e uniche
   ad avere la targhetta; le altre restano visibili ma attenuate. I Rare
   Hunter restano anonimi anche nella pedina (si estraggono entrando). I
-  Duellanti della città (`PEDINE_CON_FACCIA` in `torneo-battle-city.html`)
-  mostrano il personaggio RITAGLIATO senza sfondo quando c'è un PNG pulito
-  in `images/characters/pedine/<id>.png` (oggi Rex, Mako, Espa Roba). La
-  rimozione automatica (`@imgly/background-removal-node`) ha funzionato solo
-  su questi: su Joey, Weevil, Mai, Duke e Bakura lascia corpi semitrasparenti
-  e pezzi di sfondo (provate anche varianti: soglia sull'alpha, modello
-  small, bordo extra — nessuna pulita), quindi per loro serve un PNG
-  trasparente vero e restano pedina disegnata. Nessun elenco da tenere: ogni
-  Duellante prova `images/characters/pedine/<id>.png` e, se il file non c'è,
+  Duellanti della città mostrano il personaggio RITAGLIATO senza sfondo
+  (PNG trasparenti forniti a mano; la rimozione automatica dello sfondo non
+  dava risultati puliti). Il PNG ha lo stesso NOME del file avatar del
+  personaggio, non il suo id: `joeyWheeler.jpg` → `images/characters/pedine/
+  joeyWheeler.png`, `maximillionPegasus.jpg` → `maximillionPegasus.png`.
+  Nessun elenco da tenere: ogni Duellante prova il suo file e, se non c'è,
   `BoardPieces` ripiega da solo sulla pedina standard (`onerror`, con
-  memoria dei mancanti). Per aggiungerne uno basta mettere il PNG.
+  memoria dei mancanti). Per aggiungerne uno basta mettere il PNG. Restano
+  nella cartella alcune varianti senza avatar corrispondente (Kaiba in vari
+  costumi, `yamiYugiV2`, un secondo soldato della Grande Guerra).
 - `js/audio/`: musica ed effetti; vendor Howler incluso localmente.
 - `js/native/`: back button, aptica, keep-awake e backup Android.
 - Asset: `images/`, `audio/`, `video/`.

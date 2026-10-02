@@ -32,6 +32,9 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.13 — Pedine di Battle City: i PNG dei Duellanti si chiamano come il
+ *   file del loro avatar (dukeDevlin.png, non duke.png).
+ *
  * 1.0.12 — Evocazione Tributo: ora si può annullare (pulsante Annulla o Esc)
  *   e la modalità è molto più evidente (banda grande, velo scuro, mostri
  *   sacrificabili illuminati). Il bot non attacca né avanza più mentre il
@@ -489,4 +492,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.12';
+window.GAME_VERSION = '1.0.13';
