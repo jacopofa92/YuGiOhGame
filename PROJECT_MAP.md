@@ -296,10 +296,14 @@ precedenti.
   ad avere la targhetta; le altre restano visibili ma attenuate. I Rare
   Hunter restano anonimi anche nella pedina (si estraggono entrando). I
   Duellanti della città (`PEDINE_CON_FACCIA` in `torneo-battle-city.html`)
-  mostrano il personaggio RITAGLIATO senza sfondo,
-  `images/characters/pedine/<id>.png`, generato con
-  `@imgly/background-removal-node` (modello medium) + trim, fuori dal
-  repo: per un nuovo Duellante basta aggiungere il PNG e il suo id.
+  mostrano il personaggio RITAGLIATO senza sfondo quando c'è un PNG pulito
+  in `images/characters/pedine/<id>.png` (oggi Rex, Mako, Espa Roba). La
+  rimozione automatica (`@imgly/background-removal-node`) ha funzionato solo
+  su questi: su Joey, Weevil, Mai, Duke e Bakura lascia corpi semitrasparenti
+  e pezzi di sfondo (provate anche varianti: soglia sull'alpha, modello
+  small, bordo extra — nessuna pulita), quindi per loro serve un PNG
+  trasparente vero e restano pedina disegnata. Per aggiungerne uno: il PNG
+  e il suo id in `PEDINE_CON_FACCIA`.
 - `js/audio/`: musica ed effetti; vendor Howler incluso localmente.
 - `js/native/`: back button, aptica, keep-awake e backup Android.
 - Asset: `images/`, `audio/`, `video/`.
