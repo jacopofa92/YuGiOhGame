@@ -32,6 +32,10 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.11 — 34 Duellanti con PNG trasparente nella cartella delle pedine,
+ *   nominati con l'id del personaggio: compaiono in primo piano sulla mappa
+ *   di Battle City (Rex e gli altri senza file usano la pedina standard).
+ *
  * 1.0.10 — Se il PNG ritagliato di un Duellante non è nella cartella
  *   delle pedine, la mappa di Battle City usa da sola la pedina standard:
  *   niente più elenco da tenere aggiornato.
@@ -480,4 +484,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.10';
+window.GAME_VERSION = '1.0.11';

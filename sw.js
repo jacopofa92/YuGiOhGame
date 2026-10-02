@@ -369,7 +369,8 @@
 // v122: Duellanti ritagliati senza sfondo, solo quelli puliti
 // (images/characters/pedine/: Rex, Mako, Espa Roba).
 // v123: fallback automatico alla pedina standard se manca il PNG del Duellante.
-const CACHE_NAME = 'ygo-duel-arena-v123';
+// v124: PNG trasparenti dei Duellanti in images/characters/pedine/ (id.png).
+const CACHE_NAME = 'ygo-duel-arena-v124';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

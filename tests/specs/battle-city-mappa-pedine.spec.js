@@ -88,12 +88,12 @@ module.exports = {
             t.assert(dopo.segnalinoCentrato, 'Il segnalino deve aver raggiunto la casella cliccata');
 
             // Fallback: un Duellante senza PNG ritagliato ripiega da solo
-            // sulla pedina standard; uno col PNG (Rex) ne mostra il ritaglio.
+            // sulla pedina standard; uno col PNG (Kaiba) ne mostra il ritaglio.
             await page.evaluate(() => {
                 const box = document.createElement('div');
                 box.id = 'provaRitratti';
                 box.innerHTML = '<div id="mancante">' + BoardPieces.markup('duelist', null, { image: 'images/characters/pedine/nonEsiste.png' }) + '</div>'
-                    + '<div id="presente">' + BoardPieces.markup('duelist', null, { image: 'images/characters/pedine/rex.png' }) + '</div>';
+                    + '<div id="presente">' + BoardPieces.markup('duelist', null, { image: 'images/characters/pedine/kaiba.png' }) + '</div>';
                 document.body.appendChild(box);
             });
             await page.waitForFunction(() => !document.querySelector('#mancante image'), null, { timeout: 5000 });
