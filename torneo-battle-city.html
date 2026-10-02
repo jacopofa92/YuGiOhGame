@@ -1205,6 +1205,9 @@
         // il resto delle celle resta 'empty'
     ];
 
+    /** Duellanti che hanno il PNG ritagliato in images/characters/pedine/ (aggiungerne uno = metterci il file e il suo id qui). */
+    const PEDINE_CON_FACCIA = ['joey', 'rex', 'weevil', 'mako', 'mai', 'duke', 'espaRoba', 'bakura'];
+
     /**
      * `piece` è il tipo di pedina 3D di js/ui/board-pieces.js (null = la
      * casella ha solo l'alone a terra, nessuna pedina). Erano emoji: vedi
@@ -1733,9 +1736,16 @@
             }
             // Il disegno si riscrive solo se cambia: le 25 caselle restano
             // nodi persistenti (vedi il commento sul segnalino più sotto).
-            const signature = `${piece || '-'}|${label}`;
+            // Un Duellante mostra il PERSONAGGIO ritagliato
+            // (images/characters/pedine/<id>.png, senza sfondo); un Rare
+            // Hunter no, resta la sagoma anonima perché chi è si estrae
+            // solo entrandoci. Se il PNG non esiste (personaggio nuovo)
+            // resta la pedina generica.
+            const faccia = (piece === 'duelist' && cell.characterId && PEDINE_CON_FACCIA.indexOf(cell.characterId) !== -1)
+                ? `images/characters/pedine/${cell.characterId}.png` : null;
+            const signature = `${piece || '-'}|${label}|${faccia || ''}`;
             if (el.dataset.content !== signature) {
-                el.innerHTML = `${piece ? BoardPieces.markup(piece) : ''}<div class="cell-label">${label}</div>`;
+                el.innerHTML = `${piece ? BoardPieces.markup(piece, null, faccia ? { image: faccia } : null) : ''}<div class="cell-label">${label}</div>`;
                 el.dataset.content = signature;
             }
             if (isPlayer) el.classList.add('player');

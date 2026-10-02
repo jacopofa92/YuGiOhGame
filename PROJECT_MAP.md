@@ -294,9 +294,12 @@ precedenti.
   Nella città le caselle raggiungibili sono accese, con percorso+freccia
   dal segnalino (`layoutCityOverlay`, ricalcolato anche al resize) e uniche
   ad avere la targhetta; le altre restano visibili ma attenuate. I Rare
-  Hunter restano anonimi anche nella pedina (si estraggono entrando), e i
-  Duellanti usano una pedina generica, non il ritratto: mostrare chi c'è
-  cambierebbe le scelte di puntata, va deciso dall'utente.
+  Hunter restano anonimi anche nella pedina (si estraggono entrando). I
+  Duellanti della città (`PEDINE_CON_FACCIA` in `torneo-battle-city.html`)
+  mostrano il personaggio RITAGLIATO senza sfondo,
+  `images/characters/pedine/<id>.png`, generato con
+  `@imgly/background-removal-node` (modello medium) + trim, fuori dal
+  repo: per un nuovo Duellante basta aggiungere il PNG e il suo id.
 - `js/audio/`: musica ed effetti; vendor Howler incluso localmente.
 - `js/native/`: back button, aptica, keep-awake e backup Android.
 - Asset: `images/`, `audio/`, `video/`.
