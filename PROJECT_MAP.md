@@ -302,8 +302,10 @@ precedenti.
   su questi: su Joey, Weevil, Mai, Duke e Bakura lascia corpi semitrasparenti
   e pezzi di sfondo (provate anche varianti: soglia sull'alpha, modello
   small, bordo extra — nessuna pulita), quindi per loro serve un PNG
-  trasparente vero e restano pedina disegnata. Per aggiungerne uno: il PNG
-  e il suo id in `PEDINE_CON_FACCIA`.
+  trasparente vero e restano pedina disegnata. Nessun elenco da tenere: ogni
+  Duellante prova `images/characters/pedine/<id>.png` e, se il file non c'è,
+  `BoardPieces` ripiega da solo sulla pedina standard (`onerror`, con
+  memoria dei mancanti). Per aggiungerne uno basta mettere il PNG.
 - `js/audio/`: musica ed effetti; vendor Howler incluso localmente.
 - `js/native/`: back button, aptica, keep-awake e backup Android.
 - Asset: `images/`, `audio/`, `video/`.

@@ -87,6 +87,26 @@ module.exports = {
             t.assert(dopo.percorsi === dopo.reach.length, `I percorsi seguono la mossa: ${dopo.percorsi} per ${dopo.reach.length} caselle`);
             t.assert(dopo.segnalinoCentrato, 'Il segnalino deve aver raggiunto la casella cliccata');
 
+            // Fallback: un Duellante senza PNG ritagliato ripiega da solo
+            // sulla pedina standard; uno col PNG (Rex) ne mostra il ritaglio.
+            await page.evaluate(() => {
+                const box = document.createElement('div');
+                box.id = 'provaRitratti';
+                box.innerHTML = '<div id="mancante">' + BoardPieces.markup('duelist', null, { image: 'images/characters/pedine/nonEsiste.png' }) + '</div>'
+                    + '<div id="presente">' + BoardPieces.markup('duelist', null, { image: 'images/characters/pedine/rex.png' }) + '</div>';
+                document.body.appendChild(box);
+            });
+            await page.waitForFunction(() => !document.querySelector('#mancante image'), null, { timeout: 5000 });
+            const ritratti = await page.evaluate(() => ({
+                mancanteHaImmagine: !!document.querySelector('#mancante image'),
+                mancanteHaPedina: !!document.querySelector('#mancante svg ellipse'),
+                presenteHaImmagine: !!document.querySelector('#presente image'),
+                markupDiNuovo: BoardPieces.markup('duelist', null, { image: 'images/characters/pedine/nonEsiste.png' }).indexOf('<image') === -1
+            }));
+            t.assert(!ritratti.mancanteHaImmagine && ritratti.mancanteHaPedina, 'Senza il PNG la pedina deve ripiegare su quella standard, non restare vuota');
+            t.assert(ritratti.presenteHaImmagine, 'Con il PNG presente deve restare il ritaglio del personaggio');
+            t.assert(ritratti.markupDiNuovo, 'Un ritratto già risultato mancante non va richiesto di nuovo ad ogni render');
+
             t.assert(erroriPagina.length === 0, 'Nessun errore JS deve comparire in pagina: ' + erroriPagina.join(' | '));
         } finally {
             await page.close();

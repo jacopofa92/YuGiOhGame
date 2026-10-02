@@ -307,12 +307,30 @@
         // bordo ciano lo stacca dallo sfondo scuro della mappa.
         return `${SHADOW}${base('#22d3ee', 'bp-glow-cyan')}
             <image href="${opts.image}" x="9" y="3" width="46" height="50" preserveAspectRatio="xMidYMax meet"
+                onerror="BoardPieces._ritrattoMancante(this)"
                 style="filter: drop-shadow(0 0 1.2px rgba(125,243,255,.95)) drop-shadow(0 1.5px 1px rgba(0,0,0,.55))"/>`;
+    }
+
+    // Ritratti la cui immagine non esiste: ricordarli evita di richiederli
+    // (e di far lampeggiare il vuoto) ad ogni render della mappa.
+    const ritrattiMancanti = new Set();
+
+    /**
+     * Se il PNG del personaggio non c'è nella cartella, la pedina torna a
+     * quella STANDARD del suo tipo invece di restare vuota: così non serve
+     * tenere un elenco di chi ha il ritaglio, basta mettere o togliere il
+     * file. Chiamata dall'onerror dell'<image>.
+     */
+    function ritrattoMancante(imgEl) {
+        const svg = imgEl.closest('svg');
+        if (!svg) return;
+        ritrattiMancanti.add(imgEl.getAttribute('href'));
+        svg.innerHTML = PIECES.duelist;
     }
 
     function markup(kind, variant, opts) {
         let body = PIECES[kind];
-        if (kind === 'duelist' && opts && opts.image) body = portraitMarkup(opts);
+        if (kind === 'duelist' && opts && opts.image && !ritrattiMancanti.has(opts.image)) body = portraitMarkup(opts);
         if (!body) return '';
         ensureDefs();
         const cls = `bp-piece bp-${kind}${variant ? ' bp-' + variant : ''}`;
@@ -322,6 +340,7 @@
     window.BoardPieces = {
         markup: markup,
         ensureDefs: ensureDefs,
+        _ritrattoMancante: ritrattoMancante,
         kinds: () => Object.keys(PIECES)
     };
 })();

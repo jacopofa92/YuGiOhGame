@@ -1205,15 +1205,6 @@
         // il resto delle celle resta 'empty'
     ];
 
-    /**
-     * Duellanti che hanno il PNG ritagliato in images/characters/pedine/
-     * (aggiungerne uno = metterci il file e il suo id qui). Solo ritagli
-     * PULITI: la rimozione automatica dello sfondo funzionava solo su Rex,
-     * Mako ed Espa Roba; su Joey, Weevil, Mai, Duke e Bakura lasciava corpi
-     * semitrasparenti e pezzi di sfondo (draghi, ali), quindi per loro resta
-     * la pedina disegnata finché non c'è un PNG trasparente vero.
-     */
-    const PEDINE_CON_FACCIA = ['rex', 'mako', 'espaRoba'];
 
     /**
      * `piece` è il tipo di pedina 3D di js/ui/board-pieces.js (null = la
@@ -1746,9 +1737,10 @@
             // Un Duellante mostra il PERSONAGGIO ritagliato
             // (images/characters/pedine/<id>.png, senza sfondo); un Rare
             // Hunter no, resta la sagoma anonima perché chi è si estrae
-            // solo entrandoci. Se il PNG non esiste (personaggio nuovo)
-            // resta la pedina generica.
-            const faccia = (piece === 'duelist' && cell.characterId && PEDINE_CON_FACCIA.indexOf(cell.characterId) !== -1)
+            // solo entrandoci. Ogni Duellante PROVA il suo PNG: se il file
+            // non c'è, BoardPieces ripiega da solo sulla pedina standard
+            // (niente elenco da tenere: basta mettere o togliere il file).
+            const faccia = (piece === 'duelist' && cell.characterId)
                 ? `images/characters/pedine/${cell.characterId}.png` : null;
             const signature = `${piece || '-'}|${label}|${faccia || ''}`;
             if (el.dataset.content !== signature) {

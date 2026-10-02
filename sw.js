@@ -368,7 +368,8 @@
 // v121: pedine piu' ricche di Battle City (js/ui/board-pieces.js).
 // v122: Duellanti ritagliati senza sfondo, solo quelli puliti
 // (images/characters/pedine/: Rex, Mako, Espa Roba).
-const CACHE_NAME = 'ygo-duel-arena-v122';
+// v123: fallback automatico alla pedina standard se manca il PNG del Duellante.
+const CACHE_NAME = 'ygo-duel-arena-v123';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

@@ -32,6 +32,10 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.10 — Se il PNG ritagliato di un Duellante non è nella cartella
+ *   delle pedine, la mappa di Battle City usa da sola la pedina standard:
+ *   niente più elenco da tenere aggiornato.
+ *
  * 1.0.9 — Duellanti in città ritagliati senza sfondo solo dove il ritaglio
  *   è pulito (Rex, Mako, Espa Roba); gli altri restano pedina disegnata.
  *
@@ -476,4 +480,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.9';
+window.GAME_VERSION = '1.0.10';
