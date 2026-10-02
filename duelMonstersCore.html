@@ -2035,6 +2035,59 @@
             padding: 2px 10px;
             font-variant-numeric: tabular-nums;
         }
+        /* Annulla la selezione: la banda è pointer-events:none, il solo
+           pulsante torna cliccabile. Prima non c'era alcun modo di
+           rinunciare a un'Evocazione Tributo già avviata. */
+        .tribute-prompt-cancel {
+            pointer-events: auto;
+            cursor: pointer;
+            font: inherit;
+            color: #fff;
+            padding: 6px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.55);
+            background: rgba(255,255,255,0.14);
+        }
+        .tribute-prompt-cancel:hover, .tribute-prompt-cancel:focus-visible { background: rgba(255,255,255,0.3); }
+        .tribute-prompt-cancel:active { transform: scale(0.95); }
+        /* Modalità Tributo ben evidente: banda più grande e pulsante di
+           bordo, e un velo scuro sul resto dello schermo (sotto i mostri
+           sacrificabili, che restano illuminati dal loro contorno). */
+        .tribute-prompt#tributePrompt {
+            font-size: clamp(0.85rem, 2vw, 1.1rem);
+            padding: 12px 22px;
+            border-width: 2px;
+            animation: tributeBandGlow 1.6s ease-in-out infinite;
+        }
+        @keyframes tributeBandGlow {
+            0%, 100% { box-shadow: 0 8px 24px rgba(0,0,0,0.45), 0 0 16px rgba(231,76,60,0.3); }
+            50%      { box-shadow: 0 8px 24px rgba(0,0,0,0.45), 0 0 34px rgba(231,76,60,0.85); }
+        }
+        .tribute-veil {
+            position: fixed;
+            inset: 0;
+            z-index: 10080;
+            background: radial-gradient(ellipse at 50% 55%, rgba(0,0,0,0.12), rgba(20,0,0,0.62));
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .25s ease;
+        }
+        body.tribute-mode .tribute-veil { opacity: 1; }
+        /* I mostri sacrificabili stanno SOPRA il velo. */
+        body.tribute-mode #playerFieldBoard .field-slot.tribute-highlight {
+            position: relative;
+            z-index: 10085;
+        }
+        body.tribute-mode #playerFieldBoard .field-slot.tribute-highlight .card {
+            animation: tributeCardPulse 1.2s ease-in-out infinite;
+        }
+        @keyframes tributeCardPulse {
+            0%, 100% { box-shadow: 0 0 14px rgba(231,76,60,0.5); }
+            50%      { box-shadow: 0 0 30px rgba(231,76,60,1); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .tribute-prompt#tributePrompt, body.tribute-mode #playerFieldBoard .field-slot.tribute-highlight .card { animation: none; }
+        }
         /* Pila della Catena — vedi il commento HTML su #chainStack per il
            perché. Riga orizzontale sotto il promemoria Tributo (che occupa
            lo stesso centro-alto ma i due non compaiono mai insieme in
@@ -3720,7 +3773,9 @@
         <span class="tribute-prompt-icon">🔺</span>
         <span class="tribute-prompt-text" id="tributePromptText"></span>
         <span class="tribute-prompt-count" id="tributePromptCount"></span>
+        <button type="button" class="tribute-prompt-cancel" id="tributePromptCancel">✕ Annulla</button>
     </div>
+    <div class="tribute-veil" aria-hidden="true"></div>
 
     <!-- Promemoria "Scarta N carte", visibile finché lo scarto obbligatorio
          per il limite di mano a fine turno è in corso (vedi

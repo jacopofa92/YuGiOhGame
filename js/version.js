@@ -32,6 +32,11 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.12 — Evocazione Tributo: ora si può annullare (pulsante Annulla o Esc)
+ *   e la modalità è molto più evidente (banda grande, velo scuro, mostri
+ *   sacrificabili illuminati). Il bot non attacca né avanza più mentre il
+ *   giocatore ha un modale aperto (risposta con Trappola/Magia, scelte).
+ *
  * 1.0.11 — 34 Duellanti con PNG trasparente nella cartella delle pedine,
  *   nominati con l'id del personaggio: compaiono in primo piano sulla mappa
  *   di Battle City (Rex e gli altri senza file usano la pedina standard).
@@ -484,4 +489,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.11';
+window.GAME_VERSION = '1.0.12';

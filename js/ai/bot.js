@@ -374,7 +374,13 @@ async function botPerformAttacks() {
         // ancora aperto, sovrascrivendone i pulsanti di conferma/annulla.
         await new Promise(resolve => {
             setTimeout(() => {
-                botExecuteAttack(attackerItem.index, targetIndex, resolve);
+                // Se nel frattempo il giocatore ha un modale aperto (es. ha
+                // ancora da rispondere al colpo precedente), l'attacco
+                // successivo aspetta che lo chiuda.
+                waitForNoBlockingModal().then(() => {
+                    if (gameState.currentPlayer !== 'bot' || gameState.gameOver) { resolve(); return; }
+                    botExecuteAttack(attackerItem.index, targetIndex, resolve);
+                });
             }, 1200);
         });
     }
@@ -449,9 +455,28 @@ function waitForSummonCinematics() {
     return new Promise((resolve) => {
         const start = Date.now();
         const poll = () => {
+            // Un modale/una scelta del giocatore aperta (risposta con una
+            // Trappola/Magia, picker, Tributi...) ferma il bot SENZA
+            // tetto: il giocatore ha il tempo che gli serve. Il tetto di
+            // 20s vale solo per una cinematica che non finisce mai.
+            if (typeof isBlockingModalOpen === 'function' && document.querySelector('.modal-backdrop.open, #quickPopover')) {
+                setTimeout(poll, 150);
+                return;
+            }
             const inCorso = window.FX && typeof FX.isCinematicPlaying === 'function' && FX.isCinematicPlaying();
             if (!inCorso || Date.now() - start > 20000) { resolve(); return; }
             setTimeout(poll, 150);
+        };
+        poll();
+    });
+}
+
+/** Si risolve solo quando nessuna scelta del giocatore è aperta (modali, popover, Tributi, scarto). */
+function waitForNoBlockingModal() {
+    return new Promise((resolve) => {
+        const poll = () => {
+            if (typeof isBlockingModalOpen === 'function' && isBlockingModalOpen()) { setTimeout(poll, 150); return; }
+            resolve();
         };
         poll();
     });
@@ -486,7 +511,10 @@ function attendiPoi(ms) {
 function waitForBotChainToClear(callback) {
     const start = Date.now();
     const poll = () => {
-        if (!window.DuelEngine || !DuelEngine.isChainActive() || Date.now() - start > 15000) {
+        // Il tetto di 15s non vale se il giocatore ha un modale aperto
+        // (sta decidendo se rispondere nella Catena).
+        const modaleAperto = !!document.querySelector('.modal-backdrop.open, #quickPopover');
+        if (!window.DuelEngine || !DuelEngine.isChainActive() || (!modaleAperto && Date.now() - start > 15000)) {
             callback();
             return;
         }

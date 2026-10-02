@@ -754,7 +754,26 @@ function showTributePrompt(cardName, tributesNeeded, selectedCount) {
         `Seleziona ${tributesNeeded} mostr${tributesNeeded > 1 ? 'i' : 'o'} da Sacrificare per evocare ${cardName}`;
     document.getElementById('tributePromptCount').textContent = `${selectedCount}/${tributesNeeded}`;
     el.classList.add('show');
+    document.body.classList.add('tribute-mode');
+    const cancel = document.getElementById('tributePromptCancel');
+    if (cancel) cancel.onclick = cancelTributeSelection;
 }
+
+/**
+ * Rinuncia a un'Evocazione Tributo ancora in selezione: la carta resta in
+ * mano, nessun mostro viene sacrificato. Non si può più annullare quando il
+ * sacrificio è partito (performTributeSacrifice azzera il promemoria).
+ */
+function cancelTributeSelection() {
+    const pending = gameState.pendingTributeSummon;
+    if (!pending || pending.sacrificing) return;
+    addToLog(`↩️ Evocazione Tributo di ${pending.card.name} annullata.`);
+    clearSelection();
+}
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && gameState && gameState.pendingTributeSummon) cancelTributeSelection();
+});
 
 function updateTributePromptCount(selectedCount, tributesNeeded) {
     const el = document.getElementById('tributePromptCount');
@@ -764,6 +783,7 @@ function updateTributePromptCount(selectedCount, tributesNeeded) {
 function hideTributePrompt() {
     const el = document.getElementById('tributePrompt');
     if (el) el.classList.remove('show');
+    document.body.classList.remove('tribute-mode');
 }
 
 /**
@@ -864,6 +884,7 @@ function performTributeSacrifice() {
     const pending = gameState.pendingTributeSummon;
     if (!pending) return;
 
+    pending.sacrificing = true;
     const indices = [...pending.selected];
     if (window.MP_broadcast && !window.MP_applyingRemote) {
         // `summonedCard` NON è ridondante con il messaggio 'summon' che
