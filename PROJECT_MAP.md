@@ -284,6 +284,19 @@ precedenti.
   inserito nell'app shell del service worker: funziona offline e nell'APK.
   Il trattamento è volutamente sobrio: oro caldo opaco e ombra morbida,
   senza cornici, fregi o rilievi metallici stratificati.
+- `js/ui/board-pieces.js`: pedine "3D" in SVG per le mappe dei tornei
+  (duellante, Rare Hunter incappucciato, Carta Locazione, evento, negozio,
+  decollo, casella ignota, casella risolta, puntina del giocatore).
+  `BoardPieces.markup(kind)` torna l'SVG; i gradienti stanno in un solo
+  `<svg>` condiviso iniettato una volta (mai in un contenitore
+  `display:none`, o non si dipingono). Le usa la città di Battle City al
+  posto delle emoji; un tipo sconosciuto torna stringa vuota, mai errore.
+  Nella città le caselle raggiungibili sono accese, con percorso+freccia
+  dal segnalino (`layoutCityOverlay`, ricalcolato anche al resize) e uniche
+  ad avere la targhetta; le altre restano visibili ma attenuate. I Rare
+  Hunter restano anonimi anche nella pedina (si estraggono entrando), e i
+  Duellanti usano una pedina generica, non il ritratto: mostrare chi c'è
+  cambierebbe le scelte di puntata, va deciso dall'utente.
 - `js/audio/`: musica ed effetti; vendor Howler incluso localmente.
 - `js/native/`: back button, aptica, keep-awake e backup Android.
 - Asset: `images/`, `audio/`, `video/`.

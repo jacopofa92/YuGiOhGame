@@ -287,8 +287,19 @@
         background: transparent;
         box-shadow: none;
     }
+    /* Ogni casella è una PEDINA in piedi (js/ui/board-pieces.js, SVG con
+       volume e ombra) appoggiata su un ALONE a terra (::before, un'ellisse
+       schiacciata: è la prospettiva dall'alto dello sfondo). Erano emoji
+       dentro un cerchio — richiesta dell'utente di sostituirle con
+       "qualcosa in 3D, come immagini" e di rendere più EVIDENTE dove ci si
+       può spostare. Per questo la gerarchia visiva è a tre livelli:
+       raggiungibile (accesa, sollevata, con percorso e freccia) > rivelata
+       ma lontana (attenuata, leggibile per pianificare) > ignota (ancora
+       più spenta). Prima le caselle raggiungibili si distinguevano dalle
+       altre solo per un anello ciano un filo più acceso. */
     .city-cell {
         position: relative;
+        z-index: 1;
         aspect-ratio: 1;
         appearance: none;
         font-family: inherit;
@@ -300,8 +311,6 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 2px;
-        font-size: 1.25rem;
         color: var(--ink-dim);
         cursor: default;
         overflow: visible;
@@ -312,99 +321,193 @@
     .city-cell::before {
         content: '';
         position: absolute;
-        left: 50%; top: 50%;
+        left: 50%; top: 72%;
         width: var(--node-size, 56%);
-        aspect-ratio: 1;
+        aspect-ratio: 2.6;
         border-radius: 50%;
-        border: 1px solid rgba(144, 210, 235, 0.14);
-        background: radial-gradient(circle, rgba(6,18,34,.48), rgba(6,18,34,.13) 58%, transparent 72%);
+        border: 1px solid rgba(144, 210, 235, 0.16);
+        background: radial-gradient(ellipse, rgba(6,18,34,.62), rgba(6,18,34,.2) 60%, transparent 74%);
         transform: translate(-50%, -50%);
         transition: transform .2s ease, border-color .25s ease, background .25s ease, box-shadow .25s ease;
     }
-    .city-cell > * { position: relative; z-index: 2; text-shadow: 0 2px 5px rgba(0,0,0,.8); }
-    .city-cell .cell-label {
-        font-size: 0.5rem;
-        letter-spacing: 0.4px;
+    .city-cell > * { position: relative; z-index: 2; }
+    .city-cell .bp-piece {
+        width: 76%;
+        height: auto;
+        display: block;
+        margin-top: -14%;
+        filter: drop-shadow(0 2px 2px rgba(0,0,0,.45));
+        transition: transform .25s cubic-bezier(.2,.85,.2,1);
+    }
+    /* L'etichetta compare SOLO dove serve decidere: sulle caselle
+       raggiungibili e sulla zona di decollo. Su tutte e 25 insieme era
+       rumore, e con le pedine il tipo di casella si legge già a colpo
+       d'occhio (c'è anche la legenda). */
+    /* Targhetta appoggiata sul bordo basso del proprio alone, DENTRO la
+       casella: sotto la casella cadeva nel varco da cui arriva il percorso
+       della casella sopra il giocatore e lo copriva, e spostata sopra
+       finiva sotto la pedina vicina, come se fosse sua (entrambi visti
+       negli screenshot). */
+    .city-cell > .cell-label {
+        display: none;
+        position: absolute;
+        left: 50%; top: 84%;
+        transform: translate(-50%, -50%);
+        padding: 2px 7px;
+        border-radius: 999px;
+        font-size: 0.52rem;
+        font-weight: bold;
+        letter-spacing: 0.5px;
         text-transform: uppercase;
-        color: var(--ink-dim);
-        line-height: 1;
+        white-space: nowrap;
+        line-height: 1.4;
+        color: #05202c;
+        background: linear-gradient(180deg, #c9fbff, #22d3ee);
+        box-shadow: 0 2px 8px rgba(0,0,0,.5), 0 0 10px rgba(34,211,238,.5);
     }
-    /* Cella ancora ignota: solo la trama della città, nessun indizio. */
-    .city-cell.hidden-cell {
-        color: rgba(143, 163, 192, 0.5);
-        background: transparent;
+    .city-cell.reachable > .cell-label,
+    .city-cell.heliport > .cell-label { display: block; }
+    .city-cell.heliport > .cell-label {
+        color: #2a0631;
+        background: linear-gradient(180deg, #fbe0ff, #e879f9);
+        box-shadow: 0 2px 8px rgba(0,0,0,.5), 0 0 10px rgba(232,121,249,.55);
     }
-    .city-cell.hidden-cell::before { opacity: 0.3; }
-    .city-cell.revealed { color: #fff; }
     .city-cell.revealed::before {
-        border-color: rgba(34, 211, 238, 0.38);
-        background: radial-gradient(circle, rgba(5,24,42,.7), rgba(5,24,42,.22) 58%, transparent 72%);
+        border-color: rgba(34, 211, 238, 0.32);
+        background: radial-gradient(ellipse, rgba(5,24,42,.72), rgba(5,24,42,.24) 60%, transparent 74%);
     }
-    .city-cell.resolved { opacity: 0.34; filter: saturate(0.25); }
-    /* Solo le celle ortogonalmente adiacenti al segnalino sono raggiungibili:
-       evidenziate e cliccabili, tutte le altre restano inerti. */
-    .city-cell.reachable {
-        cursor: pointer;
-    }
+    /* Lontane = attenuate ma ancora leggibili: il radar serve proprio a
+       pianificare due mosse avanti. Ignote e già risolte ancora di più. */
+    .city-cell:not(.reachable):not(.player) { opacity: .62; filter: saturate(.6) brightness(.82); }
+    .city-cell.hidden-cell:not(.reachable) { opacity: .48; }
+    .city-cell.resolved:not(.reachable) { opacity: .4; filter: saturate(.25) brightness(.8); }
+    .city-cell.heliport:not(.reachable) { opacity: .92; filter: none; }
+
+    /* Solo le celle ortogonalmente adiacenti al segnalino sono raggiungibili. */
+    .city-cell.reachable { cursor: pointer; z-index: 5; }
     .city-cell.reachable::before {
-        border-color: var(--bc-cyan);
-        box-shadow: 0 0 0 1px rgba(34,211,238,.3), 0 0 18px rgba(34,211,238,.4);
-        animation: cellPulse 1.8s ease-in-out infinite;
+        border: 2px solid var(--bc-cyan);
+        background: radial-gradient(ellipse, rgba(34,211,238,.5), rgba(34,211,238,.16) 58%, transparent 74%);
+        box-shadow: 0 0 18px rgba(34,211,238,.6), inset 0 0 10px rgba(125,243,255,.45);
+        animation: haloPulse 1.6s ease-in-out infinite;
+    }
+    /* "Ping" del radar: un'onda che si allarga dall'alone e svanisce. */
+    .city-cell.reachable::after {
+        content: '';
+        position: absolute;
+        left: 50%; top: 72%;
+        width: var(--node-size, 56%);
+        aspect-ratio: 2.6;
+        border-radius: 50%;
+        border: 2px solid rgba(125,243,255,.85);
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+        animation: haloPing 1.6s ease-out infinite;
+    }
+    .city-cell.reachable .bp-piece {
+        filter: drop-shadow(0 6px 4px rgba(0,0,0,.5)) drop-shadow(0 0 8px rgba(125,243,255,.55));
+        animation: pieceFloat 1.8s ease-in-out infinite;
     }
     @media (hover: hover) and (pointer: fine) {
-        .city-cell.reachable:hover { transform: scale(1.09); z-index: 8; filter: brightness(1.16); }
-        .city-cell.reachable:hover::before { transform: translate(-50%, -50%) scale(1.08); }
+        .city-cell.reachable:hover { transform: scale(1.1); z-index: 8; filter: brightness(1.15); }
     }
     .city-cell.reachable:focus-visible { outline: 2px solid #fff; outline-offset: -5px; }
     .city-cell.reachable:active { transform: scale(0.94); }
-    @keyframes cellPulse {
-        0%, 100% { box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.3), 0 0 12px rgba(34, 211, 238, 0.2); }
-        50%      { box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.6), 0 0 24px rgba(34, 211, 238, 0.42); }
+    @keyframes haloPulse {
+        0%, 100% { box-shadow: 0 0 12px rgba(34,211,238,.45), inset 0 0 8px rgba(125,243,255,.35); }
+        50%      { box-shadow: 0 0 26px rgba(34,211,238,.8), inset 0 0 12px rgba(125,243,255,.6); }
     }
-    .city-cell.player::before { border-color: rgba(251,191,36,.34); }
+    @keyframes haloPing {
+        0%   { transform: translate(-50%, -50%) scale(.8); opacity: .9; }
+        100% { transform: translate(-50%, -50%) scale(1.75); opacity: 0; }
+    }
+    /* Galleggia e ridiscende morbido, senza rimbalzi (vedi la regola del
+       progetto sugli atterraggi 3D: decelerare, mai sforare). */
+    @keyframes pieceFloat {
+        0%, 100% { transform: translateY(-4%); }
+        50%      { transform: translateY(-13%); }
+    }
+
+    /* Percorsi dal segnalino alle caselle raggiungibili: un SVG sotto le
+       pedine, ridisegnato ad ogni mossa (layoutCityOverlay). Compaiono a
+       segnalino ARRIVATO (ritardo pari alla sua transizione), altrimenti
+       partirebbero dal punto d'arrivo mentre lui sta ancora scivolando. */
+    .city-routes {
+        position: absolute;
+        inset: 0;
+        width: 100%; height: 100%;
+        pointer-events: none;
+        z-index: 0;
+        overflow: visible;
+    }
+    .city-routes .route { animation: routeIn .35s ease-out .42s both; }
+    .city-routes .route-glow { stroke: rgba(34,211,238,.32); stroke-width: 11; stroke-linecap: round; fill: none; filter: blur(3px); }
+    .city-routes .route-line {
+        stroke: #9ff6ff; stroke-width: 3.5; stroke-linecap: round; fill: none;
+        stroke-dasharray: 2 9;
+        animation: routeFlow .8s linear infinite;
+    }
+    .city-routes .route-arrow {
+        fill: none; stroke: #f0feff; stroke-width: 3.2;
+        stroke-linecap: round; stroke-linejoin: round;
+        filter: drop-shadow(0 0 4px #22d3ee);
+    }
+    @keyframes routeFlow { to { stroke-dashoffset: -11; } }
+    @keyframes routeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .city-cell.player::before { border-color: rgba(251,191,36,.45); }
     .city-player-token {
         position: absolute;
         z-index: 20;
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
         color: #fff;
-        font-size: 1.3rem;
         pointer-events: none;
-        transform: translate(-50%, -50%);
+        /* La punta della puntina cade poco sotto il centro della casella,
+           non il suo baricentro: da qui il -66% verticale. Più su
+           occuperebbe il varco del percorso verso la casella superiore. */
+        transform: translate(-50%, -66%);
         transition: left .46s cubic-bezier(.22,.8,.22,1), top .46s cubic-bezier(.22,.8,.22,1), filter .3s ease;
-        filter: drop-shadow(0 0 9px rgba(251,191,36,.9));
+        filter: drop-shadow(0 0 8px rgba(251,191,36,.75));
     }
+    .city-player-token .bp-piece { width: 100%; height: auto; display: block; }
     .city-player-token::before {
         content: '';
         position: absolute;
-        width: 52%; aspect-ratio: 1;
+        left: 50%; top: 92%;
+        width: 120%; aspect-ratio: 2.6;
         z-index: -1;
         border-radius: 50%;
         border: 1px solid var(--bc-amber);
-        background: radial-gradient(circle, rgba(95,62,5,.72), rgba(95,62,5,.16) 65%, transparent 72%);
+        background: radial-gradient(ellipse, rgba(251,191,36,.45), rgba(95,62,5,.16) 62%, transparent 74%);
+        transform: translate(-50%, -50%);
         animation: playerTokenPulse 1.6s ease-in-out infinite;
     }
-    .city-player-token small { font-size: .45rem; margin-top: 1px; text-transform: uppercase; color: #ffe7a0; }
-    @keyframes playerTokenPulse {
-        0%,100% { transform: scale(.92); box-shadow: 0 0 12px rgba(251,191,36,.3); }
-        50% { transform: scale(1.08); box-shadow: 0 0 22px rgba(251,191,36,.55); }
+    .city-player-token small {
+        position: absolute; top: 100%; left: 50%;
+        transform: translate(-50%, 55%);
+        font-size: .48rem; font-weight: bold; letter-spacing: .5px;
+        white-space: nowrap; text-transform: uppercase; color: #ffe7a0;
+        text-shadow: 0 1px 3px #000, 0 0 6px rgba(0,0,0,.8);
     }
-    .city-cell.heliport {
-        color: #fff;
+    @keyframes playerTokenPulse {
+        0%,100% { transform: translate(-50%, -50%) scale(.9); box-shadow: 0 0 10px rgba(251,191,36,.3); }
+        50%     { transform: translate(-50%, -50%) scale(1.08); box-shadow: 0 0 20px rgba(251,191,36,.55); }
     }
     .city-cell.heliport::before {
-        border-color: var(--bc-magenta);
-        background: radial-gradient(circle, rgba(77, 18, 86, 0.64), rgba(77, 18, 86, 0.16) 58%, transparent 72%);
+        border: 2px solid var(--bc-magenta);
+        background: radial-gradient(ellipse, rgba(232,121,249,.42), rgba(77,18,86,.18) 58%, transparent 74%);
         animation: heliportPulse 1.4s ease-in-out infinite;
     }
+    .city-cell.heliport .bp-rotor { transform-origin: 31.5px 15.6px; animation: rotorSpin .25s linear infinite; }
+    @keyframes rotorSpin { 0%, 100% { transform: scaleX(1); } 50% { transform: scaleX(.25); } }
     @keyframes heliportPulse {
-        0%, 100% { box-shadow: 0 0 14px rgba(232, 121, 249, 0.35); }
-        50%      { box-shadow: 0 0 30px rgba(232, 121, 249, 0.7); }
+        0%, 100% { box-shadow: 0 0 14px rgba(232, 121, 249, 0.4); }
+        50%      { box-shadow: 0 0 30px rgba(232, 121, 249, 0.75); }
     }
     /* Comparsa del radar: ogni cella appena rivelata "sboccia" una volta
-       sola (classe rimossa dal render successivo insieme al nodo). */
+       sola (classe rimossa dal render successivo). */
     @keyframes radarReveal {
         from { opacity: 0; transform: scale(0.7); }
         to   { opacity: 1; transform: scale(1); }
@@ -421,7 +524,17 @@
         background: rgba(5, 12, 24, 0.52);
         backdrop-filter: blur(6px);
     }
-    .legend span { color: var(--ink-dim); font-size: 0.72rem; }
+    .legend span { color: var(--ink-dim); font-size: 0.72rem; display: inline-flex; align-items: center; gap: 5px; }
+    .legend .bp-piece { width: 24px; height: 24px; flex: none; filter: drop-shadow(0 1px 1px rgba(0,0,0,.5)); }
+    /* Il campione "puoi andarci": lo stesso alone ciano delle caselle raggiungibili. */
+    .legend .legend-reach {
+        width: 22px; aspect-ratio: 2.6; flex: none;
+        border-radius: 50%;
+        border: 2px solid var(--bc-cyan);
+        background: radial-gradient(ellipse, rgba(34,211,238,.5), transparent 74%);
+        box-shadow: 0 0 8px rgba(34,211,238,.6);
+    }
+    .legend .legend-strong { color: #fff; font-weight: bold; }
 
     .sector-actions { margin-top: 14px; display: flex; gap: 10px; }
     .sector-actions .big-btn { flex: 1; }
@@ -621,15 +734,21 @@
     @media (max-width: 480px) {
         .main { padding: 70px 10px 40px; }
         .city-grid { gap: 0; padding: 4px; }
-        .city-cell { font-size: 1rem; border-radius: 7px; }
-        .city-cell .cell-label { font-size: 0.42rem; }
+        .city-cell { border-radius: 7px; }
+        .city-cell > .cell-label { font-size: 0.44rem; padding: 1px 5px; }
+        .legend .bp-piece { width: 20px; height: 20px; }
         .panel { padding: 20px 16px; }
         .fighter { font-size: 0.7rem; }
         .fighter .avatar { width: 22px; height: 22px; }
     }
     @media (prefers-reduced-motion: reduce) {
         .city-cell, .city-cell::before, .city-player-token { transition-duration: .01ms; }
-        .city-cell.reachable::before, .city-player-token::before { animation: none; }
+        .city-cell.reachable::before, .city-player-token::before,
+        .city-cell.reachable .bp-piece, .city-cell.heliport .bp-rotor,
+        .city-routes .route-line { animation: none; }
+        /* Senza movimento l'onda del radar non serve: resta l'alone fisso. */
+        .city-cell.reachable::after { display: none; }
+        .city-routes .route { animation-duration: .01ms; animation-delay: 0s; }
     }
 </style>
 </head>
@@ -747,6 +866,7 @@
 <script src="js/ui/story-cutscene.js"></script>
 <script src="js/data/tournament-dialogues.js"></script>
 <script src="js/ui/icon-library.js"></script>
+<script src="js/ui/board-pieces.js"></script>
 <script>
     Icons.hydrate();
     // La data dei bonus giornalieri viene dal server, non dall'orologio
@@ -1085,15 +1205,20 @@
         // il resto delle celle resta 'empty'
     ];
 
+    /**
+     * `piece` è il tipo di pedina 3D di js/ui/board-pieces.js (null = la
+     * casella ha solo l'alone a terra, nessuna pedina). Erano emoji: vedi
+     * il commento sullo stile `.city-cell` per il perché del cambio.
+     */
     const CELL_META = {
-        empty:    { icon: '·', label: '' },
-        duelist:  { icon: '🧑‍🎤', label: 'Duellante' },
-        hunter:   { icon: '🕶️', label: 'Rare Hunter' },
-        locator:  { icon: '🃏', label: 'Locazione' },
-        event:    { icon: '❗', label: 'Evento' },
-        shop:     { icon: '🏪', label: 'Negozio' },
-        heliport: { icon: '🚁', label: 'Decollo' },
-        start:    { icon: '📍', label: '' }
+        empty:    { piece: null,       label: 'Libero' },
+        duelist:  { piece: 'duelist',  label: 'Duellante' },
+        hunter:   { piece: 'hunter',   label: 'Rare Hunter' },
+        locator:  { piece: 'locator',  label: 'Locazione' },
+        event:    { piece: 'event',    label: 'Evento' },
+        shop:     { piece: 'shop',     label: 'Negozio' },
+        heliport: { piece: 'heliport', label: 'Decollo' },
+        start:    { piece: null,       label: '' }
     };
 
     function buildSector(state) {
@@ -1441,6 +1566,80 @@
     }
 
     // ---------------- Fase 1: la città ----------------
+    /**
+     * Posa la puntina del giocatore sulla sua casella e disegna un percorso
+     * (linea tratteggiata che scorre + freccia) verso ognuna delle caselle
+     * raggiungibili: è la risposta alla richiesta dell'utente di rendere
+     * più evidente DOVE ci si può spostare. Legge tutto da `gridEl.dataset`
+     * e dalla geometria reale delle caselle, quindi la si può richiamare
+     * anche al ridimensionamento senza ridisegnare la città.
+     */
+    function layoutCityOverlay(gridEl) {
+        if (!gridEl || !gridEl.isConnected) return;
+        const token = gridEl.querySelector('.city-player-token');
+        const routes = gridEl.querySelector('.city-routes');
+        const playerCell = gridEl.querySelector(`.city-cell[data-index="${gridEl.dataset.player}"]`);
+        if (!token || !routes || !playerCell) return;
+
+        const gridRect = gridEl.getBoundingClientRect();
+        const cellRect = playerCell.getBoundingClientRect();
+        const centro = (r) => ({ x: r.left - gridRect.left + r.width / 2, y: r.top - gridRect.top + r.height / 2 });
+        const p = centro(cellRect);
+
+        // Il segnalino è un solo nodo persistente: cambia coordinate con una
+        // transizione, mentre le 25 celle non vengono distrutte e ricreate.
+        if (!token.dataset.positioned) token.style.transition = 'none';
+        token.style.width = `${Math.round(cellRect.width * 0.44)}px`;
+        token.style.left = `${p.x}px`;
+        token.style.top = `${p.y}px`;
+        if (!token.dataset.positioned) {
+            token.dataset.positioned = '1';
+            requestAnimationFrame(() => { token.style.transition = ''; });
+        }
+
+        routes.setAttribute('viewBox', `0 0 ${gridRect.width} ${gridRect.height}`);
+        const raggio = cellRect.width;
+        const tratti = (gridEl.dataset.reachable || '').split(',').filter(Boolean).map((i) => {
+            const cell = gridEl.querySelector(`.city-cell[data-index="${i}"]`);
+            if (!cell) return '';
+            const t = centro(cell.getBoundingClientRect());
+            const dx = t.x - p.x;
+            const dy = t.y - p.y;
+            const lung = Math.hypot(dx, dy) || 1;
+            const ux = dx / lung;
+            const uy = dy / lung;
+            // Si parte appena fuori dalla puntina e ci si ferma prima della
+            // pedina d'arrivo: la linea collega, non copre. Verso l'alto si
+            // parte più lontano, perché la puntina si alza SOPRA il centro
+            // della casella (la sua punta, non il baricentro, sta sul punto).
+            // E verso l'alto ci si ferma prima, sotto la targhetta della
+            // casella d'arrivo (sta sul bordo basso del suo alone).
+            const suSu = uy < -0.5;
+            const partenza = suSu ? 0.32 : 0.26;
+            const arrivo = suSu ? 0.46 : 0.32;
+            const a = { x: p.x + ux * raggio * partenza, y: p.y + uy * raggio * partenza };
+            const b = { x: t.x - ux * raggio * arrivo, y: t.y - uy * raggio * arrivo };
+            const m = { x: a.x + (b.x - a.x) * 0.55, y: a.y + (b.y - a.y) * 0.55 };
+            const angolo = Math.atan2(dy, dx) * 180 / Math.PI;
+            const s = Math.max(5, raggio * 0.07);
+            const d = `M${a.x.toFixed(1)} ${a.y.toFixed(1)} L${b.x.toFixed(1)} ${b.y.toFixed(1)}`;
+            return `<g class="route">
+                <path class="route-glow" d="${d}"/>
+                <path class="route-line" d="${d}"/>
+                <path class="route-arrow" d="M${-s} ${-s} L${s * 0.6} 0 L${-s} ${s}" transform="translate(${m.x.toFixed(1)} ${m.y.toFixed(1)}) rotate(${angolo.toFixed(1)})"/>
+            </g>`;
+        });
+        routes.innerHTML = tratti.join('');
+    }
+
+    // Al ridimensionamento (rotazione del telefono, finestra) le caselle si
+    // spostano: si riposano puntina e percorsi senza ridisegnare la città.
+    let cityLayoutTimer = null;
+    window.addEventListener('resize', () => {
+        clearTimeout(cityLayoutTimer);
+        cityLayoutTimer = setTimeout(() => layoutCityOverlay(document.getElementById('cityGrid')), 120);
+    });
+
     function renderCity(state) {
         document.body.classList.add('city-map-active');
         applyPhaseBackdrop('city');
@@ -1463,11 +1662,24 @@
                 </div>
                 <div class="city-grid" id="cityGrid" data-sector="${state.sector}" style="grid-template-columns: repeat(${grid.w}, 1fr);"></div>
                 <div class="legend">
-                    <span>📍 Sei qui</span><span>🧑‍🎤 Duellante</span><span>🕶️ Rare Hunter</span>
-                    <span>🃏 Carta Locazione</span><span>❗ Evento</span><span>🏪 Negozio</span><span>❓ Ignoto</span>
+                    <span class="legend-strong"><i class="legend-reach"></i>Puoi andarci</span>
+                    <span>${BoardPieces.markup('player')}Sei qui</span>
+                    <span>${BoardPieces.markup('duelist')}Duellante</span>
+                    <span>${BoardPieces.markup('hunter')}Rare Hunter</span>
+                    <span>${BoardPieces.markup('locator')}Carta Locazione</span>
+                    <span>${BoardPieces.markup('event')}Evento</span>
+                    <span>${BoardPieces.markup('shop')}Negozio</span>
+                    <span>${BoardPieces.markup('heliport')}Decollo</span>
+                    <span>${BoardPieces.markup('hidden')}Ignoto</span>
                 </div>
                 <div class="sector-actions" id="sectorActions"></div>`;
             gridEl = document.getElementById('cityGrid');
+            // Strato dei percorsi: PRIMO figlio della griglia e z-index 0,
+            // così le linee passano sotto le pedine (vedi .city-routes).
+            const routes = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            routes.setAttribute('class', 'city-routes');
+            routes.setAttribute('aria-hidden', 'true');
+            gridEl.appendChild(routes);
             grid.cells.forEach((cell, index) => {
                 const el = document.createElement('button');
                 el.type = 'button';
@@ -1486,7 +1698,7 @@
             const token = document.createElement('div');
             token.className = 'city-player-token';
             token.setAttribute('aria-hidden', 'true');
-            token.innerHTML = '<span>📍</span><small>Sei qui</small>';
+            token.innerHTML = `${BoardPieces.markup('player')}<small>Sei qui</small>`;
             gridEl.appendChild(token);
         }
 
@@ -1500,24 +1712,31 @@
             const isPlayer = index === grid.playerIndex;
             const meta = CELL_META[cell.kind] || CELL_META.empty;
 
+            // Quale pedina e quale etichetta. Una casella già risolta mostra
+            // il gettone spento (si vede che ci si è già passati), una vuota
+            // solo l'alone a terra; l'etichetta si vede solo se raggiungibile
+            // (vedi .cell-label), quindi descrive cosa si trova ANDANDOCI.
+            let piece;
+            let label;
             if (!cell.revealed) {
                 el.classList.add('hidden-cell');
-                if (el.dataset.content !== 'hidden') {
-                    el.innerHTML = `<div>❓</div>`;
-                    el.dataset.content = 'hidden';
-                }
+                piece = 'hidden';
+                label = 'Ignoto';
             } else {
                 el.classList.add('revealed');
                 if (cell.resolved) el.classList.add('resolved');
                 if (cell.kind === 'heliport') el.classList.add('heliport');
                 if (cell.justRevealed) el.classList.add('just-revealed');
-                const icon = cell.resolved ? '✓' : meta.icon;
-                const label = cell.resolved ? '' : meta.label;
-                const signature = `${icon}|${label}`;
-                if (el.dataset.content !== signature) {
-                    el.innerHTML = `<div>${icon}</div>${label ? `<div class="cell-label">${label}</div>` : ''}`;
-                    el.dataset.content = signature;
-                }
+                const vuota = cell.kind === 'empty' || cell.kind === 'start';
+                piece = vuota ? null : (cell.resolved ? 'done' : meta.piece);
+                label = (vuota || cell.resolved) ? 'Libero' : meta.label;
+            }
+            // Il disegno si riscrive solo se cambia: le 25 caselle restano
+            // nodi persistenti (vedi il commento sul segnalino più sotto).
+            const signature = `${piece || '-'}|${label}`;
+            if (el.dataset.content !== signature) {
+                el.innerHTML = `${piece ? BoardPieces.markup(piece) : ''}<div class="cell-label">${label}</div>`;
+                el.dataset.content = signature;
             }
             if (isPlayer) el.classList.add('player');
 
@@ -1536,21 +1755,14 @@
                 el.setAttribute('aria-disabled', 'true');
             }
         });
-        // Il segnalino è un solo nodo persistente: cambia coordinate con una
-        // transizione, mentre le 25 celle non vengono distrutte e ricreate.
-        const token = gridEl.querySelector('.city-player-token');
-        const playerCell = gridEl.querySelector(`.city-cell[data-index="${grid.playerIndex}"]`);
-        requestAnimationFrame(() => {
-            const gridRect = gridEl.getBoundingClientRect();
-            const cellRect = playerCell.getBoundingClientRect();
-            if (!token.dataset.positioned) token.style.transition = 'none';
-            token.style.left = `${cellRect.left - gridRect.left + cellRect.width / 2}px`;
-            token.style.top = `${cellRect.top - gridRect.top + cellRect.height / 2}px`;
-            if (!token.dataset.positioned) {
-                token.dataset.positioned = '1';
-                requestAnimationFrame(() => { token.style.transition = ''; });
-            }
-        });
+        // Segnalino e percorsi si posano in base alla geometria VERA delle
+        // caselle (le deviazioni --node-x/--node-y spostano ogni punto), che
+        // esiste solo dopo il layout: da qui il requestAnimationFrame. Gli
+        // indici servono anche al ridimensionamento, che ripete lo stesso
+        // calcolo senza un render completo (vedi in fondo al file).
+        gridEl.dataset.player = String(grid.playerIndex);
+        gridEl.dataset.reachable = Array.from(reachable).join(',');
+        requestAnimationFrame(() => layoutCityOverlay(gridEl));
         // Consumata: l'animazione di comparsa del radar deve giocare una
         // volta sola, non ad ogni render successivo dello stesso settore.
         grid.cells.forEach((c) => { delete c.justRevealed; });

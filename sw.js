@@ -362,7 +362,10 @@
 // v118: Rare Hunter estratti soltanto entrando nel relativo nodo.
 // v119: la struttura logica della mappa Battle City torna invisibile; i nodi
 // restano persistenti e soltanto il segnalino scorre fra gli isolati.
-const CACHE_NAME = 'ygo-duel-arena-v119';
+// v120: pedine 3D in SVG al posto delle emoji sulla mappa di Battle City
+// (js/ui/board-pieces.js, nuovo nell'app shell) e percorsi con freccia
+// verso le caselle raggiungibili.
+const CACHE_NAME = 'ygo-duel-arena-v120';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -461,6 +464,7 @@ const APP_SHELL = [
     'js/ui/effects.js',
     'js/ui/error-recovery.js',
     'js/ui/icon-library.js',
+    'js/ui/board-pieces.js',
     'js/ui/topbar.js',
     'js/ui/node-map.js',
     'js/ui/node-map.css',

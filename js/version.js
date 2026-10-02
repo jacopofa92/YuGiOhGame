@@ -32,6 +32,11 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.7 — Mappa di Battle City: le caselle sono pedine 3D al posto delle
+ *   emoji, e le destinazioni raggiungibili sono evidenti — accese, con un
+ *   percorso e una freccia dal segnalino, uniche ad avere l'etichetta;
+ *   tutte le altre restano visibili ma attenuate.
+ *
  * 1.0.6 — Nuova cinematica per ogni Evocazione Rituale, con materiali e
  *   sigillo in prospettiva prima della comparsa del mostro; Tornado di
  *   Polvere e Piumino delle Arpie hanno effetti di vento dedicati e
@@ -465,4 +470,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.6';
+window.GAME_VERSION = '1.0.7';
