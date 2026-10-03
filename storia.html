@@ -1134,7 +1134,9 @@
         StoryCutscene.play(battute, {
             titolo: (pg && pg.name) || tappa.label || '',
             sottotitolo: (pg && pg.title) || '',
-            sfondo: [tappa.field]
+            sfondo: [tappa.field],
+            // Aspetto di un personaggio solo in questa tappa (`avatar`).
+            ritratti: tappa.avatar
         }).then(poi);
     }
 
@@ -1369,7 +1371,8 @@
             // percorso su cui sta, poi lo sfondo della campagna. Il
             // componente prova i candidati in ordine e usa il primo che
             // esiste davvero.
-            sfondo: [tappa.field, sfondoDelPercorso, campagna && campagna.sfondo]
+            sfondo: [tappa.field, sfondoDelPercorso, campagna && campagna.sfondo],
+            ritratti: tappa.avatar
         }).then(() => {
             // Una rilettura non tocca il progresso: si chiude la scena e
             // si resta esattamente dov'eravamo.

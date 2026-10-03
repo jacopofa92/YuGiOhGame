@@ -374,7 +374,8 @@
 // v126: PNG delle pedine rinominati col nome del file avatar (dukeDevlin.png).
 // v127: pedine ridimensionate (max 320 px); originali in avatarTrasparenza/.
 // v128: velocità del bot, schema unico delle scelte, Rare Hunter ritagliato, anti-imbroglio server.
-const CACHE_NAME = 'ygo-duel-arena-v128';
+// v129: avatar di Kaiba per contesto (Regno dei Duellanti / Forbidden Memories).
+const CACHE_NAME = 'ygo-duel-arena-v129';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

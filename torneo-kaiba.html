@@ -843,8 +843,10 @@
         let cls = 'bk-side';
         if (id === 'player') cls += ' is-player';
         if (winner) cls += (winner === id ? ' winner' : ' loser');
-        const avatar = character && character.image
-            ? `<span class="bk-avatar"><img src="${character.image}" alt=""></span>`
+        // Ritratto del TORNEO (Kaiba qui ha l'aspetto di Forbidden Memories).
+        const immagine = character ? getCharacterImageFor(id, TOURNAMENT_ID) : null;
+        const avatar = immagine
+            ? `<span class="bk-avatar"><img src="${immagine}" alt=""></span>`
             : `<span class="bk-avatar">${id === 'player' ? '🫵' : '?'}</span>`;
         const seed = id === KAIBA_SEED ? '<span class="bk-seed">T1</span>' : '';
         return `<div class="${cls}">${avatar}<span class="who">${nameOf(id)}</span>${seed}</div>`;

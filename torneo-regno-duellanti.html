@@ -1757,12 +1757,14 @@
         const portrait = document.getElementById('wagerPortrait');
         portrait.className = 'opponent-portrait';
         portrait.innerHTML = '🧑‍🎤';
-        if (character && character.image) {
+        // Ritratto del TORNEO (Kaiba al Cancello ha l'aspetto del Regno dei Duellanti).
+        const immagineTorneo = character ? getCharacterImageFor(character.id, 'duelistKingdom') : null;
+        if (immagineTorneo) {
             const img = document.createElement('img');
             img.alt = '';
             img.onload = () => portrait.classList.add('has-image');
             img.onerror = () => img.remove();
-            img.src = character.image;
+            img.src = immagineTorneo;
             portrait.appendChild(img);
         }
         document.getElementById('wagerName').textContent = character ? character.name : 'Duellante';

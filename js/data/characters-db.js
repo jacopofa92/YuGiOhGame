@@ -145,6 +145,33 @@ const characterDatabase = [
     { id: 'ww1_kaiserjager', name: 'Kaiserjäger Tirolese', title: 'La Guardia dell\'Imperatore', image: 'images/characters/ww1_kaiserjager.jpg', series: 'ww1' }
 ];
 
+/**
+ * Ritratti ALTERNATIVI di un personaggio, validi solo in un contesto: lo
+ * stesso Kaiba ha un aspetto diverso nel Regno dei Duellanti e nel Torneo
+ * della Kaiba Corporation di Forbidden Memories. Il contesto è l'id del
+ * torneo (lo stesso di DuelSession/tournament-dialogues). Chi non è qui —
+ * Duello Libero, Battle City, ogni altro torneo — usa il ritratto del
+ * roster. Per la Storia lo stesso si ottiene col campo `avatar` della
+ * singola tappa (js/data/story-campaigns.js).
+ */
+const CHARACTER_IMAGE_VARIANTS = {
+    duelistKingdom: { kaiba: 'images/characters/setoKaiba_duelist_Kingdom.png' },
+    kaibaTournament: { kaiba: 'images/characters/setoKaiba_forbiddenMemories.png' }
+};
+
+/** La mappa { idPersonaggio: ritratto } valida in un contesto (vuota se non ce ne sono). */
+function getCharacterImageVariants(contextId) {
+    return CHARACTER_IMAGE_VARIANTS[contextId] || {};
+}
+
+/** Il ritratto di un personaggio in un contesto: la variante se c'è, altrimenti quello del roster. */
+function getCharacterImageFor(characterId, contextId) {
+    const variante = getCharacterImageVariants(contextId)[characterId];
+    if (variante) return variante;
+    const c = characterDatabase.find((x) => x.id === characterId);
+    return (c && c.image) || null;
+}
+
 function getCharacterRecord(characterId) {
     if (window.SaveManager) return SaveManager.getRecord(characterId);
     // Fallback difensivo se save-manager.js non è caricato su questa pagina.

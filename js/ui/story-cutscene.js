@@ -247,7 +247,9 @@
 
     /**
      * @param {Array} battute - [{ chi?: string, nome?: string, icona?: string, testo: string }]
-     * @param {object} [opzioni] - { titolo, sottotitolo, sfondo }
+     * @param {object} [opzioni] - { titolo, sottotitolo, sfondo, ritratti }
+     *   `ritratti`: { idPersonaggio: percorso } per cambiare l'aspetto di
+     *   un personaggio solo in questa scena.
      * @returns {Promise<void>} risolta a scena conclusa (o saltata)
      */
     function play(battute, opzioni) {
@@ -443,7 +445,13 @@
                 // campagna, che può essere una persona (Giacobbo) o anche
                 // una bandiera (il Regio Esercito). Vedi `protagonista` in
                 // js/data/story-campaigns.js.
-                const fonteRitratto = riga.ritratto || (chi && chi.image) || '';
+                // `opt.ritratti` ({ idPersonaggio: percorso }) è l'aspetto di
+                // un personaggio SOLO in questa scena (Kaiba nel Regno dei
+                // Duellanti non è il Kaiba di Battle City): vince sul roster
+                // ma non sul ritratto scritto a mano sulla riga.
+                const fonteRitratto = riga.ritratto
+                    || (opt.ritratti && riga.chi && opt.ritratti[riga.chi])
+                    || (chi && chi.image) || '';
 
                 box.classList.toggle('is-narratore', !nome);
                 box.classList.remove('is-completa');

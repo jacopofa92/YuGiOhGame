@@ -96,6 +96,13 @@
  *     3200x1800 e le tappe riposizionate. Conviene quindi partire
  *     dall'arte e disporci sopra le tappe, non il contrario.
  *
+ * `avatar` su una TAPPA ({ idPersonaggio: 'percorso/immagine' }) cambia
+ * l'aspetto di un personaggio solo lì: nella schermata e nei dialoghi del
+ * duello e nelle battute della scena. Serve quando lo stesso personaggio ha
+ * più versioni nel corso della storia (Kaiba nel Regno dei Duellanti non è
+ * quello di Battle City). Senza, vale il ritratto del roster. Per i tornei
+ * a sé lo stesso si dichiara in CHARACTER_IMAGE_VARIANTS (characters-db.js).
+ *
  * `protagonista` è CHI SEI in quella campagna: nome e ritratto che
  * prendono il posto dei tuoi nel duello, nella cinematica di presentazione
  * e nella schermata finale. Serve perché in una storia non si gioca come
@@ -448,6 +455,9 @@ const storyCampaignsDatabase = [
                             },
                             {
                                 id: 'anime-1-kaiba-scena', kind: 'scene', icona: '🏢',
+                                // Kaiba con l'aspetto del Regno dei Duellanti
+                                // (vedi `avatar` in cima al file).
+                                avatar: { kaiba: 'images/characters/setoKaiba_duelist_Kingdom.png' },
                                 label: 'La KaibaCorp', x: 1010, y: 522,
                                 chi: 'Seto Kaiba', chiId: 'kaiba',
                                 music: '07. Preliminary Face-Off.mp3',
@@ -460,6 +470,7 @@ const storyCampaignsDatabase = [
                             },
                             {
                                 id: 'anime-1-kaiba', kind: 'duel', icona: '🐉',
+                                avatar: { kaiba: 'images/characters/setoKaiba_duelist_Kingdom.png' },
                                 label: 'Seto Kaiba', x: 1425, y: 470,
                                 characterId: 'kaiba', difficulty: 'Medio',
                                 field: 'images/fields/mobile/torreDeiDuelli.jpg',
@@ -628,7 +639,7 @@ const storyCampaignsDatabase = [
                                 label: 'Kaiba contro Joey', x: 430, y: 545,
                                 parallelo: true, sbloccaDopo: 'anime-2-panik',
                                 characterId: 'joey', difficulty: 'Difficile',
-                                protagonista: { name: 'Seto Kaiba', title: 'In cerca di Mokuba', image: 'images/characters/setoKaiba.jpg', icon: '🐉' },
+                                protagonista: { name: 'Seto Kaiba', title: 'In cerca di Mokuba', image: 'images/characters/setoKaiba_duelist_Kingdom.png', icon: '🐉' },
                                 dialogo: [
                                     { chi: 'joey', testo: 'Non passerai sopra di noi come se non esistessimo. Il mio Drago Nero affronterà il tuo Drago Bianco.' },
                                     { io: true, testo: 'Se vuoi misurarti con me, Wheeler, preparati a scoprire la differenza fra un dilettante e un campione.' }
@@ -645,6 +656,7 @@ const storyCampaignsDatabase = [
                             },
                             {
                                 id: 'anime-2-falso-kaiba', kind: 'duel', icona: '👻',
+                                avatar: { kaiba: 'images/characters/setoKaiba_duelist_Kingdom.png' },
                                 label: 'Il fantasma di Kaiba', x: 610, y: 390,
                                 characterId: 'kaiba', difficulty: 'Difficile',
                                 dialogo: [
@@ -657,7 +669,7 @@ const storyCampaignsDatabase = [
                                 label: 'Kaiba contro Pegasus', x: 520, y: 325,
                                 parallelo: true, sbloccaDopo: 'anime-2-kaiba',
                                 characterId: 'pegasus', difficulty: 'Difficile',
-                                protagonista: { name: 'Seto Kaiba', title: 'In cerca di Mokuba', image: 'images/characters/setoKaiba.jpg', icon: '🐉' },
+                                protagonista: { name: 'Seto Kaiba', title: 'In cerca di Mokuba', image: 'images/characters/setoKaiba_duelist_Kingdom.png', icon: '🐉' },
                                 dialogo: [
                                     { chi: 'pegasus', testo: 'Mokuba e la KaibaCorp saranno miei, Kaiba-boy. Con l’Occhio del Millennio conosco già ogni carta che giocherai.' },
                                     { io: true, testo: 'Non mi interessa come leggi la mente. Libererai Mokuba quando i miei Draghi Bianchi avranno distrutto i tuoi Toon.' }
@@ -709,6 +721,7 @@ const storyCampaignsDatabase = [
                             // apre il portone, e con lui la seconda mappa.
                             {
                                 id: 'anime-2-kaiba', kind: 'duel', icona: '🐉',
+                                avatar: { kaiba: 'images/characters/setoKaiba_duelist_Kingdom.png' },
                                 label: 'Seto Kaiba', x: 1030, y: 330,
                                 characterId: 'kaiba', difficulty: 'Difficile',
                                 dialogo: [
@@ -1741,6 +1754,8 @@ const storyCampaignsDatabase = [
                             },
                             {
                                 id: 'fm-3t-kaiba', kind: 'duel', icona: '🐉',
+                                // Il Kaiba del torneo di Forbidden Memories.
+                                avatar: { kaiba: 'images/characters/setoKaiba_forbiddenMemories.png' },
                                 label: 'Finale · lo Scettro', x: 1000, y: 1240,
                                 characterId: 'kaiba', difficulty: 'Difficile',
                                 field: 'images/fields/mobile/stadioKaiba.jpg',

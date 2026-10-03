@@ -356,7 +356,10 @@
         return StoryCutscene.play(battute, {
             titolo: scena.titolo,
             sottotitolo: scena.sottotitolo,
-            sfondo: scena.sfondo
+            sfondo: scena.sfondo,
+            // Aspetto dei personaggi specifico di questo torneo (vedi
+            // CHARACTER_IMAGE_VARIANTS in characters-db.js).
+            ritratti: (typeof getCharacterImageVariants === 'function') ? getCharacterImageVariants(torneo) : undefined
         });
     }
 

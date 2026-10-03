@@ -79,6 +79,26 @@
     };
 
     /**
+     * La tappa della Storia che sta lanciando questo duello (?campaign= e
+     * ?tappa=), cercata anche DENTRO tornei e aree: una prova è una tappa a
+     * tutti gli effetti. null fuori dalla Storia o se non si trova.
+     */
+    function findStoryTappa() {
+        if (mode !== 'story' || typeof storyCampaignsDatabase === 'undefined') return null;
+        const campagna = storyCampaignsDatabase.find((c) => c.id === params.get('campaign'));
+        const idTappa = params.get('tappa');
+        if (!campagna || !idTappa) return null;
+        let trovata = null;
+        (campagna.capitoli || []).forEach((cap) => {
+            (cap.tappe || []).forEach((t) => {
+                if (t.id === idTappa) trovata = t;
+                (t.tappe || []).forEach((x) => { if (x.id === idTappa) trovata = x; });
+            });
+        });
+        return trovata;
+    }
+
+    /**
      * Risolve l'avversario. In Duello Libero/Storia lo cerca per id nel
      * database dei personaggi (js/data/characters-db.js); se l'id manca o non
      * esiste, ricade sul Bot generico invece di rompere il duello.
@@ -88,11 +108,23 @@
         if (characterId && typeof characterDatabase !== 'undefined') {
             const character = characterDatabase.find((c) => c.id === characterId);
             if (character) {
+                // Aspetto specifico del contesto: la variante del TORNEO
+                // (Kaiba nel Regno dei Duellanti ≠ Kaiba nella Kaiba Corp)
+                // o quella dichiarata dalla TAPPA della Storia (`avatar`).
+                // Senza nessuna delle due resta il ritratto del roster.
+                let image = character.image || null;
+                if (mode === 'tournament' && typeof getCharacterImageFor === 'function') {
+                    image = getCharacterImageFor(character.id, params.get('tournament')) || image;
+                }
+                const tappaStoria = findStoryTappa();
+                if (tappaStoria && tappaStoria.avatar && tappaStoria.avatar[character.id]) {
+                    image = tappaStoria.avatar[character.id];
+                }
                 return {
                     id: character.id,
                     name: character.name,
                     title: character.title || '',
-                    image: character.image || null,
+                    image: image,
                     icon: '🧑‍🎤'
                 };
             }
