@@ -39,8 +39,9 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
 - [x] Schema unico (banda + velo + elementi sopra il velo + Annulla dove ha
       senso) per Tributo, scarto a fine turno e casella dopo un Sacrificio.
       I picker a modale (lista carte, Attacco/Difesa) erano già modali con
-      chiusura. NON verificato a occhio nel duello (solo da test): guardare
-      scarto e casella in una partita vera.
+      chiusura. Verificato a occhio con screenshot (desktop e telefono in
+      orizzontale): banda, velo e carte sopra il velo funzionano. Difetto
+      minore: su telefono la banda copre in parte il nome dell'avversario.
 - [ ] Tutorial o partita guidata per chi non conosce Yu-Gi-Oh.
 - [x] Velocità del bot regolabile (Normale/Veloce) in Impostazioni → Dispositivo.
       Accorcia solo le pause di ritmo in `js/ai/bot.js` (`botMs`).
