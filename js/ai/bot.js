@@ -318,6 +318,12 @@ async function botPerformAttacks() {
         // non ha senso indebolire il proprio campo per un attacco che
         // potrebbe anche perdere.
         const attackerDef = window.DuelEngine && DuelEngine.getDefinition(attackerItem.slot.card.id);
+        // def.canDeclareAttack (Drago della Caverna id 1040): stessa
+        // condizione di resolveAttack, controllata PRIMA di pagare costi o
+        // scegliere bersagli, così il bot non paga LP o Sacrifici per un
+        // attacco che verrebbe poi rifiutato.
+        if (attackerDef && typeof attackerDef.canDeclareAttack === 'function'
+            && !attackerDef.canDeclareAttack(DuelEngine.makeContext('bot', { card: attackerItem.slot.card, slotIndex: attackerItem.index }))) continue;
         // "Paga N Life Points per dichiarare un attacco" (es. Drago Toon
         // Occhi Blu id 123, Manga Ryu-Ran id 606) — stesso principio di
         // requiresTributeToAttack qui sotto, ma senza bisogno di scegliere
@@ -372,6 +378,14 @@ async function botPerformAttacks() {
         if (typeof mustTargetFilter === 'function') {
             const matches = playerMonsters.filter((item) => !item.slot.isFaceDown && mustTargetFilter(item.slot.card));
             if (matches.length > 0) playerMonsters = matches;
+        }
+        // Anello Magnetico (id 420) sul Terreno del giocatore: si può
+        // attaccare solo il mostro equipaggiato (stessa regola di
+        // resolveAttack, letta dallo stesso punto del motore).
+        const obbligati = window.DuelEngine && DuelEngine.forcedAttackTargetIndexes ? DuelEngine.forcedAttackTargetIndexes('player') : [];
+        if (obbligati.length > 0) {
+            playerMonsters = playerMonsters.filter((item) => obbligati.indexOf(item.index) !== -1);
+            if (playerMonsters.length === 0) continue;
         }
         // 341 — Ultimo Turno: se questo attaccante ha un obbligo ancora
         // aperto (gameState.mustAttackTargetUidsFor), attacca quel

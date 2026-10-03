@@ -269,6 +269,9 @@
         // lato giocatore in attemptMonsterSummon (actions.js) e da
         // ACTIONS.specialSummon (duel-engine.js).
         if (gameState.otherMonsterSummonsBlockedFor && gameState.otherMonsterSummonsBlockedFor[owner] && card.id !== 282) return false;
+        // Divieti della carta stessa ("non Evocabile Normalmente", fisso o
+        // condizionato): stesso punto unico del lato giocatore.
+        if (window.DuelEngine && DuelEngine.normalSummonBlockReason && DuelEngine.normalSummonBlockReason(owner, card)) return false;
         const def = window.DuelEngine && DuelEngine.getDefinition(card.id);
         if (!def || !def.requiresFieldPresenceId) return true;
         // La carta richiesta può essere un mostro O una Magia/Trappola

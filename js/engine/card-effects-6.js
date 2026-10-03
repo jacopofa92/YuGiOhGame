@@ -1242,18 +1242,27 @@
     // 772 — Simorgh, Uccello della Divinità
     // Durante la End Phase di ciascun giocatore, mentre resta scoperta
     // sul Terreno: ciascun giocatore subisce 1000 danni, ridotti di 500
-    // per ogni propria Magia/Trappola. Vedi missingEffectNote su id 772
-    // in cards.json per le clausole ancora mancanti.
+    // per ogni propria Magia/Trappola. "Ciascun giocatore" vuol dire in
+    // OGNI End Phase, anche quella dell'avversario: onEndPhase scatta solo
+    // nella propria, onOpponentEndPhase (firePhaseTrigger) copre l'altra.
+    // "Tutti i Sacrifici devono essere mostri VENTO" è applicato dove si
+    // scelgono i Tributi (continueNormalTributeFlow/handleTributeSelectClick
+    // in actions.js per il giocatore, chooseSummon nei due livelli IA).
+    // "Non può essere Special Summonata": def.cannotSpecialSummon, letto da
+    // ACTIONS.specialSummon.
     // ================================================================
+    const danniDiSimorgh = (ctx) => {
+        ['player', 'bot'].forEach((owner) => {
+            const stCount = ctx.stField(owner).filter((s) => s).length;
+            const damage = Math.max(0, 1000 - stCount * 500);
+            if (damage > 0) ctx.dealDamage(owner, damage);
+        });
+        ctx.log('🦅 Simorgh infligge danno ad entrambi i giocatori!');
+    };
     CardEffects.register(772, {
-        onEndPhase(ctx) {
-            ['player', 'bot'].forEach((owner) => {
-                const stCount = ctx.stField(owner).filter((s) => s).length;
-                const damage = Math.max(0, 1000 - stCount * 500);
-                if (damage > 0) ctx.dealDamage(owner, damage);
-            });
-            ctx.log('🦅 Simorgh infligge danno ad entrambi i giocatori!');
-        }
+        cannotSpecialSummon: true,
+        onEndPhase(ctx) { danniDiSimorgh(ctx); },
+        onOpponentEndPhase(ctx) { danniDiSimorgh(ctx); }
     });
 
     // ================================================================

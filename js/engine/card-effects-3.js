@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { blockBanishFromField, findEquipTarget, equipToChosenTarget, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, attachUnionMonster, maxRitualTributeLevel, performRitualTribute } = window.CardEffectsShared;
+    const { blockBanishFromField, findEquipTarget, equipToChosenTarget, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, attachUnionMonster, maxRitualTributeLevel, performRitualTribute, chooseCardFromList, chooseUpToNFromList } = window.CardEffectsShared;
 
     // ================================================================
     // 517 — Rituale di Zera / Zera Ritual (Magia Rituale)
@@ -82,16 +82,61 @@
 
     // ================================================================
     // 523 — Guardian Eatos (Special Summon dalla mano)
-    // Se non hai mostri nel tuo Cimitero, puoi Special Summonare questa
-    // carta dalla mano.
-    // Vedi missingEffectNote su id 523 in cards.json: manca il secondo
-    // effetto (manda al Cimitero 1 Magia Equipaggiamento equipaggiata a
-    // questa carta per bandire fino a 3 mostri dal Cimitero avversario,
-    // guadagnando 500 ATK ciascuno fino a fine turno).
+    // Se non hai MOSTRI nel tuo Cimitero, puoi Special Summonare questa
+    // carta dalla mano (prima contava qualunque carta: una Magia nel
+    // Cimitero bastava a impedirlo, contro il testo).
+    // Secondo effetto (Ignition dalla zona Mostro): manda al Cimitero 1
+    // Magia Equipaggiamento agganciata a questa carta, poi bandisci fino a
+    // 3 mostri dal Cimitero dell'avversario; +500 ATK per ognuno fino a
+    // fine turno. Due scelte del giocatore in sequenza (quale Equip, quali
+    // mostri — chooseUpToNFromList, ci si può fermare prima di 3). Il bando
+    // passa da ctx.banishFromGraveyard, quindi rispetta Necrovalley: il
+    // bonus conta solo i mostri banditi davvero. Il +500 si SOMMA a un
+    // eventuale bonus temporaneo già presente (grantTemporaryAtkDefBonus
+    // sovrascrive), così due attivazioni nello stesso turno si accumulano.
     // ================================================================
+    const equipMagicheDiEatos = (ctx) => {
+        const out = [];
+        ctx.stField(ctx.owner).forEach((s, i) => {
+            if (s && !s.isFaceDown && s.card.type === 'spell' && s.card.equippedToUid === ctx.card.uid) out.push({ index: i, card: s.card });
+        });
+        return out;
+    };
+    const mostriNelCimiteroAvversario = (ctx) => ctx.graveyard(ctx.opponent).filter((c) => c.type === 'monster');
     CardEffects.register(523, {
         canSpecialSummonFromHand(ctx) {
-            return ctx.graveyard(ctx.owner).length === 0;
+            return !ctx.graveyard(ctx.owner).some((c) => c.type === 'monster');
+        },
+        canActivate(ctx) {
+            const slot = ctx.field(ctx.owner).find((s) => s && s.card.uid === ctx.card.uid);
+            if (!slot || slot.isFaceDown) return false;
+            return equipMagicheDiEatos(ctx).length > 0 && mostriNelCimiteroAvversario(ctx).length > 0;
+        },
+        activate(ctx) {
+            const equip = equipMagicheDiEatos(ctx);
+            if (equip.length === 0) return;
+            chooseCardFromList(ctx, equip.map((e) => e.card), {
+                title: '👼 Guardian Eatos',
+                text: 'Scegli quale Magia Equipaggiamento mandare al Cimitero.'
+            }, (scelta) => {
+                const voce = equipMagicheDiEatos(ctx).find((e) => e.card.uid === scelta.uid);
+                if (!voce) return;
+                ctx.destroySpellTrap(ctx.owner, voce.index);
+                const candidati = mostriNelCimiteroAvversario(ctx);
+                chooseUpToNFromList(ctx, candidati, 3, {
+                    title: '👼 Guardian Eatos',
+                    text: 'Scegli fino a 3 mostri del Cimitero avversario da bandire (+500 ATK ciascuno).'
+                }, (daBandire) => {
+                    let banditi = 0;
+                    daBandire.forEach((c) => { if (ctx.banishFromGraveyard(ctx.opponent, c)) banditi++; });
+                    const self = ctx.field(ctx.owner).find((s) => s && s.card.uid === ctx.card.uid);
+                    if (banditi > 0 && self) {
+                        const prec = (gameState.temporaryAtkDefBonus && gameState.temporaryAtkDefBonus[ctx.card.uid]) || { atk: 0, def: 0 };
+                        ctx.grantTemporaryAtkDefBonus(ctx.card, (prec.atk || 0) + 500 * banditi, prec.def || 0);
+                    }
+                    ctx.log(`👼 Guardian Eatos manda ${scelta.name} al Cimitero e bandisce ${banditi} mostr${banditi === 1 ? 'o' : 'i'}: +${500 * banditi} ATK fino a fine turno!`);
+                });
+            });
         }
     });
 

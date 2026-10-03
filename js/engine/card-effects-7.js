@@ -2268,8 +2268,26 @@
     // 880 — Messaggero della Pace / Messenger of Peace (Magia Continua):
     // i mostri scoperti con 1500+ ATK (di ENTRAMBI i lati) non possono
     // attaccare — stesso schema di Legame di Gravità (id 707, lì sul
-    // Livello invece che sull'ATK). Vedi missingEffectNote in
-    // data/cards.json per la semplificazione sul costo di mantenimento.
+    // Livello invece che sull'ATK).
+    // Mantenimento "paga 100 LP o questa carta viene distrutta": è una
+    // scelta di chi la controlla. Il giocatore la fa con un popover; il
+    // bot paga finché ha più di 1000 LP, poi la lascia andare (100 LP a
+    // turno diventano pesanti quando si è vicini a perdere). Con 100 LP o
+    // meno non si può pagare: la carta viene distrutta.
+    // In Multiplayer si paga sempre in automatico, da entrambe le parti:
+    // la scelta dell'avversario remoto non viaggia (le scelte che viaggiano
+    // sono fra carte, vedi awaitRemoteCardChoice), e due client che
+    // decidessero ognuno per conto suo mostrerebbero due partite diverse.
+    const messaggeroPaga = (ctx) => {
+        ctx.dealDamage(ctx.owner, 100);
+        ctx.log('🕊️ Messaggero della Pace: pagati 100 Life Points per mantenerla attiva.');
+    };
+    const messaggeroLasciaAndare = (ctx) => {
+        const i = ctx.stField(ctx.owner).findIndex((s) => s && s.card.uid === ctx.card.uid);
+        if (i === -1) return;
+        ctx.destroySpellTrap(ctx.owner, i);
+        ctx.log('🕊️ Messaggero della Pace non viene mantenuta e viene distrutta.');
+    };
     CardEffects.register(880, {
         continuous: true,
         activate(ctx) { ctx.log('🕊️ Messaggero della Pace impedisce l\'attacco ai mostri più forti!'); },
@@ -2283,8 +2301,18 @@
             });
         },
         onStandbyPhase(ctx) {
-            ctx.dealDamage(ctx.owner, 100);
-            ctx.log('🕊️ Messaggero della Pace: pagati 100 Life Points per mantenerla attiva.');
+            const lp = ctx.owner === 'player' ? gameState.playerLP : gameState.botLP;
+            if (window.MULTIPLAYER_MODE) { messaggeroPaga(ctx); return; }
+            if (lp <= 100) { messaggeroLasciaAndare(ctx); return; }
+            if (ctx.owner === 'player' && window.DuelEngineUI) {
+                window.DuelEngineUI.openChoicePopover(null, {
+                    title: '🕊️ Messaggero della Pace',
+                    choiceA: { icon: '💰', label: 'Paga 100 Life Points e mantienila', onSelect: () => messaggeroPaga(ctx) },
+                    choiceB: { icon: '🗑️', label: 'Non pagare: viene distrutta', onSelect: () => messaggeroLasciaAndare(ctx) }
+                });
+                return;
+            }
+            if (lp > 1000) messaggeroPaga(ctx); else messaggeroLasciaAndare(ctx);
         }
     });
 
@@ -2929,21 +2957,24 @@
     // tuo mostro distrutto in battaglia in questo turno" — Ignition dalla
     // zona Mostro, auto-tributo di se stessa (stesso schema tributo
     // scritto a mano di Metamorfosi id 886/Artigliere dei Guardiani della
-    // Tomba id 896). Il bersaglio da far tornare in mano è ora una vera
-    // scelta (searchGraveyardWithChoice) tra ogni mostro nel Cimitero,
-    // non più sempre il primo trovato — SEMPLIFICAZIONE residua onesta,
-    // ora anche in missingEffectNote: non filtra "necessariamente
-    // distrutto in battaglia in questo turno" (nessun tracking generico
-    // per quella condizione precisa esiste ancora in questo motore),
-    // quindi la scelta include OGNI mostro nel Cimitero, non solo quelli
-    // che soddisferebbero il vero requisito. Materiale di Fusione per
-    // Santa Giovanna (id 903).
+    // Tomba id 896). Il bersaglio da far tornare in mano è una vera
+    // scelta (searchGraveyardWithChoice), ristretta ai soli mostri
+    // distrutti in battaglia IN QUESTO TURNO: lo dice
+    // gameState.battleDestroyedThisTurnFor (popolato da fireOnDestroy in
+    // actions.js, azzerato a ogni cambio turno, nato per Sentinella
+    // Cremisi id 1063). Si confronta per uid: una copia con lo stesso nome
+    // distrutta in un altro modo non conta. Materiale di Fusione per Santa
+    // Giovanna (id 903).
+    const distruttoInBattagliaQuestoTurno = (owner, card) => {
+        const elenco = gameState.battleDestroyedThisTurnFor && gameState.battleDestroyedThisTurnFor[owner];
+        return !!(elenco && elenco.some((c) => c && c.uid === card.uid));
+    };
     CardEffects.register(901, {
         canActivate(ctx) {
-            return ctx.graveyard(ctx.owner).some((c) => c.type === 'monster' && c.uid !== ctx.card.uid);
+            return ctx.graveyard(ctx.owner).some((c) => c.type === 'monster' && c.uid !== ctx.card.uid && distruttoInBattagliaQuestoTurno(ctx.owner, c));
         },
         activate(ctx) {
-            searchGraveyardWithChoice(ctx, ctx.owner, (c) => c.type === 'monster' && c.uid !== ctx.card.uid, {
+            searchGraveyardWithChoice(ctx, ctx.owner, (c) => c.type === 'monster' && c.uid !== ctx.card.uid && distruttoInBattagliaQuestoTurno(ctx.owner, c), {
                 title: '👼 La Fanciulla Indulgente',
                 text: 'Scegli quale mostro far tornare in mano dal Cimitero.'
             }, (target) => {

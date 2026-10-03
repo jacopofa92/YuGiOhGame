@@ -149,10 +149,50 @@
      * coperta mentre la prima è già scoperta: richiederebbe di scegliere
      * quale delle due lascia il campo, e non c'è un'interfaccia per farlo.
      */
+    /**
+     * Perché `card` NON si può Evocare (o Posizionare) Normalmente adesso,
+     * come testo da mostrare nel log; null se si può. Punto unico letto
+     * dall'Evocazione del giocatore (attemptMonsterSummon, actions.js) e
+     * dall'IA (AI_SHARED.canNormalSummonNow), così le due non divergono.
+     *  - def.cannotNormalSummon: divieto fisso ("non può essere Evocata
+     *    Normalmente/Set" — Toon, Metalzoa, Drago Nero Metallico...). Prima
+     *    lo controllava SOLO il popover della Special Summon dalla mano: con
+     *    un click/trascinamento su una casella libera, o per il bot, la
+     *    carta si Evocava lo stesso.
+     *  - def.canNormalSummon(ctx) => bool: divieto CONDIZIONATO dal Terreno
+     *    (Drago della Caverna id 1040: "non può essere Evocata Normalmente
+     *    se controlli già un mostro"). Vale anche per il Set: la regola
+     *    vera delle carte "non Evocabile Normalmente" comprende il Set.
+     */
+    function normalSummonBlockReason(owner, card) {
+        const def = card && getDefinition(card.id);
+        if (!def) return null;
+        if (def.cannotNormalSummon) return `${card.name} non può essere Evocata Normalmente né Posizionata.`;
+        if (typeof def.canNormalSummon === 'function' && !def.canNormalSummon(makeContext(owner, { card: card }))) {
+            return `${card.name} non può essere Evocata Normalmente in questo momento.`;
+        }
+        return null;
+    }
+
     function isFaceUpDuplicateBlocked(owner, card) {
         const def = card && getDefinition(card.id);
         if (!def || !def.uniqueFaceUp) return false;
         return fieldOf(owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === card.id && slot.card.uid !== card.uid);
+    }
+
+    /**
+     * Le caselle del Terreno di `defenderOwner` che un attacco AVVERSARIO è
+     * obbligato a scegliere (Anello Magnetico id 420), lette da
+     * gameState.mustBeAttackedUidsFor. Vuoto = nessun obbligo. Controllata
+     * da resolveAttack (actions.js) e dalla scelta del bot (bot.js), così
+     * le due parti non possono divergere.
+     */
+    function forcedAttackTargetIndexes(defenderOwner) {
+        const uids = gameState.mustBeAttackedUidsFor && gameState.mustBeAttackedUidsFor[defenderOwner];
+        if (!uids || uids.size === 0) return [];
+        const out = [];
+        fieldOf(defenderOwner).forEach((s, i) => { if (s && uids.has(s.card.uid)) out.push(i); });
+        return out;
     }
 
     function fieldOf(owner) {
@@ -2042,6 +2082,20 @@
         if (movedDef && typeof movedDef.onControlChangedToOpponent === 'function') {
             safeCallCardHandler(slot.card, 'onControlChangedToOpponent', () => movedDef.onControlChangedToOpponent(makeContext(newOwner, { card: slot.card, previousOwner: fromOwner })));
         }
+        // def.onOwnFieldGainsMonster: un mostro è appena arrivato sul Terreno
+        // di `newOwner` per un CAMBIO DI CONTROLLO (non per un'Evocazione,
+        // che ha già onAnyNormalOrFlipSummon/onAnySpecialSummon). Serve alle
+        // carte che controllano una condizione su "i mostri che controlli"
+        // (Thunder Nyan Nyan id 1121: si autodistrugge se controlli un mostro
+        // non-LUCE). Riceve anche la carta spostata stessa, perché può
+        // essere lei a finire su un Terreno che non le va bene.
+        fieldOf(newOwner).slice().forEach((s, index) => {
+            if (!s || s.isFaceDown) return;
+            const def = getDefinition(s.card.id);
+            if (def && typeof def.onOwnFieldGainsMonster === 'function' && !isMonsterCardEffectsNegated(newOwner, s.card.uid)) {
+                safeCallCardHandler(s.card, 'onOwnFieldGainsMonster', () => def.onOwnFieldGainsMonster(makeContext(newOwner, { card: s.card, slotIndex: index, gainedCard: slot.card })));
+            }
+        });
     }
 
     /**
@@ -4229,6 +4283,10 @@
         // lascia il campo, stesso identico motivo del reset qui sopra).
         gameState.cannotAttackUids = {};
         gameState.cannotChangePositionUids = {};
+        // Bersaglio obbligato per gli attacchi AVVERSARI (Anello Magnetico
+        // id 420): per difensore, ricalcolato da zero a ogni render come gli
+        // altri divieti qui intorno. Vedi forcedAttackTargetIndexes.
+        gameState.mustBeAttackedUidsFor = { player: new Set(), bot: new Set() };
         // Divieto di essere scelto come BERSAGLIO di un attacco per UN
         // SOLO mostro (es. Torre d'Ossa Divora-Anime id 664, Capitano
         // Predone id 714: "l'avversario non può bersagliare i Guerrieri
@@ -5563,6 +5621,9 @@
         isChainActive: isChainActive,
         isSummonBannedThisTurn: isSummonBannedThisTurn,
         isFaceUpDuplicateBlocked: isFaceUpDuplicateBlocked,
+        forcedAttackTargetIndexes: forcedAttackTargetIndexes,
+        normalSummonBlockReason: normalSummonBlockReason,
+        isMonsterCardEffectsNegated: isMonsterCardEffectsNegated,
         applyRemoteChainDecision: applyRemoteChainDecision,
         // Scelte di bersaglio che viaggiano — vedi il blocco dedicato più
         // sopra. Usate da chooseFieldMonsterTarget (card-effects.js) e

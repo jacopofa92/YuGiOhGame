@@ -32,6 +32,13 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.32 — Dieci carte allineate al testo con meccanismi generici:
+ *   annulla effetti dei mostri distrutti in battaglia anche in difesa
+ *   (Balter Oscuro, Lupo Bicefalo), bersaglio d'attacco obbligato (Anello
+ *   Magnetico), Evocazione e attacco condizionati (Drago della Caverna),
+ *   Guardian Eatos, Yado Karu, Messaggero della Pace, Fanciulla
+ *   Indulgente, Thunder Nyan Nyan, Simorgh. Corretto un bug: i mostri
+ *   "non Evocabili Normalmente" si potevano Evocare con un click diretto.
  * 1.0.31 — Quattro carte allineate al testo: Capo dei Guardiani della Tomba
  *   (solo 1 copia scoperta), Castello delle Illusioni Oscure (+200 al flip e
  *   a ogni Standby Phase per 4 volte), Cannone Drago XY/XYZ (scarta 1
@@ -566,4 +573,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.31';
+window.GAME_VERSION = '1.0.32';

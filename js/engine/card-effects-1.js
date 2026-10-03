@@ -810,9 +810,12 @@
     });
 
     // 420 — Anello Magnetico: -500 ATK/-500 DEF al
-    // proprio mostro equipaggiato (di solito per "attirare" gli attacchi su di lui).
-    // Vedi missingEffectNote su id 420 in cards.json: manca "l'avversario
-    // può attaccare solo il mostro equipaggiato".
+    // proprio mostro equipaggiato, e "i mostri dell'avversario possono
+    // attaccare solo il mostro equipaggiato" — gameState.mustBeAttackedUidsFor
+    // (letto da resolveAttack e dalla scelta del bot tramite
+    // DuelEngine.forcedAttackTargetIndexes). "Solo a un mostro sul tuo
+    // Terreno" lo garantisce già la raccolta dei bersagli d'aggancio, che
+    // guarda solo il proprio lato.
     CardEffects.register(420, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx) !== -1; },
@@ -822,6 +825,8 @@
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
             gameState.atkDefBonus[t.uid] = { atk: e.atk - 500, def: e.def - 500 };
+            const lato = ctx.card.equippedToOwner || ctx.owner;
+            gameState.mustBeAttackedUidsFor[lato].add(t.uid);
         }
     });
 

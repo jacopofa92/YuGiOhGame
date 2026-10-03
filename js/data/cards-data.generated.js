@@ -4592,8 +4592,7 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "equip",
     "effect": "Puoi equipaggiare questa carta solo a un mostro sul tuo Terreno. Il mostro equipaggiato perde 500 ATK/DEF. Inoltre, tutti i mostri sul Terreno del tuo avversario possono attaccare solo il mostro equipaggiato con questa carta, se attaccano.",
-    "artOnly": true,
-    "missingEffectNote": "Manca \"i mostri dell'avversario possono attaccare solo il mostro equipaggiato\": niente in questo motore restringe il bersaglio legale degli attacchi ALTRUI. gameState.mustAttackTargetUidsFor (id 199) fa il contrario, obbliga un PROPRIO attaccante."
+    "artOnly": true
   },
   {
     "id": 421,
@@ -5801,8 +5800,7 @@ const cardDatabase = [
     "attack": 2500,
     "defense": 2000,
     "effect": "Se non hai mostri nel tuo Cimitero, puoi Special Summonare questa carta dalla mano. Puoi mandare al Cimitero 1 delle tue Magie Equipaggiamento equipaggiate a questa carta, poi scegli come bersaglio fino a 3 mostri nel Cimitero del tuo avversario; bandiscili, e se lo fai, questa carta guadagna 500 ATK per ogni mostro bandito con questo effetto, fino alla fine di questo turno.",
-    "artOnly": true,
-    "missingEffectNote": "E' implementata solo la Special Summon dalla mano. Manca il secondo effetto (manda al Cimitero 1 Equip agganciata a questa carta per bandire fino a 3 mostri dal Cimitero avversario, +500 ATK ciascuno fino a fine turno), mai registrato."
+    "artOnly": true
   },
   {
     "id": 526,
@@ -8694,7 +8692,6 @@ const cardDatabase = [
     "attack": 2700,
     "defense": 1000,
     "effect": "Non può essere Special Summonata. Se questa carta viene Evocata Tributo, tutti i Sacrifici devono essere mostri VENTO. Durante la End Phase di ciascun giocatore, mentre questa carta resta scoperta sul Terreno: ciascun giocatore subisce 1000 danni, ridotti di 500 per ogni Magia/Trappola che controlla.",
-    "missingEffectNote": "Manca \"tutti i Sacrifici devono essere mostri VENTO\": l'Evocazione Tributo di questo motore conta quanti mostri si sacrificano, mai che cosa siano. \"Non puo' essere Special Summonata\" non e' applicato ma e' inerte, nessuna carta del dataset la cercherebbe.",
     "artOnly": true
   },
   {
@@ -9926,7 +9923,6 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "continuous",
     "effect": "I mostri con 1500 o più ATK non possono dichiarare un attacco. Una volta per turno, durante la tua Standby Phase, paga 100 Life Points o questa carta viene distrutta.",
-    "missingEffectNote": "I 100 Life Points di mantenimento vengono pagati in automatico ad ogni Standby Phase, senza mai offrire l'alternativa di lasciar distruggere la carta. A quel prezzo pagare e' quasi sempre la mossa giusta comunque.",
     "artOnly": true
   },
   {
@@ -10203,7 +10199,6 @@ const cardDatabase = [
     "attack": 850,
     "defense": 2000,
     "effect": "Tributa questa carta scoperta per far tornare in mano 1 tuo mostro distrutto in battaglia in questo turno.",
-    "missingEffectNote": "Il bersaglio si sceglie fra TUTTI i mostri nel Cimitero, non solo fra quelli distrutti in battaglia in questo turno: quella condizione non e' tracciata da nessuna parte.",
     "artOnly": true
   },
   {
@@ -12125,7 +12120,6 @@ const cardDatabase = [
     "attack": 2000,
     "defense": 100,
     "effect": "Non può essere Evocata Normalmente se controlli già un mostro. Questa carta non può dichiarare un attacco a meno che tu non controlli un altro mostro Tipo Drago.",
-    "missingEffectNote": "Nessuna delle due restrizioni e' applicata. La prima (\"non Evocabile Normalmente se controlli gia' un mostro\") e' condizionale, mentre def.cannotNormalSummon e' un booleano fisso; la seconda (\"non puo' attaccare se non controlli un altro Drago\") vorrebbe un controllo nuovo nella dichiarazione d'attacco. Serve soprattutto come materiale di Fusione per id 1044, che non eredita nulla di tutto questo.",
     "artOnly": true
   },
   {
@@ -12169,7 +12163,6 @@ const cardDatabase = [
     "category": "fusion",
     "extraDeck": true,
     "effect": "Evocabile per Fusione solo con \"Anima Oscura Posseduta\" e \"Saggio della Frontiera\". Quando viene attivata una Magia Normale, puoi pagare 1000 Life Points per negarne l'effetto.",
-    "missingEffectNote": "Manca \"l'effetto di un Mostro Effetto distrutto in battaglia da questa carta viene negato\": gameState.monsterEffectsNegatedUidsFor esiste gia', ma andrebbe applicato al bersaglio PRIMA che la sua distruzione ne faccia scattare i trigger, e quell'ordine non e' mai servito finora.",
     "artOnly": true
   },
   {
@@ -12997,7 +12990,6 @@ const cardDatabase = [
     "attack": 1900,
     "defense": 800,
     "effect": "Se controlli un mostro non-LUCE, distruggi questa carta scoperta.",
-    "missingEffectNote": "Il controllo scatta quando un mostro viene Evocato o girato scoperto, non ad ogni modo in cui un mostro non-LUCE puo' finire sotto il tuo controllo: manca il caso di un cambio di controllo diretto, che passerebbe da ACTIONS.takeControl (duel-engine.js).",
     "artOnly": true
   },
   {
@@ -13264,7 +13256,6 @@ const cardDatabase = [
     "attack": 900,
     "defense": 1700,
     "effect": "Quando questa carta passa dalla Posizione di Attacco alla Posizione di Difesa, puoi rimandare un numero qualsiasi di carte dalla tua mano in fondo al tuo Deck, nell'ordine che preferisci.",
-    "missingEffectNote": "Rimanda in fondo al Deck TUTTA la mano, invece di lasciar scegliere quante carte e in che ordine. Un numero a piacere richiederebbe un picker che si possa anche chiudere a meta', e nessuna scelta di questo motore lo permette.",
     "artOnly": true
   },
   {
@@ -13278,7 +13269,6 @@ const cardDatabase = [
     "attack": 1500,
     "defense": 1000,
     "effect": "Finché controlli un altro mostro Tipo Demone, annulla gli effetti dei Mostri Flip distrutti in battaglia da questa carta.",
-    "missingEffectNote": "Copre solo il caso in cui questa carta ATTACCA e vince lo scontro (def.onDestroysMonsterInBattle, con lo stesso limite gia' accettato per id 833), non quello in cui distrugge l'attaccante mentre difende.",
     "artOnly": true
   },
   {

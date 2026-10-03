@@ -392,7 +392,8 @@
 // v142: Storia anime, scene riscritte come dialoghi fra personaggi.
 // v143: Multiplayer, attesa del server come terminale KaibaCorp con glitch (in pagina, senza modali).
 // v144: carte 899/142/511/512 allineate al testo.
-const CACHE_NAME = 'ygo-duel-arena-v144';
+// v145: dieci carte allineate al testo (negazione in battaglia, bersaglio obbligato, Evocazione condizionata).
+const CACHE_NAME = 'ygo-duel-arena-v145';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

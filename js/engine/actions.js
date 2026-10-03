@@ -538,6 +538,15 @@ function attemptMonsterSummon(card, handIndex, slotIndex, fromRect) {
         clearSelection();
         return;
     }
+    // Divieti di Evocazione Normale della carta stessa, fissi o condizionati
+    // (DuelEngine.normalSummonBlockReason, punto unico condiviso con l'IA).
+    const bloccoNormale = window.DuelEngine && DuelEngine.normalSummonBlockReason
+        ? DuelEngine.normalSummonBlockReason('player', card) : null;
+    if (bloccoNormale) {
+        addToLog(`🚫 ${bloccoNormale}`);
+        clearSelection();
+        return;
+    }
     // Le carte dell'Extra Deck (Fusione/Rituale, card.extraDeck === true —
     // es. Drago Bianco Definitivo id 29) non possono MAI essere Evocate
     // Normalmente/Tributo, solo Special Summonate con la procedura
@@ -1751,7 +1760,7 @@ function promptHandMonsterSpecialSummon(card, handIndex) {
     // Alcune carte (es. i mostri Toon) non sono MAI Evocabili Normalmente
     // nella realtà: per loro il popover offre solo Special Summon.
     const def = DuelEngine.getDefinition(card.id);
-    const canNormalSummon = !(def && def.cannotNormalSummon);
+    const canNormalSummon = !DuelEngine.normalSummonBlockReason('player', card);
 
     const pop = openQuickPopover(anchorEl, `
         <div class="quick-popover-actions">
@@ -2103,6 +2112,18 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
         done();
         return;
     }
+    // def.canDeclareAttack(ctx) => bool: una condizione SULLA CARTA per
+    // poter dichiarare un attacco, valutata adesso sul Terreno (Drago della
+    // Caverna id 1040: "non può dichiarare un attacco a meno che tu non
+    // controlli un altro mostro Tipo Drago"). Il bot la consulta già prima
+    // di scegliere un attaccante (botPerformAttacks, bot.js).
+    const attackerDefForCondition = window.DuelEngine && DuelEngine.getDefinition(attackerSlot.card.id);
+    if (attackerDefForCondition && typeof attackerDefForCondition.canDeclareAttack === 'function'
+        && !attackerDefForCondition.canDeclareAttack(DuelEngine.makeContext(attackerOwner, { card: attackerSlot.card, slotIndex: attackerIndex }))) {
+        addToLog(`🚫 ${attackerSlot.card.name} non può dichiarare un attacco in questo momento.`);
+        done();
+        return;
+    }
     // Divieto d'attacco per QUESTO SOLO mostro (a differenza del divieto
     // per l'intero giocatore qui sopra) — es. Incantesimo Ombra (id 439):
     // vedi gameState.cannotAttackUids, ricalcolato ad ogni render da un
@@ -2158,6 +2179,23 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
             done();
             return;
         }
+    }
+    // Bersaglio obbligato imposto dal DIFENSORE (Anello Magnetico id 420:
+    // "i mostri dell'avversario possono attaccare solo il mostro
+    // equipaggiato con questa carta, se attaccano"): se il difensore ha
+    // mostri in gameState.mustBeAttackedUidsFor (ricalcolato a ogni render
+    // da uno static(), azzerato in recomputeStaticEffects), l'attacco deve
+    // puntare uno di quelli — niente altri mostri e niente attacco diretto.
+    // È il contrario di mustAttackTargetUidsFor (id 199), che obbliga un
+    // PROPRIO attaccante. Vale solo finché quel mostro è davvero sul
+    // Terreno del difensore. Il bot restringe la scelta allo stesso modo
+    // (DuelEngine.forcedAttackTargetIndexes, usato da bot.js).
+    const obbligati = window.DuelEngine && DuelEngine.forcedAttackTargetIndexes
+        ? DuelEngine.forcedAttackTargetIndexes(defenderOwner) : [];
+    if (obbligati.length > 0 && obbligati.indexOf(targetIndex) === -1) {
+        addToLog(`🚫 ${attackerSlot.card.name} può attaccare solo ${obbligati.map((i) => defenderField[i].card.name).join(' o ')}.`);
+        done();
+        return;
     }
     // Vincolo sul lato dell'ATTACCANTE (es. Manga Ryu-Ran, id 606: "può
     // attaccare direttamente, a meno che l'avversario controlli un
@@ -2611,6 +2649,35 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                 gameState.monsterEffectsNegatedUidsFor[owner].add(card.uid);
                 gameState.negatedEffectsForeverUids = gameState.negatedEffectsForeverUids || new Set();
                 gameState.negatedEffectsForeverUids.add(card.uid);
+            }
+        }
+        // def.negatesEffectsOfBattleVictims sulla carta CHE distrugge: "gli
+        // effetti dei mostri distrutti in battaglia da questa carta vengono
+        // annullati" (Balter Oscuro il Terribile id 1043; Lupo Bicefalo id
+        // 1114, solo per i Mostri FLIP e solo se controlli un altro Demone).
+        // `true` per ogni vittima, oppure una funzione
+        // (destroyerOwner, destroyerCard, victimCard) => bool per una
+        // condizione. Sta qui, nell'unica funzione da cui passano TUTTI e 6 i
+        // modi in cui una battaglia distrugge un mostro, quindi vale sia in
+        // attacco sia in difesa (prima 1114 stava su onDestroysMonsterInBattle,
+        // che scatta solo quando è l'attaccante a vincere). Stesso schema di
+        // Onda di Diffusione qui sopra: si marca PRIMA che l'ON_DESTROY della
+        // vittima scatti, così il suo "quando viene distrutta" non parte.
+        // Un distruttore con gli effetti a sua volta annullati non annulla
+        // niente.
+        if (opponentBattleCard) {
+            const destroyerOwner = owner === 'player' ? 'bot' : 'player';
+            const killerDef = DuelEngine.getDefinition(opponentBattleCard.id);
+            const regola = killerDef && killerDef.negatesEffectsOfBattleVictims;
+            const negatoIlDistruttore = DuelEngine.isMonsterCardEffectsNegated(destroyerOwner, opponentBattleCard.uid);
+            const applica = !negatoIlDistruttore && (regola === true
+                || (typeof regola === 'function' && regola(destroyerOwner, opponentBattleCard, card)));
+            if (applica) {
+                gameState.monsterEffectsNegatedUidsFor = gameState.monsterEffectsNegatedUidsFor || { player: new Set(), bot: new Set() };
+                gameState.monsterEffectsNegatedUidsFor[owner].add(card.uid);
+                gameState.negatedEffectsForeverUids = gameState.negatedEffectsForeverUids || new Set();
+                gameState.negatedEffectsForeverUids.add(card.uid);
+                addToLog(`🚫 ${opponentBattleCard.name} annulla gli effetti di ${card.name}!`);
             }
         }
         // Sentinella Cremisi (id 1063, Crimson Sentry): "1 tuo mostro

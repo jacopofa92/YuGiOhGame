@@ -1015,6 +1015,56 @@
     }
 
     /**
+     * Scelta VERA di "fino a N" carte fra quelle già filtrate da chi chiama
+     * ("bandisci fino a 3 mostri", "rimanda un numero qualsiasi di carte"):
+     * il giocatore ne sceglie una alla volta e si ferma quando vuole col
+     * pulsante Chiudi del picker (o raggiunto `max`). L'ORDINE in cui le
+     * sceglie è l'ordine dell'array passato a `onDone`, per le carte che
+     * dicono "nell'ordine che preferisci" (Yado Karu id 1113).
+     *
+     * Non tocca le carte: chi chiama decide cosa farne in `onDone(scelte)`,
+     * che riceve anche un array vuoto (il giocatore ha chiuso subito — una
+     * scelta legittima per un "fino a"). ASINCRONO quando si apre un
+     * picker, come ogni helper di scelta di questo file.
+     *
+     * Il bot (o un fallback senza UI) sceglie con `options.pickForBot(cards,
+     * max)` se c'è, altrimenti prende le prime `max`.
+     * `options.min` (default 0): sotto quel numero il pulsante Chiudi non
+     * conclude, il picker si riapre.
+     */
+    function chooseUpToNFromList(ctx, cards, max, options, onDone) {
+        const o = options || {};
+        const minimo = o.min || 0;
+        const tetto = Math.min(max, (cards || []).length);
+        if (!Array.isArray(cards) || cards.length === 0 || tetto <= 0) { onDone([]); return false; }
+        if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+            const auto = typeof o.pickForBot === 'function' ? o.pickForBot(cards.slice(), tetto) : cards.slice(0, tetto);
+            onDone((auto || []).slice(0, tetto));
+            return true;
+        }
+        const scelte = [];
+        const prossima = () => {
+            const restanti = cards.filter((c) => !scelte.some((s) => s.uid === c.uid));
+            if (scelte.length >= tetto || restanti.length === 0) { onDone(scelte); return; }
+            const giaPrese = scelte.length ? ` Scelte finora: ${scelte.map((c) => c.name).join(', ')}.` : '';
+            window.DuelEngineUI.openCardListPicker(restanti, {
+                title: o.title || '🔍 Scegli le carte',
+                text: `${o.text || 'Scegli una carta alla volta.'} (${scelte.length}/${tetto}) ${scelte.length >= minimo ? 'Chiudi per finire.' : ''}${giaPrese}`,
+                onSelect: (card) => {
+                    scelte.push(restanti.find((c) => c.uid === card.uid) || card);
+                    prossima();
+                },
+                onCancel: () => {
+                    if (scelte.length >= minimo) onDone(scelte);
+                    else prossima();
+                }
+            });
+        };
+        prossima();
+        return true;
+    }
+
+    /**
      * Come searchGraveyardWithChoice qui sopra, ma per un costo/effetto che
      * deve BANDIRE la carta scelta (Zona Bandite), non spostarla in mano/
      * Terreno — usata per la prima volta da Spada Divina - Lama della
@@ -1359,5 +1409,5 @@
         return ctx.hand(ctx.owner).filter((c) => !selfUid || c.uid !== selfUid);
     }
 
-    window.CardEffectsShared = { otherHandCards, blockBanishFromField, isHarpieLadySupport, findEquipTarget, collectEquipTargets, equipToChosenTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchZoneWithChoice, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, chooseCardFromList, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost, resolveSpecialSummonTributeCost, attachUnionMonster, maxRitualTributeLevel, performRitualTribute, findPetitMothReadyForCocoonSummon, releaseRelinquishedTarget, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach, returnSpellTrapToHand };
+    window.CardEffectsShared = { otherHandCards, blockBanishFromField, isHarpieLadySupport, findEquipTarget, collectEquipTargets, equipToChosenTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchZoneWithChoice, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, chooseCardFromList, chooseUpToNFromList, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost, resolveSpecialSummonTributeCost, attachUnionMonster, maxRitualTributeLevel, performRitualTribute, findPetitMothReadyForCocoonSummon, releaseRelinquishedTarget, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach, returnSpellTrapToHand };
 })();

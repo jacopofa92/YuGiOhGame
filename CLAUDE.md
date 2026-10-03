@@ -3577,12 +3577,51 @@ priorità o richiedono un refactor ampio):
   `js/economy/shop-catalog.js`): il primo Starter resta a 18 Stelle
   perché è legato al premio del Regno dei Duellanti in `rewards.js`.
 
+- ✅ **Meccanismi generici per i missingEffectNote (due giri, 14 carte
+  chiuse).** Ognuno nato per una carta ma pensato per la prossima con lo
+  stesso bisogno — **usarli invece di riscriverli**:
+  - `def.uniqueFaceUp` → `DuelEngine.isFaceUpDuplicateBlocked` ("puoi
+    controllarne solo 1 scoperto", id 899): Evocazione di giocatore e bot,
+    Special Summon.
+  - `DuelEngine.normalSummonBlockReason(owner, card)`: punto UNICO dei
+    divieti di Evocazione Normale, letto da `attemptMonsterSummon` e da
+    `AI_SHARED.canNormalSummonNow`. Copre `def.cannotNormalSummon` (fisso)
+    e il nuovo `def.canNormalSummon(ctx)` (condizionato, id 1040).
+    **Bug reale chiuso insieme**: `cannotNormalSummon` era controllato SOLO
+    nel popover della Special Summon dalla mano — con un click o un
+    trascinamento su una casella libera (e per il bot) Metalzoa, Drago Nero
+    Metallico & co. si Evocavano lo stesso.
+  - `def.canDeclareAttack(ctx)`: condizione per dichiarare un attacco
+    (id 1040), in `resolveAttack` e in `botPerformAttacks`.
+  - `gameState.mustBeAttackedUidsFor` + `DuelEngine.forcedAttackTargetIndexes`:
+    bersaglio OBBLIGATO per gli attacchi avversari (Anello Magnetico id
+    420), il contrario di `mustAttackTargetUidsFor` (id 199).
+  - `def.negatesEffectsOfBattleVictims` (true o funzione): "annulla gli
+    effetti dei mostri distrutti in battaglia da questa carta" (id 1043,
+    1114), dentro `fireOnDestroy` — quindi vale anche quando la carta
+    DIFENDE, a differenza di `onDestroysMonsterInBattle` (solo attacco
+    vinto).
+  - `def.onOwnFieldGainsMonster`: un mostro arriva sul tuo Terreno per un
+    CAMBIO DI CONTROLLO (id 1121), in `fireControlChangedTrigger`.
+  - `chooseUpToNFromList` (card-effects.js): "fino a N carte" / "un numero
+    qualsiasi, nell'ordine che preferisci", una alla volta col pulsante
+    Chiudi per finire (id 523, 1113).
+  - Già esistente e riusato, da ricordare: `gameState.battleDestroyedThisTurnFor`
+    (id 1063, 901) per "distrutto in battaglia in questo turno".
+  **Lezione**: 3 delle 10 note del secondo giro erano in parte già false
+  (il vincolo VENTO di Simorgh id 772 c'era già, per giocatore e IA) —
+  leggere sempre il codice prima di implementare una nota.
+  Spec: `note-carte-chiuse-2.spec.js`, `note-carte-chiuse-3.spec.js`
+  (battaglie vere via `resolveAttack`; LP alzati a inizio caso, o una
+  battaglia precedente chiude il duello e i casi dopo falliscono per finta).
+
 ## Carte con limiti noti (da riprendere)
 
 **Fonte di verità: `grep missingEffectNote data/cards.json`, e nient'altro.**
-48 risultati (erano 55 dopo la revisione completa descritta più sopra,
-poi 52 contati di nuovo, poi chiuse 142/511/512/899 — vedi `def.uniqueFaceUp`
-in duel-engine.js e il Castello/Cannoni in card-effects-3.js). Questa
+38 risultati (erano 55 dopo la revisione completa descritta più sopra,
+poi 52 contati di nuovo; chiuse poi 142/511/512/899 e, in un secondo giro,
+420/523/772/880/901/1040/1043/1113/1114/1121 — vedi il bullet
+«Meccanismi generici per i missingEffectNote» qui sotto). Questa
 sezione è solo una mappa per orientarsi: ogni carta porta la propria
 nota per esteso, con il motivo preciso. **Non ricopiare qui i motivi** —
 è così che le due copie sono andate alla deriva l'ultima volta.
@@ -3594,20 +3633,18 @@ carta nuova e nessuno li aggiorna — si dice dove contarli).
 
 Tre famiglie, da non confondere.
 
-**A — scostamento reale ancora aperto (29 carte).** La carta si comporta
+**A — scostamento reale ancora aperto (17 carte).** La carta si comporta
 diversamente dal testo, e chiuderla richiede infrastruttura che non
-esiste: 146, 154, 198, 282, 420, 423, 434, 469, 523, 772,
-882, 887, 888, 890, 891, 900, 901, 1001, 1030, 1035, 1040, 1043,
-1045, 1059, 1080, 1110, 1113, 1114, 1121.
+esiste: 146, 154, 198, 423, 469, 882, 887, 888, 890, 891, 900, 1001,
+1030, 1035, 1059, 1080, 1110.
 
-Due sotto-gruppi con lo stesso bisogno, quindi i primi candidati per un
+Un sotto-gruppo con lo stesso bisogno, quindi il primo candidato per un
 meccanismo condiviso invece che per una toppa a carta singola:
-- **"blocca ogni Evocazione"** — 282, 434, 1045. Il divieto di Special
-  Summon esiste (`gameState.otherMonsterSummonsBlockedFor`), quello
-  sull'Evocazione NORMALE non ha nulla di equivalente.
 - **"scelta di chi SUBISCE l'effetto"** — 761, 873. Ogni scelta di
   questo motore è del giocatore che controlla l'effetto; per l'altro
   lato non c'è modo di chiedere.
+(Il vecchio sotto-gruppo "blocca ogni Evocazione" — 282, 434, 1045 — era
+già chiuso da tempo: l'elenco qui non era stato aggiornato.)
 
 **B — implementata, il limite è del motore (13 carte).** La nota è un
 promemoria, non lavoro arretrato: 115, 192, 235, 353, 396, 459, 622,
@@ -3634,8 +3671,8 @@ altrui. Servirebbe una vera finestra di priorità ad ogni cambio fase —
 un cambiamento al cuore del game loop, da fare solo su richiesta
 esplicita.
 
-**C — la scelta la fa il motore, non il giocatore (9 carte).** 100, 761,
-873, 880, 883, 885, 889, 895, 1120. **Prima di migrarne una, leggere il
+**C — la scelta la fa il motore, non il giocatore (8 carte).** 100, 761,
+873, 883, 885, 889, 895, 1120. **Prima di migrarne una, leggere il
 limite su `onAttackDeclare`** più sopra in questo file: cinque di queste
 (100, 235, 883, 889, 895) si risolvono dentro la finestra di
 dichiarazione d'attacco, dove un picker asincrono arriva a danno già

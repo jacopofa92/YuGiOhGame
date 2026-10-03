@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldMonsterTarget, chooseFieldCardTarget, collectFieldTargets, chooseCardFromList, offerHandDiscardChoice, resolveSpecialSummonBanishCost, maxRitualTributeLevel, performRitualTribute, returnSpellTrapToHand } = window.CardEffectsShared;
+    const { searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldMonsterTarget, chooseFieldCardTarget, collectFieldTargets, chooseCardFromList, offerHandDiscardChoice, resolveSpecialSummonBanishCost, maxRitualTributeLevel, performRitualTribute, returnSpellTrapToHand, chooseUpToNFromList } = window.CardEffectsShared;
 
     // ================================================================
     // 1001-1008 — Il ciclo di Mostri Spirito di Legacy of Darkness (LOD),
@@ -869,9 +869,23 @@
         protectsOwnRaceFromSpellTargeting: 'Guerriero'
     });
 
-    // 1040 — Drago della Caverna / Cave Dragon: SEMPLIFICAZIONE non
-    // implementata (vedi missingEffectNote) — stesso schema di 1039.
-    CardEffects.register(1040, {});
+    // 1040 — Drago della Caverna / Cave Dragon: due restrizioni.
+    //  - "Non può essere Evocata Normalmente se controlli già un mostro":
+    //    def.canNormalSummon (DuelEngine.normalSummonBlockReason, letto
+    //    dall'Evocazione del giocatore e dall'IA). Conta qualunque mostro,
+    //    anche coperto: "controlli" non distingue.
+    //  - "Non può dichiarare un attacco a meno che tu non controlli un altro
+    //    mostro Tipo Drago": def.canDeclareAttack (resolveAttack, bot.js).
+    //    Il Drago dev'essere scoperto, perché il Tipo di una carta coperta
+    //    non si conosce.
+    CardEffects.register(1040, {
+        canNormalSummon(ctx) {
+            return !ctx.field(ctx.owner).some((s) => !!s);
+        },
+        canDeclareAttack(ctx) {
+            return ctx.field(ctx.owner).some((s) => s && !s.isFaceDown && s.card.uid !== ctx.card.uid && s.card.race === 'Drago');
+        }
+    });
 
     // 1041 — Demone Minore / Lesser Fiend: "bandisci ogni mostro che
     // questa carta distrugge in battaglia" — riusa il già esistente
@@ -922,11 +936,13 @@
     // (Fusione di 1039+405): stesso Effetto Veloce di Maryokutai qui
     // sopra (canRespondAsQuickEffect + negateActivation), ma per
     // qualunque Magia Normale (non solo durante il turno avversario) e
-    // pagando 1000 LP invece di tributarsi. SEMPLIFICAZIONE (vedi
-    // missingEffectNote): manca la negazione dell'effetto dei Mostri
-    // Effetto che questa carta distrugge in battaglia.
+    // pagando 1000 LP invece di tributarsi. Gli effetti dei mostri che
+    // distrugge in battaglia vengono annullati con
+    // def.negatesEffectsOfBattleVictims (fireOnDestroy, actions.js), in
+    // attacco come in difesa.
     CardEffects.register(1043, {
         fusionMaterials: [405, 1039],
+        negatesEffectsOfBattleVictims: true,
         canRespondAsQuickEffect: true,
         canActivate(ctx) {
             const chain = ctx.gameState.chain;
@@ -2672,45 +2688,54 @@
     });
 
     // 1113 — Yado Karu: se passa da Posizione di Attacco a Difesa,
-    // rimanda in fondo al proprio Deck tutte le carte della mano —
-    // def.onPositionChange (già esistente). SEMPLIFICAZIONE: rimanda
-    // sempre TUTTA la mano invece di un numero/ordine a scelta.
+    // puoi rimandare in fondo al proprio Deck un numero QUALSIASI di carte
+    // dalla mano, nell'ordine che preferisci — def.onPositionChange (già
+    // esistente) + chooseUpToNFromList: il giocatore sceglie una carta alla
+    // volta e chiude quando ha finito (anche subito: è un "puoi"). L'ordine
+    // di scelta è l'ordine in fondo al Deck: la PRIMA scelta finisce più in
+    // basso di tutte (indice 0 = fondo, il Deck si pesca da `pop`).
+    // Il bot non ne rimanda nessuna: prima si svuotava la mano da solo a
+    // ogni cambio di Posizione, una mossa che quasi mai conviene.
     CardEffects.register(1113, {
         onPositionChange(ctx) {
             if (ctx.fromPosition !== 'attack' || ctx.toPosition !== 'defense') return;
             const hand = ctx.hand(ctx.owner);
             if (hand.length === 0) return;
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
-            const moved = hand.splice(0, hand.length);
-            gameState[deckKey].unshift(...moved);
-            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = gameState[deckKey].length;
-            ctx.log(`🐢 Yado Karu rimanda ${moved.length} cart${moved.length === 1 ? 'a' : 'e'} dalla mano in fondo al Deck!`);
+            chooseUpToNFromList(ctx, hand.slice(), hand.length, {
+                title: '🐢 Yado Karu',
+                text: 'Scegli le carte da rimandare in fondo al Deck, nell\'ordine (la prima va più in basso).',
+                pickForBot: () => []
+            }, (scelte) => {
+                const mano = ctx.hand(ctx.owner);
+                const spostate = scelte.filter((c) => {
+                    const i = mano.indexOf(c);
+                    if (i === -1) return false;
+                    mano.splice(i, 1);
+                    return true;
+                });
+                if (spostate.length === 0) return;
+                const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+                gameState[deckKey].unshift(...spostate);
+                gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = gameState[deckKey].length;
+                ctx.log(`🐢 Yado Karu rimanda ${spostate.length} cart${spostate.length === 1 ? 'a' : 'e'} dalla mano in fondo al Deck!`);
+            });
         }
     });
 
     // 1114 — Lupo Bicefalo (Twin-Headed Wolf): finché controlli un ALTRO
     // mostro Tipo Demone, annulla per sempre gli effetti dei Mostri FLIP
-    // che questa carta distrugge in battaglia — riusa l'esistente
-    // def.onDestroysMonsterInBattle (applyBattleDestroyBonus, actions.js
-    // — vedi il commento su fireOnDestroy per la differenza rispetto al
-    // più recente onDestroysMonsterByBattle) e lo stesso schema PERMANENTE
-    // già usato da Bestia Ingranaggio Antico (id 833): gameState.monsterEffectsNegatedUidsFor
-    // (immediato) + gameState.negatedEffectsForeverUids (anche nel
-    // Cimitero). "Mostro Flip" riconosciuto da def.onFlip definito sulla
-    // carta distrutta — stesso identico controllo già usato altrove in
-    // questo file per distinguere un Mostro Flip Effetto da uno normale.
+    // che questa carta distrugge in battaglia — def.negatesEffectsOfBattleVictims
+    // (fireOnDestroy, actions.js), che passa da tutti i modi in cui una
+    // battaglia distrugge un mostro: vale anche quando è questa carta a
+    // DIFENDERE e a distruggere l'attaccante (prima copriva solo l'attacco
+    // vinto). "Mostro Flip" = la definizione della vittima ha un onFlip,
+    // stesso controllo usato altrove per riconoscerlo.
     CardEffects.register(1114, {
-        onDestroysMonsterInBattle(ctx) {
-            if (!ctx.destroyedCard) return;
-            const destroyedDef = DuelEngine.getDefinition(ctx.destroyedCard.id);
-            if (!destroyedDef || typeof destroyedDef.onFlip !== 'function') return;
-            const hasOtherFiend = ctx.field(ctx.owner).some((s) => s && s.card.uid !== ctx.card.uid && s.card.race === 'Demone');
-            if (!hasOtherFiend) return;
-            gameState.monsterEffectsNegatedUidsFor = gameState.monsterEffectsNegatedUidsFor || { player: new Set(), bot: new Set() };
-            gameState.monsterEffectsNegatedUidsFor[ctx.opponent].add(ctx.destroyedCard.uid);
-            gameState.negatedEffectsForeverUids = gameState.negatedEffectsForeverUids || new Set();
-            gameState.negatedEffectsForeverUids.add(ctx.destroyedCard.uid);
-            ctx.log(`🐺 Lupo Bicefalo annulla per sempre gli effetti di ${ctx.destroyedCard.name}!`);
+        negatesEffectsOfBattleVictims(destroyerOwner, destroyer, victim) {
+            const victimDef = DuelEngine.getDefinition(victim.id);
+            if (!victimDef || typeof victimDef.onFlip !== 'function') return false;
+            const campo = destroyerOwner === 'player' ? gameState.playerMonsterField : gameState.botMonsterField;
+            return campo.some((s) => s && s.card.uid !== destroyer.uid && s.card.race === 'Demone');
         }
     });
 
@@ -2894,9 +2919,14 @@
         ctx.destroyMonster(ctx.owner, ownIndex);
         ctx.log('🐱 Thunder Nyan Nyan si autodistrugge: controlli un mostro non-LUCE!');
     }
+    // Anche un cambio di controllo (Cambio di Cuore & co.) porta un mostro
+    // sul tuo Terreno: def.onOwnFieldGainsMonster (fireControlChangedTrigger,
+    // duel-engine.js) copre quel caso, compreso quello in cui è Thunder Nyan
+    // Nyan stessa a passare a un Terreno con un mostro non-LUCE.
     CardEffects.register(1121, {
         onAnyNormalOrFlipSummon(ctx) { thunderNyanNyanCheckSelfDestruct(ctx); },
-        onAnySpecialSummon(ctx) { thunderNyanNyanCheckSelfDestruct(ctx); }
+        onAnySpecialSummon(ctx) { thunderNyanNyanCheckSelfDestruct(ctx); },
+        onOwnFieldGainsMonster(ctx) { thunderNyanNyanCheckSelfDestruct(ctx); }
     });
 
     // 1122 — Scorpione d'Acciaio (Steel Scorpion): "un mostro non-Macchina

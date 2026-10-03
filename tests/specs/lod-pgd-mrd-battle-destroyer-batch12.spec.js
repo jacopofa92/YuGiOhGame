@@ -178,42 +178,64 @@ module.exports = {
         t.assert(sylvanResult.equipGone, 'L\'Equip deve finire al Cimitero');
         t.assert(sylvanResult.botLp === 7500, `Spirito Silvano deve infliggere 500 danni (attesi 7500, rilevati ${sylvanResult.botLp})`);
 
-        // Yado Karu (1113): passando da Attacco a Difesa, rimanda la mano in fondo al Deck.
+        // Yado Karu (1113): passando da Attacco a Difesa, PUOI rimandare un
+        // numero qualsiasi di carte in fondo al Deck, nell'ordine scelto.
+        // Senza interfaccia (il fallback, come il bot) non ne rimanda nessuna;
+        // con il picker si sceglie h2 e poi h1, poi si chiude: h2 va più in
+        // basso (indice 0 = fondo) e d1 resta l'unica carta della mano rimasta.
         const yadoKaruResult = await t.evaluate(() => {
             const filler = cardDatabase.find((c) => c.type === 'monster' && !c.extraDeck);
             const yado = { ...cardDatabase.find((c) => c.id === 1113), uid: 'yado-1' };
-            gameState.playerHand = [{ ...filler, uid: 'h1' }, { ...filler, uid: 'h2' }];
-            gameState.playerDeck = [{ ...filler, uid: 'd1' }];
-            DuelEngine.getDefinition(1113).onPositionChange(DuelEngine.makeContext('player', { card: yado, fromPosition: 'attack', toPosition: 'defense' }));
-            return { handEmpty: gameState.playerHand.length === 0, deckBottomHasHandCards: gameState.playerDeck[0].uid === 'h1' && gameState.playerDeck[1].uid === 'h2' };
-        });
-        t.assert(yadoKaruResult.handEmpty, 'Yado Karu deve svuotare la mano');
-        t.assert(yadoKaruResult.deckBottomHasHandCards, 'Le carte della mano devono finire in fondo al Deck, nell\'ordine originale');
+            const prepara = () => {
+                gameState.playerHand = [{ ...filler, uid: 'h1' }, { ...filler, uid: 'h2' }, { ...filler, uid: 'h3' }];
+                gameState.playerDeck = [{ ...filler, uid: 'd1' }];
+            };
+            const giraInDifesa = () => DuelEngine.getDefinition(1113).onPositionChange(DuelEngine.makeContext('player', { card: yado, fromPosition: 'attack', toPosition: 'defense' }));
 
-        // Lupo Bicefalo (1114): riusa l'ESISTENTE onDestroysMonsterInBattle (id 833) — nega per sempre gli effetti di un Mostro Flip distrutto, solo se controlla un ALTRO Demone.
+            prepara();
+            window.DuelEngineUI = null;
+            giraInDifesa();
+            const senzaUi = { mano: gameState.playerHand.length, deck: gameState.playerDeck.length };
+
+            prepara();
+            const daScegliere = ['h2', 'h1'];
+            window.DuelEngineUI = {
+                openCardListPicker(cards, opts) {
+                    const prossimo = daScegliere.shift();
+                    const carta = prossimo && cards.find((c) => c.uid === prossimo);
+                    if (carta) opts.onSelect(carta); else opts.onCancel();
+                }
+            };
+            giraInDifesa();
+            window.DuelEngineUI = null;
+            return {
+                senzaUi,
+                mano: gameState.playerHand.map((c) => c.uid),
+                fondo: gameState.playerDeck.map((c) => c.uid)
+            };
+        });
+        t.assert(yadoKaruResult.senzaUi.mano === 3 && yadoKaruResult.senzaUi.deck === 1,
+            `Senza scelta (bot/fallback) Yado Karu non rimanda nulla: ${JSON.stringify(yadoKaruResult.senzaUi)}`);
+        t.assert(JSON.stringify(yadoKaruResult.mano) === JSON.stringify(['h3']),
+            `Restano in mano solo le carte non scelte: ${JSON.stringify(yadoKaruResult.mano)}`);
+        t.assert(JSON.stringify(yadoKaruResult.fondo) === JSON.stringify(['h2', 'h1', 'd1']),
+            `Le carte scelte vanno in fondo al Deck nell'ordine di scelta (la prima più in basso): ${JSON.stringify(yadoKaruResult.fondo)}`);
+
+        // Lupo Bicefalo (1114): def.negatesEffectsOfBattleVictims — nega per
+        // sempre gli effetti di un Mostro Flip che distrugge in battaglia,
+        // solo se controlla un ALTRO Demone. Qui si interroga la regola; il
+        // percorso vero (fireOnDestroy) è provato in note-carte-chiuse-3.
         const twinHeadedWolfResult = await t.evaluate(() => {
             const wolf = { ...cardDatabase.find((c) => c.id === 1114), uid: 'wolf-1' };
             const otherFiend = { ...cardDatabase.find((c) => c.type === 'monster' && c.race === 'Demone' && c.id !== 1114), uid: 'wolf-fiend-2' };
             const flipMonster = { ...cardDatabase.find((c) => c.id === 23), uid: 'wolf-prey-flip' };
+            const regola = DuelEngine.getDefinition(1114).negatesEffectsOfBattleVictims;
             gameState.playerMonsterField = [{ card: wolf, position: 'attack', isFaceDown: false }, null, null, null, null];
-            gameState.monsterEffectsNegatedUidsFor = { player: new Set(), bot: new Set() };
-            gameState.negatedEffectsForeverUids = new Set();
-            // Senza un altro Demone sul proprio Terreno: NON deve negare nulla.
-            const ctxNoFiend = DuelEngine.makeContext('player', { card: wolf, destroyedCard: flipMonster });
-            DuelEngine.getDefinition(1114).onDestroysMonsterInBattle(ctxNoFiend);
-            const negatedWithoutFiend = gameState.negatedEffectsForeverUids.has('wolf-prey-flip');
-
-            // Con un altro Demone sul proprio Terreno: deve negare per sempre.
+            const negatedWithoutFiend = regola('player', wolf, flipMonster);
             gameState.playerMonsterField = [{ card: wolf, position: 'attack', isFaceDown: false }, { card: otherFiend, position: 'attack', isFaceDown: false }, null, null, null];
-            const ctxWithFiend = DuelEngine.makeContext('player', { card: wolf, destroyedCard: flipMonster });
-            DuelEngine.getDefinition(1114).onDestroysMonsterInBattle(ctxWithFiend);
-            const negatedWithFiend = gameState.negatedEffectsForeverUids.has('wolf-prey-flip');
-
-            // Un mostro NON Flip distrutto non deve mai essere toccato.
+            const negatedWithFiend = regola('player', wolf, flipMonster);
             const nonFlipMonster = { ...cardDatabase.find((c) => c.type === 'monster' && !c.extraDeck && !DuelEngine.getDefinition(c.id)?.onFlip), uid: 'wolf-prey-nonflip' };
-            const ctxNonFlip = DuelEngine.makeContext('player', { card: wolf, destroyedCard: nonFlipMonster });
-            DuelEngine.getDefinition(1114).onDestroysMonsterInBattle(ctxNonFlip);
-            const nonFlipUntouched = !gameState.negatedEffectsForeverUids.has('wolf-prey-nonflip');
+            const nonFlipUntouched = !regola('player', wolf, nonFlipMonster);
             return { negatedWithoutFiend: negatedWithoutFiend, negatedWithFiend: negatedWithFiend, nonFlipUntouched: nonFlipUntouched };
         });
         t.assert(!twinHeadedWolfResult.negatedWithoutFiend, 'Lupo Bicefalo NON deve negare nulla senza un altro mostro Demone sul proprio Terreno');
