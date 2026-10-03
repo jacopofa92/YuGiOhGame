@@ -84,7 +84,7 @@
                 // sull'Arena Kaiba notturna, che è lo stesso mondo. Il
                 // giorno in cui arriverà storia_anime_battlecity2.jpg, questa riga la
                 // userà da sola.
-                sfondo: ['images/maps/storia_anime_battlecity2.jpg', 'images/maps/storia_anime_battlecity2.jpg'],
+                sfondo: ['images/maps/storia_anime_battlecity2.jpeg', 'images/maps/storia_anime_battlecity2.jpeg'],
                 // `ctx` arriva da torneo-battle-city.html: chi affronti in
                 // semifinale, e chi si gioca l'altra metà del tabellone.
                 battute: (ctx) => [
