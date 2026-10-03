@@ -369,7 +369,12 @@
                     ? principali.length - sep.quante
                     : principali.findIndex((t) => t.id === sep.prima) - sep.quante;
                 if (nuovaPosizione >= 0 && fatte > nuovaPosizione) {
-                    progress.sotto[sep.area] = fatte + sep.quante;
+                    // Mai oltre il totale delle principali: chi aveva già
+                    // finito l'area (contatore al massimo, vedi 'laterali'
+                    // e 'inserite') non deve ritrovarsi con più prove fatte
+                    // di quante l'area ne abbia — a ogni tappa inserita il
+                    // numero cresceva di uno, fino a 19 su 17.
+                    progress.sotto[sep.area] = Math.min(fatte + sep.quante, principali.length);
                 }
                 return;
             }

@@ -194,8 +194,16 @@ module.exports = {
                 `A metà delle vecchie tappe del prologo si deve restare lì: ${JSON.stringify(migrazione.aMetaPrologo)}`);
             t.assert(migrazione.oltrePrologo.c === 0 && migrazione.oltrePrologo.prologo === 5 && migrazione.oltrePrologo.regno === 3,
                 `Oltre il prologo, il Regno deve tenere il suo avanzamento: ${JSON.stringify(migrazione.oltrePrologo)}`);
-            t.assert(migrazione.inBattleCity.c === 2 && migrazione.inBattleCity.regno === 13,
-                `Chi era già oltre il Regno non deve tornare indietro: ${JSON.stringify(migrazione.inBattleCity)}`);
+            // Il Regno "pieno" è TUTTE le sue tappe principali (le parallele
+            // non contano), qualunque sia il loro numero oggi: un numero
+            // scritto a mano qui invecchiava ad ogni tappa inserita nel
+            // catalogo — è esattamente ciò che aveva reso rosso questo test.
+            const principaliRegno = await page.evaluate(() => {
+                const area = StoryProgress.getTappe('anime').find((x) => x.id === 'anime-area-regno');
+                return area.tappe.filter((x) => x.parallelo !== true).length;
+            });
+            t.assert(migrazione.inBattleCity.c === 2 && migrazione.inBattleCity.regno === principaliRegno,
+                `Chi era già oltre il Regno non deve tornare indietro, e il Regno risulta finito (${principaliRegno} principali): ${JSON.stringify(migrazione.inBattleCity)}`);
             t.assert(migrazione.davantiAPegasus.c === 1 && migrazione.davantiAPegasus.prova === 'anime-2c-scena',
                 `Chi era davanti a Pegasus deve entrare nel castello dalla prima tappa nuova: ${JSON.stringify(migrazione.davantiAPegasus)}`);
             t.assert(migrazione.dalCastelloArea.c === 1 && migrazione.dalCastelloArea.regno === 11
