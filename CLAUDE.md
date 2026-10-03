@@ -3608,6 +3608,39 @@ priorità o richiedono un refactor ampio):
     Chiudi per finire (id 523, 1113).
   - Già esistente e riusato, da ricordare: `gameState.battleDestroyedThisTurnFor`
     (id 1063, 901) per "distrutto in battaglia in questo turno".
+  - **Terzo giro (le 17 della famiglia A)**:
+    `card.destroyWhenDestroyedUid` (sorte legata, ramo ON_DESTROY: id 154);
+    `card.battleDestroyedDamageToOpponent` (per-istanza, per i Token:
+    id 1030); `gameState.graveyardBanishBlockedFor` + terzo argomento
+    `actor` di `banishFromGraveyard` (divieto per ATTORE: id 1080);
+    `fusionSummon(..., { banishMaterials })` e `def.activateAsTurnPlayer`
+    (Magia Terreno usabile da chi è di turno, anche l'avversario: id 887);
+    `def.attacksEachEnemyOnce` + `getExtraAttackCount` (id 1001) — e il
+    bot ora USA gli attacchi extra (prima ogni suo mostro attaccava una
+    volta sola); `gameState.extraBattlePhase` +
+    `canConductSecondBattlePhase`/`startSecondBattlePhase` (seconda Battle
+    Phase: id 1035); `openSummonResponseWindows` + `def.onOwnSummonResponse`
+    (risposta alla PROPRIA Evocazione: id 146); `def.canReactToTargetDeclare`
+    (quando reagisce al checkpoint di targeting, separato da canActivate:
+    id 423) e `destroyTargetingSpellIfItStays` (id 423, 888);
+    `def.immuneToUntargetedSpellTrapDestruction` + `ctx.__declaredTargetUids`
+    (id 198); `findHandQuickEffectCandidates` + `def.canRespondFromHand`/
+    `activateFromHand` (risposta dalla MANO a un'attivazione: id 900);
+    `gameState.battleProtectionByName` (id 1059);
+    `def.indestructibleByEffectOncePerTurn` in `destroyFieldSpell`,
+    `def.blocksOwnExtraDeckSummons` → `DuelEngine.isExtraDeckSummonBlocked`
+    (id 469); Necrovalley ora nega anche rianimazioni e recuperi
+    (`specialSummon` da 'graveyard', `searchGraveyardWithChoice`).
+    **Due bug reali trovati nel giro**: il checkpoint di targeting provava
+    solo la PRIMA carta reattiva della zona Magia/Trappola (se quella diceva
+    no, le altre non venivano interpellate); e la scelta dei bersagli del
+    bot leggeva una voce-funzione di `cannotBeAttackTargetUids` come
+    "vero", escludendo il mostro anche quando l'attacco era permesso.
+    **Insidia presa scrivendolo**: un confronto per uid fra due carte SENZA
+    uid (`undefined === undefined`) lega tutto a tutto — un Drago Bianco
+    veniva distrutto "insieme" a un mostro qualunque in uno spec del bot.
+    Ogni nuovo confronto per uid va scritto con un uid vero da entrambe le
+    parti.
   **Lezione**: 3 delle 10 note del secondo giro erano in parte già false
   (il vincolo VENTO di Simorgh id 772 c'era già, per giocatore e IA) —
   leggere sempre il codice prima di implementare una nota.
@@ -3618,10 +3651,11 @@ priorità o richiedono un refactor ampio):
 ## Carte con limiti noti (da riprendere)
 
 **Fonte di verità: `grep missingEffectNote data/cards.json`, e nient'altro.**
-38 risultati (erano 55 dopo la revisione completa descritta più sopra,
-poi 52 contati di nuovo; chiuse poi 142/511/512/899 e, in un secondo giro,
-420/523/772/880/901/1040/1043/1113/1114/1121 — vedi il bullet
-«Meccanismi generici per i missingEffectNote» qui sotto). Questa
+26 risultati (erano 55 dopo la revisione completa descritta più sopra,
+poi 52 contati di nuovo; chiuse in tre giri 142/511/512/899, poi
+420/523/772/880/901/1040/1043/1113/1114/1121, poi tutte le 17 della
+famiglia A — vedi il bullet «Meccanismi generici per i missingEffectNote»
+qui sopra). Questa
 sezione è solo una mappa per orientarsi: ogni carta porta la propria
 nota per esteso, con il motivo preciso. **Non ricopiare qui i motivi** —
 è così che le due copie sono andate alla deriva l'ultima volta.
@@ -3633,22 +3667,19 @@ carta nuova e nessuno li aggiorna — si dice dove contarli).
 
 Tre famiglie, da non confondere.
 
-**A — scostamento reale ancora aperto (17 carte).** La carta si comporta
-diversamente dal testo, e chiuderla richiede infrastruttura che non
-esiste: 146, 154, 198, 423, 469, 882, 887, 888, 890, 891, 900, 1001,
-1030, 1035, 1059, 1080, 1110.
+**A — scostamento reale ancora aperto: nessuna carta.** Le ultime 17
+sono state chiuse insieme (spec `note-carte-chiuse-4.spec.js`). Una carta
+nuova che finisse qui va trattata cercando prima un meccanismo esistente:
+vedi l'elenco nel bullet «Meccanismi generici per i missingEffectNote».
 
-Un sotto-gruppo con lo stesso bisogno, quindi il primo candidato per un
-meccanismo condiviso invece che per una toppa a carta singola:
-- **"scelta di chi SUBISCE l'effetto"** — 761, 873. Ogni scelta di
-  questo motore è del giocatore che controlla l'effetto; per l'altro
-  lato non c'è modo di chiedere.
-(Il vecchio sotto-gruppo "blocca ogni Evocazione" — 282, 434, 1045 — era
-già chiuso da tempo: l'elenco qui non era stato aggiornato.)
+Resta un bisogno condiviso ancora senza meccanismo:
+- **"scelta di chi SUBISCE l'effetto"** — 761, 873 (famiglia C). Ogni
+  scelta di questo motore è del giocatore che controlla l'effetto; per
+  l'altro lato non c'è modo di chiedere.
 
-**B — implementata, il limite è del motore (13 carte).** La nota è un
-promemoria, non lavoro arretrato: 115, 192, 235, 353, 396, 459, 622,
-661, 738, 826, 851, 1129, 1130.
+**B — implementata, il limite è del motore (18 carte).** La nota è un
+promemoria, non lavoro arretrato: 115, 192, 198, 235, 353, 396, 423,
+459, 622, 661, 738, 826, 851, 882, 890, 1059, 1129, 1130.
 
 Due limiti condivisi, entrambi deliberati:
 

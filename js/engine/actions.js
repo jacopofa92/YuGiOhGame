@@ -162,6 +162,22 @@ function handleCardClickInner(card, sourceType, sourceIndex, sourceOwner, isFace
         // regole di quando è permesso — es. una Trappola non si può
         // attivare nel turno in cui è stata Set).
         attemptActivateCard('player', 'st', sourceIndex);
+    } else if (sourceType === 'field-spell' && sourceOwner === 'bot' && isMainPhase && !isFaceDown && window.DuelEngine
+        && typeof (DuelEngine.getDefinition(card.id) || {}).activateAsTurnPlayer === 'function') {
+        // Magia Terreno dell'AVVERSARIO che "il giocatore di turno" può usare
+        // (Cancello di Fusione id 887): def.canActivateAsTurnPlayer/
+        // activateAsTurnPlayer, con il contesto del giocatore di turno (noi).
+        // Non è l'attivazione di una carta, quindi niente Chain; in
+        // Multiplayer il risultato viaggia come fotografia di stato.
+        const defTurno = DuelEngine.getDefinition(card.id);
+        const ctxTurno = DuelEngine.makeContext('player', { card: card, zone: 'fieldSpell', borrowedFrom: 'bot' });
+        if (typeof defTurno.canActivateAsTurnPlayer === 'function' && !defTurno.canActivateAsTurnPlayer(ctxTurno)) {
+            addToLog(`❌ Non puoi usare ${card.name} in questo momento.`);
+            return;
+        }
+        defTurno.activateAsTurnPlayer(ctxTurno);
+        if (DuelEngine.broadcastLocalStatePush) DuelEngine.broadcastLocalStatePush(null);
+        updateUI();
     } else if (sourceType === 'field-spell' && sourceOwner === 'player' && isMainPhase) {
         // Click sulla propria Magia Terreno già piazzata: stesso principio
         // di sourceType === 'st' qui sopra, ma sulla sua zona dedicata.
@@ -2027,6 +2043,17 @@ function fieldOfOwner(owner) {
     return owner === 'player' ? gameState.playerMonsterField : gameState.botMonsterField;
 }
 
+/**
+ * I bersagli che il mostro in `slot` ha già attaccato in QUESTO turno
+ * (uid, oppure '__diretto' per un attacco diretto) — vedi
+ * def.attacksEachEnemyOnce in resolveAttack. Un registro di un turno
+ * passato vale come vuoto: niente da azzerare a mano.
+ */
+function attackedEnemyUidsOf(slot) {
+    if (!slot || slot.attackedEnemyUidsTurn !== gameState.turn || !slot.attackedEnemyUids) return new Set();
+    return new Set(slot.attackedEnemyUids);
+}
+
 function graveyardOfOwner(owner) {
     return owner === 'player' ? gameState.playerGraveyard : gameState.botGraveyard;
 }
@@ -2196,6 +2223,34 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
         addToLog(`🚫 ${attackerSlot.card.name} può attaccare solo ${obbligati.map((i) => defenderField[i].card.name).join(' o ')}.`);
         done();
         return;
+    }
+    // def.attacksEachEnemyOnce (Sacerdote di Asura id 1001: "può attaccare
+    // tutti i mostri dell'avversario, una volta ciascuno"): quali bersagli
+    // questo mostro ha già attaccato in questo turno sta sullo slot
+    // (attackedEnemyUids, valido solo col timbro del turno, così non serve
+    // azzerarlo). Niente secondo attacco allo stesso mostro, e niente attacco
+    // diretto dopo averne attaccato uno. Il NUMERO di attacchi lo dà
+    // def.getExtraAttackCount della carta, che legge lo stesso registro
+    // (attackedEnemyUidsOf, qui sotto).
+    const defOgniNemico = window.DuelEngine && DuelEngine.getDefinition(attackerSlot.card.id);
+    if (defOgniNemico && defOgniNemico.attacksEachEnemyOnce) {
+        const registro = attackedEnemyUidsOf(attackerSlot);
+        const bersaglioUid = targetIndex === -1 ? '__diretto' : (defenderField[targetIndex] && defenderField[targetIndex].card.uid);
+        if (targetIndex === -1 && registro.size > 0) {
+            addToLog(`🚫 ${attackerSlot.card.name} ha già attaccato un mostro: non può attaccare direttamente.`);
+            done();
+            return;
+        }
+        if (bersaglioUid && registro.has(bersaglioUid)) {
+            addToLog(`🚫 ${attackerSlot.card.name} ha già attaccato quel mostro in questo turno.`);
+            done();
+            return;
+        }
+        if (bersaglioUid) {
+            registro.add(bersaglioUid);
+            attackerSlot.attackedEnemyUids = registro;
+            attackerSlot.attackedEnemyUidsTurn = gameState.turn;
+        }
     }
     // Vincolo sul lato dell'ATTACCANTE (es. Manga Ryu-Ran, id 606: "può
     // attaccare direttamente, a meno che l'avversario controlli un
@@ -2680,6 +2735,17 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                 addToLog(`🚫 ${opponentBattleCard.name} annulla gli effetti di ${card.name}!`);
             }
         }
+        // `card.battleDestroyedDamageToOpponent` (per-istanza, sulla carta
+        // distrutta): "quando questa carta viene distrutta in battaglia,
+        // infliggi N danni all'avversario" — nato per il Token di Barattolo
+        // Cobra (id 1030), che non ha una registrazione propria a cui
+        // appendere un effetto. L'avversario è chi controllava l'altro
+        // mostro della battaglia.
+        if (opponentBattleCard && card.battleDestroyedDamageToOpponent) {
+            const contro = owner === 'player' ? 'bot' : 'player';
+            DuelEngine.actions.dealDamage(contro, card.battleDestroyedDamageToOpponent);
+            addToLog(`☠️ ${card.name} distrutto in battaglia: ${card.battleDestroyedDamageToOpponent} danni all'avversario!`);
+        }
         // Sentinella Cremisi (id 1063, Crimson Sentry): "1 tuo mostro
         // distrutto in battaglia DURANTE QUESTO TURNO" — nuovo tracker
         // generico gameState.battleDestroyedThisTurnFor (per proprietario,
@@ -2882,6 +2948,19 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
         const flag = DuelEngine.getDefinition(card.id)?.cannotBeDestroyedByBattle;
         if (typeof flag === 'function') return !!flag(opponentAtk);
         if (flag) return true;
+        // Protezione dalla battaglia per NOME fino alla fine del turno, per
+        // i mostri di un giocatore (Amuleto di Shabti id 1059: "fino alla End
+        // Phase, i mostri Guardiani della Tomba che controlli non possono
+        // essere distrutti in battaglia"): gameState.battleProtectionByName,
+        // elenco di { owner, turn, nameIncludes }. Vale per chi li controlla
+        // ADESSO (anche se Evocati dopo l'attivazione), e smette da sola al
+        // cambio di turno (il confronto col turno non corrisponde più).
+        const protezioni = gameState.battleProtectionByName || [];
+        if (protezioni.length && card.name) {
+            const lato = gameState.playerMonsterField.some((s) => s && s.card.uid === card.uid) ? 'player'
+                : gameState.botMonsterField.some((s) => s && s.card.uid === card.uid) ? 'bot' : null;
+            if (lato && protezioni.some((p) => p.owner === lato && p.turn === gameState.turn && card.name.includes(p.nameIncludes))) return true;
+        }
         // 395 — Orgoth l'Implacabile: indistruttibilità TEMPORANEA per uid
         // (lancio dado 1-2), non un flag fisso sulla definizione come sopra
         // — vedi gameState.orgothIndestructibleUids/orgothActiveUidsFor

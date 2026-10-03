@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { blockBanishFromField, isHarpieLadySupport, findEquipTarget, equipToChosenTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchDeckWithChoice, maxRitualTributeLevel, performRitualTribute, findPetitMothReadyForCocoonSummon, grantAttackAllEnemiesOncEach, chooseCardFromList, searchGraveyardWithChoice, collectFieldTargets, chooseFieldCardTarget } = window.CardEffectsShared;
+    const { blockBanishFromField, isHarpieLadySupport, findEquipTarget, equipToChosenTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchDeckWithChoice, maxRitualTributeLevel, performRitualTribute, findPetitMothReadyForCocoonSummon, grantAttackAllEnemiesOncEach, chooseCardFromList, searchGraveyardWithChoice, collectFieldTargets, chooseFieldCardTarget, destroyTargetingSpellIfItStays } = window.CardEffectsShared;
 
     // ================================================================
     // 110 — Drago Berserk / Berserk Dragon
@@ -831,12 +831,29 @@
     });
 
     // 423 — Bastone del Silenzio - Kay'est / Staff of the Silencer - Kay'est: +500 DEF, qualsiasi mostro.
-    // Vedi missingEffectNote su id 423 in cards.json: manca la negazione
-    // di Magie che bersagliano il mostro equipaggiato.
+    // "Nega altri effetti Magia che scelgono come bersaglio il mostro
+    // equipaggiato, e se lo fai, distruggi quella Magia": reagisce al
+    // checkpoint di targeting condiviso (declareCardEffectTarget) dalla zona
+    // Magia/Trappola. canReactToTargetDeclare dice QUANDO (solo una Magia,
+    // non questa stessa carta, e solo se il bersaglio è proprio il mostro
+    // equipaggiato), separato da canActivate che qui vuol dire "posso
+    // agganciarmi". La distruzione vale per una Magia che resta in campo
+    // (destroyTargetingSpellIfItStays). Come ogni reazione a quel
+    // checkpoint, non copre una Magia che bersaglia senza passarci.
     CardEffects.register(423, {
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx) !== -1; },
         activate(ctx) { equipToChosenTarget(ctx); },
+        canReactToTargetDeclare(ctx) {
+            if (ctx.sourceType !== 'spell' || !ctx.sourceCard || ctx.sourceCard.uid === ctx.card.uid) return false;
+            const bersaglio = ctx.field(ctx.targetOwner)[ctx.targetIndex];
+            return !!(bersaglio && bersaglio.card.uid === ctx.card.equippedToUid);
+        },
+        onCardEffectTargetDeclare(ctx) {
+            ctx.cancel();
+            const distrutta = destroyTargetingSpellIfItStays(ctx);
+            ctx.log(`🪄 Bastone del Silenzio nega l'effetto di ${ctx.sourceCard.name}${distrutta ? ' e la distrugge' : ''}!`);
+        },
         isEquip: true,
         static(ctx) {
             const t = equippedTarget(ctx);

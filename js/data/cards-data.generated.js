@@ -1414,8 +1414,7 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Quando viene Evocato un mostro con 2000 o meno ATK: scegli come bersaglio quel mostro; distruggi tutte le carte con lo stesso nome nella mano e nel Deck di chi lo controlla.",
-    "artOnly": true,
-    "missingEffectNote": "Reagisce solo all'Evocazione di un mostro dell'AVVERSARIO, non anche a una propria come dice il testo: openTriggerWindow apre la finestra di risposta al solo avversario di chi ha fatto scattare il trigger, e nessun'altra carta del dataset avrebbe bisogno del contrario."
+    "artOnly": true
   },
   {
     "id": 147,
@@ -1497,8 +1496,7 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Quando l'avversario Evoca Normalmente o tramite Flip Summon un mostro con un Livello: scegli come bersaglio quel mostro; Special Summon 1 Token con le stesse statistiche originali. Se il mostro bersaglio viene distrutto, distruggi anche il Token.",
-    "artOnly": true,
-    "missingEffectNote": "Manca \"se il mostro bersaglio viene distrutto, distruggi anche il Token\": non c'e' modo, in questo motore, di legare la sorte di due carte per il resto della partita."
+    "artOnly": true
   },
   {
     "id": 155,
@@ -2032,7 +2030,7 @@ const cardDatabase = [
     "defense": 1500,
     "effect": "L'effetto di una Magia o Trappola non può distruggere questa carta a meno che non la scelga specificamente come bersaglio. Questa carta non viene distrutta in battaglia se combatte con un mostro con 1900 o meno ATK.",
     "artOnly": true,
-    "missingEffectNote": "E' implementata solo l'indistruttibilita' in battaglia. L'immunita' alla distruzione da un effetto Magia/Trappola NON mirato (Raigeki, Buco Nero) no: per il targeting esiste un checkpoint condiviso, per la distruzione di massa non esiste nulla di equivalente, e andrebbe aggiornata a mano ogni carta che distrugge in blocco."
+    "missingEffectNote": "Implementata per intero. Il 'non mirato' si riconosce dai bersagli dichiarati col checkpoint di targeting condiviso (ctx.declareTarget): una Magia/Trappola che la bersaglia senza passare di lì viene trattata come non mirata e non la distrugge."
   },
   {
     "id": 199,
@@ -4625,7 +4623,7 @@ const cardDatabase = [
     "subtype": "equip",
     "effect": "Il mostro equipaggiato guadagna 500 DEF. Nega altri effetti Magia che scelgono come bersaglio il mostro equipaggiato, e se lo fai, distruggi quella Magia.",
     "artOnly": true,
-    "missingEffectNote": "Manca la negazione (e la distruzione) di una Magia che bersaglia il mostro equipaggiato. def.cannotBeTargetedBySpells esiste ma vale per DEFINIZIONE, non per l'istanza a cui un Equip e' agganciato; e comunque bloccherebbe solo il targeting, senza distruggere la Magia che ci ha provato."
+    "missingEffectNote": "Implementata. La negazione passa dal checkpoint di targeting condiviso (ctx.declareTarget, duel-engine.js), che non copre una Magia che bersaglia senza dichiararlo lì."
   },
   {
     "id": 424,
@@ -5148,7 +5146,6 @@ const cardDatabase = [
     "name": "Il Sigillo di Orichalcos",
     "type": "spell",
     "subtype": "field",
-    "missingEffectNote": "E' implementato solo il +500 ATK ai propri mostri. Mancano l'immunita' una volta per turno, la protezione del mostro con l'ATK piu' basso, la distruzione dei propri mostri Special Summonati all'attivazione, il blocco del Special Summon dall'Extra Deck e \"una sola volta per Duello\": e' un floodgate a cinque teste, non una clausola sola.",
     "effect": "Tutti i mostri che controlli guadagnano 500 ATK. Una volta per turno, questa carta non può essere distrutta da effetti carta. Finché controlli 2 o più mostri scoperti in Posizione di Attacco, il tuo avversario non può scegliere come bersaglio dell'attacco i tuoi mostri con l'ATK più basso. Se questa carta viene attivata: distruggi tutti i mostri Special Summonati che controlli. Non puoi Special Summonare mostri dall'Extra Deck. Puoi attivare questa carta solo una volta per Duello.",
     "artOnly": true
   },
@@ -9941,7 +9938,7 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Uno dei due giocatori può pagare 800 Life Points per annullare l'Evocazione Speciale di uno o più mostri (e/o un effetto che li Evoca Specialmente), e distruggerli.",
-    "missingEffectNote": "E' una Trappola Normale usa-e-getta (nega la prima Evocazione Speciale e finisce al Cimitero) invece della Trappola Continua del testo reale, che resterebbe li' a negarle tutte pagando ogni volta.",
+    "missingEffectNote": "Resta fuori 'uno dei due giocatori può pagare': la usa solo chi la controlla, perché ogni finestra di risposta di questo motore è di un giocatore solo.",
     "artOnly": true,
     "limit": 1
   },
@@ -10001,7 +9998,6 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "field",
     "effect": "Finché questa carta è sul Terreno: il giocatore di turno può Evocare per Fusione 1 Mostro Fusione dal proprio Extra Deck, bandendo i Materiali da Fusione elencati dalla propria mano o Terreno.",
-    "missingEffectNote": "I materiali finiscono al Cimitero invece di essere banditi, e la Fusione si puo' fare solo nel proprio turno, non anche in quello dell'avversario come dice il testo.",
     "artOnly": true
   },
   {
@@ -10016,7 +10012,6 @@ const cardDatabase = [
     "attack": 2300,
     "defense": 1700,
     "effect": "Nega gli effetti Magia che scelgono questa carta come bersaglio, e se lo fai, distruggi quella Magia. Durante la tua Draw Phase, invece della pescata normale, puoi aggiungere 1 mostro Tipo Guerriero di Livello 4 o inferiore dal tuo Deck alla tua mano. Questa carta deve essere scoperta sul Terreno per attivare e risolvere questo effetto.",
-    "missingEffectNote": "La negazione blocca l'effetto della Magia bersaglio ma non la distrugge esplicitamente se e' Continua o Equipaggiamento (per una Normale/Rapida non cambia nulla, finisce al Cimitero comunque). La sostituzione della pescata con la ricerca avviene sempre che sia possibile, invece di lasciar scegliere fra pescare e cercare.",
     "artOnly": true
   },
   {
@@ -10041,7 +10036,7 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "field",
     "effect": "Tutti i mostri Guardiani della Tomba guadagnano 500 ATK e DEF. Le carte nel Cimitero non possono essere bandite. Nega ogni effetto Carta che sposterebbe una carta nel Cimitero in un posto diverso. Nega ogni effetto Carta che cambia Tipo o Attributo nel Cimitero.",
-    "missingEffectNote": "Sono implementate le prime due clausole (bonus ai Guardiani della Tomba e blocco del bando dal Cimitero, quest'ultimo su un punto unico condiviso). Le altre due (nega uno spostamento di zona diverso dal bando; nega un cambio di Tipo/Attributo nel Cimitero) no: non esiste un checkpoint per nessuna delle due, e nel dataset attuale non se ne presenta il caso.",
+    "missingEffectNote": "La negazione degli spostamenti dal Cimitero copre la Special Summon (fromZone 'graveyard', assumendo il Cimitero di chi Evoca) e le scelte fatte con searchGraveyardWithChoice; un effetto che sposta una carta dal Cimitero con uno splice scritto a mano non viene negato. La clausola sul cambio di Tipo/Attributo nel Cimitero non ha casi nel dataset.",
     "artOnly": true
   },
   {
@@ -10056,7 +10051,6 @@ const cardDatabase = [
     "attack": 2200,
     "defense": 2800,
     "effect": "Non può essere Evocata Normalmente né Set. Deve prima essere Evocata Specialmente (dalla tua mano) bandendo 3 mostri Demone dal tuo Cimitero. Durante la End Phase, se questa carta è nel tuo Cimitero perché distrutta nella tua Zona Mostro da una carta dell'avversario e mandata lì in questo turno: scegli come bersaglio 1 mostro scoperto che l'avversario controlla; equipaggia questa carta a quel bersaglio. Finché questa carta è equipaggiata a un mostro con questo effetto, prendi il controllo di quel mostro.",
-    "missingEffectNote": "Il bersaglio dell'equipaggiamento ora lo sceglie chi controlla la carta. Resta scoperto un caso limite: se a lasciare il campo e' il mostro equipaggiato (distrutto in battaglia mentre e' sotto controllo), questa carta resta orfana e viene semplicemente mandata al Cimitero al controllo successivo.",
     "artOnly": true
   },
   {
@@ -10184,7 +10178,6 @@ const cardDatabase = [
     "attack": 1000,
     "defense": 1000,
     "effect": "Durante il turno di uno dei due giocatori, quando il tuo avversario attiva una Magia/Trappola o un effetto Mostro che, se si risolve, potrebbe fargli scartare una carta: puoi mandare questa carta dalla tua mano al Cimitero; nega l'attivazione, e se lo fai, distruggila.",
-    "missingEffectNote": "Non implementata. Servirebbe una finestra di risposta attivabile da una carta ancora IN MANO, in qualunque momento del turno di chiunque, e per giunta capace di sapere in anticipo se l'attivazione avversaria \"potrebbe far scartare\". Come ogni Effetto Veloce di questo motore, risponde solo quando una Chain e' gia' aperta da un'attivazione: nessuna fase apre una finestra di priorita' se non sta succedendo nulla.",
     "artOnly": true
   },
   {
@@ -11600,7 +11593,6 @@ const cardDatabase = [
     "attack": 1700,
     "defense": 1200,
     "effect": "Non può essere Special Summonato. Alla End Phase del turno in cui viene Evocato Normalmente o girato scoperto: torna in mano al proprietario.",
-    "missingEffectNote": "Manca \"puo' attaccare tutti i mostri dell'avversario, una volta ciascuno\": un attacco multiplo su piu' bersagli non serve a nessun'altra carta del dataset.",
     "artOnly": true
   },
   {
@@ -11978,7 +11970,6 @@ const cardDatabase = [
     "attack": 600,
     "defense": 300,
     "effect": "FLIP: Special Summon 1 Token Serpente Velenoso (Rettile/TERRA/Lv3/ATK 1200/DEF 1200).",
-    "missingEffectNote": "Manca \"quando il Token viene distrutto in battaglia: infliggi 500 danni all'avversario\". I Token non hanno una registrazione propria in card-effects.js, quindi non c'e' dove appendere un effetto a un Token nato da questa carta in particolare.",
     "artOnly": true
   },
   {
@@ -12049,7 +12040,6 @@ const cardDatabase = [
     "attack": 950,
     "defense": 1500,
     "effect": "FLIP: distruggi tutte le \"Spada Rivelatrice\" scoperte dell'avversario.",
-    "missingEffectNote": "Manca \"se distruggi almeno una Spada Rivelatrice, puoi eseguire la Battle Phase due volte\": servirebbe una seconda Battle Phase vera, cioe' toccare la sequenza delle fasi del motore.",
     "artOnly": true
   },
   {
@@ -12375,7 +12365,7 @@ const cardDatabase = [
     "attack": 100,
     "defense": 100,
     "effect": "Durante il turno di uno dei due giocatori: puoi scartare questa carta; fino alla End Phase, i mostri \"Custode della Tomba\" che controlli non possono essere distrutti in battaglia.",
-    "missingEffectNote": "Registrata ma senza effetto. Servirebbe poter scartare questa carta dalla MANO durante il turno dell'avversario, e questo motore non ha finestre di attivazione dalla mano. Come ogni Effetto Veloce di questo motore, risponde solo quando una Chain e' gia' aperta da un'attivazione: nessuna fase apre una finestra di priorita' se non sta succedendo nulla.",
+    "missingEffectNote": "Si attiva dalla mano in due momenti: quando l'avversario dichiara un attacco contro un tuo Guardiano della Tomba, e nella tua Main Phase. Non in ogni istante del turno altrui in cui non succede nulla: servirebbe una finestra di priorità a ogni cambio fase.",
     "artOnly": true
   },
   {
@@ -12650,7 +12640,6 @@ const cardDatabase = [
     "attack": 1800,
     "defense": 700,
     "effect": "Quando questa carta infligge danno da battaglia al tuo avversario: puoi scegliere come bersaglio fino a 2 mostri nel suo Cimitero; bandiscili. Il tuo avversario non può bandire carte dal Cimitero di nessuno dei due giocatori.",
-    "missingEffectNote": "Manca il floodgate \"l'avversario non puo' bandire dal Cimitero di nessuno dei due\": il blocco esistente (Necrovalley) protegge un Cimitero a prescindere da chi banisce, mentre qui il divieto dipende da CHI compie l'azione, e per quello non c'e' nulla. L'effetto principale e' implementato.",
     "artOnly": true
   },
   {
@@ -13216,7 +13205,6 @@ const cardDatabase = [
     "attack": 1500,
     "defense": 1500,
     "effect": "Una volta per turno, durante la tua Main Phase, puoi mettere questa carta coperta in Posizione di Difesa. Dopo aver usato questo effetto, riordina i mostri coperti in Posizione di Difesa nelle tue zone Mostro, poi rimettili coperti in Posizione di Difesa.",
-    "missingEffectNote": "La clausola \"riordina i mostri coperti\" non fa nulla di osservabile: in questo motore l'ordine delle caselle non influenza alcuna meccanica.",
     "artOnly": true
   },
   {

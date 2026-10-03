@@ -46,6 +46,10 @@ function botTurn() {
                 // vedi ai-hard.js) — anche questa una novità: prima il
                 // retrocampo del bot restava sempre e solo reattivo.
                 .then(() => attemptBotActivateSetCards())
+                // Una Magia Terreno del GIOCATORE che "il giocatore di turno"
+                // può usare (Cancello di Fusione id 887): nel suo turno il
+                // bot la sfrutta come farebbe con la propria.
+                .then(() => attemptBotUseTurnPlayerFieldSpell())
                 // NON un semplice setTimeout: `attendiPoi` ricontrolla le
                 // cinematiche allo SCADERE dell'attesa, non solo prima di
                 // farla partire. Una cinematica puo' cominciare DOPO il
@@ -82,6 +86,24 @@ function botTurn() {
                             return botPerformAttacks()
                                 .then(waitForSummonCinematics)
                                 .then(() => attendiPoi(1000))
+                                // Seconda Battle Phase (Bollettino Meteo id
+                                // 1035): passa da Main Phase 2 e rientra in
+                                // Battaglia una volta, come farebbe il
+                                // giocatore dallo stepper delle fasi.
+                                .then(() => {
+                                    if (gameState.currentPlayer !== 'bot' || gameState.gameOver) return;
+                                    const eb = gameState.extraBattlePhase;
+                                    if (!eb || eb.owner !== 'bot' || eb.turn !== gameState.turn || eb.used) return;
+                                    enterMainPhase2();
+                                    return attendiPoi(1200).then(() => {
+                                        if (gameState.currentPlayer !== 'bot' || gameState.gameOver) return;
+                                        if (!startSecondBattlePhase('bot')) return;
+                                        return attendiPoi(1400)
+                                            .then(() => botPerformAttacks())
+                                            .then(waitForSummonCinematics)
+                                            .then(() => attendiPoi(1000));
+                                    });
+                                })
                                 .then(() => {
                                     if (gameState.currentPlayer !== 'bot' || gameState.gameOver) return;
                                     enterEndPhase();
@@ -143,6 +165,28 @@ function attemptBotMassDestructionBeforeSummon() {
  * risposta del giocatore) è DAVVERO finita — vedi botTurn(), che aspetta
  * questa Promise prima di passare alla Battle Phase.
  */
+/**
+ * Usa la Magia Terreno del giocatore quando il suo testo la concede a
+ * chiunque sia di turno (def.canActivateAsTurnPlayer/activateAsTurnPlayer,
+ * oggi solo Cancello di Fusione id 887). Il bot la usa sempre quando può:
+ * Evocare per Fusione è quasi sempre una mossa che conviene. Torna una
+ * Promise che aspetta un attimo, per lasciar partire l'effetto visivo
+ * della Fusione prima della mossa successiva.
+ */
+function attemptBotUseTurnPlayerFieldSpell() {
+    if (gameState.currentPlayer !== 'bot' || gameState.gameOver || !window.DuelEngine) return Promise.resolve();
+    const fs = gameState.playerFieldSpell;
+    if (!fs || fs.isFaceDown) return Promise.resolve();
+    const def = DuelEngine.getDefinition(fs.card.id);
+    if (!def || typeof def.activateAsTurnPlayer !== 'function') return Promise.resolve();
+    const ctx = DuelEngine.makeContext('bot', { card: fs.card, zone: 'fieldSpell', borrowedFrom: 'player' });
+    if (typeof def.canActivateAsTurnPlayer === 'function' && !def.canActivateAsTurnPlayer(ctx)) return Promise.resolve();
+    addToLog(`🤖 Il bot usa ${fs.card.name} del tuo Terreno.`);
+    def.activateAsTurnPlayer(ctx);
+    updateUI();
+    return new Promise((resolve) => setTimeout(resolve, 1200)).then(waitForSummonCinematics);
+}
+
 function attemptBotSummon() {
     // Guardia difensiva: se un setTimeout/Promise di un botTurn() precedente
     // arriva TARDI (es. il duello è stato resettato/ricaricato dal
@@ -291,9 +335,17 @@ function botSummonMonster(card, tributeIndices, emptySlotHint, position, faceDow
     });
 }
 
-async function botPerformAttacks() {
+async function botPerformAttacks(giro = 0, soloUids = null) {
     // Guardia difensiva, stesso motivo di attemptBotSummon qui sopra.
     if (gameState.currentPlayer !== 'bot' || gameState.gameOver) return;
+    // Quanti attacchi sono partiti in questo giro: se almeno uno è partito
+    // e qualche mostro può ancora attaccare (attacco extra: Hayabusa,
+    // Sacerdote di Asura, Ben Kei...), alla fine si fa un altro giro. Senza,
+    // il bot usava sempre e solo il primo attacco di ogni mostro.
+    // Nei giri successivi al primo tornano in gioco SOLO i mostri che hanno
+    // attaccato nel giro prima (`soloUids`): chi aveva rinunciato non deve
+    // ripagare un costo d'attacco (LP, Sacrificio) per rinunciare di nuovo.
+    const hannoAttaccato = new Set();
     if (window.DuelEngine && DuelEngine.cannotAttack('bot')) {
         addToLog('🚫 I mostri del bot non possono attaccare in questo momento (es. Spada Rivelatrice).');
         return;
@@ -303,7 +355,8 @@ async function botPerformAttacks() {
     // resta comunque il vero cancello di sicurezza; qui filtrato PRIMA
     // così l'IA non spreca la sua valutazione (chooseAttackTarget) su un
     // candidato che verrebbe comunque respinto.
-    const attackers = gameState.botMonsterField.map((slot, index) => ({ slot, index })).filter(item => item.slot && !item.slot.hasAttacked && item.slot.position === 'attack');
+    const attackers = gameState.botMonsterField.map((slot, index) => ({ slot, index })).filter(item => item.slot && !item.slot.hasAttacked && item.slot.position === 'attack'
+        && (!soloUids || soloUids.has(item.slot.card.uid)));
     for (const attackerItem of attackers) {
         // Se un attacco precedente ha già chiuso il duello, non restiamo
         // ad aspettare gli attacchi rimanenti sotto la schermata finale.
@@ -367,8 +420,15 @@ async function botPerformAttacks() {
         // applicato lato server in resolveAttack() (actions.js), ma qui
         // evita anche di sprecare la scelta strategica dell'IA su un
         // bersaglio che verrebbe comunque rifiutato.
-        let playerMonsters = gameState.playerMonsterField.map((slot, index) => ({ slot, index })).filter(item => item.slot
-            && !(gameState.cannotBeAttackTargetUids && gameState.cannotBeAttackTargetUids[item.slot.card.uid]));
+        // Una voce può essere `true` o una FUNZIONE (attaccante) => bool
+        // (Kaitoptera id 322, Il Sigillo di Orichalcos id 469): va valutata,
+        // non letta come vero/falso — una funzione è sempre "vera" e
+        // escluderebbe quel mostro anche quando l'attacco è permesso.
+        let playerMonsters = gameState.playerMonsterField.map((slot, index) => ({ slot, index })).filter((item) => {
+            if (!item.slot) return false;
+            const voce = gameState.cannotBeAttackTargetUids && gameState.cannotBeAttackTargetUids[item.slot.card.uid];
+            return !(typeof voce === 'function' ? voce(attackerItem.slot.card) : voce);
+        });
         // Manga Ryu-Ran (id 606): stesso vincolo lato bot di
         // mustTargetFilterIfPresent (resolveAttack, actions.js) — se un
         // bersaglio idoneo esiste, restringe la scelta dell'IA a quelli
@@ -387,6 +447,16 @@ async function botPerformAttacks() {
             playerMonsters = playerMonsters.filter((item) => obbligati.indexOf(item.index) !== -1);
             if (playerMonsters.length === 0) continue;
         }
+        // Sacerdote di Asura (id 1001, def.attacksEachEnemyOnce): niente
+        // secondo attacco allo stesso mostro, e niente attacco diretto dopo
+        // averne attaccato uno — stesse regole di resolveAttack.
+        if (attackerDef && attackerDef.attacksEachEnemyOnce) {
+            const fatti = attackedEnemyUidsOf(attackerItem.slot);
+            if (fatti.size > 0) {
+                playerMonsters = playerMonsters.filter((item) => !fatti.has(item.slot.card.uid));
+                if (playerMonsters.length === 0) continue;
+            }
+        }
         // 341 — Ultimo Turno: se questo attaccante ha un obbligo ancora
         // aperto (gameState.mustAttackTargetUidsFor), attacca quel
         // bersaglio direttamente, ignorando la normale valutazione di
@@ -404,6 +474,7 @@ async function botPerformAttacks() {
         // Nessun bersaglio conveniente: il bot trattiene questo mostro
         // invece di sacrificarlo in uno scambio sfavorevole.
         if (targetIndex === null) continue;
+        hannoAttaccato.add(attackerItem.slot.card.uid);
         // Aspetta la RISOLUZIONE PIENA dell'attacco (compresa un'eventuale
         // finestra "vuoi rispondere?" del giocatore, che può richiedere un
         // tempo arbitrario), non solo un timer fisso: altrimenti un secondo
@@ -420,6 +491,12 @@ async function botPerformAttacks() {
                 });
             }, botMs(1200));
         });
+    }
+    // Un altro giro solo se qualcosa è successo (altrimenti chi ha rinunciato
+    // rinuncerebbe di nuovo all'infinito) e con un tetto, per sicurezza.
+    const ancoraPronti = gameState.botMonsterField.some((s) => s && !s.hasAttacked && s.position === 'attack' && hannoAttaccato.has(s.card.uid));
+    if (ancoraPronti && giro < 4 && !gameState.gameOver && gameState.currentPlayer === 'bot') {
+        await botPerformAttacks(giro + 1, hannoAttaccato);
     }
 }
 

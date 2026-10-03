@@ -1124,7 +1124,9 @@ function enterDrawPhase(autoAdvance = true, onComplete = null) {
 function enterDrawPhaseInner(autoAdvance = true, onComplete = null) {
     clearPhaseTransitionTimeout();
     gameState.phase = 'draw';
-    if (window.DuelDialogues && gameState.turn > 1) {
+    // Al rientro dopo "Pesca normalmente" di Freed (id 888, più sotto) la
+    // battuta d'inizio turno è già stata detta: non va ripetuta.
+    if (window.DuelDialogues && gameState.turn > 1 && gameState.freedChoiceTurn !== gameState.turn) {
         DuelDialogues.say(gameState.currentPlayer, 'turnStart');
     }
     if (window.MP_broadcast && !window.MP_applyingRemote) {
@@ -1149,23 +1151,63 @@ function enterDrawPhaseInner(autoAdvance = true, onComplete = null) {
     // schema hardcoded qui (non in card-effects.js) di skipDrawFor/
     // pendingMaharaghiPeekFor qui sopra/sotto: una sostituzione della
     // pescata vive per forza a questo livello, non in un normale hook di
-    // card-effects.js. SEMPLIFICAZIONE (vedi missingEffectNote su id 888):
-    // sostituzione AUTOMATICA se disponibile un bersaglio, invece di una
-    // vera scelta libera "pesca o cerca".
+    // card-effects.js. È un "puoi": il giocatore sceglie con un popover se
+    // pescare o cercare, e se cerca sceglie QUALE Guerriero. Scegliendo di
+    // pescare, la funzione si richiama da capo con la scelta già fatta
+    // (gameState.freedChoiceTurn) e prosegue con la pescata normale. Il bot
+    // cerca sempre (la carta scelta vale più di una pescata a caso); in
+    // Multiplayer la ricerca resta automatica per entrambi, perché questa
+    // scelta non viaggia fra i due client.
     const freedOwner = gameState.currentPlayer;
     const freedField = freedOwner === 'player' ? gameState.playerMonsterField : gameState.botMonsterField;
     const freedSlot = (freedField || []).find((s) => s && !s.isFaceDown && s.card.id === 888);
-    if (freedSlot) {
+    if (freedSlot && gameState.freedChoiceTurn !== gameState.turn) {
         const freedDeckKey = freedOwner === 'player' ? 'playerDeck' : 'botDeck';
         const freedDeck = gameState[freedDeckKey];
-        const freedIndex = Array.isArray(freedDeck) ? freedDeck.findIndex((c) => c.type === 'monster' && c.race === 'Guerriero' && (c.level || 0) <= 4) : -1;
-        if (freedIndex !== -1) {
-            const foundCard = freedDeck.splice(freedIndex, 1)[0];
-            gameState[freedOwner === 'player' ? 'playerHand' : 'botHand'].push(foundCard);
-            gameState[freedDeckKey === 'playerDeck' ? 'playerDeckCount' : 'botDeckCount'] = freedDeck.length;
-            addToLog(`⚔️ Freed il Generale Senza Rivali cerca ${foundCard.name} dal Deck invece di pescare!`);
-            if (typeof onComplete === 'function') onComplete();
-            else if (autoAdvance) schedulePhaseTransition(() => enterStandbyPhase(true), 500);
+        const isTarget = (c) => c.type === 'monster' && c.race === 'Guerriero' && (c.level || 0) <= 4;
+        const candidati = Array.isArray(freedDeck) ? freedDeck.filter(isTarget) : [];
+        if (candidati.length > 0) {
+            const prosegui = () => {
+                if (typeof onComplete === 'function') onComplete();
+                else if (autoAdvance) schedulePhaseTransition(() => enterStandbyPhase(true), 500);
+            };
+            const cerca = (scelta) => {
+                const i = freedDeck.indexOf(scelta);
+                if (i === -1) { prosegui(); return; }
+                freedDeck.splice(i, 1);
+                gameState[freedOwner === 'player' ? 'playerHand' : 'botHand'].push(scelta);
+                gameState[freedDeckKey === 'playerDeck' ? 'playerDeckCount' : 'botDeckCount'] = freedDeck.length;
+                addToLog(`⚔️ Freed il Generale Senza Rivali cerca ${freedOwner === 'player' ? scelta.name : 'un Guerriero'} dal Deck invece di pescare!`);
+                updateUI();
+                prosegui();
+            };
+            const ui = window.DuelEngineUI;
+            if (freedOwner !== 'player' || !ui || window.MULTIPLAYER_MODE) {
+                cerca(candidati[0]);
+                return;
+            }
+            ui.openChoicePopover(null, {
+                title: '⚔️ Freed il Generale: pescare o cercare?',
+                choiceA: {
+                    icon: '🔍', label: 'Cerca 1 Guerriero di Livello 4 o inferiore',
+                    onSelect: () => {
+                        if (candidati.length === 1) { cerca(candidati[0]); return; }
+                        ui.openCardListPicker(candidati, {
+                            title: '⚔️ Freed il Generale',
+                            text: 'Scegli quale Guerriero aggiungere alla mano al posto della pescata.',
+                            onSelect: (card) => cerca(candidati.find((c) => c.uid === card.uid) || candidati[0]),
+                            onCancel: () => cerca(candidati[0])
+                        });
+                    }
+                },
+                choiceB: {
+                    icon: '🎴', label: 'Pesca normalmente',
+                    onSelect: () => {
+                        gameState.freedChoiceTurn = gameState.turn;
+                        enterDrawPhaseInner(autoAdvance, onComplete);
+                    }
+                }
+            });
             return;
         }
     }
@@ -1373,6 +1415,39 @@ function enterBattlePhase() {
     updateUI();
 }
 
+/**
+ * Seconda Battle Phase (Bollettino Meteo id 1035: "puoi eseguire la Battle
+ * Phase due volte in questo turno, o nel tuo prossimo se attivato durante
+ * il turno avversario"). La carta scrive gameState.extraBattlePhase =
+ * { owner, turn, used }; qui si legge. Si rientra in Battle Phase da Main
+ * Phase 2 una volta sola, e prima di rientrare ogni proprio mostro torna a
+ * poter attaccare (hasAttacked e gli attacchi extra si azzerano: è una
+ * Battle Phase nuova). Il giocatore lo fa cliccando di nuovo "Battaglia"
+ * nello stepper; il bot lo fa da solo (botTurn, bot.js).
+ */
+function canConductSecondBattlePhase(owner) {
+    const eb = gameState.extraBattlePhase;
+    if (!eb || eb.owner !== owner || eb.turn !== gameState.turn || eb.used) return false;
+    if (gameState.currentPlayer !== owner || gameState.phase !== 'main2' || gameState.turn === 1) return false;
+    if (gameState.skipBattlePhaseFor && gameState.skipBattlePhaseFor[owner]) return false;
+    return true;
+}
+
+function startSecondBattlePhase(owner) {
+    if (!canConductSecondBattlePhase(owner)) return false;
+    gameState.extraBattlePhase.used = true;
+    const campo = owner === 'player' ? gameState.playerMonsterField : gameState.botMonsterField;
+    campo.forEach((slot) => {
+        if (!slot) return;
+        slot.hasAttacked = false;
+        slot.extraAttacksUsedThisTurn = 0;
+        slot.attackedEnemyUidsTurn = null;
+    });
+    addToLog(`🌦️ ${owner === 'player' ? 'Conduci' : 'Il bot conduce'} una seconda Battle Phase (Bollettino Meteo)!`);
+    enterBattlePhase();
+    return true;
+}
+
 function enterMainPhase2() {
     clearPhaseTransitionTimeout();
     gameState.phase = 'main2';
@@ -1381,6 +1456,9 @@ function enterMainPhase2() {
     }
     showPhaseAnnouncement('Main Phase 2');
     addToLog('⚡ Main Phase 2');
+    if (canConductSecondBattlePhase('player')) {
+        addToLog('🌦️ Puoi condurre una seconda Battle Phase: clicca di nuovo "Battaglia".');
+    }
     updateUI();
 }
 
@@ -3549,6 +3627,12 @@ function hasUnfulfilledForcedAttack() {
 
 function handlePhaseStepperClick(targetPhase) {
     if (gameState.currentPlayer !== 'player') return;
+    // Seconda Battle Phase (Bollettino Meteo id 1035): l'unico passo
+    // "all'indietro" ammesso, da Main Phase 2 a Battaglia.
+    if (gameState.phase === 'main2' && targetPhase === 'battle' && canConductSecondBattlePhase('player')) {
+        startSecondBattlePhase('player');
+        return;
+    }
     const currentPhaseIndex = phaseOrder.indexOf(gameState.phase);
     const targetPhaseIndex = phaseOrder.indexOf(targetPhase);
     if (targetPhaseIndex <= currentPhaseIndex) return;
@@ -3633,7 +3717,8 @@ function updatePhaseIndicator() {
             (gameState.phase === 'standby' && targetPhase === 'main1') ||
             (gameState.phase === 'main1' && ((targetPhase === 'battle' && !isFirstTurn) || targetPhase === 'end')) ||
             (gameState.phase === 'battle' && (targetPhase === 'main2' || targetPhase === 'end')) ||
-            (gameState.phase === 'main2' && targetPhase === 'end')
+            (gameState.phase === 'main2' && targetPhase === 'end') ||
+            (gameState.phase === 'main2' && targetPhase === 'battle' && canConductSecondBattlePhase('player'))
         );
 
         step.classList.toggle('completed', index < currentPhaseIndex);

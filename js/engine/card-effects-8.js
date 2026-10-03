@@ -27,16 +27,28 @@
     // l'abilità aggiuntiva di ciascuno cambia.
     // ================================================================
 
-    // 1001 — Sacerdote di Asura / Asura Priest: solo lo schema Spirito.
-    // SEMPLIFICAZIONE (vedi missingEffectNote): manca "può attaccare
-    // tutti i mostri dell'avversario, una volta ciascuno" — un vero
-    // attacco multiplo simultaneo su più bersagli in una sola Battle
-    // Phase, meccanismo che nessun'altra carta di questo motore ha mai
-    // richiesto (le carte con più attacchi esistenti, es. Hayabusa
-    // Knight, attaccano più volte lo STESSO tipo di bersaglio scelto di
-    // volta in volta, mai "tutti i mostri avversari" in un colpo solo) —
-    // sproporzionato costruire quell'infrastruttura per una carta sola.
+    // 1001 — Sacerdote di Asura / Asura Priest: schema Spirito, più "può
+    // attaccare tutti i mostri dell'avversario, una volta ciascuno".
+    //  - def.attacksEachEnemyOnce: resolveAttack (actions.js) tiene sullo
+    //    slot il registro dei bersagli già attaccati in questo turno, e
+    //    rifiuta un secondo attacco allo stesso mostro o un attacco diretto
+    //    dopo averne attaccato uno.
+    //  - def.getExtraAttackCount: il meccanismo di attacchi extra già
+    //    esistente (Ben Kei id 721) concede un altro attacco finché resta un
+    //    mostro avversario non ancora attaccato. Calcolato come "attacchi già
+    //    fatti - 1 + bersagli rimasti", perché il motore lo confronta con
+    //    gli extra già usati.
+    // Se attacca direttamente (campo avversario vuoto) l'attacco resta uno.
     CardEffects.register(1001, {
+        attacksEachEnemyOnce: true,
+        getExtraAttackCount(ctx) {
+            const slot = ctx.field(ctx.owner)[ctx.slotIndex];
+            if (!slot || slot.attackedEnemyUidsTurn !== gameState.turn || !slot.attackedEnemyUids) return 0;
+            const fatti = slot.attackedEnemyUids;
+            if (fatti.has('__diretto')) return 0;
+            const rimasti = ctx.field(ctx.opponent).filter((s) => s && !fatti.has(s.card.uid)).length;
+            return Math.max(0, fatti.size - 1 + rimasti);
+        },
         cannotSpecialSummon: true,
         onSummon(ctx) {
             if (ctx.summonedVia !== 'normal') return;
@@ -570,8 +582,11 @@
     // Token Serpente Velenoso (costruito a mano, non tramite
     // ctx.createTokens — quell'helper forza sempre la Posizione di
     // Difesa, qui invece il token reale entra in Posizione di Attacco).
-    // SEMPLIFICAZIONE (vedi missingEffectNote): manca il danno quando il
-    // Token viene distrutto in battaglia.
+    // "Quando il Token viene distrutto in battaglia: infliggi 500 danni
+    // all'avversario": `battleDestroyedDamageToOpponent` sul Token stesso,
+    // per-istanza (i Token non hanno una registrazione propria), letto da
+    // fireOnDestroy in actions.js — l'unico punto da cui passa ogni
+    // distruzione in battaglia, in attacco come in difesa.
     CardEffects.register(1030, {
         onFlip(ctx) {
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
@@ -586,7 +601,8 @@
                 race: 'Rettile',
                 attribute: 'TERRA',
                 attack: 1200,
-                defense: 1200
+                defense: 1200,
+                battleDestroyedDamageToOpponent: 500
             };
             ctx.specialSummon(ctx.owner, token, slotIndex, 'attack', 'token');
             ctx.log('🐍 Barattolo Cobra Special Summona un Token Serpente Velenoso!');
@@ -704,20 +720,27 @@
     });
 
     // 1035 — Bollettino Meteo / Weather Report: FLIP, distrugge ogni
-    // "Spada Rivelatrice" (id 8) scoperta dell'avversario.
-    // SEMPLIFICAZIONE (vedi missingEffectNote): manca la seconda Battle
-    // Phase concessa se ne distrugge almeno una.
+    // "Spada Rivelatrice" (id 8) scoperta dell'avversario, passando da
+    // ctx.destroySpellTrap (prima era uno spostamento a mano nel Cimitero,
+    // che saltava ogni reazione alla distruzione). Se ne distrugge almeno
+    // una, "puoi eseguire la Battle Phase due volte in questo turno (o nel
+    // tuo prossimo, se attivata durante il turno avversario)" —
+    // gameState.extraBattlePhase, letto da canConductSecondBattlePhase/
+    // startSecondBattlePhase in game-flow.js (stepper per il giocatore,
+    // botTurn per il bot). Testo verificato su YGOPRODeck.
     CardEffects.register(1035, {
         onFlip(ctx) {
             let count = 0;
             ctx.stField(ctx.opponent).forEach((slot, i) => {
                 if (slot && !slot.isFaceDown && slot.card.id === 8) {
-                    ctx.graveyard(ctx.opponent).push(slot.card);
-                    ctx.stField(ctx.opponent)[i] = null;
+                    ctx.destroySpellTrap(ctx.opponent, i);
                     count++;
                 }
             });
-            if (count > 0) ctx.log(`🌦️ Bollettino Meteo distrugge ${count} Spada Rivelatrice!`);
+            if (count === 0) return;
+            const turnoDellaBattaglia = gameState.currentPlayer === ctx.owner ? gameState.turn : gameState.turn + 1;
+            gameState.extraBattlePhase = { owner: ctx.owner, turn: turnoDellaBattaglia, used: false };
+            ctx.log(`🌦️ Bollettino Meteo distrugge ${count} Spada Rivelatrice: ${gameState.currentPlayer === ctx.owner ? 'in questo turno' : 'nel prossimo turno'} la Battle Phase si può condurre due volte!`);
         }
     });
 
@@ -804,6 +827,9 @@
         onFlip(ctx) {
             const extraDeck = ctx.owner === 'player' ? gameState.playerExtraDeck : gameState.botExtraDeck;
             if (!Array.isArray(extraDeck) || extraDeck.length === 0) return;
+            // Il Sigillo di Orichalcos (id 469): niente Extra Deck, e quindi
+            // nessun Tributo da pagare a vuoto.
+            if (DuelEngine.isExtraDeckSummonBlocked(ctx.owner)) return;
             const sacrificabili = collectFieldTargets(ctx, {
                 zone: 'monster', owner: 'self', includiCoperte: true,
                 filter: (card) => card.uid !== ctx.card.uid
@@ -1257,14 +1283,38 @@
         }
     });
 
-    // 1059 — Amuleto di Shabti / Charm of Shabti: attivabile dalla mano,
-    // a velocità istantanea, durante il turno di UNO QUALUNQUE dei due
-    // giocatori — questo motore non ha alcuna finestra di priorità per
-    // un'attivazione dalla mano fuori da una Chain già aperta o da un
-    // trigger nominato (stesso limite già accettato per Sentinella dei
-    // Guardiani della Tomba, id 900): registrata senza hook funzionale,
-    // SEMPLIFICAZIONE onestamente documentata in cards.json.
-    CardEffects.register(1059, {});
+    // 1059 — Amuleto di Shabti / Charm of Shabti: "durante il turno di uno
+    // dei due giocatori: puoi scartare questa carta; fino alla End Phase, i
+    // mostri Guardiani della Tomba che controlli non possono essere
+    // distrutti in battaglia". Due momenti in cui il motore la offre:
+    //  - dalla MANO quando l'avversario dichiara un attacco contro un tuo
+    //    Guardiano della Tomba (onAttackDeclare: findTriggerCandidates guarda
+    //    anche la mano, come per Kuriboh; consumeCandidateCard la scarta) —
+    //    è il momento in cui l'effetto serve davvero;
+    //  - dalla mano nella tua Main Phase, cliccandola (activate: activateCard
+    //    scarta da sé un mostro attivato dalla mano, come Thunder Dragon).
+    // Non in ogni istante del turno altrui in cui non succede nulla: per
+    // quello servirebbe una finestra di priorità a ogni cambio fase.
+    // La protezione è gameState.battleProtectionByName, letta da
+    // cardIsIndestructibleByBattle in actions.js.
+    const eGuardianoDellaTomba = (card) => !!(card && card.name && card.name.includes('Guardiani della Tomba'));
+    function amuletoDiShabti(ctx) {
+        gameState.battleProtectionByName = (gameState.battleProtectionByName || []).filter((p) => p.turn === gameState.turn);
+        gameState.battleProtectionByName.push({ owner: ctx.owner, turn: gameState.turn, nameIncludes: 'Guardiani della Tomba' });
+        ctx.log('🏺 Amuleto di Shabti: fino alla End Phase i tuoi Guardiani della Tomba non possono essere distrutti in battaglia!');
+    }
+    CardEffects.register(1059, {
+        canActivate(ctx) {
+            const campo = ctx.field(ctx.owner);
+            if (typeof ctx.attackerIndex === 'number') {
+                const bersaglio = campo[ctx.targetIndex];
+                return !!(bersaglio && eGuardianoDellaTomba(bersaglio.card));
+            }
+            return campo.some((s) => s && !s.isFaceDown && eGuardianoDellaTomba(s.card));
+        },
+        activate(ctx) { amuletoDiShabti(ctx); },
+        onAttackDeclare(ctx) { amuletoDiShabti(ctx); }
+    });
 
     // ================================================================
     // SETTIMA ONDATA PRIMA SERIE (id 1060-1066) — 7 Mostri Effetto minori.
@@ -1762,22 +1812,28 @@
 
     // 1080 — Kycoo Distruttore di Fantasmi (Kycoo the Ghost Destroyer):
     // quando infligge danno da battaglia, bandisce fino a 2 mostri dal
-    // Cimitero avversario (ctx.banishFromGraveyard, già esistente).
-    // SEMPLIFICAZIONE dichiarata (vedi missingEffectNote): "l'avversario
-    // non può bandire dal Cimitero" NON è implementato — nessun
-    // checkpoint condiviso per-ATTORE (a differenza di isNecrovalleyProtectingGraveyard,
-    // che protegge un Cimitero per-PROPRIETARIO indipendentemente da chi
-    // banisce) esiste in questo motore per un floodgate legato a CHI
-    // compie l'azione invece che a quale Cimitero viene toccato.
+    // Cimitero avversario (ctx.banishFromGraveyard), scelti dal giocatore
+    // con chooseUpToNFromList ("fino a 2": ci si può fermare prima).
+    // "Il tuo avversario non può bandire carte dal Cimitero di nessuno dei
+    // due giocatori": gameState.graveyardBanishBlockedFor[avversario],
+    // scritto dallo static() finché questa carta è scoperta e letto da
+    // ACTIONS.banishFromGraveyard, che conosce CHI bandisce (il
+    // proprietario del contesto che chiama). Il bando di Kycoo stesso resta
+    // permesso: l'attore è il suo controllore, non l'avversario.
     CardEffects.register(1080, {
+        static(ctx) {
+            gameState.graveyardBanishBlockedFor[ctx.opponent] = true;
+        },
         onDealsBattleDamage(ctx) {
             const grave = ctx.graveyard(ctx.opponent).filter((c) => c.type === 'monster');
             if (grave.length === 0) return;
-            const banishChosen = (cards) => {
-                cards.forEach((card) => ctx.banishFromGraveyard(ctx.opponent, card));
-                ctx.log(`👻 Kycoo Distruttore di Fantasmi bandisce ${cards.length} mostr${cards.length === 1 ? 'o' : 'i'} dal Cimitero avversario!`);
-            };
-            banishChosen(grave.slice(0, 2));
+            chooseUpToNFromList(ctx, grave, 2, {
+                title: '👻 Kycoo Distruttore di Fantasmi',
+                text: 'Scegli fino a 2 mostri del Cimitero avversario da bandire.'
+            }, (scelti) => {
+                const banditi = scelti.filter((card) => ctx.banishFromGraveyard(ctx.opponent, card)).length;
+                if (banditi > 0) ctx.log(`👻 Kycoo Distruttore di Fantasmi bandisce ${banditi} mostr${banditi === 1 ? 'o' : 'i'} dal Cimitero avversario!`);
+            });
         }
     });
 
@@ -2612,12 +2668,33 @@
 
     // 1110 — Mummia Errante (Wandering Mummy): Ignition una volta per
     // turno per coprirsi in Posizione di Difesa (stesso schema di Des
-    // Lacooda id 1052). SEMPLIFICAZIONE: la clausola "riordina i mostri
-    // coperti in Posizione di Difesa nelle tue zone Mostro" non ha alcun
-    // effetto funzionale in questo motore — l'ordine delle caselle non
-    // influenza nessuna meccanica esistente (a differenza del vero gioco
-    // fisico, dove l'ordine spaziale delle carte coperte serve solo a
-    // confondere l'avversario).
+    // Lacooda id 1052), poi "riordina i mostri coperti in Posizione di
+    // Difesa nelle tue zone Mostro". Lo scopo vero è confondere
+    // l'avversario su quale carta coperta sia quale, e qui succede davvero:
+    // le carte coperte si rimescolano fra le LORO caselle (le altre non si
+    // toccano). Il rimescolo usa ctx.random, così in Multiplayer esce uguale
+    // sui due client. Un Equip agganciato a una carta spostata segue la
+    // carta: equippedToIndex si riallinea alla nuova casella.
+    function rimescolaCoperteInDifesa(ctx) {
+        const campo = ctx.field(ctx.owner);
+        const caselle = [];
+        campo.forEach((s, i) => { if (s && s.isFaceDown && s.position === 'defense') caselle.push(i); });
+        if (caselle.length < 2) return;
+        const slots = caselle.map((i) => campo[i]);
+        for (let i = slots.length - 1; i > 0; i--) {
+            const j = Math.floor(ctx.random() * (i + 1));
+            const t = slots[i]; slots[i] = slots[j]; slots[j] = t;
+        }
+        caselle.forEach((indice, k) => { campo[indice] = slots[k]; });
+        ['player', 'bot'].forEach((lato) => {
+            ctx.stField(lato).forEach((st) => {
+                if (!st || !st.card.equippedToUid) return;
+                const nuovo = campo.findIndex((s) => s && s.card.uid === st.card.equippedToUid);
+                if (nuovo !== -1 && st.card.equippedToOwner === ctx.owner) st.card.equippedToIndex = nuovo;
+            });
+        });
+        ctx.log(`🧟 Mummia Errante rimescola ${caselle.length} carte coperte in Difesa.`);
+    }
     CardEffects.register(1110, {
         canActivate(ctx) {
             if (!(gameState.phase === 'main1' || gameState.phase === 'main2') || gameState.currentPlayer !== ctx.owner) return false;
@@ -2633,6 +2710,7 @@
             slot.isFaceDown = true;
             slot.position = 'defense';
             ctx.log('🧟 Mummia Errante si copre in Posizione di Difesa!');
+            rimescolaCoperteInDifesa(ctx);
         }
     });
 

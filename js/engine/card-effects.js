@@ -711,6 +711,16 @@
      * aggiornare (ctx.graveyard(owner) riflette già la lunghezza reale).
      */
     function searchGraveyardWithChoice(ctx, graveyardOwner, filterFn, options, onChosen) {
+        // Necrovalley (id 890): "nega ogni effetto Carta che sposterebbe una
+        // carta nel Cimitero in un posto diverso". Questo helper sposta
+        // sempre la carta fuori dal Cimitero (in mano, in campo, nel Deck),
+        // quindi con Necrovalley attiva l'effetto non fa nulla. È il punto
+        // condiviso da cui passa la gran parte di questi effetti; chi sposta
+        // dal Cimitero con uno splice scritto a mano non è coperto.
+        if (window.DuelEngine && DuelEngine.isNecrovalleyProtectingGraveyard && DuelEngine.isNecrovalleyProtectingGraveyard(graveyardOwner)) {
+            ctx.log('🏺 Necrovalley nega l\'effetto: le carte nel Cimitero non possono essere spostate.');
+            return false;
+        }
         return searchZoneWithChoice(ctx, ctx.graveyard(graveyardOwner), filterFn, options, onChosen);
     }
 
@@ -1011,6 +1021,26 @@
             // helper, invece di fidarsi dell'identità dell'oggetto.
             onSelect: (card) => onChosen(cards.find((c) => c.uid === card.uid) || card)
         });
+        return true;
+    }
+
+    /**
+     * Dentro un onCardEffectTargetDeclare: "...e se lo fai, distruggi quella
+     * Magia" (Freed il Generale id 888, Bastone del Silenzio id 423). Si
+     * distrugge solo una Magia che RESTA sul Terreno (Continua o
+     * Equipaggiamento): una Normale/Rapida va al Cimitero da sola a fine
+     * risoluzione, e distruggerla mentre si sta ancora risolvendo la
+     * manderebbe al Cimitero due volte. Torna true se l'ha distrutta.
+     */
+    function destroyTargetingSpellIfItStays(ctx) {
+        if (!ctx.sourceCard || !ctx.sourceOwner) return false;
+        const def = DuelEngine.getDefinition(ctx.sourceCard.id);
+        const resta = ctx.sourceCard.subtype === 'continuous' || ctx.sourceCard.subtype === 'equip'
+            || !!(def && (def.continuous || def.isEquip));
+        if (!resta) return false;
+        const i = ctx.stField(ctx.sourceOwner).findIndex((s) => s && s.card.uid === ctx.sourceCard.uid);
+        if (i === -1) return false;
+        ctx.destroySpellTrap(ctx.sourceOwner, i);
         return true;
     }
 
@@ -1409,5 +1439,5 @@
         return ctx.hand(ctx.owner).filter((c) => !selfUid || c.uid !== selfUid);
     }
 
-    window.CardEffectsShared = { otherHandCards, blockBanishFromField, isHarpieLadySupport, findEquipTarget, collectEquipTargets, equipToChosenTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchZoneWithChoice, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, chooseCardFromList, chooseUpToNFromList, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost, resolveSpecialSummonTributeCost, attachUnionMonster, maxRitualTributeLevel, performRitualTribute, findPetitMothReadyForCocoonSummon, releaseRelinquishedTarget, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach, returnSpellTrapToHand };
+    window.CardEffectsShared = { otherHandCards, blockBanishFromField, isHarpieLadySupport, findEquipTarget, collectEquipTargets, equipToChosenTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchZoneWithChoice, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, chooseCardFromList, chooseUpToNFromList, destroyTargetingSpellIfItStays, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost, resolveSpecialSummonTributeCost, attachUnionMonster, maxRitualTributeLevel, performRitualTribute, findPetitMothReadyForCocoonSummon, releaseRelinquishedTarget, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach, returnSpellTrapToHand };
 })();

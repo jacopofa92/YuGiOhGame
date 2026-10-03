@@ -32,6 +32,12 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.33 — Chiuse tutte le 17 carte che si comportavano ancora diversamente
+ *   dal testo: seconda Battle Phase (Bollettino Meteo), attacco a tutti i
+ *   mostri (Sacerdote di Asura), risposte dalla mano (Sentinella, Amuleto di
+ *   Shabti), Il Sigillo di Orichalcos completo, Necrovalley che nega anche
+ *   le rianimazioni, Cancello di Fusione usabile da chi è di turno, e altre.
+ *   Il bot ora usa gli attacchi extra dei suoi mostri.
  * 1.0.32 — Dieci carte allineate al testo con meccanismi generici:
  *   annulla effetti dei mostri distrutti in battaglia anche in difesa
  *   (Balter Oscuro, Lupo Bicefalo), bersaglio d'attacco obbligato (Anello
@@ -573,4 +579,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.32';
+window.GAME_VERSION = '1.0.33';

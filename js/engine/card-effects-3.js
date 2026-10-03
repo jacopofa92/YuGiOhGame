@@ -2785,8 +2785,12 @@
     // 154 — Clonazione: quando l'avversario Evoca Normalmente o tramite
     // Flip Summon un mostro con un Livello, Special Summon 1 Token con le
     // sue stesse statistiche (onOpponentSummon, stesso meccanismo di
-    // risposta di Buco Trappola/id 40). Vedi missingEffectNote su id 154
-    // in cards.json per la clausola ancora mancante.
+    // risposta di Buco Trappola/id 40). Le statistiche sono quelle
+    // ORIGINALI (lette da cardDatabase, non dalla copia in campo, che una
+    // carta può aver già modificato). "Se il mostro bersaglio viene
+    // distrutto, distruggi anche il Token": `destroyWhenDestroyedUid` sul
+    // Token (copiato dal template da createTokens), letto dal ramo ON_DESTROY
+    // di fireTrigger in duel-engine.js.
     CardEffects.register(154, {
         canActivate(ctx) {
             return typeof ctx.summonedCard.level === 'number';
@@ -2794,7 +2798,12 @@
         onOpponentSummon(ctx) {
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) return;
-            const template = { name: ctx.summonedCard.name, race: ctx.summonedCard.race, attribute: ctx.summonedCard.attribute, level: ctx.summonedCard.level, attack: ctx.summonedCard.attack, defense: ctx.summonedCard.defense };
+            const originale = cardDatabase.find((c) => c.id === ctx.summonedCard.id) || ctx.summonedCard;
+            const template = {
+                name: ctx.summonedCard.name, race: originale.race, attribute: originale.attribute,
+                level: originale.level, attack: originale.attack, defense: originale.defense,
+                destroyWhenDestroyedUid: ctx.summonedCard.uid
+            };
             ctx.createTokens(ctx.owner, 1, template);
             ctx.log(`🎭 Clonazione crea un Token copia di ${ctx.summonedCard.name}!`);
         }
@@ -2874,17 +2883,54 @@
         }
     });
 
-    // 469 — Il Sigillo di Orichalcos: +500 ATK continuo a tutti i propri
-    // mostri (stesso schema delle Carte Equipaggiamento/mostri con buff
-    // continuo già visti, applicato qui a tutto il campo invece che a un
-    // solo bersaglio). Vedi missingEffectNote su id 469 in cards.json
-    // per le altre clausole ancora mancanti.
+    // 469 — Il Sigillo di Orichalcos (Magia Terreno), tutte e sei le clausole:
+    //  1. +500 ATK ai propri mostri (static);
+    //  2. "una volta per turno, non può essere distrutta da effetti carta":
+    //     def.indestructibleByEffectOncePerTurn, in ACTIONS.destroyFieldSpell;
+    //  3. "finché controlli 2+ mostri scoperti in Attacco, l'avversario non
+    //     può attaccare i tuoi mostri con l'ATK più basso": una voce-funzione
+    //     in gameState.cannotBeAttackTargetUids, valutata AL MOMENTO
+    //     dell'attacco (resolveAttack, e la scelta del bot) — calcolarla
+    //     dentro lo static leggerebbe ATK non ancora del tutto ricalcolati.
+    //     A parità di ATK più basso sono protetti tutti;
+    //  4. "se attivata: distruggi tutti i mostri Special Summonati che
+    //     controlli" — slot.wasSpecialSummoned (nato per Jowgen id 1075);
+    //  5. "non puoi Special Summonare dall'Extra Deck":
+    //     def.blocksOwnExtraDeckSummons -> DuelEngine.isExtraDeckSummonBlocked;
+    //  6. "solo una volta per Duello": gameState.orichalcosActivatedFor.
+    const piuDeboliProtetti = (owner, uid) => {
+        const campo = owner === 'player' ? gameState.playerMonsterField : gameState.botMonsterField;
+        const inAttacco = campo.filter((s) => s && !s.isFaceDown && s.position === 'attack');
+        if (inAttacco.length < 2) return false;
+        const minimo = Math.min(...inAttacco.map((s) => DuelEngine.getEffectiveAtk(s.card)));
+        const questo = inAttacco.find((s) => s.card.uid === uid);
+        return !!(questo && DuelEngine.getEffectiveAtk(questo.card) === minimo);
+    };
     CardEffects.register(469, {
+        indestructibleByEffectOncePerTurn: true,
+        blocksOwnExtraDeckSummons: true,
+        canActivate(ctx) {
+            return !(gameState.orichalcosActivatedFor && gameState.orichalcosActivatedFor[ctx.owner]);
+        },
+        activate(ctx) {
+            gameState.orichalcosActivatedFor = gameState.orichalcosActivatedFor || {};
+            gameState.orichalcosActivatedFor[ctx.owner] = true;
+            let distrutti = 0;
+            ctx.field(ctx.owner).forEach((slot, i) => {
+                if (slot && slot.wasSpecialSummoned) { ctx.destroyMonster(ctx.owner, i); distrutti++; }
+            });
+            ctx.log(`🔯 Il Sigillo di Orichalcos si attiva${distrutti ? `: distrutti ${distrutti} mostri Special Summonati` : ''}.`);
+        },
         static(ctx) {
-            ctx.field(ctx.owner).forEach((slot) => {
+            const owner = ctx.owner;
+            ctx.field(owner).forEach((slot) => {
                 if (!slot || slot.isFaceDown) return;
                 const e = gameState.atkDefBonus[slot.card.uid] || { atk: 0, def: 0 };
                 gameState.atkDefBonus[slot.card.uid] = { atk: e.atk + 500, def: e.def };
+                const uid = slot.card.uid;
+                const prima = gameState.cannotBeAttackTargetUids[uid];
+                gameState.cannotBeAttackTargetUids[uid] = (attaccante) => (typeof prima === 'function' ? prima(attaccante) : !!prima)
+                    || piuDeboliProtetti(owner, uid);
             });
         }
     });

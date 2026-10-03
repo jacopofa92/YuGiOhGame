@@ -393,7 +393,8 @@
 // v143: Multiplayer, attesa del server come terminale KaibaCorp con glitch (in pagina, senza modali).
 // v144: carte 899/142/511/512 allineate al testo.
 // v145: dieci carte allineate al testo (negazione in battaglia, bersaglio obbligato, Evocazione condizionata).
-const CACHE_NAME = 'ygo-duel-arena-v145';
+// v146: chiuse le ultime 17 carte che non seguivano il testo.
+const CACHE_NAME = 'ygo-duel-arena-v146';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

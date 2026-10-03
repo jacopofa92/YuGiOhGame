@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { isHarpieLadySupport, findEquipTarget, equipToChosenTarget, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, chooseCardFromList, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost, maxRitualTributeLevel, performRitualTribute, releaseRelinquishedTarget, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach } = window.CardEffectsShared;
+    const { isHarpieLadySupport, findEquipTarget, equipToChosenTarget, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, chooseCardFromList, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost, maxRitualTributeLevel, performRitualTribute, releaseRelinquishedTarget, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach, destroyTargetingSpellIfItStays } = window.CardEffectsShared;
 
     // ================================================================
     // 835 — Ingranaggio Antico / Ancient Gear
@@ -1102,31 +1102,34 @@
     // 146 — Catena di Distruzione / Chain Destruction (Trappola Normale)
     // Quando viene Evocato un mostro con 2000 o meno ATK: distruggi tutte
     // le carte con lo stesso nome nella mano e nel Deck del suo
-    // proprietario. Riusa onOpponentSummon (stesso schema di Buco
-    // Trappola id 40) — vedi missingEffectNote su id 146 in cards.json:
-    // risponde solo a un'Evocazione dell'AVVERSARIO, non anche a una
-    // propria Evocazione come richiede il testo reale.
+    // proprietario. Risponde all'Evocazione dell'avversario
+    // (onOpponentSummon, stesso schema di Buco Trappola id 40) e anche a una
+    // PROPRIA (onOwnSummonResponse, openSummonResponseWindows in
+    // duel-engine.js) — da sé serve a sfoltire il proprio Deck. Le copie da
+    // distruggere sono sempre quelle di chi controlla il mostro Evocato.
     // ------------------------------------------------------------------
+    function catenaDiDistruzione(ctx, controllore) {
+        const name = ctx.summonedCard.name;
+        let count = 0;
+        const hand = ctx.hand(controllore);
+        for (let i = hand.length - 1; i >= 0; i--) {
+            if (hand[i].name === name) { ctx.discardChosenFromHand(controllore, i); count++; }
+        }
+        const deckKey = controllore === 'player' ? 'playerDeck' : 'botDeck';
+        const deck = gameState[deckKey];
+        if (Array.isArray(deck)) {
+            for (let i = deck.length - 1; i >= 0; i--) {
+                if (deck[i].name === name) { ctx.millCardFromDeck(controllore, i); count++; }
+            }
+        }
+        ctx.log(`⛓️ Catena di Distruzione manda ${count} copie di ${name} al Cimitero!`);
+    }
     CardEffects.register(146, {
         canActivate(ctx) {
             return (ctx.summonedCard?.attack || 0) <= 2000;
         },
-        onOpponentSummon(ctx) {
-            const name = ctx.summonedCard.name;
-            let count = 0;
-            const hand = ctx.hand(ctx.opponent);
-            for (let i = hand.length - 1; i >= 0; i--) {
-                if (hand[i].name === name) { ctx.discardChosenFromHand(ctx.opponent, i); count++; }
-            }
-            const deckKey = ctx.opponent === 'player' ? 'playerDeck' : 'botDeck';
-            const deck = gameState[deckKey];
-            if (Array.isArray(deck)) {
-                for (let i = deck.length - 1; i >= 0; i--) {
-                    if (deck[i].name === name) { ctx.millCardFromDeck(ctx.opponent, i); count++; }
-                }
-            }
-            ctx.log(`⛓️ Catena di Distruzione manda ${count} copie di ${name} al Cimitero!`);
-        }
+        onOpponentSummon(ctx) { catenaDiDistruzione(ctx, ctx.opponent); },
+        onOwnSummonResponse(ctx) { catenaDiDistruzione(ctx, ctx.owner); }
     });
 
     // ------------------------------------------------------------------
@@ -1224,12 +1227,15 @@
     // 198 — Drago della Dimensione Diversa / Different Dimension Dragon
     // Non può essere distrutta in battaglia da un mostro con 1900 o meno
     // ATK (riusa cardIsIndestructibleByBattle, come Guardiano Celtico
-    // Sgradito id 712, ma con la condizione invertita). Vedi
-    // missingEffectNote su id 198 in cards.json: manca l'immunità dalla
-    // distruzione via effetti Magia/Trappola NON mirati.
+    // Sgradito id 712, ma con la condizione invertita). Immune anche alla
+    // distruzione da effetti Magia/Trappola che NON la scelgono come
+    // bersaglio: def.immuneToUntargetedSpellTrapDestruction, controllato in
+    // ACTIONS.destroyMonster contro i bersagli dichiarati col checkpoint di
+    // targeting nella stessa risoluzione.
     // ------------------------------------------------------------------
     CardEffects.register(198, {
-        cannotBeDestroyedByBattle: (opponentAtk) => (opponentAtk || 0) <= 1900
+        cannotBeDestroyedByBattle: (opponentAtk) => (opponentAtk || 0) <= 1900,
+        immuneToUntargetedSpellTrapDestruction: true
     });
 
     // ------------------------------------------------------------------
@@ -2357,16 +2363,21 @@
         }
     });
 
-    // 882 — Oppressione Reale / Royal Oppression (Trappola Normale — vedi
-    // missingEffectNote per la semplificazione rispetto alla vera
-    // Trappola Continua): nega e distrugge un'Evocazione Speciale altrui,
-    // stesso schema reattivo di Giudizio Solenne (id 448, lì per QUALUNQUE
-    // Evocazione/attivazione) ma filtrato a ctx.summonedVia === 'special'
-    // (il discriminatore condiviso normale/speciale già usato da Buco
-    // Trappola id 40 per il caso opposto).
+    // 882 — Oppressione Reale / Royal Oppression (Trappola CONTINUA): nega
+    // e distrugge un'Evocazione Speciale altrui pagando 800 LP, stesso
+    // schema reattivo di Giudizio Solenne (id 448) filtrato a
+    // ctx.summonedVia === 'special'. `continuous: true`: alla prima
+    // risposta resta scoperta sul Terreno (consumeCandidateCard) invece di
+    // finire al Cimitero, e da scoperta findTriggerCandidates la offre di
+    // nuovo a ogni Special Summon successiva, pagando ogni volta.
+    // Resta fuori "uno dei due giocatori può pagare": la usa solo chi la
+    // controlla (ogni finestra di risposta di questo motore è di un
+    // giocatore solo).
     CardEffects.register(882, {
+        continuous: true,
         canActivate(ctx) {
-            return ctx.summonedVia === 'special' && typeof ctx.summonedCard !== 'undefined';
+            const lp = ctx.owner === 'player' ? gameState.playerLP : gameState.botLP;
+            return ctx.summonedVia === 'special' && typeof ctx.summonedCard !== 'undefined' && lp > 800;
         },
         onOpponentSummon(ctx) {
             if (ctx.summonedVia !== 'special') return;
@@ -2497,6 +2508,9 @@
         canActivate(ctx) {
             const extraDeck = ctx.owner === 'player' ? gameState.playerExtraDeck : gameState.botExtraDeck;
             if (!Array.isArray(extraDeck) || extraDeck.length === 0) return false;
+            // Il Sigillo di Orichalcos (id 469) vieta l'Extra Deck: meglio non
+            // attivarla che pagare il Tributo per un'Evocazione che non avverrà.
+            if (DuelEngine.isExtraDeckSummonBlocked(ctx.owner)) return false;
             return ctx.field(ctx.owner).some((s) => s && extraDeck.some((c) => c.level === s.card.level));
         },
         activate(ctx) {
@@ -2551,14 +2565,43 @@
         }
     });
 
-    // 887 — Cancello di Fusione / Fusion Gate (Magia Campo): vedi
-    // missingEffectNote per le due semplificazioni (materiali al
-    // Cimitero invece che banditi; solo dal proprio turno). Riusa
-    // interamente DuelEngine.getFusableExtraDeckMonsters/ctx.fusionSummon
-    // già esistenti per "Fusione" (id 38) — qui però come Ignition
-    // ripetibile di un Continuo già scoperto (repeatableWhileContinuous,
-    // stesso schema di Offerta Suprema id 559).
+    // 887 — Cancello di Fusione / Fusion Gate (Magia Campo). Riusa
+    // DuelEngine.getFusableExtraDeckMonsters/ctx.fusionSummon già esistenti
+    // per "Fusione" (id 38) — qui come Ignition ripetibile di un Continuo
+    // già scoperto (repeatableWhileContinuous, stesso schema di Offerta
+    // Suprema id 559). I materiali vengono BANDITI (fusionSummon con
+    // banishMaterials). "Il giocatore di turno" vuol dire chiunque sia di
+    // turno, anche l'avversario di chi controlla la carta: def.activateAsTurnPlayer,
+    // chiamata cliccando la Magia Terreno dell'avversario nella propria Main
+    // Phase (handleCardClickInner, actions.js) o dal bot nel suo turno
+    // (attemptBotUseTurnPlayerFieldSpell, bot.js). Quel percorso non passa
+    // da una Chain: è l'uso di un effetto continuo già scoperto, non
+    // l'attivazione di una carta.
+    function fondiConCancello(ctx) {
+        const options = DuelEngine.getFusableExtraDeckMonsters(ctx.owner);
+        if (options.length === 0) return;
+        const owner = ctx.owner;
+        const summon = (option) => { ctx.fusionSummon(owner, option.extraDeckIndex, option.materialLocations, { banishMaterials: true }); };
+        if (options.length === 1 || owner !== 'player' || !window.DuelEngineUI) {
+            summon(options[0]);
+            return;
+        }
+        window.DuelEngineUI.openCardListPicker(options.map((o) => o.card), {
+            title: '🔗 Cancello di Fusione: scegli il Mostro Fusione',
+            text: 'Hai i materiali per più di un Mostro Fusione: scegline uno da Evocare (i materiali vengono banditi).',
+            onSelect: (card) => {
+                const match = options.find((o) => o.card.uid === card.uid);
+                if (match) summon(match);
+            }
+        });
+    }
     CardEffects.register(887, {
+        canActivateAsTurnPlayer(ctx) {
+            return ctx.gameState.currentPlayer === ctx.owner
+                && (ctx.gameState.phase === 'main1' || ctx.gameState.phase === 'main2')
+                && DuelEngine.getFusableExtraDeckMonsters(ctx.owner).length > 0;
+        },
+        activateAsTurnPlayer(ctx) { fondiConCancello(ctx); },
         continuous: true,
         repeatableWhileContinuous: true,
         canActivate(ctx) {
@@ -2574,41 +2617,28 @@
             if (ctx.zone !== 'fieldSpell') return true;
             return DuelEngine.getFusableExtraDeckMonsters(ctx.owner).length > 0;
         },
-        activate(ctx) {
-            const options = DuelEngine.getFusableExtraDeckMonsters(ctx.owner);
-            if (options.length === 0) return;
-            const owner = ctx.owner;
-            const summon = (option) => { ctx.fusionSummon(owner, option.extraDeckIndex, option.materialLocations); };
-            if (options.length === 1 || !window.DuelEngineUI) {
-                summon(options[0]);
-                return;
-            }
-            window.DuelEngineUI.openCardListPicker(options.map((o) => o.card), {
-                title: '🔗 Cancello di Fusione: scegli il Mostro Fusione',
-                text: 'Hai i materiali per più di un Mostro Fusione: scegline uno da Evocare.',
-                onSelect: (card) => {
-                    const match = options.find((o) => o.card.uid === card.uid);
-                    if (match) summon(match);
-                }
-            });
-        }
+        activate(ctx) { fondiConCancello(ctx); }
     });
 
     // 888 — Freed il Generale Senza Rivali (Mostro Effetto): nega gli
     // effetti Magia che la bersagliano — stesso schema reattivo di Gran
     // Scudo Gardna (id 115)/Mago Comando del Caos (id 738) via
-    // onCardEffectTargetDeclare + ctx.cancel(). Vedi missingEffectNote
-    // in data/cards.json per la semplificazione sulla distruzione
-    // esplicita della Magia bersaglio. La seconda abilità (sostituire la
-    // pescata con una ricerca in Draw Phase) vive in game-flow.js
-    // (enterDrawPhaseInner), non qui — una sostituzione della pescata è
-    // per forza a quel livello, stesso schema hardcoded già usato da
-    // skipDrawFor/pendingMaharaghiPeekFor per lo stesso motivo.
+    // onCardEffectTargetDeclare + ctx.cancel(). "...e se lo fai, distruggi
+    // quella Magia": una Magia che resta sul Terreno (Continua o
+    // Equipaggiamento) viene distrutta qui; una Normale/Rapida finisce al
+    // Cimitero da sola a fine risoluzione, e distruggerla adesso, mentre si
+    // sta ancora risolvendo, la manderebbe al Cimitero due volte.
+    // La seconda abilità (sostituire la pescata con una ricerca in Draw
+    // Phase) vive in game-flow.js (enterDrawPhaseInner), non qui — una
+    // sostituzione della pescata è per forza a quel livello, stesso schema
+    // già usato da skipDrawFor/pendingMaharaghiPeekFor. Lì è una scelta del
+    // giocatore: pescare o cercare.
     CardEffects.register(888, {
         onCardEffectTargetDeclare(ctx) {
             if (!ctx.sourceCard || ctx.sourceType !== 'spell') return;
             ctx.cancel();
-            ctx.log(`⚔️ Freed il Generale Senza Rivali nega l'effetto di ${ctx.sourceCard.name}!`);
+            const distrutta = destroyTargetingSpellIfItStays(ctx);
+            ctx.log(`⚔️ Freed il Generale Senza Rivali nega l'effetto di ${ctx.sourceCard.name}${distrutta ? ' e la distrugge' : ''}!`);
         }
     });
 
@@ -2656,10 +2686,16 @@
         }
     });
 
-    // 890 — Necrovalley (Magia Terreno): due clausole reali implementate,
-    // vedi missingEffectNote in data/cards.json per le altre due (nessun
-    // checkpoint generico esiste in questo motore per loro, casi di
-    // nicchia). Il bonus ai Guardiani della Tomba è PROPEDEUTICO
+    // 890 — Necrovalley (Magia Terreno). Clausole:
+    //  - +500 ATK/DEF ai Guardiani della Tomba (static, qui sotto);
+    //  - niente bando dal Cimitero (ACTIONS.banishFromGraveyard);
+    //  - "nega ogni effetto che sposterebbe una carta nel Cimitero altrove":
+    //    in ACTIONS.specialSummon (fromZone 'graveyard') e in
+    //    searchGraveyardWithChoice (card-effects.js), i due passaggi da cui
+    //    passa la gran parte delle rianimazioni e dei recuperi;
+    //  - "nega ogni effetto che cambia Tipo o Attributo nel Cimitero": nessuna
+    //    carta del dataset fa una cosa simile, quindi non c'è niente da negare.
+    // Il bonus ai Guardiani della Tomba è PROPEDEUTICO
     // (l'archetipo non esiste ancora in questo dataset — vedi Livello 5
     // in AUDIT_CARTE_PRIMA_SERIE.md): filtro per NOME (`includes('Guardiani
     // della Tomba')`, stesso stile già usato per "Occhi Rossi" in questo
@@ -2713,11 +2749,12 @@
     //    Cambio di Cuore) si rilascia quando QUESTA carta lascia la zona
     //    Magia/Trappola (onSTDestroyed/onBanished/onReturnedToHandSelf,
     //    stesso pattern multi-hook già usato da Abbandonato id 416/
-    //    releaseRelinquishedTarget) — SEMPLIFICAZIONE onesta (vedi
-    //    missingEffectNote): se è il mostro EQUIPAGGIATO a lasciare il
-    //    campo per conto proprio, questa carta resta orfana e finisce nel
-    //    Cimitero al controllo successivo, senza un vero effetto a
-    //    cascata aggiuntivo — il testo reale attuale non ne specifica uno.
+    //    releaseRelinquishedTarget). Se è il mostro EQUIPAGGIATO a lasciare
+    //    il campo per conto proprio, questa carta finisce nel Cimitero alla
+    //    prima ripulitura degli Equip senza bersaglio (recomputeStaticEffects,
+    //    a ogni render, quindi di fatto subito): è la regola vera di ogni
+    //    Carta Equipaggiamento, non una semplificazione — la nota che la
+    //    dava per un limite è stata tolta.
     // ================================================================
     function releaseNecrofearControl(ctx) {
         const uid = ctx.card._necrofearControlledUid;
@@ -2934,23 +2971,46 @@
         }
     });
 
-    // 900 — Sentinella dei Guardiani della Tomba (Gravekeeper's
-    // Watcher): SEMPLIFICAZIONE — non implementata, vedi missingEffectNote
-    // in data/cards.json per il motivo esteso. In breve: richiederebbe
-    // una vera finestra di risposta attivabile da una carta ancora in
-    // MANO (mai da campo, a differenza di ogni altro Effetto Veloce di
-    // questo motore — findMonsterQuickEffectCandidates/
-    // findSpellTrapQuickEffectCandidates coprono solo carte già scoperte
-    // in campo), apribile in QUALUNQUE momento del turno di uno dei due
-    // giocatori, PIÙ una capacità di riconoscere in anticipo se
-    // un'attivazione "potrebbe far scartare" l'avversario — nessuna
-    // delle due esiste oggi, e costruirle per questa carta sola sarebbe
-    // sproporzionato, stesso principio già accettato per la Categoria B
-    // di questo dataset (Santuario Oscuro id 192/Spada Sigillante di
-    // Orichalcos id 396/Ninja d'Assalto id 459 rispondono comunque solo
-    // quando una Chain è GIÀ aperta — questa carta dovrebbe rispondere
-    // anche quando non lo è, un requisito ancora più stringente).
-    CardEffects.register(900, {});
+    // 900 — Sentinella dei Guardiani della Tomba (Gravekeeper's Watcher):
+    // "quando il tuo avversario attiva una carta o un effetto che può far
+    // scartare: manda questa carta dalla mano al Cimitero; nega
+    // l'attivazione, e se lo fai, distruggila". Il momento giusto è proprio
+    // un'attivazione avversaria, cioè la finestra di priorità che si apre
+    // già (openActivationWindow): la carta vi entra dalla MANO grazie a
+    // findHandQuickEffectCandidates (def.canRespondFromHand +
+    // canActivateFromHand/activateFromHand). Mandarla al Cimitero è il
+    // costo, pagato da consumeCandidateCard.
+    // "Può far scartare" si riconosce dal testo della carta attivata: c'è
+    // "scart..." in un EFFETTO, non solo come costo d'apertura ("Scarta 1
+    // carta: ..." / "Paga ...;" in testa al testo non conta). È una lettura
+    // del testo, non un dato strutturato: una carta scritta in modo insolito
+    // può sfuggire o entrare per sbaglio.
+    const faScartare = (card) => {
+        if (!card || !card.effect) return false;
+        const senzaCosto = card.effect.replace(/^\s*(scarta|paga)[^;:.]*[;:]/i, '');
+        return /scart/i.test(senzaCosto);
+    };
+    CardEffects.register(900, {
+        canRespondFromHand: true,
+        canActivateFromHand(ctx) {
+            const chain = ctx.gameState.chain;
+            const top = chain && chain.links && chain.links[chain.links.length - 1];
+            return !!(top && !top.negated && top.owner !== ctx.owner && faScartare(top.card));
+        },
+        activateFromHand(ctx) {
+            const chain = ctx.gameState.chain;
+            const top = chain && chain.links && chain.links[chain.links.length - 1];
+            if (!top || !ctx.negateActivation()) return;
+            // "...e se lo fai, distruggila": una Magia/Trappola negata finisce
+            // al Cimitero già da resolveChain; un MOSTRO che ha attivato un
+            // effetto va distrutto qui.
+            if (top.card.type === 'monster') {
+                const i = ctx.field(top.owner).findIndex((s) => s && s.card.uid === top.card.uid);
+                if (i !== -1) ctx.destroyMonster(top.owner, i);
+            }
+            ctx.log(`🏺 Sentinella dei Guardiani della Tomba nega l'attivazione di ${top.card.name}!`);
+        }
+    });
 
     // 901 — La Fanciulla Indulgente / The Forgiving Maiden (Mostro
     // Effetto): "Tributa questa carta scoperta per far tornare in mano 1

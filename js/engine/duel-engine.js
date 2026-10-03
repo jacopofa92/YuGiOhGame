@@ -187,11 +187,24 @@
      * da resolveAttack (actions.js) e dalla scelta del bot (bot.js), così
      * le due parti non possono divergere.
      */
+    /**
+     * `owner` non può Special Summonare dall'Extra Deck adesso (Il Sigillo
+     * di Orichalcos id 469: "non puoi Special Summonare mostri dall'Extra
+     * Deck", def.blocksOwnExtraDeckSummons sulla Magia Terreno scoperta).
+     * Letto PRIMA di pagare i materiali (getFusableExtraDeckMonsters,
+     * getBanishFusableExtraDeckMonsters: un elenco vuoto vuol dire nessuna
+     * Fusione proposta) e come ultima rete in ACTIONS.specialSummon.
+     */
+    function isExtraDeckSummonBlocked(owner) {
+        const fs = fieldSpellOf(owner);
+        return !!(fs && !fs.isFaceDown && getDefinition(fs.card.id) && getDefinition(fs.card.id).blocksOwnExtraDeckSummons);
+    }
+
     function forcedAttackTargetIndexes(defenderOwner) {
         const uids = gameState.mustBeAttackedUidsFor && gameState.mustBeAttackedUidsFor[defenderOwner];
         if (!uids || uids.size === 0) return [];
         const out = [];
-        fieldOf(defenderOwner).forEach((s, i) => { if (s && uids.has(s.card.uid)) out.push(i); });
+        fieldOf(defenderOwner).forEach((s, i) => { if (s && s.card.uid && uids.has(s.card.uid)) out.push(i); });
         return out;
     }
 
@@ -590,6 +603,24 @@
                 addToLog(`🛡️ ${slot.card.name} non può essere distrutta (Orgoth l'Implacabile)!`);
                 return;
             }
+            // def.immuneToUntargetedSpellTrapDestruction (Drago della
+            // Dimensione Diversa id 198: "l'effetto di una Magia o Trappola
+            // non può distruggere questa carta a meno che non la scelga
+            // specificamente come bersaglio"): si distrugge solo se la carta
+            // sorgente è una Magia/Trappola che l'ha DICHIARATA come bersaglio
+            // con ctx.declareTarget in questa stessa risoluzione — il
+            // checkpoint annota i bersagli sul contesto (__declaredTargetUids,
+            // vedi declareTarget). Raigeki, Buco Nero & co. non la toccano.
+            // Una carta che bersaglia senza passare dal checkpoint non viene
+            // riconosciuta come "mirata": è il limite già noto di quel
+            // checkpoint, qui a favore di questa carta.
+            const defImmune = getDefinition(slot.card.id);
+            if (defImmune && defImmune.immuneToUntargetedSpellTrapDestruction && destroyerCard
+                && (destroyerCard.type === 'spell' || destroyerCard.type === 'trap')
+                && !(this && this.__declaredTargetUids && this.__declaredTargetUids.has(slot.card.uid))) {
+                addToLog(`🛡️ ${slot.card.name} non può essere distrutta da una Magia/Trappola che non la sceglie come bersaglio!`);
+                return;
+            }
             // 246 — Elefante Volante: "una volta per turno dell'avversario,
             // se dovrebbe essere distrutta da un suo effetto: non viene
             // distrutta" — indestructibilità condizionata (opt-in
@@ -851,6 +882,17 @@
             const slot = gameState[key];
             if (!slot) return false;
             const card = slot.card;
+            // def.indestructibleByEffectOncePerTurn (Il Sigillo di Orichalcos
+            // id 469: "una volta per turno, questa carta non può essere
+            // distrutta da effetti carta"): la prima distruzione del turno
+            // viene assorbita. Il timbro sta sullo slot, così vale per QUELLA
+            // carta in campo e riparte da capo se viene rigiocata.
+            const defFs = getDefinition(card.id);
+            if (defFs && defFs.indestructibleByEffectOncePerTurn && !slot.isFaceDown && slot.immunityUsedTurn !== gameState.turn) {
+                slot.immunityUsedTurn = gameState.turn;
+                addToLog(`🛡️ ${card.name} non viene distrutta (una volta per turno)!`);
+                return false;
+            }
             if (window.FX && typeof FX.playSpellTrapDestroyEffect === 'function') {
                 FX.playSpellTrapDestroyEffect(card, owner, -1, 'fieldSpell');
             }
@@ -938,7 +980,18 @@
          * targetIndex), fermandosi subito se target.allowed è false.
          */
         declareTarget(targetOwner, targetIndex, options) {
-            return declareCardEffectTarget(this, targetOwner, targetIndex, options);
+            const esito = declareCardEffectTarget(this, targetOwner, targetIndex, options);
+            // Il contesto ricorda chi ha davvero bersagliato (dopo eventuali
+            // ridirezioni): lo legge destroyMonster per le carte immuni alla
+            // distruzione NON mirata (def.immuneToUntargetedSpellTrapDestruction).
+            if (esito && esito.allowed && this && typeof this === 'object') {
+                const slot = fieldOf(esito.targetOwner)[esito.targetIndex];
+                if (slot && slot.card.uid) {
+                    this.__declaredTargetUids = this.__declaredTargetUids || new Set();
+                    this.__declaredTargetUids.add(slot.card.uid);
+                }
+            }
+            return esito;
         },
 
         /**
@@ -1268,6 +1321,27 @@
             // Capro Espiatorio (id 434): niente Evocazioni nel turno in cui
             // è stato attivato. I suoi stessi Token nascono PRIMA che il
             // divieto venga acceso, quindi non ne sono toccati.
+            // Necrovalley (id 890): "nega ogni effetto Carta che sposterebbe
+            // una carta nel Cimitero in un posto diverso" — anche una
+            // rianimazione. Il Cimitero si assume quello di chi Evoca (il caso
+            // di gran lunga più comune; questa funzione non sa da quale
+            // Cimitero il chiamante abbia preso la carta). La carta torna lì.
+            // L'eccezione del Capo dei Guardiani della Tomba (id 899) vale
+            // anche qui, dentro isNecrovalleyProtectingGraveyard.
+            if (fromZone === 'graveyard' && isNecrovalleyProtectingGraveyard(owner)) {
+                addToLog(`🏺 Necrovalley nega l'effetto: ${card.name} non può lasciare il Cimitero.`);
+                graveyardOf(owner).push(card);
+                return false;
+            }
+            if (fromZone === 'extra' && isExtraDeckSummonBlocked(owner)) {
+                // La carta torna nell'Extra Deck (non al Cimitero): non è mai
+                // arrivata in campo. Chi chiama dovrebbe averlo già escluso
+                // prima di pagare i materiali; questa è solo l'ultima rete.
+                addToLog(`🚫 Non puoi Special Summonare dall'Extra Deck in questo momento: ${card.name} torna nell'Extra Deck.`);
+                const extra = owner === 'player' ? gameState.playerExtraDeck : gameState.botExtraDeck;
+                if (Array.isArray(extra)) extra.push(card);
+                return false;
+            }
             if (isFaceUpDuplicateBlocked(owner, card)) {
                 addToLog(`🚫 ${card.name}: puoi controllarne solo 1 scoperto, non può essere Special Summonata.`);
                 graveyardOf(owner).push(card);
@@ -1539,7 +1613,18 @@
          * se il Terreno è pieno o l'indice Extra Deck non è valido, così
          * chi chiama non deve ricontrollare da sé prima di invocarla.
          */
-        fusionSummon(owner, extraDeckIndex, materialLocations) {
+        fusionSummon(owner, extraDeckIndex, materialLocations, options) {
+            // options.banishMaterials: i materiali vanno BANDITI invece che al
+            // Cimitero (Cancello di Fusione id 887: "bandendo i Materiali da
+            // Fusione elencati dalla propria mano o Terreno"). Un materiale
+            // sul Terreno che non può essere bandito (def.cannotBeBanishedWhileOnField,
+            // id 808) finisce comunque al Cimitero: resta usato, solo non bandito.
+            const bandisci = !!(options && options.banishMaterials);
+            const destinazione = (card, dalTerreno) => {
+                const defMat = getDefinition(card.id);
+                if (bandisci && !(dalTerreno && defMat && defMat.cannotBeBanishedWhileOnField)) ACTIONS.banish(owner, card);
+                else graveyardOf(owner).push(card);
+            };
             const extraDeck = owner === 'player' ? gameState.playerExtraDeck : gameState.botExtraDeck;
             const fusionCard = extraDeck && extraDeck[extraDeckIndex];
             if (!fusionCard) return false;
@@ -1559,7 +1644,6 @@
                 return false;
             }
             const hand = handOf(owner);
-            const graveyard = graveyardOf(owner);
             // Fotografia PRIMA della rimozione: l'effetto visuale deve
             // mostrare proprio le carte realmente consumate, dalla mano
             // e/o dal Terreno, non ricostruirle dagli id a posteriori.
@@ -1577,10 +1661,11 @@
             sorted.forEach((loc) => {
                 if (loc.zone === 'hand') {
                     const [card] = hand.splice(loc.index, 1);
-                    if (card) graveyard.push(card);
+                    if (card) destinazione(card, false);
                 } else if (loc.zone === 'monster' && field[loc.index]) {
-                    graveyard.push(field[loc.index].card);
+                    const card = field[loc.index].card;
                     field[loc.index] = null;
+                    destinazione(card, true);
                 }
             });
             extraDeck.splice(extraDeckIndex, 1);
@@ -1649,12 +1734,25 @@
          * `false` come "la carta resta dov'era", mai assumere che sia
          * comunque sparita.
          */
-        banishFromGraveyard(owner, card) {
+        banishFromGraveyard(owner, card, actor) {
             const grave = graveyardOf(owner);
             const idx = grave.indexOf(card);
             if (idx === -1) return false;
             if (isNecrovalleyProtectingGraveyard(owner)) {
                 addToLog(`🏺 Necrovalley impedisce che ${card.name} venga bandita dal Cimitero!`);
+                return false;
+            }
+            // Divieto legato a CHI bandisce, non a quale Cimitero (Kycoo il
+            // Distruttore di Fantasmi id 1080: "il tuo avversario non può
+            // bandire carte dal Cimitero di nessuno dei due giocatori") —
+            // gameState.graveyardBanishBlockedFor[attore], ricalcolato a ogni
+            // render. L'attore è `actor` se passato, altrimenti il
+            // proprietario del contesto con cui la carta ha chiamato
+            // (ctx.banishFromGraveyard gira con `this` = ctx). Una chiamata
+            // del motore senza contesto né attore non è bloccata.
+            const attore = actor || (this && this.owner) || null;
+            if (attore && gameState.graveyardBanishBlockedFor && gameState.graveyardBanishBlockedFor[attore]) {
+                addToLog(`👻 Non puoi bandire carte dal Cimitero in questo momento: ${card.name} resta dov'è.`);
                 return false;
             }
             grave.splice(idx, 1);
@@ -2540,6 +2638,8 @@
      * banishFusionSummon qui sotto.
      */
     function getBanishFusableExtraDeckMonsters(owner) {
+        // Il Sigillo di Orichalcos (id 469): niente Evocazioni dall'Extra Deck.
+        if (isExtraDeckSummonBlocked(owner)) return [];
         const extraDeck = owner === 'player' ? gameState.playerExtraDeck : gameState.botExtraDeck;
         if (!extraDeck || extraDeck.length === 0) return [];
         const field = fieldOf(owner);
@@ -2678,7 +2778,7 @@
             // onOpponentSummon già usato per ON_NORMAL_SUMMON/ON_SPECIAL_SUMMON
             // più sotto — qui riadattato coi campi che quella finestra si
             // aspetta (summonedCard/summonedSlotIndex/summonedPosition).
-            openTriggerWindow('onOpponentSummon', makeContext(ctx.owner, {
+            openSummonResponseWindows(makeContext(ctx.owner, {
                 summonedCard: ctx.card,
                 summonedSlotIndex: ctx.slotIndex,
                 summonedPosition: 'attack',
@@ -2847,7 +2947,7 @@
                 finish();
                 return;
             }
-            openTriggerWindow('onOpponentSummon', ctx, finish);
+            openSummonResponseWindows(ctx, finish);
             return;
         }
 
@@ -2982,6 +3082,27 @@
                 if (window.FX) FX.playCardActivateCenterScreen(choice.card);
                 safeCallCardHandler(choice.card, 'onEnemyMonsterDestroyed', () => choice.def.onEnemyMonsterDestroyed(enemyReactCtx(choice)));
             }
+            // Sorte LEGATA per-istanza: un mostro con
+            // `card.destroyWhenDestroyedUid` uguale all'uid appena distrutto
+            // viene distrutto anche lui (Clonazione id 154: "se il mostro
+            // bersaglio viene distrutto, distruggi anche il Token"). Sta qui
+            // perché ogni distruzione di un mostro — da effetto o in
+            // battaglia — passa da questo ramo. Solo "distrutto": se il
+            // bersaglio lascia il campo in altro modo (bandito, rimandato in
+            // mano) il legame resta inerte, come da testo.
+            // Solo con un uid VERO da entrambe le parti: due carte senza uid
+            // (succede nei test, o con dati costruiti a mano) farebbero
+            // combaciare undefined === undefined e legherebbero ogni mostro a
+            // ogni altro — trovato così, con un Drago Bianco distrutto
+            // "insieme" a un mostro avversario qualunque.
+            if (ctx.card.uid) ['player', 'bot'].forEach((lato) => {
+                fieldOf(lato).forEach((slot, index) => {
+                    if (slot && slot.card.destroyWhenDestroyedUid && slot.card.destroyWhenDestroyedUid === ctx.card.uid) {
+                        addToLog(`🔗 ${slot.card.name} viene distrutto insieme a ${ctx.card.name}.`);
+                        ACTIONS.destroyMonster(lato, index);
+                    }
+                });
+            });
             finish();
             return;
         }
@@ -3390,7 +3511,7 @@
             // (es. Tartaruga Elettromagnetica, id 223) — passa da
             // banishFromGraveyard (rispetta Necrovalley, id 890) come ogni
             // altro bando dal Cimitero di questo motore.
-            ACTIONS.banishFromGraveyard(owner, choice.card);
+            ACTIONS.banishFromGraveyard(owner, choice.card, owner);
         }
     }
 
@@ -3657,7 +3778,12 @@
                 redirectedIndex: null,
                 redirect(newOwner, newIndex) { this.redirectedOwner = newOwner; this.redirectedIndex = newIndex; }
             }));
-            if (def.canActivate && !def.canActivate(reactCtx)) return false;
+            // def.canReactToTargetDeclare, se c'è, vince su canActivate: una
+            // carta con un'attivazione sua (un Equip, il cui canActivate vuol
+            // dire "posso agganciarmi") deve poter dire separatamente QUANDO
+            // reagisce a un bersaglio (Bastone del Silenzio id 423).
+            const condizione = typeof def.canReactToTargetDeclare === 'function' ? def.canReactToTargetDeclare : def.canActivate;
+            if (condizione && !condizione(reactCtx)) return false;
             if (zone === 'st' && !def.continuous) {
                 // Consuma la Trappola come una vera attivazione (va al
                 // Cimitero) — stesso schema di consumeCandidateCard qui sotto.
@@ -3701,10 +3827,14 @@
                 && !(slot.card.type === 'trap' && slot.setOnTurn === gameState.turn)
                 && !(slot.card.type === 'trap' && areTrapsNegatedFor(currentOwner))
                 && getDefinition(slot.card.id) && typeof getDefinition(slot.card.id).onCardEffectTargetDeclare === 'function');
-            if (stCandidates.length > 0) {
-                const choice = stCandidates[0];
+            // Si provano in ordine finché una reagisce davvero: prima si
+            // provava solo la prima, e se il suo canActivate diceva di no
+            // (es. una Trappola che reagisce solo a certi bersagli) le altre
+            // non venivano mai interpellate — un Bastone del Silenzio (id
+            // 423) dopo una Trappola non pertinente restava muto.
+            for (const choice of stCandidates) {
                 const index = stFieldOf(currentOwner).indexOf(choice);
-                tryReact(currentOwner, choice.card, index, 'st');
+                if (index !== -1 && tryReact(currentOwner, choice.card, index, 'st')) break;
             }
         }
         if (currentOwner === null) return { allowed: false, targetOwner: targetOwner, targetIndex: targetIndex };
@@ -3766,6 +3896,40 @@
             });
         };
         askNextRound();
+    }
+
+    /**
+     * Le finestre di risposta a un'Evocazione: prima quella dell'avversario
+     * di chi evoca (onOpponentSummon, Buco Trappola & co., com'è sempre
+     * stato), poi — solo se serve — quella di CHI EVOCA, per le Trappole
+     * che reagiscono a "quando viene Evocato un mostro" di chiunque, anche
+     * proprio (def.onOwnSummonResponse: Catena di Distruzione id 146).
+     * La seconda finestra si apre solo se chi evoca ha davvero una carta
+     * Set con quell'handler, così ogni altra Evocazione non paga nessuna
+     * attesa in più. In Multiplayer resta chiusa: le carte Set dell'altro
+     * lato qui sono segnaposto, i due client non potrebbero accordarsi su
+     * quando aprirla.
+     */
+    function openSummonResponseWindows(ctx, onDone) {
+        const finish = typeof onDone === 'function' ? onDone : function () {};
+        openTriggerWindow('onOpponentSummon', ctx, () => {
+            const summoner = ctx.owner;
+            const ha = !window.MULTIPLAYER_MODE && stFieldOf(summoner).some((s) => s && s.isFaceDown
+                && getDefinition(s.card.id) && typeof getDefinition(s.card.id).onOwnSummonResponse === 'function');
+            // Il mostro dev'essere ancora in campo: una risposta
+            // dell'avversario (Buco Trappola) può averlo già distrutto.
+            const ancoraLi = ctx.summonedCard && fieldOf(summoner).some((s) => s && s.card.uid === ctx.summonedCard.uid);
+            if (!ha || !ancoraLi) { finish(); return; }
+            // openTriggerWindow fa rispondere ctx.opponent: un contesto con
+            // owner = l'avversario di chi evoca rende rispondente chi evoca.
+            openTriggerWindow('onOwnSummonResponse', makeContext(opponentOf(summoner), {
+                summonedCard: ctx.summonedCard,
+                summonedSlotIndex: ctx.summonedSlotIndex,
+                summonedPosition: ctx.summonedPosition,
+                summonedVia: ctx.summonedVia,
+                summonedOwner: summoner
+            }), finish);
+        });
     }
 
     /**
@@ -3860,6 +4024,32 @@
      * openActivationWindow qui sotto, che dispatcha per link.handlerName
      * a def[link.handlerName](link.ctx), generico per qualunque nome.
      */
+    /**
+     * Carte in MANO con un Effetto Veloce attivabile da lì in risposta a
+     * un'attivazione (Sentinella dei Guardiani della Tomba id 900: "manda
+     * questa carta dalla mano al Cimitero; nega l'attivazione"). Opt-in con
+     * def.canRespondFromHand, coppia di hook dedicata
+     * canActivateFromHand/activateFromHand (stesso motivo della coppia
+     * AsQuickEffect qui sotto: non si confonde con un'eventuale attivazione
+     * normale della carta). consumeCandidateCard manda la carta dalla mano
+     * al Cimitero, che è proprio il costo. Mai una Trappola (deve prima
+     * essere Set). Spenta in Multiplayer: la mano dell'altro lato qui è
+     * fatta di segnaposto, e la risposta non potrebbe indicare quale carta.
+     */
+    function findHandQuickEffectCandidates(owner, usedUids) {
+        if (window.MULTIPLAYER_MODE) return [];
+        const results = [];
+        handOf(owner).forEach((card, index) => {
+            if (!card || card.type === 'trap' || usedUids.has(card.uid)) return;
+            const def = getDefinition(card.id);
+            if (!def || !def.canRespondFromHand || typeof def.activateFromHand !== 'function') return;
+            const ctx = makeContext(owner, { card: card, zone: 'hand', index: index });
+            if (typeof def.canActivateFromHand === 'function' && !def.canActivateFromHand(ctx)) return;
+            results.push({ zone: 'hand', index: index, card: card, def: def, handEffect: true });
+        });
+        return results;
+    }
+
     function findSpellTrapQuickEffectCandidates(owner, usedUids) {
         const results = [];
         stFieldOf(owner).forEach((slot, index) => {
@@ -3920,7 +4110,8 @@
             const candidates = [
                 ...findSetTrapCandidates(responderOwner, usedUidsBySide[responderOwner]),
                 ...findMonsterQuickEffectCandidates(responderOwner, usedUidsBySide[responderOwner]),
-                ...findSpellTrapQuickEffectCandidates(responderOwner, usedUidsBySide[responderOwner])
+                ...findSpellTrapQuickEffectCandidates(responderOwner, usedUidsBySide[responderOwner]),
+                ...findHandQuickEffectCandidates(responderOwner, usedUidsBySide[responderOwner])
             ];
             // La carta a cui `responderOwner` starebbe rispondendo ORA: il
             // link più in cima allo stack (l'ultima cosa aggiunta alla
@@ -3954,7 +4145,7 @@
                     // qui sopra): dispatcha su una coppia di hook DEDICATA
                     // invece della normale activate(), vedi il commento su
                     // quella funzione per il perché.
-                    handlerName: choice.quickEffect ? 'activateAsQuickEffect' : 'activate',
+                    handlerName: choice.handEffect ? 'activateFromHand' : (choice.quickEffect ? 'activateAsQuickEffect' : 'activate'),
                     def: choice.def,
                     ctx: makeContext(responderOwner, { card: choice.card, zone: choice.zone, index: choice.index }),
                     isManualActivation: true,
@@ -4287,6 +4478,9 @@
         // id 420): per difensore, ricalcolato da zero a ogni render come gli
         // altri divieti qui intorno. Vedi forcedAttackTargetIndexes.
         gameState.mustBeAttackedUidsFor = { player: new Set(), bot: new Set() };
+        // Divieto di bandire dal Cimitero per ATTORE (Kycoo id 1080), letto
+        // da ACTIONS.banishFromGraveyard.
+        gameState.graveyardBanishBlockedFor = { player: false, bot: false };
         // Divieto di essere scelto come BERSAGLIO di un attacco per UN
         // SOLO mostro (es. Torre d'Ossa Divora-Anime id 664, Capitano
         // Predone id 714: "l'avversario non può bersagliare i Guerrieri
@@ -4981,6 +5175,8 @@
      * materiali scelti liberino davvero lo spazio necessario.
      */
     function getFusableExtraDeckMonsters(owner) {
+        // Il Sigillo di Orichalcos (id 469): niente Evocazioni dall'Extra Deck.
+        if (isExtraDeckSummonBlocked(owner)) return [];
         const extraDeck = owner === 'player' ? gameState.playerExtraDeck : gameState.botExtraDeck;
         if (!extraDeck || extraDeck.length === 0) return [];
         const hand = handOf(owner);
@@ -5609,6 +5805,7 @@
         isSTZoneLocked: isSTZoneLocked,
         findFreeSTSlot: findFreeSTSlot,
         isNecrovalleyOnField: isNecrovalleyOnField,
+        isNecrovalleyProtectingGraveyard: isNecrovalleyProtectingGraveyard,
         areTrapsNegatedFor: areTrapsNegatedFor,
         areSpellsNegatedFor: areSpellsNegatedFor,
         hasRacePiercing: hasRacePiercing,
@@ -5622,6 +5819,7 @@
         isSummonBannedThisTurn: isSummonBannedThisTurn,
         isFaceUpDuplicateBlocked: isFaceUpDuplicateBlocked,
         forcedAttackTargetIndexes: forcedAttackTargetIndexes,
+        isExtraDeckSummonBlocked: isExtraDeckSummonBlocked,
         normalSummonBlockReason: normalSummonBlockReason,
         isMonsterCardEffectsNegated: isMonsterCardEffectsNegated,
         applyRemoteChainDecision: applyRemoteChainDecision,
