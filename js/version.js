@@ -32,6 +32,9 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.18 — Tolte dal catalogo della Storia anime le migrazioni dei
+ *   salvataggi precedenti al timbro di base (ormai azzerati).
+ *
  * 1.0.17 — Storia anime: un avanzamento scritto prima dei contatori a prove
  *   principali (campo `azzeraSeSenzaTimbro`) riparte da zero invece di
  *   essere migrato in un punto sbagliato; il premio già ritirato resta.
@@ -509,4 +512,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.17';
+window.GAME_VERSION = '1.0.18';

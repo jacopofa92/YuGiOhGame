@@ -1391,48 +1391,19 @@ const storyCampaignsDatabase = [
         // Da questa voce in poi vale la migrazione di sempre.
         azzeraSeSenzaTimbro: 'anime-rami-paralleli',
         separazioni: [
-            { id: 'prologo-domino-city', nuova: 'anime-area-prologo', da: 'anime-area-regno', quante: 5 },
-            // Il castello di Pegasus è la SECONDA MAPPA del Regno, con due
-            // tappe nuove (la scena d'ingresso e la semifinale con Mai)
-            // davanti a Pegasus. Per un giorno è stato invece un'area a sé
-            // sulla mappa grande: chi ha scritto il salvataggio in quella
-            // forma porta il timbro 'castello-pegasus', e va ricucito col
-            // Regno ('unione'); chi è arrivato da prima non l'ha mai avuta
-            // e trova solo le due tappe in più ('inserite'). L'id
-            // 'castello-pegasus' resta riservato: non riusarlo.
-            // Nell'aritmetica della forma corrente si sottraggono anche le
-            // due scene dell'isola aggiunte più tardi; le loro migrazioni
-            // qui sotto le reinseriscono poi al punto esatto. Il vecchio
-            // Castello separato continua ad avere realmente tre tappe.
-            { id: 'castello-nel-regno', dalla: 'unione', vecchia: 'anime-area-castello', dentro: 'anime-area-regno', quante: 5, soloSeTimbrato: 'castello-pegasus' },
-            { id: 'castello-tappe-nuove', dalla: 'inserite', area: 'anime-area-regno', prima: 'anime-2-pegasus', quante: 2, saltaSeTimbrato: 'castello-pegasus' },
-            { id: 'regno-notte-isola', dalla: 'inserite', area: 'anime-area-regno', prima: 'anime-2-panik', quante: 1 },
-            { id: 'regno-dieci-stelle', dalla: 'inserite', area: 'anime-area-regno', prima: 'anime-2-kaiba', quante: 1 },
-            { id: 'regno-viaggio-nave', dalla: 'inserite', area: 'anime-area-regno', prima: 'anime-2-weevil', quante: 1 },
-            { id: 'regno-primo-duello-mai', dalla: 'inserite', area: 'anime-area-regno', prima: 'anime-2-rex', quante: 1 },
-            { id: 'regno-fratelli-paradosso', dalla: 'inserite', area: 'anime-area-regno', prima: 'anime-2-stelle', quante: 1 },
-            { id: 'regno-finali-complete', dalla: 'inserite', area: 'anime-area-regno', prima: 'anime-2-pegasus', quante: 2 },
-            // I quattro Rare Hunter aggiunti a Battle City in tre punti
-            // diversi della sequenza. Le migrazioni evitano che un vecchio
-            // salvataggio venga spostato indietro su duelli già superati.
-            { id: 'battle-city-seeker', dalla: 'inserite', area: 'anime-area-battlecity1', prima: 'anime-3-espa', quante: 1 },
-            { id: 'battle-city-strings', dalla: 'inserite', area: 'anime-area-battlecity1', prima: 'anime-3-arkana', quante: 1 },
-            { id: 'battle-city-maschere', dalla: 'inserite', area: 'anime-area-battlecity1', prima: 'anime-3-bakura', quante: 2 },
-            { id: 'anime-prologo-amici', dalla: 'inserite', area: 'anime-area-prologo', prima: 'anime-1-kaiba-scena', quante: 1 },
-            { id: 'anime-battle-city-fili', dalla: 'inserite', area: 'anime-area-battlecity1', prima: 'anime-3-seeker', quante: 1 },
-            { id: 'battle-city-duello-molo', dalla: 'inserite', area: 'anime-area-battlecity1', prima: 'anime-3-bakura', quante: 1 },
-            { id: 'battle-city-finalisti', dalla: 'inserite', area: 'anime-area-battlecity1', prima: 'anime-4-scena', quante: 1 },
-            { id: 'virtuale-anime-prigioniere', dalla: 'inserite', area: 'anime-area-virtuale', prima: 'anime-6-noah', quante: 1 },
-            { id: 'battle-city-promessa-joey', dalla: 'inserite', area: 'anime-area-battlecity2', prima: 'anime-4-kaiba', quante: 1 },
-            { id: 'battle-city-tre-dei', dalla: 'inserite', area: 'anime-area-battlecity2', prima: 'anime-4-marik', quante: 1 },
-            // Il Mondo dei Ricordi: le quattro tappe dello scontro con Bakura
-            // (Re dei Ladri, Mahad, Gioco delle Ombre) nate davanti a
-            // "L'ultima porta".
-            { id: 'cerimoniale-bakura', dalla: 'inserite', area: 'anime-area-cerimoniale', prima: 'anime-5-scena', quante: 5 },
-            // Chi aveva già ricevuto le quattro tappe del blocco Bakura
-            // deve vedere anche il nuovo raccordo sul vero nome; per i
-            // salvataggi più vecchi è già compreso nelle cinque qui sopra.
-            { id: 'cerimoniale-nome-atem', dalla: 'inserite', area: 'anime-area-cerimoniale', prima: 'anime-5-scena', quante: 1, soloSeTimbrato: 'cerimoniale-bakura' },
+            // Le migrazioni delle forme PIÙ VECCHIE del catalogo (staccare il
+            // prologo dal Regno, il castello come area e poi come seconda
+            // mappa, le tappe inserite nel Regno, a Battle City, nel
+            // Prologo e nel Mondo dei Ricordi) sono state tolte: i salvataggi
+            // scritti prima di 'anime-rami-paralleli' ora si azzerano
+            // (`azzeraSeSenzaTimbro`), quindi nessuna di quelle voci poteva
+            // più applicarsi. I loro id restano storici e NON vanno riusati.
+            // Le voci da 'anime-rami-paralleli' in giù si applicano ancora ai
+            // salvataggi che portano il timbro di base.
+            // 'anime-rami-paralleli' resta come MARCATORE del timbro di base:
+            // chi scrive oggi lo porta, e senza di lui verrebbe azzerato. La
+            // sua conversione non si applica più (i salvataggi senza timbro
+            // sono già azzerati prima), ma l'id deve restare in lista.
             { id: 'anime-rami-paralleli', dalla: 'laterali', aree: ['anime-area-regno', 'anime-area-battlecity1', 'anime-area-virtuale', 'anime-area-battlecity2'] },
             { id: 'anime-duello-video-pegasus', dalla: 'principali-fine', area: 'anime-area-prologo', quante: 1 },
             { id: 'anime-bakura-isola', dalla: 'principali-inserite', area: 'anime-area-regno', prima: 'anime-2-mai', quante: 1 },

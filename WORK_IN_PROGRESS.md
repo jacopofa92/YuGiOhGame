@@ -17,6 +17,9 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
 - [x] `bot-waits-for-summon-cinematic` ora aspetta segnali veri (cinematica
       finita + attacco avvenuto) invece di 11 s fissi. Gli altri spec con
       `waitForTimeout` fissi non sono stati rivisti: farlo se ne fallisce uno.
+- [ ] La CI di GitHub falliva a ogni push: ho sistemato `storia-aree-macro`
+      (salvataggi vecchi della Storia azzerati), ma non so se ora è verde.
+      Controllare l'esito dell'ultimo push; se è ancora rossa servono i log.
 - [ ] Controllo automatico pre-commit: sintassi (`scripts/check-syntax.js`) più
       ricerca di accenti corrotti (`â€`, `Ã¨`…), per evitare di riscrivere i
       file con PowerShell `Get-Content`/`Set-Content` rovinando gli accenti.

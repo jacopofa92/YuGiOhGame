@@ -96,17 +96,18 @@ module.exports = {
                 if (!fra(id, 'anime-1-joey', 'anime-1-tristan')) problems.push(`${id}: amichevole fuori dal ramo richiesto`);
             });
 
-            return { problems, scenes, migrations: anime.separazioni.map((entry) => entry.id) };
+            return { problems, scenes, base: anime.azzeraSeSenzaTimbro, migrations: anime.separazioni.map((entry) => entry.id) };
         });
 
         t.assert(audit.problems.length === 0, `Problemi nella campagna anime:\n${audit.problems.join('\n')}`);
         t.assert(audit.scenes >= 16, `La campagna deve avere raccordi narrativi sufficienti (${audit.scenes})`);
-        [
-            'regno-notte-isola', 'regno-dieci-stelle', 'regno-viaggio-nave', 'battle-city-finalisti',
-            'regno-primo-duello-mai', 'regno-fratelli-paradosso', 'regno-finali-complete',
-            'battle-city-duello-molo',
-            'virtuale-anime-prigioniere', 'battle-city-promessa-joey',
-            'battle-city-tre-dei', 'cerimoniale-nome-atem'
-        ].forEach((id) => t.assert(audit.migrations.includes(id), `${id}: migrazione salvataggi mancante`));
+        // Le migrazioni delle tappe inserite PRIMA del timbro di base
+        // ('anime-rami-paralleli') sono state tolte di proposito: quei
+        // salvataggi si azzerano (azzeraSeSenzaTimbro). Restano dovute le
+        // voci da lì in poi, e il marcatore stesso: senza, ogni salvataggio
+        // nuovo verrebbe letto come vecchio e azzerato.
+        ['anime-rami-paralleli', 'anime-duello-video-pegasus', 'anime-bakura-isola', 'anime-falso-kaiba', 'anime-duello-joey-molo']
+            .forEach((id) => t.assert(audit.migrations.includes(id), `${id}: migrazione salvataggi mancante`));
+        t.assert(audit.migrations.includes(audit.base), `Il timbro di base (${audit.base}) deve restare tra le separazioni`);
     }
 };

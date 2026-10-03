@@ -376,7 +376,8 @@
 // v128: velocità del bot, schema unico delle scelte, Rare Hunter ritagliato, anti-imbroglio server.
 // v129: avatar di Kaiba per contesto (Regno dei Duellanti / Forbidden Memories).
 // v130: salvataggi vecchi della Storia anime azzerati invece che migrati.
-const CACHE_NAME = 'ygo-duel-arena-v130';
+// v131: ripulite le vecchie migrazioni della Storia anime.
+const CACHE_NAME = 'ygo-duel-arena-v131';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
