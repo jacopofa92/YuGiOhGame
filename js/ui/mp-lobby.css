@@ -376,6 +376,84 @@
 }
 .mp-status-error { color: var(--kc-alert); text-shadow: 0 0 14px rgba(255, 138, 122, 0.4); }
 
+/* Attesa del server: terminale KaibaCorp dentro la riga di stato (niente
+   finestre sopra la pagina). Titolo che glitcha, scanline, barra senza fine. */
+.mp-term {
+    position: relative; overflow: hidden;
+    max-width: 460px; margin: 0 auto; padding: 10px 14px 12px;
+    text-align: left;
+    font-family: Consolas, 'Courier New', ui-monospace, monospace;
+    font-size: 0.74rem; letter-spacing: 0.08em;
+    color: #7fe3ff;
+    background: rgba(2, 10, 20, 0.82);
+    border: 1px solid rgba(127, 227, 255, 0.4);
+    border-radius: 6px;
+    box-shadow: 0 0 22px rgba(34, 211, 238, 0.18), inset 0 0 18px rgba(34, 211, 238, 0.08);
+    animation: mpTermJitter 3.4s steps(1) infinite;
+}
+/* Scanline che scorrono + una barra di luce che attraversa il pannello. */
+.mp-term::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.28) 0 1px, transparent 1px 3px);
+}
+.mp-term::after {
+    content: ''; position: absolute; left: 0; right: 0; height: 36%; top: -40%;
+    pointer-events: none;
+    background: linear-gradient(180deg, transparent, rgba(127, 227, 255, 0.14), transparent);
+    animation: mpTermSweep 2.8s linear infinite;
+}
+.mp-term-head { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 8px; font-weight: 700; }
+.mp-term-clock { color: #f7d774; font-variant-numeric: tabular-nums; }
+.mp-term-title { position: relative; text-shadow: 0 0 10px rgba(127, 227, 255, 0.6); }
+/* Separazione RGB: due copie del titolo, rossa e verde-acqua, scattano ai lati. */
+.mp-term-title::before, .mp-term-title::after {
+    content: attr(data-glitch); position: absolute; left: 0; top: 0; width: 100%;
+    overflow: hidden; pointer-events: none; opacity: 0;
+}
+.mp-term-title::before { color: #ff4d6d; }
+.mp-term-title::after { color: #3df5c4; }
+.mp-term-title.is-glitch::before { animation: mpGlitchA 0.55s steps(1) 1; }
+.mp-term-title.is-glitch::after { animation: mpGlitchB 0.55s steps(1) 1; }
+.mp-term-body { min-height: 5.4em; line-height: 1.55; }
+.mp-term-line { color: rgba(127, 227, 255, 0.55); white-space: pre-wrap; word-break: break-word; }
+.mp-term-line.is-attiva { color: #e8fdff; }
+.mp-term-line.is-attiva::after { content: '▮'; margin-left: 3px; animation: mpTermBlink 0.9s steps(1) infinite; }
+.mp-term-bar { height: 4px; margin: 10px 0 8px; background: rgba(127, 227, 255, 0.14); overflow: hidden; border-radius: 2px; }
+.mp-term-bar span {
+    display: block; width: 32%; height: 100%;
+    background: linear-gradient(90deg, transparent, #7fe3ff, #fff, #7fe3ff, transparent);
+    animation: mpTermBar 1.3s ease-in-out infinite;
+}
+.mp-term-foot { font-size: 0.66rem; color: rgba(247, 215, 116, 0.85); }
+@keyframes mpTermBar { 0% { transform: translateX(-110%); } 100% { transform: translateX(340%); } }
+@keyframes mpTermBlink { 50% { opacity: 0; } }
+@keyframes mpTermSweep { to { top: 110%; } }
+/* Un piccolo scatto del pannello, raro: non deve stancare in un minuto di attesa. */
+@keyframes mpTermJitter {
+    0%, 91%, 100% { transform: none; }
+    92% { transform: translate(-2px, 0); }
+    94% { transform: translate(2px, 1px); }
+    96% { transform: translate(-1px, -1px); }
+}
+@keyframes mpGlitchA {
+    0% { opacity: 1; transform: translate(-3px, 0); clip-path: inset(10% 0 55% 0); }
+    25% { opacity: 1; transform: translate(3px, 0); clip-path: inset(60% 0 8% 0); }
+    50% { opacity: 1; transform: translate(-2px, 1px); clip-path: inset(30% 0 35% 0); }
+    75% { opacity: 1; transform: translate(2px, 0); clip-path: inset(0 0 70% 0); }
+    100% { opacity: 0; }
+}
+@keyframes mpGlitchB {
+    0% { opacity: 1; transform: translate(3px, 0); clip-path: inset(50% 0 20% 0); }
+    25% { opacity: 1; transform: translate(-3px, 0); clip-path: inset(5% 0 65% 0); }
+    50% { opacity: 1; transform: translate(2px, -1px); clip-path: inset(65% 0 5% 0); }
+    75% { opacity: 1; transform: translate(-2px, 0); clip-path: inset(25% 0 40% 0); }
+    100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .mp-term, .mp-term::after, .mp-term-bar span, .mp-term-line.is-attiva::after,
+    .mp-term-title.is-glitch::before, .mp-term-title.is-glitch::after { animation: none; }
+}
+
 /* ---------------------------------------------------------------
    Sala d'attesa — identificativo della stanza
    --------------------------------------------------------------- */

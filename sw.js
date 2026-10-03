@@ -390,7 +390,8 @@
 // v140: Battle City, legenda ancorata in basso e una sola Carta Locazione per distretto.
 // v141: Battle City, oggetti (Radar potenziato, Scudo del Duel Disk), Blackout e Missione secondaria.
 // v142: Storia anime, scene riscritte come dialoghi fra personaggi.
-const CACHE_NAME = 'ygo-duel-arena-v142';
+// v143: Multiplayer, attesa del server come terminale KaibaCorp con glitch (in pagina, senza modali).
+const CACHE_NAME = 'ygo-duel-arena-v143';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

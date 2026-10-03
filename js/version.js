@@ -32,6 +32,9 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.30 — Multiplayer: mentre il server si sveglia, la riga di stato
+ *   diventa un terminale KaibaCorp (titolo con glitch RGB, scanline,
+ *   righe scritte a mano, barra senza fine). Sempre in pagina, mai modali.
  * 1.0.29 — Storia anime: le 31 scene non sono più monologhi di un solo
  *   personaggio ma conversazioni fra più voci, fedeli agli eventi della
  *   serie. Una riga di scena può ora essere una battuta { chi, testo }.
@@ -559,4 +562,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.29';
+window.GAME_VERSION = '1.0.30';

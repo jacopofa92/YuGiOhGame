@@ -222,22 +222,75 @@
     // pagina, il resto della lobby resta com'è (richiesta esplicita
     // dell'utente: "niente modali"). Il tempo è reale; le frasi sono solo
     // compagnia, non descrivono passaggi veri del server.
+    //
+    // Aspetto: un piccolo terminale della KaibaCorp DENTRO la riga di stato
+    // (`#mpStatus`), con titolo che glitcha (separazione RGB), scanline,
+    // righe che si scrivono lettera per lettera e una barra senza fine.
+    // Vive solo finché dura l'attesa: il prossimo `showStatus` sostituisce
+    // tutto col suo testo, quindi non serve mai "chiuderlo".
     const FRASI_ATTESA = [
-        'Il server si sta risvegliando',
-        'Sto preparando la sala duello',
-        'Controllo che tutto sia pronto',
-        'Ancora un momento, ci siamo quasi',
-        'Il server gratuito si riavvia da fermo'
+        'COLLEGAMENTO AL NODO DUELARENA',
+        'SERVER IN STAND-BY: AVVIO IN CORSO',
+        'ALLOCO LA SALA DUELLO',
+        'SINCRONIZZO I DUEL DISK',
+        'CONTROLLO DI INTEGRITÀ DEL CANALE',
+        'ANCORA UN ISTANTE'
     ];
-    const attesa = { timer: null, inizio: 0, risveglio: false, tentativo: 0 };
+    const attesa = { timer: null, inizio: 0, risveglio: false, tentativo: 0, righe: 0, digitazione: null };
+    const riduciMovimento = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    /** Scrive `testo` dentro `el` una lettera alla volta (subito intero se il movimento è ridotto). */
+    function scriviLentamente(el, testo) {
+        if (riduciMovimento) { el.textContent = testo; return; }
+        let i = 0;
+        const passo = () => {
+            el.textContent = testo.slice(0, ++i);
+            if (i < testo.length && el.isConnected) setTimeout(passo, 22);
+        };
+        passo();
+    }
+
+    function costruisciTerminaleAttesa(el) {
+        el.classList.remove('mp-status-error');
+        el.innerHTML = `
+            <div class="mp-term" role="status" aria-live="polite">
+                <div class="mp-term-head">
+                    <span class="mp-term-title" data-glitch="KAIBACORP // NETWORK ACCESS">KAIBACORP // NETWORK ACCESS</span>
+                    <span class="mp-term-clock" id="mpTermClock">T+00:00</span>
+                </div>
+                <div class="mp-term-body" id="mpTermBody"></div>
+                <div class="mp-term-bar"><span></span></div>
+                <div class="mp-term-foot" id="mpTermFoot"></div>
+            </div>`;
+        attesa.righe = 0;
+    }
 
     function mostraAttesaServer() {
         if (!attesa.risveglio) return;
+        const el = $('mpStatus');
+        if (!el) return;
+        if (!el.querySelector('.mp-term')) costruisciTerminaleAttesa(el);
         const secondi = Math.max(0, Math.round((Date.now() - attesa.inizio) / 1000));
-        // La frase cambia ogni 4 secondi, il tempo ogni secondo.
-        const frase = FRASI_ATTESA[Math.floor(secondi / 4) % FRASI_ATTESA.length];
-        const nota = secondi >= 25 ? ' Può servire fino a un minuto: resta su questa pagina.' : '';
-        showStatus(`⏳ ${frase}… (${secondi} s, tentativo ${Math.max(1, attesa.tentativo)}).${nota}`);
+        const mm = String(Math.floor(secondi / 60)).padStart(2, '0');
+        const ss = String(secondi % 60).padStart(2, '0');
+        $('mpTermClock').textContent = `T+${mm}:${ss}`;
+        // Una riga nuova ogni 4 secondi, fino all'ultima, che resta.
+        const attese = Math.min(FRASI_ATTESA.length, Math.floor(secondi / 4) + 1);
+        const corpo = $('mpTermBody');
+        while (attesa.righe < attese) {
+            const prec = corpo.lastElementChild;
+            if (prec) prec.classList.remove('is-attiva');
+            const riga = document.createElement('div');
+            riga.className = 'mp-term-line is-attiva';
+            corpo.appendChild(riga);
+            scriviLentamente(riga, '> ' + FRASI_ATTESA[attesa.righe]);
+            attesa.righe++;
+            // Un colpo di glitch sul titolo ad ogni riga nuova.
+            const titolo = el.querySelector('.mp-term-title');
+            titolo.classList.remove('is-glitch'); void titolo.offsetWidth; titolo.classList.add('is-glitch');
+        }
+        $('mpTermFoot').textContent = `TENTATIVO ${Math.max(1, attesa.tentativo)}`
+            + (secondi >= 25 ? ' · PUÒ SERVIRE FINO A UN MINUTO: RESTA SU QUESTA PAGINA' : '');
     }
     function avviaAttesaServer() {
         fermaAttesaServer();
