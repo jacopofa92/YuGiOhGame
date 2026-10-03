@@ -32,6 +32,10 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.27 — Battle City: la legenda della mappa è ancorata in fondo allo
+ *   schermo; ogni distretto ha UNA sola Carta Locazione da raccogliere (erano
+ *   4), le altre si guadagnano coi duelli puntati.
+ *
  * 1.0.26 — Multiplayer: tolti la console a finestra e lo stile "KaibaCorp
  *   System" (non piacevano); mentre il server si sveglia l'attesa è scritta
  *   in pagina, sotto i pulsanti, con frasi che cambiano e il tempo
@@ -547,4 +551,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.26';
+window.GAME_VERSION = '1.0.27';

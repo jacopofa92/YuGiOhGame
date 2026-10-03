@@ -109,10 +109,12 @@
         max-width: none;
         min-height: 100dvh;
         margin: 0;
-        padding: 74px clamp(10px, 2vw, 28px) 24px;
+        /* Poco spazio sotto: la legenda ancorata in fondo (vedi .legend)
+           deve stare a ridosso del bordo dello schermo, non a 24px. */
+        padding: 74px clamp(10px, 2vw, 28px) 8px;
     }
     .main.map-mode #content {
-        min-height: calc(100dvh - 98px);
+        min-height: calc(100dvh - 82px);
         display: flex;
         flex-direction: column;
     }
@@ -514,11 +516,20 @@
     }
     .city-cell.just-revealed { animation: radarReveal 0.32s ease-out; }
 
+    /* ANCORATA IN BASSO (richiesta dell'utente): `margin-top: auto` la spinge
+       al fondo di #content, che occupa tutta l'altezza dello schermo, e
+       `sticky` la tiene a vista in fondo anche quando la mappa è più alta
+       dello schermo (telefoni piccoli). Prima restava appoggiata sotto la
+       griglia, a metà pagina. */
     .legend {
         align-self: center;
         width: min(100%, 760px);
         display: flex; flex-wrap: wrap; gap: 8px 14px;
-        margin-top: 8px; padding: 8px 12px;
+        margin-top: auto;
+        position: sticky;
+        bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+        z-index: 4;
+        padding: 8px 12px;
         border-radius: 12px;
         border: 1px solid rgba(34, 211, 238, 0.14);
         background: rgba(5, 12, 24, 0.52);
@@ -1199,7 +1210,11 @@
     const SECTOR_COMPOSITION = [
         { kind: 'duelist', count: 7 },
         { kind: 'hunter', count: 2 },
-        { kind: 'locator', count: 4 },
+        // UNA sola Carta Locazione da raccogliere per distretto (erano 4:
+        // "troppe", segnalato dall'utente — con le 3 di partenza bastava un
+        // giro per arrivare a 6 senza duellare). Il grosso delle carte
+        // deve arrivare dai duelli puntati.
+        { kind: 'locator', count: 1 },
         { kind: 'event', count: 4 },
         { kind: 'shop', count: 2 }
         // il resto delle celle resta 'empty'

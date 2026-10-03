@@ -78,6 +78,35 @@ module.exports = {
             t.assert(prima.etichetteFuoriPosto === 0, `L'etichetta si vede solo sulle caselle raggiungibili (e sul decollo): ${prima.etichetteFuoriPosto} fuori posto`);
             t.assert(prima.segnalinoCentrato, 'Il segnalino deve stare sulla casella del giocatore');
 
+            // La legenda sta ancorata in fondo allo schermo, anche su un
+            // telefono: il suo bordo basso a pochi pixel dal bordo della
+            // finestra, mai appoggiata a metà pagina sotto la griglia.
+            for (const [w, h] of [[1280, 900], [393, 852]]) {
+                await page.setViewportSize({ width: w, height: h });
+                await page.waitForTimeout(250);
+                const leg = await page.evaluate(() => {
+                    const r = document.querySelector('.legend').getBoundingClientRect();
+                    return { bottom: Math.round(r.bottom), altezza: window.innerHeight };
+                });
+                t.assert(leg.bottom <= leg.altezza && leg.bottom >= leg.altezza - 30,
+                    `Legenda ancorata in basso a ${w}x${h}: bordo basso a ${leg.bottom}px su ${leg.altezza}`);
+            }
+            await page.setViewportSize({ width: 1280, height: 900 });
+
+            // Una sola Carta Locazione da raccogliere per distretto.
+            const raccolte = await page.evaluate(() => {
+                let massimo = 0; let minimo = 99;
+                for (let i = 0; i < 40; i++) {
+                    const s = makeInitialState('Medio');
+                    buildSector(s);
+                    const n = s.grid.cells.filter((c) => c.kind === 'locator').length;
+                    massimo = Math.max(massimo, n); minimo = Math.min(minimo, n);
+                }
+                return { massimo, minimo };
+            });
+            t.assert(raccolte.massimo === 1 && raccolte.minimo === 1,
+                `Ogni distretto ha UNA sola Carta Locazione da raccogliere (trovate da ${raccolte.minimo} a ${raccolte.massimo})`);
+
             await page.click('.city-cell[data-index="13"]');
             await page.waitForFunction(() => document.getElementById('cityGrid').dataset.player === '13', null, { timeout: 5000 });
             await page.waitForTimeout(700);
