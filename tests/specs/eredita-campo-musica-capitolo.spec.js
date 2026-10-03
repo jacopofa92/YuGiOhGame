@@ -47,9 +47,14 @@ module.exports = {
 
             const proveArea = await page.evaluate(() => StoryProgress.getProveConStato('anime', 'anime-area-prologo')
                 .map((p) => ({ id: p.id, kind: p.kind, field: p.field, music: p.music })));
-            const nonno = proveArea.find((p) => p.id === 'anime-1-nonno');
-            t.assert(!!nonno, 'Il duello contro il nonno Solomon deve esistere dentro l\'area del prologo');
-            t.assert(nonno.music === '07. Preliminary Face-Off.mp3',
+            // Un nodo che dichiara una music PROPRIA (diversa da quella del
+            // capitolo) la deve tenere. Si prende il duello contro Kaiba alla
+            // KaibaCorp, che nel catalogo ha il suo brano: il duello col nonno
+            // usato qui prima è diventato una scena (non è mai avvenuto nella
+            // serie) e non ha più una music sua.
+            const nonno = proveArea.find((p) => p.id === 'anime-1-kaiba');
+            t.assert(!!nonno, 'Il duello contro Kaiba alla KaibaCorp deve esistere dentro l\'area del prologo');
+            t.assert(nonno.music === '32. Seto Kaiba (Tournament Final) HD.mp3',
                 `Un nodo con la propria music deve tenere la SUA, non quella ereditata dal capitolo: ${JSON.stringify(nonno)}`);
 
             const scena = proveArea.find((p) => p.id === 'anime-1-scena');

@@ -52,7 +52,12 @@ module.exports = {
         t.assert(story.ids.filter((id) => id === 'seeker').length >= 2,
             'La Storia deve conservare sia Yugi vs Seeker sia il ramo parallelo Joey vs Seeker');
         t.assert(story.dialogues, 'Ogni Rare Hunter deve avere un dialogo introduttivo nella Storia');
-        t.assert(story.migrations.length === 3, 'Le nuove tappe di Battle City devono migrare i vecchi salvataggi');
+        // Le migrazioni di queste tre tappe sono state tolte di proposito: un
+        // salvataggio precedente al timbro di base della Storia anime si
+        // azzera (`azzeraSeSenzaTimbro`), quindi non c'è più nessun vecchio
+        // salvataggio da riportare in pari per loro. Si controlla invece che il
+        // timbro di base esista ancora, o ogni salvataggio nuovo verrebbe azzerato.
+        t.assert(story.migrations.length === 0, 'Le migrazioni delle tre tappe Rare Hunter non servono più (salvataggi vecchi azzerati)');
 
         const battleCity = fs.readFileSync(path.join(process.cwd(), 'torneo-battle-city.html'), 'utf8');
         ids.forEach((id) => t.assert(

@@ -64,6 +64,12 @@ module.exports = {
             gameState.gameOver = false;
             gameState.hasNormalSummoned = false;
             gameState.botHand = [bucoNero, mostroDebole];
+            // botTurn() comincia con la pescata del bot: una carta CASUALE dal
+            // suo Deck poteva essere un mostro più forte del "debole" del test,
+            // e il bot Evocava quello al suo posto (visto in CI: "botSummonMonster
+            // chiamata con id 1213" invece di 4). Il Deck contiene solo copie del
+            // mostro debole, così qualunque carta pescata non cambia l'esito.
+            gameState.botDeck = Array.from({ length: 10 }, (_, i) => ({ ...mostroDebole, uid: 'riempitivo-' + i }));
             gameState.botMonsterField = [null, null, null, null, null];
             gameState.botSTField = [null, null, null, null, null];
             gameState.playerMonsterField = [{ card: mostroForteAvversario, position: 'attack', isFaceDown: false, hasAttacked: false }, null, null, null, null];
