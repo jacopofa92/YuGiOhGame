@@ -256,6 +256,16 @@
         // Un salvataggio mai scritto non ha niente da spostare: una
         // campagna a zero è a zero in qualunque forma del catalogo.
         if (!salvato) return progress;
+        // Un avanzamento scritto prima del timbro `azzeraSeSenzaTimbro` è
+        // troppo vecchio per essere riportato in pari in modo affidabile
+        // (vedi il commento nel catalogo): riparte da zero. `premiata` si
+        // conserva, o il premio finale si pagherebbe una seconda volta. La
+        // prossima scrittura timbra, quindi l'azzeramento avviene una volta.
+        const campagnaLetta = getCampaign(campaignId);
+        const timbroBase = campagnaLetta && campagnaLetta.azzeraSeSenzaTimbro;
+        if (timbroBase && (salvato.separazioni || []).indexOf(timbroBase) === -1) {
+            return { completate: 0, finita: false, premiata: progress.premiata, sotto: {}, laterali: {} };
+        }
         applicaSeparazioni(campaignId, progress, salvato.separazioni || []);
         return saltaPercorsiGiaFiniti(campaignId, progress);
     }

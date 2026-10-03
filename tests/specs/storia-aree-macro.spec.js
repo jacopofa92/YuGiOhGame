@@ -152,63 +152,42 @@ module.exports = {
                     const p = StoryProgress.getProgress('anime');
                     return { c: p.completate, prologo: p.sotto['anime-area-prologo'] || 0, regno: p.sotto['anime-area-regno'] || 0 };
                 };
+                const catalogo = storyCampaignsDatabase.find((c) => c.id === 'anime');
+                const tutti = catalogo.separazioni.map((s) => s.id);
+                const base = catalogo.azzeraSeSenzaTimbro;
+                // Un salvataggio PRIMA del timbro di base è troppo vecchio
+                // per essere migrato in modo affidabile: riparte da zero.
+                // Vale per le vecchie forme (senza timbro, solo il prologo,
+                // il castello-area), e il premio già ritirato resta tale.
                 const out = {
-                    // Dentro il vecchio Regno, ancora nelle tappe del prologo.
-                    aMetaPrologo: leggi({ completate: 0, sotto: { 'anime-area-regno': 3 } }),
-                    // Dentro il vecchio Regno, oltre il prologo: il resto del
-                    // Regno resta dov'era, e si giocano le tappe nuove.
-                    oltrePrologo: leggi({ completate: 0, sotto: { 'anime-area-regno': 8 } }),
-                    // Già in Battle City: tutto fatto, un passo più avanti
-                    // (il prologo davanti) e il Regno pieno, comprese le
-                    // tappe nate col castello.
-                    inBattleCity: leggi({ completate: 1, sotto: { 'anime-area-regno': 14, 'anime-area-battlecity1': 2 } })
+                    base: base,
+                    senzaTimbro: leggi({ completate: 1, premiata: true, sotto: { 'anime-area-regno': 14, 'anime-area-battlecity1': 2 } }),
+                    primaDelPrologo: leggi({ completate: 0, sotto: { 'anime-area-regno': 8 } }),
+                    castelloArea: leggi({ completate: 2, sotto: { 'anime-area-regno': 8, 'anime-area-castello': 1 }, separazioni: ['prologo-domino-city', 'castello-pegasus'] })
                 };
-                // Il castello: Pegasus chiudeva l'isola, e ora gli stanno
-                // davanti due tappe nate col castello. Chi era arrivato
-                // davanti a lui (qui già riportato in pari col prologo)
-                // entra nel castello dalla prima delle due.
-                const statoProva = (stato) => {
-                    SaveManager.setStoryState('anime', stato);
-                    const p = StoryProgress.getProgress('anime');
-                    const area = StoryProgress.getTappaCorrente('anime');
-                    return { c: p.completate, regno: p.sotto['anime-area-regno'] || 0,
-                        prova: (area.tappe[p.sotto[area.id] || 0] || {}).id };
-                };
-                out.davantiAPegasus = statoProva({
-                    completate: 1, sotto: { 'anime-area-prologo': 7, 'anime-area-regno': 8 },
-                    separazioni: ['prologo-domino-city']
-                });
-                // Per un giorno il castello è stato un'area a sé: chi era
-                // dentro (a una tappa) ci si ritrova, ora dentro il Regno.
-                out.dalCastelloArea = statoProva({
-                    completate: 2, sotto: { 'anime-area-prologo': 7, 'anime-area-regno': 8, 'anime-area-castello': 1 },
-                    separazioni: ['prologo-domino-city', 'castello-pegasus']
-                });
+                out.premioTenuto = StoryProgress.getProgress('anime').premiata;
+                SaveManager.setStoryState('anime', { completate: 1, premiata: true, sotto: { 'anime-area-regno': 8 }, separazioni: ['prologo-domino-city'] });
+                out.premioTenuto = StoryProgress.getProgress('anime').premiata;
+                // Un salvataggio SUCCESSIVO al timbro di base si migra come
+                // sempre: non si azzera, e il Regno finito resta finito.
+                const quasiAttuale = tutti.slice(0, tutti.indexOf(base) + 1);
+                out.dopoIlTimbro = leggi({ completate: 2, sotto: { 'anime-area-regno': 17, 'anime-area-battlecity1': 2 }, separazioni: quasiAttuale });
+                // Il Regno finito non può risultare "più che finito".
+                const area = StoryProgress.getTappe('anime').find((x) => x.id === 'anime-area-regno');
+                out.principaliRegno = area.tappe.filter((x) => x.parallelo !== true).length;
                 // Scrivere lo timbra: rileggendolo non si migra una seconda volta.
                 StoryProgress.ricomincia('anime');
                 out.timbro = (SaveManager.getStoryState('anime').separazioni || []).slice();
                 out.attese = storyCampaignsDatabase.find((c) => c.id === 'anime').separazioni.map((s) => s.id);
                 return out;
             });
-            t.assert(migrazione.aMetaPrologo.c === 0 && migrazione.aMetaPrologo.prologo === 3 && migrazione.aMetaPrologo.regno === 0,
-                `A metà delle vecchie tappe del prologo si deve restare lì: ${JSON.stringify(migrazione.aMetaPrologo)}`);
-            t.assert(migrazione.oltrePrologo.c === 0 && migrazione.oltrePrologo.prologo === 5 && migrazione.oltrePrologo.regno === 3,
-                `Oltre il prologo, il Regno deve tenere il suo avanzamento: ${JSON.stringify(migrazione.oltrePrologo)}`);
-            // Il Regno "pieno" è TUTTE le sue tappe principali (le parallele
-            // non contano), qualunque sia il loro numero oggi: un numero
-            // scritto a mano qui invecchiava ad ogni tappa inserita nel
-            // catalogo — è esattamente ciò che aveva reso rosso questo test.
-            const principaliRegno = await page.evaluate(() => {
-                const area = StoryProgress.getTappe('anime').find((x) => x.id === 'anime-area-regno');
-                return area.tappe.filter((x) => x.parallelo !== true).length;
-            });
-            t.assert(migrazione.inBattleCity.c === 2 && migrazione.inBattleCity.regno === principaliRegno,
-                `Chi era già oltre il Regno non deve tornare indietro, e il Regno risulta finito (${principaliRegno} principali): ${JSON.stringify(migrazione.inBattleCity)}`);
-            t.assert(migrazione.davantiAPegasus.c === 1 && migrazione.davantiAPegasus.prova === 'anime-2c-scena',
-                `Chi era davanti a Pegasus deve entrare nel castello dalla prima tappa nuova: ${JSON.stringify(migrazione.davantiAPegasus)}`);
-            t.assert(migrazione.dalCastelloArea.c === 1 && migrazione.dalCastelloArea.regno === 11
-                && migrazione.dalCastelloArea.prova === 'anime-2c-mai',
-                `Chi era dentro il castello-area deve ritrovarsi allo stesso punto dentro il Regno: ${JSON.stringify(migrazione.dalCastelloArea)}`);
+            const azzerato = (s) => s.c === 0 && s.prologo === 0 && s.regno === 0;
+            t.assert(!!migrazione.base, 'La campagna anime deve dichiarare il timbro di base (azzeraSeSenzaTimbro)');
+            t.assert(azzerato(migrazione.senzaTimbro) && azzerato(migrazione.primaDelPrologo) && azzerato(migrazione.castelloArea),
+                `I salvataggi scritti prima del timbro di base riparte da zero: ${JSON.stringify([migrazione.senzaTimbro, migrazione.primaDelPrologo, migrazione.castelloArea])}`);
+            t.assert(migrazione.premioTenuto === true, 'L\'azzeramento non deve far ripagare il premio finale già ritirato');
+            t.assert(migrazione.dopoIlTimbro.c === 2 && migrazione.dopoIlTimbro.regno <= migrazione.principaliRegno && migrazione.dopoIlTimbro.regno >= 17,
+                `Un salvataggio col timbro di base non si azzera, e il Regno finito non supera le sue ${migrazione.principaliRegno} prove principali: ${JSON.stringify(migrazione.dopoIlTimbro)}`);
 
             // --- DUE MAPPE NELLO STESSO REGNO --------------------------
             // L'isola e poi, battuto Kaiba, gli interni del castello. Si
@@ -217,15 +196,24 @@ module.exports = {
             // passaggi per tornare sull'isola, e dall'isola si torna avanti.
             const mappe = await page.evaluate(() => {
                 const tStamp = storyCampaignsDatabase.find((c) => c.id === 'anime').separazioni.map((s) => s.id);
+                // "Davanti a Pegasus" = tutte le prove principali che stanno
+                // PRIMA dell'ingresso nel castello (anime-2c-scena). Si
+                // legge dal catalogo: un numero scritto a mano invecchia ad
+                // ogni tappa inserita nel Regno.
+                const principali = StoryProgress.getTappe('anime').find((x) => x.id === 'anime-area-regno')
+                    .tappe.filter((x) => x.parallelo !== true);
+                const davantiAlCastello = principali.findIndex((x) => x.id === 'anime-2c-scena');
                 SaveManager.setStoryState('anime', {
-                    completate: 1, sotto: { 'anime-area-prologo': 7, 'anime-area-regno': 10 }, separazioni: tStamp
+                    completate: 1, sotto: { 'anime-area-prologo': 7, 'anime-area-regno': davantiAlCastello }, separazioni: tStamp
                 });
                 try { sessionStorage.setItem('ygoStoriaMappaVista:anime-area-regno:1', '1'); } catch (e) { /* */ }
                 const p = StoryProgress.getPagineConStato('anime', 'anime-area-regno');
                 return {
                     quante: p.pagine.length, corrente: p.corrente,
                     primaDelCastello: p.pagine[1] && p.pagine[1].prove[0].id,
-                    ultimaDellIsola: p.pagine[0].prove[p.pagine[0].prove.length - 1].id
+                    // L'ultima prova PRINCIPALE: in coda all'isola ci sono anche
+                    // duelli paralleli (Tea contro Mai), che non chiudono il percorso.
+                    ultimaDellIsola: p.pagine[0].prove.filter((x) => x.parallelo !== true).pop().id
                 };
             });
             t.assert(mappe.quante === 2 && mappe.corrente === 1,
@@ -244,8 +232,14 @@ module.exports = {
             // subito, lo sfondo dopo un attimo.
             await page.waitForFunction(() => /castello_pegasus/.test(getComputedStyle(document.querySelector('.nm-canvas')).backgroundImage),
                 null, { timeout: 10000 });
-            // 3 tappe del castello + il passaggio di ritorno sull'isola.
-            t.assert(sulCastello.nodi === 4 && /Castello di Pegasus/.test(sulCastello.capitolo),
+            // Le prove di ciascuna mappa si leggono dal catalogo: un numero
+            // scritto a mano qui invecchiava ad ogni tappa aggiunta.
+            const proveMappe = await page.evaluate(() => {
+                const pg = StoryProgress.getPagineConStato('anime', 'anime-area-regno').pagine;
+                return { isola: pg[0].prove.length, castello: pg[1].prove.length };
+            });
+            // Le tappe del castello + il passaggio di ritorno sull'isola.
+            t.assert(sulCastello.nodi === proveMappe.castello + 1 && /Castello di Pegasus/.test(sulCastello.capitolo),
                 `Davanti a Pegasus la pagina deve aprirsi sul castello: ${JSON.stringify(sulCastello)}`);
             await page.locator('.nm-node', { hasText: 'Torna sull\'isola' }).click();
             await page.waitForFunction(() => /storia_anime_regno/.test(getComputedStyle(document.querySelector('.nm-canvas')).backgroundImage),
@@ -255,8 +249,8 @@ module.exports = {
                 passaggioAvanti: !!document.querySelector('.nm-node--apribile .nm-label')
                     && [...document.querySelectorAll('.nm-node')].some((n) => /Il Castello/.test(n.textContent) && !n.disabled)
             }));
-            // 10 tappe dell'isola + il passaggio verso il castello, aperto.
-            t.assert(sullIsola.nodi === 11 && sullIsola.passaggioAvanti,
+            // Le tappe dell'isola + il passaggio verso il castello, aperto.
+            t.assert(sullIsola.nodi === proveMappe.isola + 1 && sullIsola.passaggioAvanti,
                 `Sull'isola ci devono essere le sue tappe e il passaggio aperto verso il castello: ${JSON.stringify(sullIsola)}`);
 
             // --- SU UNO SCHERMO PIÙ GRANDE DEL DISEGNO -------------------
@@ -283,13 +277,18 @@ module.exports = {
             // come superarla un'altra volta, e alla seconda rilettura il
             // Regno risultava vinto senza aver giocato Mai né Pegasus.
             await page.evaluate(() => {
+                // Come sopra: davanti all'ingresso del castello, letto dal catalogo.
+                const principaliRileggi = StoryProgress.getTappe('anime').find((x) => x.id === 'anime-area-regno')
+                    .tappe.filter((x) => x.parallelo !== true);
                 SaveManager.setStoryState('anime', {
-                    completate: 1, sotto: { 'anime-area-prologo': 7, 'anime-area-regno': 11 },
+                    completate: 1, sotto: { 'anime-area-prologo': 7, 'anime-area-regno': principaliRileggi.findIndex((x) => x.id === 'anime-2c-scena') + 1 },
                     separazioni: storyCampaignsDatabase.find((c) => c.id === 'anime').separazioni.map((s) => s.id)
                 });
             });
             await page.goto(url('?campaign=anime&torneo=' + AREA + '&pagina=1'));
             await page.waitForSelector('.nm-node', { timeout: 20000 });
+            // Il punto di partenza, per confrontare: la rilettura non lo sposta.
+            const regnoPrima = await page.evaluate(() => StoryProgress.getProgress('anime').sotto['anime-area-regno']);
             await page.locator('.nm-node', { hasText: 'Il cancello si apre' }).click();
             await page.waitForSelector('.sc-scena', { timeout: 10000 });
             const scadenza = Date.now() + 25000;
@@ -308,7 +307,7 @@ module.exports = {
                 completate: StoryProgress.getProgress('anime').completate,
                 ancoraDentro: /torneo=anime-area-regno/.test(location.search)
             }));
-            t.assert(dopoRilettura.regno === 11 && dopoRilettura.completate === 1 && dopoRilettura.ancoraDentro,
+            t.assert(dopoRilettura.regno === regnoPrima && dopoRilettura.completate === 1 && dopoRilettura.ancoraDentro,
                 `Rileggere una scena già letta non deve far avanzare niente: ${JSON.stringify(dopoRilettura)}`);
             t.assert(JSON.stringify(migrazione.timbro) === JSON.stringify(migrazione.attese),
                 `Ogni scrittura deve timbrare tutte le separazioni del catalogo: ${JSON.stringify(migrazione.timbro)}`);

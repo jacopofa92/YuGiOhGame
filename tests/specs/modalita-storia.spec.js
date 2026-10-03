@@ -357,7 +357,11 @@ module.exports = {
             // --- Finire la campagna paga, una volta sola ----------------
             const premi = await page.evaluate(() => {
                 const tappe = StoryProgress.getTappe('anime');
-                SaveManager.setStoryState('anime', { completate: tappe.length, finita: true, premiata: false });
+                // Col timbro: senza, un salvataggio così vecchio verrebbe azzerato.
+                SaveManager.setStoryState('anime', {
+                    completate: tappe.length, finita: true, premiata: false,
+                    separazioni: storyCampaignsDatabase.find((c) => c.id === 'anime').separazioni.map((s) => s.id)
+                });
                 const prima = SaveManager.getCurrency().credits;
                 const voci = StoryProgress.riscuotiPremioFinale('anime');
                 const dopoPrimo = SaveManager.getCurrency().credits;

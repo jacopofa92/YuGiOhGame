@@ -32,6 +32,10 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.17 — Storia anime: un avanzamento scritto prima dei contatori a prove
+ *   principali (campo `azzeraSeSenzaTimbro`) riparte da zero invece di
+ *   essere migrato in un punto sbagliato; il premio già ritirato resta.
+ *
  * 1.0.16 — Kaiba cambia aspetto per contesto: avatar del Regno dei Duellanti
  *   (torneo e Storia fino a fine Regno) e di Forbidden Memories (Torneo
  *   Kaiba e tappa del torneo in Memorie Proibite); altrove resta quello di
@@ -505,4 +509,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.16';
+window.GAME_VERSION = '1.0.17';

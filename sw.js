@@ -375,7 +375,8 @@
 // v127: pedine ridimensionate (max 320 px); originali in avatarTrasparenza/.
 // v128: velocità del bot, schema unico delle scelte, Rare Hunter ritagliato, anti-imbroglio server.
 // v129: avatar di Kaiba per contesto (Regno dei Duellanti / Forbidden Memories).
-const CACHE_NAME = 'ygo-duel-arena-v129';
+// v130: salvataggi vecchi della Storia anime azzerati invece che migrati.
+const CACHE_NAME = 'ygo-duel-arena-v130';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

@@ -1380,6 +1380,16 @@ const storyCampaignsDatabase = [
         // è portata via; StoryProgress la applica UNA volta ai salvataggi
         // scritti prima (che non ne portano l'id) e la timbra su tutti
         // quelli scritti dopo. L'`id` non va mai cambiato né riusato.
+        //
+        // SALVATAGGI VECCHI: un avanzamento scritto PRIMA di questa voce
+        // (cioè prima che i contatori delle aree contassero le sole prove
+        // principali) non si migra più, si AZZERA: le migrazioni in
+        // sequenza, applicate a salvataggi così vecchi, li riportavano in
+        // un punto sbagliato della mappa (misurato: un salvataggio "davanti
+        // a Pegasus" ripartiva da metà Regno). Resta salvato solo il fatto
+        // di aver già ritirato il premio finale, così non si paga due volte.
+        // Da questa voce in poi vale la migrazione di sempre.
+        azzeraSeSenzaTimbro: 'anime-rami-paralleli',
         separazioni: [
             { id: 'prologo-domino-city', nuova: 'anime-area-prologo', da: 'anime-area-regno', quante: 5 },
             // Il castello di Pegasus è la SECONDA MAPPA del Regno, con due
