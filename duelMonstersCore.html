@@ -2065,6 +2065,24 @@
             border-width: 2px;
             animation: tributeBandGlow 1.6s ease-in-out infinite;
         }
+        /* Schermi stretti (telefono in verticale): la banda va a capo invece
+           di uscire dallo schermo — a una riga sola il testo e "Obbligatorio"
+           venivano tagliati ai lati. */
+        @media (max-width: 600px) {
+            .tribute-prompt.selection-banner {
+                white-space: normal;
+                flex-wrap: wrap;
+                justify-content: center;
+                text-align: center;
+                width: calc(100vw - 20px);
+                max-width: 420px;
+                padding: 8px 14px;
+                border-radius: 18px;
+                gap: 6px 8px;
+                font-size: clamp(0.78rem, 3.4vw, 0.95rem);
+            }
+            .tribute-prompt.selection-banner .tribute-prompt-text { flex: 1 1 60%; }
+        }
         @keyframes tributeBandGlow {
             0%, 100% { box-shadow: 0 8px 24px rgba(0,0,0,0.45), 0 0 16px rgba(231,76,60,0.3); }
             50%      { box-shadow: 0 8px 24px rgba(0,0,0,0.45), 0 0 34px rgba(231,76,60,0.85); }

@@ -377,7 +377,8 @@
 // v129: avatar di Kaiba per contesto (Regno dei Duellanti / Forbidden Memories).
 // v130: salvataggi vecchi della Storia anime azzerati invece che migrati.
 // v131: ripulite le vecchie migrazioni della Storia anime.
-const CACHE_NAME = 'ygo-duel-arena-v131';
+// v132: banda delle scelte (Tributo/scarto/casella) a capo su telefono in verticale.
+const CACHE_NAME = 'ygo-duel-arena-v132';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

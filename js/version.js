@@ -32,6 +32,9 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.19 — La banda delle scelte (Tributo, scarto, casella) va a capo su
+ *   telefono in verticale invece di uscire dallo schermo.
+ *
  * 1.0.18 — Tolte dal catalogo della Storia anime le migrazioni dei
  *   salvataggi precedenti al timbro di base (ormai azzerati).
  *
@@ -512,4 +515,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.18';
+window.GAME_VERSION = '1.0.19';
