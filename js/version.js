@@ -32,6 +32,10 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.22 — Tutte le foto hanno estensione .jpg (1162 .jpeg rinominati:
+ *   carte e mappe) e il codice le nomina così; guardrail contro il ritorno
+ *   di .jpeg e contro riferimenti a immagini inesistenti.
+ *
  * 1.0.21 — Divieti di Evocazione corretti: L'Ultimo Guerriero (1045) blocca
  *   solo le Special Summon, Capro Espiatorio (434) vieta Evocazioni scoperte
  *   e Special Summon nel turno (il Set resta libero), 282 già a posto.
@@ -467,7 +471,7 @@
  *   appoggiata sopra un disegno e diventa un viaggio dentro quel disegno.
  *
  * beta.27 — La campagna Freedom ha la sua mappa disegnata
- *   (images/maps/storia_freedom_1.jpeg): una mappa vera si stende intera
+ *   (images/maps/storia_freedom_1.jpg): una mappa vera si stende intera
  *   sul mondo invece di essere piastrellata come le texture prese in
  *   prestito, e il mondo di quella campagna è stato riportato alle
  *   proporzioni dell'arte. Le altre quattro campagne aspettano la loro
@@ -522,4 +526,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.21';
+window.GAME_VERSION = '1.0.22';

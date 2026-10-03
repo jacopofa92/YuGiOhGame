@@ -11,7 +11,7 @@
  * Il fallback CSS qui dentro imita il layout di una vera carta Yu-Gi-Oh
  * (barra nome + attributo, stelle Livello, finestra immagine, riga
  * tipo/razza, riga ATK/DEF) per le carte che non hanno ancora
- * un'immagine reale in images/cards/<id>.jpeg — vedi js/card-renderer.js
+ * un'immagine reale in images/cards/<id>.jpg — vedi js/card-renderer.js
  * per come si sceglie tra immagine vera e questo fallback.
  *
  * SCALATURA AUTOMATICA: .card è un "container query container"
@@ -97,7 +97,7 @@
 .card[data-type="monster"][data-category="fusion"] { background: linear-gradient(145deg, #d9a8f0, #6b2f8f); border-color: #a855d9; }
 
 /* ============================================================
-   Immagine reale della carta (images/cards/<id>.jpeg). Se manca o non
+   Immagine reale della carta (images/cards/<id>.jpg). Se manca o non
    carica, l'<img> viene rimosso via JS (vedi card-renderer.js) e resta
    visibile il fallback CSS (.card-frame) sottostante.
    ============================================================ */
@@ -323,7 +323,7 @@
    Retro della carta (coperta) — replica del retro "anime" originale
    (marrone scuro pieno, ovale dorato al centro, niente anello/stelle
    come nel retro TCG moderno) usata finché non esiste una vera
-   images/cards/backCard.jpeg, che quando presente la sostituisce
+   images/cards/backCard.jpg, che quando presente la sostituisce
    automaticamente (stesso meccanismo di has-image sopra).
    ============================================================ */
 /* !important qui, non per pigrizia: card-renderer.js scrive SEMPRE
@@ -411,7 +411,7 @@
    Pila di carte (es. la zona Deck sul campo): 3 dorsi impilati e
    leggermente sfalsati come fallback CSS — le pagine che la usano
    (duelMonstersCore.html) aggiungono i propri offset via .deck-preview.
-   Se esiste una vera images/cards/backPilaCards.jpeg, prende il posto
+   Se esiste una vera images/cards/backPilaCards.jpg, prende il posto
    dell'intera pila (vedi .has-pile-image, gestito in card-renderer.js).
    ============================================================ */
 .deck-pile-image {

@@ -3,7 +3,7 @@
 Le carte che Yu-Gi-Oh non sono (vedi il campo `origin` in `js/data/cards-db.js`)
 tengono qui le proprie illustrazioni, separate dal materiale ufficiale in
 `images/cards/`, che ha origine e licenza completamente diverse. Il nome del
-file resta `<id carta>.jpeg`, come nella cartella principale.
+file resta `<id carta>.jpg`, come nella cartella principale.
 
 Tutte le immagini qui sotto vengono da Wikimedia Commons. La maggior parte
 sono fotografie del 1915-1922 ormai di pubblico dominio; alcune vengono

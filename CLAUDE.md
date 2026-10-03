@@ -86,6 +86,14 @@ perde al prossimo build.
 - **Immagini carta**: sempre un ritaglio della sola illustrazione dentro
   la cornice CSS della carta — mai uno scan intero pre-renderizzato,
   anche quando disponibile.
+- **Estensione delle foto: SEMPRE `.jpg`, mai `.jpeg`** (carte, mappe,
+  personaggi, arene, sfondi). Prima convivevano le due e ogni file nuovo
+  costringeva a indovinare quale usare nel codice; convertite tutte
+  (1162 file rinominati) e sorvegliato da
+  `tests/specs/guardrail-estensione-immagini.spec.js`, che boccia anche un
+  riferimento `images/....jpg` a un file che non esiste (tranne una lista
+  chiusa di file opzionali, dichiarata nel test). Un file nuovo si salva
+  già come `.jpg`.
 - **Commenti nel codice**: generosi e orientati al PERCHÉ (vincoli
   nascosti, invarianti, bug specifici aggirati) — il codice deve restare
   editabile a mano, senza assistenza AI, da chi lo legge dopo. Non

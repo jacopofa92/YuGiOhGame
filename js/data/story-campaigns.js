@@ -44,11 +44,11 @@
  * in ordine di preferenza: si usa il primo che esiste davvero.
  *
  * Ogni campagna dichiara come PRIMO candidato la sua mappa disegnata,
- * `images/maps/storia_<id della campagna>_1.jpeg`, e come secondo
+ * `images/maps/storia_<id della campagna>_1.jpg`, e come secondo
  * l'immagine presa in prestito da un'arena, che è il ripiego finché
  * quella mappa non c'è:
  *
- *     sfondo: ['images/maps/storia_ww2_1.jpeg', 'images/fields/mobile/rovine_2.jpg']
+ *     sfondo: ['images/maps/storia_ww2_1.jpg', 'images/fields/mobile/rovine_2.jpg']
  *
  * IL GIORNO IN CUI QUEL FILE VIENE MESSO NELLA CARTELLA, la mappa lo usa
  * da sola — nessuna riga di codice da toccare, nessun elenco da
@@ -222,14 +222,14 @@ const storyCampaignsDatabase = [
         // Battle City, l'Egitto. Ogni nodo sta sulla SUA isola. Il castello
         // non ha un nodo suo: è la seconda mappa DENTRO il Regno.
         //
-        // La vecchia mappa a cinque isole (`storia_mappa_principale.jpeg`)
+        // La vecchia mappa a cinque isole (`storia_mappa_principale.jpg`)
         // NON è più fra i candidati, e non per dimenticanza: ha un altro
         // rapporto (1672x940 contro 1942x809), quindi se questa mancasse
         // e ricadesse su quella, i nodi posati per sei isole finirebbero
         // in mezzo al mare. Meglio l'arena generica qui sotto, che almeno
         // non finge di essere la mappa giusta.
         sfondo: [
-            'images/maps/storia_mappa_principale_sei_isole.jpeg',
+            'images/maps/storia_mappa_principale_sei_isole.jpg',
             'images/fields/mobile/rovine_1.jpg'
         ],
         musica: 'mainTheme.mp3',
@@ -276,7 +276,7 @@ const storyCampaignsDatabase = [
         // punizione — vedi SOTTOPERCORSI in js/story/story-progress.js.
         //
         // Ogni area dichiara la propria mappa col nome canonico
-        // `images/maps/storia_anime_<area>.jpeg`. Le cinque mappe sono
+        // `images/maps/storia_anime_<area>.jpg`. Le cinque mappe sono
         // arrivate tutte insieme: il mondo di ogni area è stato portato alle
         // proporzioni del suo disegno (16:9 per Regno e Battle City, 3:2 per
         // Mondo Virtuale e Mondo dei Ricordi) e le tappe spostate IN
@@ -303,7 +303,7 @@ const storyCampaignsDatabase = [
                         label: 'Domino City', x: 190, y: 360,
                         nome: 'Prologo: Domino City',
                         testo: 'Otto anni su un puzzle, tre amici da convincere, e un Drago Bianco che Kaiba non doveva toccare.',
-                        mappa: { sfondo: ['images/maps/storia_anime_prologo.jpeg'], larghezza: 1672, altezza: 940 },
+                        mappa: { sfondo: ['images/maps/storia_anime_prologo.jpg'], larghezza: 1672, altezza: 940 },
                         // Le PRIME CINQUE tappe qui sotto stavano in testa
                         // al Regno dei Duellanti prima che il prologo avesse
                         // un'isola sua: vedi `separazioni` in fondo alla
@@ -510,13 +510,13 @@ const storyCampaignsDatabase = [
                         // striscia dei capitoli, un nodo sulla mappa grande —
                         // perché è un unico torneo: il castello è dove
                         // finisce, non un posto nuovo.
-                        mappa: { nome: 'L\'isola di Pegasus', sfondo: ['images/maps/storia_anime_regno.jpeg'], larghezza: 1672, altezza: 941 },
+                        mappa: { nome: 'L\'isola di Pegasus', sfondo: ['images/maps/storia_anime_regno.jpg'], larghezza: 1672, altezza: 941 },
                         mappeSuccessive: [
                             {
                                 daTappa: 'anime-2c-scena',
                                 nome: 'Il Castello di Pegasus',
                                 testo: 'Oltre il cancello le Stelle non servono più: restano quattro finalisti, e un padrone di casa che legge nel pensiero.',
-                                sfondo: ['images/maps/storia_anime_castello_pegasus.jpeg'], larghezza: 1672, altezza: 941,
+                                sfondo: ['images/maps/storia_anime_castello_pegasus.jpg'], larghezza: 1672, altezza: 941,
                                 // Sull'isola il passaggio è il portone del
                                 // castello, in cima alla scalinata dove
                                 // aspetta Kaiba; dentro, è la scalinata
@@ -812,7 +812,7 @@ const storyCampaignsDatabase = [
                         label: 'Battle City - Parte 1', x: 865, y: 360,
                         nome: 'Battle City - Parte 1',
                         testo: 'Sei Carte Localizzatrici per arrivare alle finali, e tre Dei Egizi che non dovrebbero esistere.',
-                        mappa: { sfondo: ['images/maps/storia_anime_battlecity1.jpeg'], larghezza: 1672, altezza: 941 },
+                        mappa: { sfondo: ['images/maps/storia_anime_battlecity1.jpg'], larghezza: 1672, altezza: 941 },
                         tappe: [
                             {
                                 id: 'anime-3-scena', kind: 'scene', icona: '🏙️',
@@ -1043,7 +1043,7 @@ const storyCampaignsDatabase = [
                         label: 'Il Mondo Virtuale', x: 1120, y: 335,
                         nome: 'Il Mondo Virtuale',
                         testo: 'Nessun corpo, nessun Duel Disk: qui si perde l\'anima e basta. Prima i Cinque, poi Noah, poi chi comanda davvero.',
-                        mappa: { sfondo: ['images/maps/storia_anime_virtuale.jpeg'], larghezza: 1536, altezza: 1024 },
+                        mappa: { sfondo: ['images/maps/storia_anime_virtuale.jpg'], larghezza: 1536, altezza: 1024 },
                         tappe: [
                             {
                                 id: 'anime-6-scena', kind: 'scene', icona: '🧊',
@@ -1179,7 +1179,7 @@ const storyCampaignsDatabase = [
                         label: 'Battle City - Parte 2', x: 1400, y: 355,
                         nome: 'Battle City - Parte 2',
                         testo: 'Le finali riprendono da dove Noah le aveva interrotte: mancano solo i duelli veri.',
-                        mappa: { sfondo: ['images/maps/storia_anime_battlecity2.jpeg'], larghezza: 1672, altezza: 941 },
+                        mappa: { sfondo: ['images/maps/storia_anime_battlecity2.jpg'], larghezza: 1672, altezza: 941 },
                         tappe: [
                             {
                                 id: 'anime-4b-scena', kind: 'scene', icona: '🛩️',
@@ -1257,7 +1257,7 @@ const storyCampaignsDatabase = [
                         label: 'Il Mondo dei Ricordi', x: 1765, y: 350,
                         nome: 'Il Mondo dei Ricordi',
                         testo: 'L\'ultimo duello non si gioca per vincere: si gioca per lasciarlo andare.',
-                        mappa: { sfondo: ['images/maps/storia_anime_cerimoniale.jpeg'], larghezza: 1536, altezza: 1024 },
+                        mappa: { sfondo: ['images/maps/storia_anime_cerimoniale.jpg'], larghezza: 1536, altezza: 1024 },
                         tappe: [
                             {
                                 id: 'anime-9-scena', kind: 'scene', icona: '🏜️',
@@ -1420,7 +1420,7 @@ const storyCampaignsDatabase = [
         nome: 'Memorie Proibite',
         sottotitolo: 'Il Principe e i Cinque Maghi Guerrieri',
         icona: '🏺',
-        sfondo: ['images/maps/storia_forbidden_memories_1.jpeg', 'images/fields/mobile/anticoEgittoGiorno_2.jpg'],
+        sfondo: ['images/maps/storia_forbidden_memories_1.jpg', 'images/fields/mobile/anticoEgittoGiorno_2.jpg'],
         // Due brani della colonna sonora del gioco originale, scelti per
         // ora e da rivedere: la campagna li ha per non suonare come il
         // menu, non perché siano definitivi.
@@ -1621,7 +1621,7 @@ const storyCampaignsDatabase = [
                         nome: 'Torneo della Kaiba Corporation',
                         testo: 'Quattro preliminari e cinque finali fino al presidente. Chi perde esce dal tabellone e ricomincia dal primo.',
                         mappa: {
-                            sfondo: ['images/maps/storia_torneo_kaiba_1.jpeg', 'images/fields/mobile/stadioKaiba.jpg'],
+                            sfondo: ['images/maps/storia_torneo_kaiba_1.jpg', 'images/fields/mobile/stadioKaiba.jpg'],
                             larghezza: 3200,
                             altezza: 1800
                         },
@@ -2172,10 +2172,10 @@ const storyCampaignsDatabase = [
         // scavate nella rupe e lungo il fiume, si risale al tempio centrale
         // e al palazzo, e si finisce fra la Sfinge e le piramidi. I nodi
         // stanno su quei luoghi, nell'ordine della puntata.
-        // La prima versione (`storia_freedom_1.jpeg`, 2700x1800) non è più
+        // La prima versione (`storia_freedom_1.jpg`, 2700x1800) non è più
         // fra i candidati: altro rapporto, e i nodi di adesso ci
         // cadrebbero sopra a caso.
-        sfondo: ['images/maps/storia_freedom_2.jpeg', 'images/fields/mobile/anticoEgittoGiorno_1.jpg'],
+        sfondo: ['images/maps/storia_freedom_2.jpg', 'images/fields/mobile/anticoEgittoGiorno_1.jpg'],
         // Il conduttore in persona: la campagna è la sua puntata, e da metà
         // in poi anche il suo problema.
         protagonista: { name: 'Roberto Giacobbo', title: 'Il conduttore', image: 'images/characters/rg.jpg', icon: '🎥' },
@@ -2408,14 +2408,14 @@ const storyCampaignsDatabase = [
         // quindi ogni duello resta alla difficoltà scritta sulla sua tappa.
         senzaLivelli: true,
         // La mappa disegnata del fronte italiano. Il nome del file non
-        // segue la convenzione `storia_<id>_1.jpeg` (l'id della campagna è
+        // segue la convenzione `storia_<id>_1.jpg` (l'id della campagna è
         // 'ww1', il file si chiama col nome per esteso): resta com'è
         // arrivato invece di rinominarlo, e il nome canonico gli sta
         // dietro come secondo candidato — così un file messo lì domani con
         // quel nome funziona lo stesso, senza toccare niente.
         sfondo: [
-            'images/maps/storia_la_grande_guerra_1.jpeg',
-            'images/maps/storia_ww1_1.jpeg',
+            'images/maps/storia_la_grande_guerra_1.jpg',
+            'images/maps/storia_ww1_1.jpg',
             'images/fields/mobile/rovine_2.jpg'
         ],
         // Due canti del fronte italiano invece della colonna sonora di
@@ -2771,7 +2771,7 @@ const storyCampaignsDatabase = [
         icona: '✈️',
         // Come la Grande Guerra: una storia di guerra, senza livelli.
         senzaLivelli: true,
-        sfondo: ['images/maps/storia_ww2_1.jpeg', 'images/fields/mobile/rovine_2.jpg'],
+        sfondo: ['images/maps/storia_ww2_1.jpg', 'images/fields/mobile/rovine_2.jpg'],
         // A differenza della Grande Guerra, un set di carte dedicato alla
         // Seconda NON esiste ancora: la descrizione non lo promette.
         descrizione: 'Campagna a tema Seconda Guerra Mondiale, seguito ideale della Grande Guerra.',

@@ -46,7 +46,7 @@
  * con `continuous: true` in js/engine/card-effects.js per comodità di
  * implementazione (vedi il commento lì).
  *
- * "artOnly" (opzionale, solo se true): l'immagine in images/cards/<id>.jpeg
+ * "artOnly" (opzionale, solo se true): l'immagine in images/cards/<id>.jpg
  * è SOLO l'illustrazione ritagliata (niente scan completo della carta —
  * nessun nome/stelle/ATK-DEF disegnati dentro il file), a differenza delle
  * altre immagini di questo set che sono scan completi pronti da mostrare

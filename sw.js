@@ -237,16 +237,16 @@
 // (mappeSuccessive); cambiano storia.html, node-map.js, story-progress.js,
 // story-campaigns.js e l'Editor Mappa.
 // v91: Storia — area del Castello di Pegasus con la mappa degli interni
-// (images/maps/storia_anime_castello_pegasus.jpeg); cambiano
+// (images/maps/storia_anime_castello_pegasus.jpg); cambiano
 // story-campaigns.js, story-progress.js e challenges-db.js.
 // v90: Storia — mappa grande a sei isole
-// (images/maps/storia_mappa_principale_sei_isole.jpeg), il prologo a
-// Domino City con la sua mappa (storia_anime_prologo.jpeg) e la nuova
-// mappa di Freedom (storia_freedom_2.jpeg). Cambiano story-campaigns.js,
+// (images/maps/storia_mappa_principale_sei_isole.jpg), il prologo a
+// Domino City con la sua mappa (storia_anime_prologo.jpg) e la nuova
+// mappa di Freedom (storia_freedom_2.jpg). Cambiano story-campaigns.js,
 // story-progress.js e challenges-db.js.
 // v89: 25 terreni nuovi (images/fields/ e fields/mobile/, compresi i due
 // della Grande Guerra) e le mappe delle cinque aree della Storia anime
-// (images/maps/storia_anime_*.jpeg). Sono MEDIA, cache-first: il bump
+// (images/maps/storia_anime_*.jpg). Sono MEDIA, cache-first: il bump
 // serve perché chi aveva in cache un 404 a quei percorsi non se lo porti
 // dietro.
 // v88: i mazzi dei Duellanti rifatti (tre liste per personaggio in
@@ -261,7 +261,7 @@
 // mazzo Facile. Nessun file nuovo (character-decks.js era gia' in app
 // shell) - il bump serve solo a far ripopolare la cache con la versione
 // nuova, non a introdurre percorsi nuovi.
-// v85: images/maps/storia_mappa_principale.jpeg rifatta con le 5 isole
+// v85: images/maps/storia_mappa_principale.jpg rifatta con le 5 isole
 // vere della Storia anime (MEDIA, cache-first: il bump serve a farla
 // riscaricare), e i 5 nodi della mappa spostati al centro di ogni arena
 // (js/data/story-campaigns.js). Nessun file di codice nuovo.
@@ -273,7 +273,7 @@
 // prima serie — via Il Risveglio dei Draghi e il Gran Premio KC).
 // Nessun file nuovo.
 // v81: la campagna anime diventa una mappa di sette aree, con la sua
-// immagine images/maps/storia_mappa_principale.jpeg (MEDIA, cache-first:
+// immagine images/maps/storia_mappa_principale.jpg (MEDIA, cache-first:
 // il bump serve a farla scaricare). Nessun file di codice nuovo.
 // v80: apertura bustina rifatta (una carta alla volta, niente
 // scorrimento), scatola vera per l'acquisto di un mazzo, barra di
@@ -332,14 +332,14 @@
 // js/data/story-campaigns.js), piu' il fix alla lista delle storie in
 // storia.html. Nessun file nuovo.
 // v64: la mappa disegnata della Grande Guerra e i due canti del fronte
-// (images/maps/storia_la_grande_guerra_1.jpeg,
+// (images/maps/storia_la_grande_guerra_1.jpg,
 // audio/soundtracks/ww1/*.mp3 — tutti MEDIA, cache-first). Il bump serve
 // per lo stesso motivo di sempre: chi aveva in cache un 404 a quei
 // percorsi, finché non esistevano, se lo porterebbe dietro.
 // v63: il torneo della Kaiba Corporation dentro Memorie Proibite, più un
 // dialogo prima di ogni duello della campagna. Solo dati e logica di
 // pagina (nessun file nuovo da precaricare) — la mappa del tabellone
-// (images/maps/storia_torneo_kaiba_1.jpeg) non c'è ancora e ricade sulla
+// (images/maps/storia_torneo_kaiba_1.jpg) non c'è ancora e ricade sulla
 // texture di riserva: il bump serve perché chi avesse in cache il 404 a
 // quel percorso non se lo porti dietro quando l'immagine arriverà.
 // v62: le tappe di Memorie Proibite posate sui luoghi veri della sua
@@ -380,7 +380,8 @@
 // v132: banda delle scelte (Tributo/scarto/casella) a capo su telefono in verticale.
 // v133: ritaglio di Joey per la mappa di Battle City.
 // v134: divieti di Evocazione (282/434/1045) e Velocita' del bot nel menu Impostazioni.
-const CACHE_NAME = 'ygo-duel-arena-v134';
+// v135: tutte le foto sono .jpg (prima carte e mappe erano .jpeg): i nomi sono cambiati.
+const CACHE_NAME = 'ygo-duel-arena-v135';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

@@ -591,7 +591,7 @@
             gsap.set(volante, {
                 zIndex: 10040,
                 borderRadius: getComputedStyle(cardElement).borderRadius || '6px',
-                backgroundImage: "url('images/cards/backCard.jpeg')",
+                backgroundImage: "url('images/cards/backCard.jpg')",
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 boxShadow: '0 8px 24px rgba(0,0,0,0.55), 0 0 18px rgba(125,211,252,0.45)',

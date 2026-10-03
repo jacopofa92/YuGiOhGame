@@ -44,7 +44,7 @@ valido `CLAUDE.md`; per la separazione e il possibile riuso del motore vedere
   `TournamentDialogues` prima di renderizzare la mappa; viene registrato in
   `intermezziVisti` per non ripetersi dopo un reload.
 - Battle City apre il proprio `prologue` su
-  `images/maps/storia_anime_battlecity1.jpeg`; la fase `city` usa una main
+  `images/maps/storia_anime_battlecity1.jpg`; la fase `city` usa una main
   full-viewport e il fondale `images/fields/citta.jpg` (con variante mobile).
   Le 25 celle logiche non disegnano alcun pannello o reticolo: solo i punti
   d'interesse, leggermente sfalsati, galleggiano sul fondale. I nodi DOM

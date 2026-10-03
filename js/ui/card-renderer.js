@@ -30,8 +30,8 @@
         'DIVINO': '神'
     };
 
-    const CARD_BACK_IMAGE = 'images/cards/backCard.jpeg';
-    const CARD_PILE_IMAGE = 'images/cards/backPilaCards.jpeg';
+    const CARD_BACK_IMAGE = 'images/cards/backCard.jpg';
+    const CARD_PILE_IMAGE = 'images/cards/backPilaCards.jpg';
 
     // Le carte che Yu-Gi-Oh NON sono (set storici 'ww1'/'ww2', carte
     // 'fanmade': vedi il campo "origin" in js/data/cards-db.js) tengono le
@@ -46,8 +46,8 @@
 
     /**
      * Percorso (o data URI) dell'immagine reale della carta. Convenzione:
-     * images/cards/<id>.jpeg — basta aggiungere il file corrispondente
-     * (es. images/cards/1.jpeg per la carta con id 1 in cards-db.js)
+     * images/cards/<id>.jpg — basta aggiungere il file corrispondente
+     * (es. images/cards/1.jpg per la carta con id 1 in cards-db.js)
      * perché venga usato automaticamente al posto del fallback CSS.
      * Per una carta non-Yu-Gi-Oh vale la stessa identica convenzione, ma
      * dentro NON_YGO_ART_DIR (vedi il commento qui sopra).
@@ -61,8 +61,8 @@
      */
     function getCardImagePath(card) {
         if (card.customImage) return card.customImage;
-        if (card.origin && card.origin !== 'yu-gi-oh') return `${NON_YGO_ART_DIR}/${card.id}.jpeg`;
-        return `images/cards/${card.id}.jpeg`;
+        if (card.origin && card.origin !== 'yu-gi-oh') return `${NON_YGO_ART_DIR}/${card.id}.jpg`;
+        return `images/cards/${card.id}.jpg`;
     }
 
     // Sottotipi di Magia/Trappola che vale la pena segnalare a colpo
@@ -442,7 +442,7 @@
      * Aggiunge alla zona Deck (slotEl) la visualizzazione della pila:
      * di default 3 dorsi-carta sovrapposti in CSS (le pagine che la usano
      * decidono l'offset di ciascuno con .deck-preview, vedi duelMonstersCore.html);
-     * se esiste una vera images/cards/backPilaCards.jpeg, quella sostituisce
+     * se esiste una vera images/cards/backPilaCards.jpg, quella sostituisce
      * l'intero fallback CSS (non si sovrappongono).
      */
     function appendDeckPile(slotEl, layers = 3) {
