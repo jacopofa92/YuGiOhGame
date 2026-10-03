@@ -30,6 +30,33 @@
     ];
 
     /**
+     * ATK/DEF EFFETTIVI di un mostro: statistica stampata più ogni bonus o
+     * malus in corso (Magie Terreno, Equipaggiamenti, effetti a tempo...),
+     * esattamente ciò che il motore userà quando la battaglia si risolve
+     * (DuelEngine.getEffectiveAtk/Def). L'IA li confrontava coi valori
+     * STAMPATI: con un mostro a 1200 ATK potenziato a 1700 da un Terreno,
+     * il bot lo trovava "battibile" da uno da 1400 e attaccava in perdita
+     * (e viceversa non attaccava un mostro che in realtà era più forte).
+     * Vale per i mostri SULLA scacchiera: un mostro ancora in mano non ha
+     * (ancora) alcun bonus, e per quelli si resta sul valore stampato.
+     * Se il motore non è caricato ripiega sul valore stampato.
+     */
+    function effAtk(card) {
+        if (!card) return 0;
+        if (window.DuelEngine && typeof DuelEngine.getEffectiveAtk === 'function') return DuelEngine.getEffectiveAtk(card) || 0;
+        return card.attack || 0;
+    }
+    function effDef(card) {
+        if (!card) return 0;
+        if (window.DuelEngine && typeof DuelEngine.getEffectiveDef === 'function') return DuelEngine.getEffectiveDef(card) || 0;
+        return card.defense || 0;
+    }
+    /** La statistica con cui un mostro SCOPERTO si difende in battaglia: ATK se in Attacco, DEF se in Difesa (entrambi effettivi). */
+    function statRilevante(slot) {
+        return slot.position === 'attack' ? effAtk(slot.card) : effDef(slot.card);
+    }
+
+    /**
      * Stima grezza dell'impatto di una carta guardando il suo testo
      * effetto — usata per ordinare più candidate tra loro (es. quale
      * Trappola Set attivare per rispondere, quale Magia in mano
@@ -98,13 +125,12 @@
         const opponentField = owner === 'player' ? gameState.botMonsterField : gameState.playerMonsterField;
         const hasFavorableTarget = (opponentField || []).some((slot) => {
             if (!slot || slot.isFaceDown) return false;
-            const theirStat = slot.position === 'attack' ? (slot.card.attack || 0) : (slot.card.defense || 0);
-            return theirStat < atk;
+            return statRilevante(slot) < atk;
         });
         if (hasFavorableTarget) return { position: 'attack', faceDown: false };
         const strongestOpposingAtk = (opponentField || []).reduce((max, slot) => {
             if (!slot || slot.isFaceDown || slot.position !== 'attack') return max;
-            return Math.max(max, slot.card.attack || 0);
+            return Math.max(max, effAtk(slot.card));
         }, 0);
         const doomedEitherWay = strongestOpposingAtk > atk && strongestOpposingAtk > def;
         if (def > atk || doomedEitherWay) {
@@ -166,8 +192,7 @@
         (opponentField || []).forEach((slot) => {
             if (!slot) return;
             if (slot.isFaceDown) { hasFaceDown = true; return; }
-            const stat = slot.position === 'attack' ? (slot.card.attack || 0) : (slot.card.defense || 0);
-            bestStat = Math.max(bestStat, stat);
+            bestStat = Math.max(bestStat, statRilevante(slot));
         });
         if (hasFaceDown) bestStat = Math.max(bestStat, 1200);
         return bestStat >= threshold;
@@ -221,8 +246,7 @@
         const valoreCampo = (campo) => (campo || []).reduce((somma, slot) => {
             if (!slot) return somma;
             if (slot.isFaceDown) return somma + 1200;
-            const stat = slot.position === 'attack' ? (slot.card.attack || 0) : (slot.card.defense || 0);
-            return somma + stat;
+            return somma + statRilevante(slot);
         }, 0);
         return valoreCampo(opponentField) > valoreCampo(ownField);
     }
@@ -344,7 +368,7 @@
         const opponentField = owner === 'bot' ? gameState.playerMonsterField : gameState.botMonsterField;
         const strongestOpposingAtk = (opponentField || []).reduce((max, slot) => {
             if (!slot || slot.isFaceDown || slot.position !== 'attack') return max;
-            return Math.max(max, slot.card.attack || 0);
+            return Math.max(max, effAtk(slot.card));
         }, 0);
         return strongestOpposingAtk > card.attack && strongestOpposingAtk <= card.defense;
     }
@@ -431,6 +455,9 @@
     }
 
     window.AI_SHARED = {
+        effAtk: effAtk,
+        effDef: effDef,
+        statRilevante: statRilevante,
         scoreCardImpact: scoreCardImpact,
         decideMonsterPosture: decideMonsterPosture,
         canNormalSummonNow: canNormalSummonNow,

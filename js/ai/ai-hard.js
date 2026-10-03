@@ -35,7 +35,8 @@
         let score = (gameState.botLP - gameState.playerLP) / 100;
         const powerOf = (field) => field.reduce((sum, slot) => {
             if (!slot) return sum;
-            return sum + (slot.isFaceDown ? 400 : slot.card.attack); // mostro coperto: valore stimato prudente
+            // ATK effettivo (bonus/malus inclusi); mostro coperto: valore stimato prudente.
+            return sum + (slot.isFaceDown ? 400 : (window.AI_SHARED ? AI_SHARED.effAtk(slot.card) : slot.card.attack));
         }, 0);
         score += (powerOf(gameState.botMonsterField) - powerOf(gameState.playerMonsterField)) / 100;
         score += (gameState.botHand.length - gameState.playerHand.length) * 3;
@@ -100,11 +101,12 @@
                 if (ownIndices.length < tributesNeeded) return;
                 // Sacrifica i propri mostri più DEBOLI, non i primi che capitano.
                 tributeIndices = [...ownIndices]
-                    .sort((a, b) => gameState.botMonsterField[a].card.attack - gameState.botMonsterField[b].card.attack)
+                    .sort((a, b) => AI_SHARED.effAtk(gameState.botMonsterField[a].card) - AI_SHARED.effAtk(gameState.botMonsterField[b].card))
                     .slice(0, tributesNeeded);
             }
 
-            const sacrificedValue = tributeIndices.reduce((sum, idx) => sum + gameState.botMonsterField[idx].card.attack, 0);
+            // ATK EFFETTIVO dei mostri sacrificati (bonus/malus inclusi).
+            const sacrificedValue = tributeIndices.reduce((sum, idx) => sum + AI_SHARED.effAtk(gameState.botMonsterField[idx].card), 0);
             // AI_SHARED.isTributeSummonWorthwhile: non solo il vecchio
             // veto "mai in perdita netta" (es. sacrificare due mostri da
             // 2500 ATK per evocarne uno da 2500 ATK, ancora il primo
@@ -191,7 +193,9 @@
             if (backrowRisky) return null;
             return -1;
         }
-        const attackerAtk = attackerSlot.card.attack;
+        // ATK/DEF EFFETTIVI (vedi AI_SHARED.effAtk): la battaglia si risolve
+        // con questi, non coi valori stampati.
+        const attackerAtk = AI_SHARED.effAtk(attackerSlot.card);
         // Rischio percepito su un bersaglio coperto, scalato da quanto sta
         // andando bene la partita (vedi currentAttitude) — in vantaggio
         // netto l'IA gioca sul sicuro e tende a NON attaccare alla cieca,
@@ -209,7 +213,7 @@
                 // rischio stimato prudente (assume una DEF/ATK nella media).
                 score = 700 - faceDownRisk * 0.3;
             } else {
-                const defStat = m.slot.position === 'attack' ? m.slot.card.attack : m.slot.card.defense;
+                const defStat = AI_SHARED.statRilevante(m.slot);
                 if (attackerAtk <= defStat) return; // sfavorevole o alla pari: mai vantaggioso attaccarlo
                 // Un mostro che comunque non verrebbe distrutto (es.
                 // cannotBeDestroyedByBattle) non è mai un bersaglio

@@ -381,7 +381,8 @@
 // v133: ritaglio di Joey per la mappa di Battle City.
 // v134: divieti di Evocazione (282/434/1045) e Velocita' del bot nel menu Impostazioni.
 // v135: tutte le foto sono .jpg (prima carte e mappe erano .jpeg): i nomi sono cambiati.
-const CACHE_NAME = 'ygo-duel-arena-v135';
+// v136: l'IA decide gli attacchi con ATK/DEF effettivi (bonus e malus inclusi).
+const CACHE_NAME = 'ygo-duel-arena-v136';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

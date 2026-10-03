@@ -32,6 +32,10 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.23 — L'IA tiene conto dei bonus/malus di ATK e DEF (Terreno,
+ *   Equipaggiamenti, effetti a tempo) quando sceglie chi attaccare, quali
+ *   mostri sacrificare e come valutare il campo: prima usava i valori stampati.
+ *
  * 1.0.22 — Tutte le foto hanno estensione .jpg (1162 .jpeg rinominati:
  *   carte e mappe) e il codice le nomina così; guardrail contro il ritorno
  *   di .jpeg e contro riferimenti a immagini inesistenti.
@@ -526,4 +530,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.22';
+window.GAME_VERSION = '1.0.23';

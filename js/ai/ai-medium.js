@@ -51,10 +51,13 @@
                     ownIndices = ownIndices.filter((idx) => gameState.botMonsterField[idx].card.attribute === 'VENTO');
                 }
                 if (ownIndices.length < tributesNeeded) continue;
+                // ATK EFFETTIVO (bonus/malus inclusi), non quello stampato: il
+                // valore che si butta davvero è quello che il mostro ha ora.
+                const atkEff = (idx) => AI_SHARED.effAtk(gameState.botMonsterField[idx].card);
                 const tributeIndices = [...ownIndices]
-                    .sort((a, b) => gameState.botMonsterField[a].card.attack - gameState.botMonsterField[b].card.attack)
+                    .sort((a, b) => atkEff(a) - atkEff(b))
                     .slice(0, tributesNeeded);
-                const sacrificedValue = tributeIndices.reduce((sum, idx) => sum + gameState.botMonsterField[idx].card.attack, 0);
+                const sacrificedValue = tributeIndices.reduce((sum, idx) => sum + atkEff(idx), 0);
                 // AI_SHARED.isTributeSummonWorthwhile: non solo "non in
                 // perdita netta" (il vecchio veto, ancora il primo
                 // controllo al suo interno), ma adattivo al campo
@@ -92,11 +95,15 @@
             return -1;
         }
 
-        const attackerAtk = attackerSlot.card.attack;
+        // ATK e DEF EFFETTIVI di entrambi i lati (Terreno, Equipaggiamenti,
+        // effetti a tempo): è con questi che il motore risolve la battaglia.
+        // Coi valori stampati il bot attaccava in perdita contro un mostro
+        // potenziato, o lasciava passare un attacco vincente su uno indebolito.
+        const attackerAtk = AI_SHARED.effAtk(attackerSlot.card);
         const faceDownTargets = playerMonsters.filter((m) => m.slot.isFaceDown);
         const favorableFaceUp = playerMonsters
             .filter((m) => !m.slot.isFaceDown)
-            .filter((m) => attackerAtk > (m.slot.position === 'attack' ? m.slot.card.attack : m.slot.card.defense))
+            .filter((m) => attackerAtk > AI_SHARED.statRilevante(m.slot))
             // Un mostro che comunque non verrebbe distrutto (es.
             // cannotBeDestroyedByBattle) non è mai un bersaglio
             // "conveniente" solo perché la statistica nominale è
@@ -108,9 +115,7 @@
 
         if (favorableFaceUp.length > 0) {
             favorableFaceUp.sort((a, b) => {
-                const statA = a.slot.position === 'attack' ? a.slot.card.attack : a.slot.card.defense;
-                const statB = b.slot.position === 'attack' ? b.slot.card.attack : b.slot.card.defense;
-                return statB - statA;
+                return AI_SHARED.statRilevante(b.slot) - AI_SHARED.statRilevante(a.slot);
             });
             return favorableFaceUp[0].index;
         }

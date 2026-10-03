@@ -91,7 +91,7 @@ perde al prossimo build.
   costringeva a indovinare quale usare nel codice; convertite tutte
   (1162 file rinominati) e sorvegliato da
   `tests/specs/guardrail-estensione-immagini.spec.js`, che boccia anche un
-  riferimento `images/....jpg` a un file che non esiste (tranne una lista
+  riferimento a `images/` che punta a un file che non esiste (tranne una lista
   chiusa di file opzionali, dichiarata nel test). Un file nuovo si salva
   già come `.jpg`.
 - **Commenti nel codice**: generosi e orientati al PERCHÉ (vincoli

@@ -51,7 +51,10 @@ module.exports = {
             if (!/\.(js|html|css|md|json|yml|xml)$/.test(nome)) return;
             if (rel === 'tests/specs/guardrail-estensione-immagini.spec.js' || rel.endsWith('local-servers.js')) return;
             const testo = fs.readFileSync(p, 'utf8');
-            if (/\.jpeg\b/.test(testo)) jpeg.push(rel);
+            // Solo un NOME FILE (un carattere di nome/segnaposto subito prima
+            // del punto): la parola ".jpeg" in una frase, per spiegare la
+            // storia di questa regola, non è un riferimento a un file.
+            if (/[A-Za-z0-9_\->}]\.jpeg\b/.test(testo)) jpeg.push(rel);
             const re = /images\/[A-Za-z0-9_\-./]+\.jpg\b/g;
             let m;
             while ((m = re.exec(testo))) {
