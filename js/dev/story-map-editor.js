@@ -573,7 +573,9 @@
                 </div>
                 <div class="sme-campo">
                     <label>Battute (una per riga)</label>
-                    <textarea id="smeTesto">${escapeHtml((t.testo || []).join('\n'))}</textarea>
+                    ${(t.testo || []).some((r) => r && typeof r === 'object')
+                        ? '<p class="sme-nota">Questa scena è un dialogo a più voci (righe con <code>chi</code>/<code>io</code>): si modifica nel catalogo, qui non viene toccata.</p><textarea id="smeTesto" disabled></textarea>'
+                        : `<textarea id="smeTesto">${escapeHtml((t.testo || []).join('\n'))}</textarea>`}
                 </div>
                 ${campoESeDuelloMusica(t, kind)}`;
         }
@@ -607,7 +609,10 @@
             if (chiId) tappa.chiId = chiId; else delete tappa.chiId;
             const io = document.getElementById('smeIo').checked;
             if (io) tappa.io = true; else delete tappa.io;
-            tappa.testo = document.getElementById('smeTesto').value.split('\n').map((r) => r.trim()).filter((r) => r);
+            // Un dialogo a più voci (righe-oggetto) non si riscrive da qui.
+            if (!document.getElementById('smeTesto').disabled) {
+                tappa.testo = document.getElementById('smeTesto').value.split('\n').map((r) => r.trim()).filter((r) => r);
+            }
             leggiCampoEMusica(tappa, kind);
         } else if (kind === 'area' || kind === 'torneo') {
             tappa.nome = document.getElementById('smeNome').value.trim();

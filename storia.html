@@ -1338,21 +1338,35 @@
     function mostraScena(campaignId, tappa, rilettura, torneoId) {
         const campagna = StoryProgress.getCampaign(campaignId);
         const righe = [].concat(tappa.testo || []);
-        const battute = vociDelProtagonista(campaignId, righe.map((testo) => ({
-            // `io: true` sulla tappa: a parlare è il protagonista della
-            // campagna, e nome/ritratto li dà lei (vedi più sotto).
-            io: tappa.io === true,
-            // `chiId` aggancia la voce al roster (nome vero e ritratto);
-            // `chi` è il nome scritto nel catalogo, che vale anche per chi
-            // nel roster non c'è affatto ("Il Bollettino", "La troupe").
-            chi: tappa.chiId || undefined,
-            nome: tappa.chi || undefined,
-            // Il simbolo del sigillo quando il ritratto manca: quello
-            // della tappa, che è già scelto a tema (🌊 per il mare, ⛰️
-            // per la montagna).
-            icona: tappa.icona,
-            testo: testo
-        })), tappa);
+        const battute = vociDelProtagonista(campaignId, righe.map((riga) => {
+            // Una riga può essere una STRINGA (parla la voce della tappa,
+            // com'è sempre stato) oppure un OGGETTO { chi?, nome?, io?,
+            // testo }: una battuta di un altro personaggio, nella stessa
+            // forma del `dialogo` di un duello. Così una scena può essere
+            // una vera conversazione fra più voci invece di un monologo,
+            // senza cambiare il resto del catalogo (`testo` resta un elenco
+            // di righe, e chi lo conta o lo edita continua a funzionare).
+            const propria = riga && typeof riga === 'object';
+            const base = {
+                // `io: true` sulla tappa: a parlare è il protagonista della
+                // campagna, e nome/ritratto li dà lei (vedi più sotto).
+                io: tappa.io === true,
+                // `chiId` aggancia la voce al roster (nome vero e ritratto);
+                // `chi` è il nome scritto nel catalogo, che vale anche per chi
+                // nel roster non c'è affatto ("Il Bollettino", "La troupe").
+                chi: tappa.chiId || undefined,
+                nome: tappa.chi || undefined,
+                // Il simbolo del sigillo quando il ritratto manca: quello
+                // della tappa, che è già scelto a tema (🌊 per il mare, ⛰️
+                // per la montagna).
+                icona: tappa.icona
+            };
+            if (!propria) return Object.assign(base, { testo: riga });
+            // Una riga con voce propria non eredita quella della tappa: se
+            // dichiara `io` o un altro `chi`, il nome della tappa andrebbe
+            // sopra e mostrerebbe la persona sbagliata.
+            return Object.assign({ icona: tappa.icona }, riga);
+        }), tappa);
 
         // Una scena DENTRO un'area si svolge sul disegno della mappa su cui
         // sta — l'ingresso del castello sugli interni del castello, non

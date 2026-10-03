@@ -389,7 +389,8 @@
 // "57. King of Games - Yugi's Final Duel".
 // v140: Battle City, legenda ancorata in basso e una sola Carta Locazione per distretto.
 // v141: Battle City, oggetti (Radar potenziato, Scudo del Duel Disk), Blackout e Missione secondaria.
-const CACHE_NAME = 'ygo-duel-arena-v141';
+// v142: Storia anime, scene riscritte come dialoghi fra personaggi.
+const CACHE_NAME = 'ygo-duel-arena-v142';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

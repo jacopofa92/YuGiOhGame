@@ -32,6 +32,9 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.29 — Storia anime: le 31 scene non sono più monologhi di un solo
+ *   personaggio ma conversazioni fra più voci, fedeli agli eventi della
+ *   serie. Una riga di scena può ora essere una battuta { chi, testo }.
  * 1.0.28 — Battle City: oggetti (Radar potenziato rivela tutto il distretto,
  *   Scudo del Duel Disk para un evento negativo o un Blackout), evento
  *   Blackout (radar spento per 3 mosse) e Missione secondaria (batti un
@@ -556,4 +559,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.28';
+window.GAME_VERSION = '1.0.29';

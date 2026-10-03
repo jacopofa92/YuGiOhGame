@@ -68,10 +68,13 @@ module.exports = {
             }
             const stelleMai = regno.find((node) => node.id === 'anime-2-notte');
             const labirinto = regno.find((node) => node.id === 'anime-2-stelle');
-            if (!stelleMai.testo.join(' ').includes('Eliminatori di Pegasus')) {
+            // Una riga di scena è una stringa o una battuta { chi, testo }:
+            // per cercare una frase si guarda il testo di entrambe.
+            const parole = (nodo) => nodo.testo.map((r) => (typeof r === 'string' ? r : r.testo)).join(' ');
+            if (!parole(stelleMai).includes('Eliminatori di Pegasus')) {
                 problems.push('Il raccordo di Panik non racconta il ruolo canonico dell’Eliminatore');
             }
-            if (!labirinto.testo.join(' ').includes('Fratelli Paradosso')) {
+            if (!parole(labirinto).includes('Fratelli Paradosso')) {
                 problems.push('Il raggiungimento delle dieci Stelle non cita il duello nel labirinto');
             }
             const finaleRegno = ['anime-2c-mai', 'anime-2c-keith', 'anime-2c-joey', 'anime-2-pegasus'];

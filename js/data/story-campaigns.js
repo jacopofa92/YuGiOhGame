@@ -321,11 +321,12 @@ const storyCampaignsDatabase = [
                                 label: 'Otto anni dopo', x: 138, y: 600,
                                 chi: 'Solomon Muto', chiId: 'solomonMuto',
                                 testo: [
-                                    'Ci hai messo otto anni, Yugi. Otto anni su quel puzzle.',
-                                    'Me l\'hanno portato da uno scavo quando ero poco più vecchio di te, e nessuno l\'aveva mai finito. Nemmeno io ci ho provato davvero: mi bastava guardarlo.',
-                                    'Dicono che chi lo completa riceva un dono. Io dico che chi lo completa ha già dimostrato tutto quello che serve.',
-                                    'E adesso che l\'hai al collo, guardati bene allo specchio ogni tanto. Non si porta un oggetto così senza che lui porti qualcosa a te.',
-                                    'Vieni: ti insegno a giocare davvero.'
+                                    { chi: 'yugiMuto', testo: 'Nonno, ce l’ho fatta! L’ultimo pezzo è andato al suo posto!' },
+                                    { chi: 'solomonMuto', testo: 'Otto anni, Yugi. Otto anni su quel Puzzle, e nessuno prima di te era mai arrivato in fondo.' },
+                                    { chi: 'yugiMuto', testo: 'Ogni volta che stavo per arrendermi pensavo a quello che dicono: che chi lo completa vede esaudito un desiderio.' },
+                                    { chi: 'solomonMuto', testo: 'E tu cosa desideri?' },
+                                    { chi: 'yugiMuto', testo: 'Degli amici, nonno. Degli amici veri.' },
+                                    { chi: 'solomonMuto', testo: 'Allora tienilo stretto, quel Puzzle. E adesso vieni: ti insegno a giocare davvero a Duel Monsters.' }
                                 ]
                             },
                             {
@@ -346,10 +347,13 @@ const storyCampaignsDatabase = [
                                 label: 'Le regole del nonno', x: 262, y: 478,
                                 chi: 'Solomon Muto', chiId: 'solomonMuto',
                                 testo: [
-                                    'Nel mio negozio non vendiamo soltanto carte, Yugi. Ogni carta conserva la storia di chi l’ha scelta e di chi l’ha giocata.',
-                                    'Ti ho insegnato le regole di Duel Monsters, ma il rispetto per l’avversario non è scritto su nessun manuale.',
-                                    'Joey vuole imparare. Non prenderlo in giro se sbaglia: aiutalo a costruire un mazzo che gli somigli.',
-                                    'E ricorda il Drago Bianco Occhi Blu nella teca. Me lo affidò un amico; per questo non avrà mai un prezzo.'
+                                    { chi: 'solomonMuto', testo: 'Hai giocato bene, Yugi. Ma ricordati una cosa: a Duel Monsters non vince la carta più forte. Vince chi crede nel proprio mazzo.' },
+                                    { chi: 'yugiMuto', testo: 'Me lo ripeti da quando ero piccolo, nonno.' },
+                                    { chi: 'solomonMuto', testo: 'E continuerò a farlo. Piuttosto, ha bussato il tuo amico Joey: vuole imparare le regole.' },
+                                    { chi: 'yugiMuto', testo: 'Joey? Davvero? Allora lo aiuterò io!' },
+                                    { chi: 'solomonMuto', testo: 'Bravo. Non prenderlo in giro quando sbaglia: aiutalo a costruire un mazzo che gli somigli.' },
+                                    { chi: 'yugiMuto', testo: 'Nonno, quel Drago Bianco Occhi Blu nella teca… perché non l’hai mai venduto?' },
+                                    { chi: 'solomonMuto', testo: 'Perché me l’ha affidato un amico, Yugi. Certe carte non hanno prezzo.' }
                                 ]
                             },
                             {
@@ -357,10 +361,12 @@ const storyCampaignsDatabase = [
                                 label: 'Un nuovo amico', x: 250, y: 262,
                                 chi: 'Joey Wheeler', chiId: 'joey',
                                 testo: [
-                                    'All’inizio ho preso in giro il Puzzle e ne ho gettato un pezzo nel canale. Non meritavo che Yugi mi chiamasse amico.',
-                                    'Quando Ushio lo ha picchiato per colpa nostra, Yugi ha difeso me e Tristan senza chiedere niente in cambio.',
-                                    'Ho recuperato il pezzo del Puzzle dall’acqua e suo nonno glielo ha restituito senza dirgli chi fosse stato.',
-                                    'Adesso voglio imparare Duel Monsters. Se Yugi può credere in me, posso almeno provare a diventare un duellante vero.'
+                                    { chi: 'joey', testo: 'Yugi! Aspetta, ti devo parlare.' },
+                                    { chi: 'yugiMuto', testo: 'Dimmi, Joey.' },
+                                    { chi: 'joey', testo: 'All’inizio mi sono comportato da idiota, con te e con quel Puzzle. E tu mi hai difeso lo stesso, senza chiedere niente.' },
+                                    { chi: 'yugiMuto', testo: 'Siamo amici, Joey. Gli amici fanno così.' },
+                                    { chi: 'joey', testo: 'Allora fammi un favore da amico: insegnami a giocare. Voglio diventare un duellante vero.' },
+                                    { chi: 'yugiMuto', testo: 'Va bene. Ma ti avverto: è più difficile di quel che sembra!' }
                                 ]
                             },
                             {
@@ -407,10 +413,12 @@ const storyCampaignsDatabase = [
                                 label: 'Il gruppo', x: 540, y: 352,
                                 chi: 'Tristan Taylor', chiId: 'tristan',
                                 testo: [
-                                    'Joey è quello che vuole diventare un duellante. Io preferisco assicurarmi che non finisca nei guai mentre ci prova.',
-                                    'Yugi ci ha perdonati quando avrebbe avuto ogni motivo per lasciarci perdere. Da quel giorno, se parte lui partiamo tutti.',
-                                    'Téa conosce Yugi da più tempo di noi e capisce subito quando il Puzzle cambia qualcosa nel suo sguardo.',
-                                    'Non sappiamo ancora chi sia l’altro Yugi. Sappiamo soltanto che è dalla nostra parte.'
+                                    { chi: 'tristan', testo: 'Allora, com’è andata la lezione? Joey ha capito la differenza fra un mostro e una Trappola?' },
+                                    { chi: 'joey', testo: 'Ehi! Ho capito più di quanto pensi!' },
+                                    { chi: 'tea', testo: 'Più o meno. Ha chiamato “Magia” una carta Mostro per tutto il pomeriggio.' },
+                                    { chi: 'joey', testo: 'Sono dettagli!' },
+                                    { chi: 'yugiMuto', testo: 'Joey impara in fretta, Tristan. Piuttosto, tocca a te: se vuoi imparare anche tu, ti insegno volentieri.' },
+                                    { chi: 'tristan', testo: 'Ci sto. Ma io e Joey ci mettiamo sempre nei guai: se parti tu, partiamo tutti.' }
                                 ]
                             },
                             {
@@ -418,10 +426,11 @@ const storyCampaignsDatabase = [
                                 label: 'L’altro Yugi', x: 655, y: 592,
                                 chi: 'Téa Gardner', chiId: 'tea',
                                 testo: [
-                                    'Da quando hai completato il Puzzle, a volte la tua voce cambia e sembri più alto, più sicuro. Poi torni a essere il Yugi che conosco.',
-                                    'Non credo che quella presenza voglia farti del male. Quando i tuoi amici sono in pericolo, compare per proteggerli.',
-                                    'Prima o poi dovrete capire chi è e perché si trovava nel Puzzle.',
-                                    'Per adesso non devi affrontarlo da solo. Joey, Tristan e io siamo qui.'
+                                    { chi: 'tea', testo: 'Yugi, posso farti una domanda strana? Da quando hai completato il Puzzle, a volte sembri un’altra persona.' },
+                                    { chi: 'yugiMuto', testo: 'Lo so, Téa. Quando succede mi sento come se qualcuno mi tenesse per mano, e dopo non ricordo bene cos’è successo.' },
+                                    { chi: 'tea', testo: 'Non mi fa paura. Quando Joey e Tristan erano nei guai, quella voce più sicura è comparsa a proteggerli.' },
+                                    { chi: 'yugiMuto', testo: 'Forse c’è davvero qualcuno dentro al Puzzle. Prima o poi dovrò scoprire chi è.' },
+                                    { chi: 'tea', testo: 'Lo scopriremo insieme. Non devi affrontarlo da solo.' }
                                 ]
                             },
                             {
@@ -447,10 +456,12 @@ const storyCampaignsDatabase = [
                                 label: 'La quarta carta', x: 820, y: 420,
                                 chi: 'Solomon Muto', chiId: 'solomonMuto',
                                 testo: [
-                                    'Kaiba ha riconosciuto subito il Drago Bianco Occhi Blu. Mi ha offerto denaro e poi la sua intera valigetta di carte, ma non potevo accettare.',
-                                    'Quella carta è il dono di un amico. Non è rara per il suo prezzo: è insostituibile per ciò che ricorda.',
-                                    'Gli uomini della KaibaCorp mi hanno portato alla torre e Kaiba mi ha costretto a giocarmela in un duello.',
-                                    'Ho perso, Yugi. Adesso il quarto Drago Bianco è nelle sue mani, e Kaiba non intende conservarlo.'
+                                    { chi: 'yugiMuto', testo: 'Nonno, cos’è successo? Hai la faccia di chi ha visto un fantasma.' },
+                                    { chi: 'solomonMuto', testo: 'Kaiba è venuto in negozio, Yugi. Ha riconosciuto subito il Drago Bianco Occhi Blu.' },
+                                    { chi: 'yugiMuto', testo: 'E tu cos’hai risposto?' },
+                                    { chi: 'solomonMuto', testo: 'Che non era in vendita, a nessun prezzo. Allora i suoi uomini mi hanno portato alla KaibaCorp e mi ha costretto a giocarmela in un duello.' },
+                                    { chi: 'yugiMuto', testo: 'Non dirmi che…' },
+                                    { chi: 'solomonMuto', testo: 'Ho perso. Adesso il quarto Drago Bianco è nelle sue mani, e non ha nessuna intenzione di conservarlo.' }
                                 ]
                             },
                             {
@@ -462,10 +473,11 @@ const storyCampaignsDatabase = [
                                 chi: 'Seto Kaiba', chiId: 'kaiba',
                                 music: '07. Preliminary Face-Off.mp3',
                                 testo: [
-                                    'Un Drago Bianco Occhi Blu in un negozietto di quartiere. Il vecchio lo teneva in una scatola come un soprammobile, e non me l\'avrebbe venduto a nessun prezzo.',
-                                    'Ne esistono quattro al mondo. Tre sono miei. Il quarto non era in vendita, così ho portato qui tuo nonno e l\'ho costretto a giocarselo. Ha perso.',
-                                    'E una carta che un giorno potrebbe essere usata contro di me non deve esistere. L\'ho strappata. Nient\'altro da dire.',
-                                    'Vuoi rimediare? Sali in cima alla torre. Ti aspetto nella mia arena, con i miei ologrammi e il mio mazzo.'
+                                    { chi: 'kaiba', testo: 'Ah, il nipotino. Ti sei fatto strada fin quassù per piangere sul latte versato?' },
+                                    { io: true, testo: 'Mio nonno ti aveva detto che quella carta non era in vendita.' },
+                                    { chi: 'kaiba', testo: 'E io l’ho presa lo stesso. Ne esistono quattro al mondo: tre sono mie, e una carta che potrebbe essere usata contro di me non deve esistere. L’ho strappata.' },
+                                    { io: true, testo: 'Hai strappato molto più di una carta, Kaiba.' },
+                                    { chi: 'kaiba', testo: 'Se vuoi rimediare, sali fino all’ultimo piano. Ti aspetto nella mia arena, con i miei ologrammi e il mio mazzo.' }
                                 ]
                             },
                             {
@@ -534,11 +546,13 @@ const storyCampaignsDatabase = [
                                 label: 'L\'invito', x: 1335, y: 378,
                                 chi: 'Maximillion Pegasus', chiId: 'pegasus',
                                 testo: [
-                                    'Nel videonastro Pegasus ha sfidato Yugi a un duello a tempo usando l’Occhio del Millennio. Allo scadere, ha reclamato l’anima di Solomon Muto.',
-                                    'Per liberarlo Yugi deve partecipare al Regno dei Duellanti e raggiungere Pegasus nel suo castello.',
-                                    'Ogni concorrente riceve due Stelle dell’Esagono. Ne servono dieci per oltrepassare il cancello del castello prima che termini il torneo.',
-                                    'Joey partecipa per vincere il premio e pagare l’operazione agli occhi di Serenity; Yugi gli cede una delle proprie Stelle per farlo salire sulla nave.',
-                                    'Téa e Tristan si imbarcano di nascosto. Nessuno di loro intende lasciare che Yugi affronti Pegasus da solo.'
+                                    { chi: 'pegasus', testo: 'Buonasera, Yugi-boy. Il tuo caro nonno è qui con me: la sua anima riposa al sicuro dentro una carta, e solo io posso restituirgliela.' },
+                                    { io: true, testo: 'Pegasus… che cosa vuoi da noi?' },
+                                    { chi: 'pegasus', testo: 'Un duello. Il Regno dei Duellanti ti aspetta, e io sarò in fondo al torneo. Se mi batterai, riavrai tuo nonno.' },
+                                    { io: true, testo: 'Vengo sull’isola. E ti batterò.' },
+                                    { chi: 'joey', testo: 'Un attimo, Yugi! Io vengo con te. Il premio del torneo servirà a pagare l’operazione agli occhi di mia sorella Serenity.' },
+                                    { chi: 'tea', testo: 'E noi due non ti lasciamo andare da solo, vero Tristan?' },
+                                    { chi: 'tristan', testo: 'Neanche a parlarne. Se serve, ci imbarchiamo di nascosto.' }
                                 ]
                             },
                             {
@@ -546,10 +560,13 @@ const storyCampaignsDatabase = [
                                 label: 'Verso il Regno', x: 1515, y: 455,
                                 chi: 'Joey Wheeler', chiId: 'joey',
                                 testo: [
-                                    'Weevil ha chiesto di vedere le carte di Exodia e le ha gettate in mare. Io mi sono tuffato, ma le onde le hanno portate via.',
-                                    'Yugi ha perso le cinque carte con cui aveva sconfitto Kaiba. Weevil pensa di aver eliminato la sua unica possibilità di vittoria.',
-                                    'Sull’isola Pegasus annuncia le regole: il terreno modifica i mostri e ogni duello mette in palio le Stelle dell’Esagono.',
-                                    'Weevil si allontana verso la foresta. Se voleva assicurarsi il primo vantaggio, avrà anche il primo duello.'
+                                    { chi: 'weevil', testo: 'Fammi vedere queste famose carte di Exodia, Yugi. Dicono che con quelle tu abbia battuto Kaiba.' },
+                                    { io: true, testo: 'Eccole. Ma stai attento, sono tutto quello che ho.' },
+                                    { chi: 'weevil', testo: 'Davvero? Peccato per te. Ops… mi sono scivolate di mano.' },
+                                    { chi: 'joey', testo: 'Quel verme! Le ha buttate in mare! Yugi, ci penso io!' },
+                                    { io: true, testo: 'Joey, aspetta! Le onde se le sono già portate via…' },
+                                    { chi: 'pegasus', testo: 'Benvenuti nel Regno dei Duellanti! Ogni duellante riceve due Stelle dell’Esagono, e dieci Stelle vi apriranno il cancello del mio castello. Il terreno modificherà i vostri mostri. Che il torneo cominci.' },
+                                    { chi: 'weevil', testo: 'Senza Exodia sei finito, Yugi. Ti aspetto nella foresta.' }
                                 ]
                             },
                             {
@@ -608,10 +625,12 @@ const storyCampaignsDatabase = [
                                 label: 'Le Stelle di Mai', x: 555, y: 755,
                                 chi: 'Mai Valentine', chiId: 'mai',
                                 testo: [
-                                    'Panik mi ha trascinata nella sua arena avvolta dalle tenebre. Mi ha intimidita finché ho perso il duello e tutte le mie Stelle dell’Esagono.',
-                                    'È uno degli Eliminatori di Pegasus: non combatte per raggiungere il castello, ma per cacciare dall’isola chi è arrivato troppo vicino.',
-                                    'Yugi si è fatto avanti e ha promesso di riconquistare le mie Stelle. Non gli ho chiesto di farlo, ma non posso permettere che affronti Panik senza sapere cosa lo aspetta.',
-                                    'Nel buio della sua arena si intravede il Castello delle Illusioni Oscure. Panik crede che la paura abbia già deciso il duello.'
+                                    { chi: 'mai', testo: 'Non mi servono le tue condoglianze, ragazzino. Panik mi ha trascinata nel buio della sua arena, e ho perso tutte le mie Stelle.' },
+                                    { io: true, testo: 'Chi è, quel Panik?' },
+                                    { chi: 'mai', testo: 'Uno degli Eliminatori di Pegasus. Non gioca per arrivare al castello: è lì per cacciare dall’isola chi si avvicina troppo.' },
+                                    { io: true, testo: 'Allora lo sconfiggerò e ti restituirò le tue Stelle.' },
+                                    { chi: 'mai', testo: 'Non te l’ho chiesto, Yugi. Ma non posso lasciarti andare da lui senza dirti cosa ti aspetta: là dentro la paura gioca contro di te prima ancora delle carte.' },
+                                    { io: true, testo: 'Grazie dell’avvertimento. La paura non mi fermerà.' }
                                 ]
                             },
                             {
@@ -680,10 +699,12 @@ const storyCampaignsDatabase = [
                                 label: 'Kaiba sull’isola', x: 368, y: 335,
                                 chi: 'Mokuba Kaiba', chiId: 'mokuba',
                                 testo: [
-                                    'Pegasus ha preso la mia anima e vuole impadronirsi della KaibaCorp e del sistema olografico costruito da Seto.',
-                                    'Mio fratello è tornato sull’isola per salvarmi. Ha sconfitto Joey e ora sta cercando un modo per raggiungere Pegasus nel castello.',
-                                    'Anche Yugi deve arrivare lassù, ma prima gli servono dieci Stelle e la strada passa sotto il castello.',
-                                    'Nelle grotte lo aspettano due guardiani scelti da Pegasus. Non lasceranno uscire nessuno senza un duello.'
+                                    { chi: 'tea', testo: 'Yugi, hai visto? Kaiba è sbarcato sull’isola con un elicottero!' },
+                                    { chi: 'joey', testo: 'Eccome se l’ho visto. Mi ha battuto senza nemmeno spettinarsi, quel…' },
+                                    { chi: 'tristan', testo: 'Cerca Pegasus. Gli ha preso Mokuba, e vuole la KaibaCorp.' },
+                                    { io: true, testo: 'Anche noi dobbiamo arrivare al castello. Ci servono dieci Stelle.' },
+                                    { chi: 'joey', testo: 'E la strada passa sotto il castello, nelle grotte. Pegasus ci ha messo dei guardiani.' },
+                                    { io: true, testo: 'Allora attraverseremo anche quelle, tutti insieme.' }
                                 ]
                             },
                             {
@@ -691,10 +712,12 @@ const storyCampaignsDatabase = [
                                 label: 'Sotto il cimitero', x: 748, y: 215,
                                 chi: 'Joey Wheeler', chiId: 'joey',
                                 testo: [
-                                    'Bandit Keith ha mandato Bonz e i suoi scagnozzi a rubare le nostre Stelle. Dopo il duello ci hanno chiusi nelle grotte sotto il cimitero.',
-                                    'Keith non combatte ancora in prima persona: usa gli altri, bara e aspetta che siano loro a portargli ciò che serve per entrare nel castello.',
-                                    'Abbiamo trovato un’uscita, ma Pegasus l’ha affidata ai Fratelli Paradosso. Vogliono tutte le nostre Stelle in un unico duello a coppie.',
-                                    'Io e Yugi entreremo insieme nel loro labirinto. Per uscirne dovremo scegliere anche la porta giusta.'
+                                    { chi: 'joey', testo: 'Quel Bonz e i suoi scagnozzi mi hanno fregato le Stelle, e ci hanno chiusi qui sotto, nelle grotte del cimitero.' },
+                                    { chi: 'tristan', testo: 'Dietro c’è Bandit Keith: manda gli altri a rubare, e intanto aspetta che gli portino quello che serve per entrare nel castello.' },
+                                    { io: true, testo: 'Quello è un truffatore. Troviamo un’uscita.' },
+                                    { chi: 'joey', testo: 'Ce n’è una, ma Pegasus l’ha affidata ai Fratelli Paradosso. Vogliono tutte le nostre Stelle, in un unico duello a coppie.' },
+                                    { io: true, testo: 'Allora lo affronteremo insieme, Joey. Io e te.' },
+                                    { chi: 'joey', testo: 'Ci sto! Entriamo nel loro labirinto e usciamo dalla porta giusta.' }
                                 ]
                             },
                             {
@@ -711,10 +734,12 @@ const storyCampaignsDatabase = [
                                 label: 'L’uscita dal labirinto', x: 895, y: 255,
                                 chi: 'Joey Wheeler', chiId: 'joey',
                                 testo: [
-                                    'I Fratelli Paradosso ci hanno sbarrato l’uscita dal labirinto sotterraneo: io e Yugi abbiamo dovuto affrontarli insieme, con tutte le nostre Stelle in palio.',
-                                    'Il loro Guardiano del Cancello sembrava invincibile, ma combinando i nostri mostri abbiamo trovato la vera uscita e vinto il duello.',
-                                    'Ora abbiamo entrambi dieci Stelle dell’Esagono e il diritto di entrare nel castello. Ma sulla scalinata ci aspetta Seto Kaiba.',
-                                    'Pegasus ha imprigionato l’anima di Mokuba. Per sfidarlo e salvarlo, Kaiba vuole le Stelle di Yugi: nessuno dei due può permettersi di cedere.'
+                                    { chi: 'joey', testo: 'Ce l’abbiamo fatta, Yugi! I Fratelli Paradosso erano duri, ma combinando i nostri mostri abbiamo trovato la porta giusta.' },
+                                    { io: true, testo: 'Insieme siamo più forti di qualunque labirinto, Joey.' },
+                                    { chi: 'joey', testo: 'Adesso abbiamo tutti e due dieci Stelle. Possiamo entrare nel castello!' },
+                                    { chi: 'tea', testo: 'Aspettate… guardate, sulla scalinata. C’è qualcuno.' },
+                                    { chi: 'kaiba', testo: 'Fermi. Pegasus tiene prigioniero Mokuba, e per sfidarlo mi servono le Stelle. Le tue, Yugi.' },
+                                    { io: true, testo: 'Anch’io devo entrare per salvare mio nonno, Kaiba. Nessuno dei due può rinunciare.' }
                                 ]
                             },
                             // Kaiba sbarra la scalinata del castello: batterlo
@@ -752,10 +777,11 @@ const storyCampaignsDatabase = [
                                 label: 'Il cancello si apre', x: 170, y: 300,
                                 chi: 'Croquet',
                                 testo: [
-                                    'Congratulazioni. Siete arrivati al cancello in quattro, con le Stelle dell\'Esagono al completo: da qui in poi l\'isola non conta più.',
-                                    'Il signor Pegasus vi aspetta per le finali. Stanotte dormirete nel castello, e domani si duella nell\'arena al piano di sotto.',
-                                    'Gli abbinamenti li decide il caso, come ogni cosa sotto questo tetto. O quasi.',
-                                    'Una cortesia: non girate per i corridoi di notte. Le segrete di questo castello sono più antiche di chi ci abita.'
+                                    { nome: 'Croquet', testo: 'Congratulazioni. Siete arrivati al cancello in quattro, con le Stelle dell’Esagono al completo.' },
+                                    { chi: 'mai', testo: 'Quattro finalisti: Yugi, Joey, Keith e io. Mi sembra una compagnia interessante.' },
+                                    { nome: 'Croquet', testo: 'Il signor Pegasus vi aspetta per le finali. Stanotte dormirete nel castello, e domani si duella nell’arena al piano di sotto.' },
+                                    { chi: 'joey', testo: 'E gli abbinamenti li decidete voi?' },
+                                    { nome: 'Croquet', testo: 'Li decide il caso, come ogni cosa sotto questo tetto. O quasi. Una cortesia: non girate per i corridoi di notte.' }
                                 ]
                             },
                             // Nell'anime la semifinale di Yugi è contro Mai,
@@ -819,11 +845,11 @@ const storyCampaignsDatabase = [
                                 label: 'Domino City', x: 180, y: 780,
                                 chi: 'Seto Kaiba', chiId: 'kaiba',
                                 testo: [
-                                    'Regole nuove: si duella in città, col Duel Disk, e chi perde cede la sua carta migliore. Nessun molo, nessuna isola: il torneo è Domino intera.',
-                                    'Servono sei Carte Localizzatrici per sapere dove si tengono le finali. Chi ne ha meno, alle finali non ci arriva e basta.',
-                                    'Ho aperto io le iscrizioni, e non per generosità: c\'è qualcosa in questa città che voglio far uscire allo scoperto.',
-                                    'Da qualche parte là fuori ci sono i Cacciatori Rari, che non giocano per vincere ma per prendere.',
-                                    'E ci sono tre Dei Egizi che non dovrebbero esistere. Uno ce l\'ho io. Gli altri due li voglio.'
+                                    { chi: 'kaiba', testo: 'Ascoltate bene, duellanti di Domino City. Battle City è aperta: si duella per strada, col Duel Disk, e chi perde cede la propria carta migliore.' },
+                                    { chi: 'mokuba', testo: 'Per accedere alle finali servono sei Carte Locazione, che dicono dove si terrà la fase finale!' },
+                                    { chi: 'kaiba', testo: 'Chi ne ha meno non arriva alle finali, e basta. Ho aperto io le iscrizioni, e non per generosità.' },
+                                    { io: true, testo: 'C’è qualcosa che vuoi far uscire allo scoperto, vero?' },
+                                    { chi: 'kaiba', testo: 'Tre Dei Egizi, Yugi. Uno ce l’ho io. Gli altri due li voglio.' }
                                 ]
                             },
                             {
@@ -831,10 +857,12 @@ const storyCampaignsDatabase = [
                                 label: 'La tavola del Faraone', x: 260, y: 610,
                                 chi: 'Ishizu Ishtar', chiId: 'ishizu',
                                 testo: [
-                                    'Ti ho condotto al museo per mostrarti questa tavola: raffigura un Faraone senza nome che duella contro un sacerdote simile a Seto Kaiba.',
-                                    'Le tre figure sopra di loro sono gli Dei Egizi. Mio fratello Marik ha sottratto due delle loro carte e guida i Cacciatori Rari.',
-                                    'Kaiba possiede Obelisk perché gliel\'ho affidato io. Sapevo che il suo desiderio di riunire gli Dei avrebbe dato inizio a Battle City.',
-                                    'Entra nel torneo, Faraone. Recupera le altre carte divine e ferma Marik: soltanto allora la porta dei tuoi ricordi potrà aprirsi.'
+                                    { chi: 'ishizu', testo: 'Ti ho portato al museo per mostrarti questa tavola. Guarda: un Faraone senza nome che duella contro un sacerdote.' },
+                                    { io: true, testo: 'Quel sacerdote somiglia a Kaiba…' },
+                                    { chi: 'ishizu', testo: 'Sì. E sopra di loro ci sono i tre Dei Egizi. Mio fratello Marik ne ha sottratti due, e guida i Cacciatori Rari.' },
+                                    { io: true, testo: 'E Obelisk, la terza carta?' },
+                                    { chi: 'ishizu', testo: 'Ce l’ha Kaiba: gliel’ho affidata io. Sapevo che il suo desiderio di riunire gli Dei avrebbe dato inizio a Battle City.' },
+                                    { chi: 'ishizu', testo: 'Entra nel torneo, Faraone. Recupera le altre carte e ferma Marik: solo allora la porta dei tuoi ricordi potrà aprirsi.' }
                                 ]
                             },
                             {
@@ -930,10 +958,12 @@ const storyCampaignsDatabase = [
                                 label: 'Il duello al molo', x: 790, y: 405,
                                 chi: 'Téa Gardner', chiId: 'tea',
                                 testo: [
-                                    'Marik ha preso il controllo della mia mente e di quella di Joey. Ci ha incatenati a un’ancora e ha costretto Yugi a sfidare il suo migliore amico.',
-                                    'Ogni perdita di Life Point avvicinava uno dei due al fondo della baia. Marik voleva spezzare il Faraone obbligandolo a scegliere chi salvare.',
-                                    'Yugi e Joey hanno rifiutato di trattarsi da nemici. Joey ha ritrovato se stesso e insieme sono riusciti a liberarci prima che l’ancora cadesse.',
-                                    'Ora restano sei Carte Localizzatrici e il dirigibile delle finali. Marik ha fallito al molo, ma uno dei suoi servitori è già qualificato.'
+                                    { chi: 'tea', testo: 'Joey! Yugi! State bene?' },
+                                    { chi: 'joey', testo: 'Ho la testa che mi gira… Ricordo solo una nebbia e la tua voce, Yugi, che mi chiamava.' },
+                                    { io: true, testo: 'Non ti avrei mai fatto del male, amico. Mai.' },
+                                    { chi: 'tea', testo: 'Marik ci aveva incatenati a un’ancora. Voleva costringere Yugi a scegliere chi salvare.' },
+                                    { chi: 'joey', testo: 'Quel bastardo… e Yugi ha rifiutato di trattarmi da nemico.' },
+                                    { io: true, testo: 'Ognuno di noi avrebbe fatto lo stesso per un amico. Andiamo: le finali ci aspettano.' }
                                 ]
                             },
                             {
@@ -1005,10 +1035,11 @@ const storyCampaignsDatabase = [
                                 label: 'I finalisti', x: 1450, y: 330,
                                 chi: 'Yami Yugi', chiId: 'yamiYugi',
                                 testo: [
-                                    'Gli otto qualificati sono saliti sul dirigibile e i quarti di finale sono terminati: Joey ha superato Odion, Kaiba ha sconfitto Ishizu e io ho liberato Bakura dal suo lato oscuro.',
-                                    'Marik ha sconfitto Mai in un Gioco delle Ombre e ha imprigionato la sua mente. La sua parte oscura ha ormai preso il controllo.',
-                                    'Restiamo in quattro: Joey affronterà Marik e io affronterò Kaiba. Le semifinali si terranno alla Torre dei Duelli della KaibaCorp.',
-                                    'Il dirigibile cambia rotta verso l’isola artificiale. Prima che possa arrivarci, una fortezza emerge dal mare e prende il controllo dei sistemi di bordo.'
+                                    { chi: 'kaiba', testo: 'I quarti di finale sono finiti. Restano quattro duellanti: Yugi, Joey, Marik… e io.' },
+                                    { chi: 'mokuba', testo: 'Le semifinali si terranno alla Torre dei Duelli, Seto: Joey contro Marik, e poi tu contro Yugi.' },
+                                    { io: true, testo: 'Marik ha ridotto Mai in quello stato. Questa volta non gli lascerò altre vittime.' },
+                                    { chi: 'kaiba', testo: 'Bada ai tuoi duelli, Yugi. Il torneo è mio, non lo rovinerai con le tue crociate.' },
+                                    { chi: 'mokuba', testo: 'Seto… i comandi non rispondono! Qualcosa sta prendendo il controllo del dirigibile!' }
                                 ]
                             },
                             // Chiude la Parte 1: si sale sul dirigibile per
@@ -1023,10 +1054,12 @@ const storyCampaignsDatabase = [
                                 label: 'Sul dirigibile', x: 1450, y: 105,
                                 io: true,
                                 testo: [
-                                    'La fortezza ha agganciato il dirigibile e un ragazzo apparso sui monitor si è presentato come Noah Kaiba.',
-                                    'Ha bloccato i comandi, separato le nostre coscienze dai corpi e trascinato tutti in un mondo virtuale costruito dalla KaibaCorp.',
-                                    'Le semifinali restano sospese. Per tornare al torneo dobbiamo prima sopravvivere alle regole dei Deck Master e ai cinque ex dirigenti che governano questo luogo.',
-                                    'Kaiba conosce quel sistema, ma il nome di Noah lo ha sorpreso. Qualunque cosa ci aspetti nella rete riguarda la sua famiglia.'
+                                    { chi: 'mokuba', testo: 'Seto, guarda! Una fortezza è uscita dal mare e ha agganciato il dirigibile!' },
+                                    { chi: 'noah', testo: 'Salve a tutti. Mi chiamo Noah Kaiba, e da questo momento siete miei ospiti.' },
+                                    { chi: 'kaiba', testo: 'Noah? Non conosco nessun Noah!' },
+                                    { chi: 'noah', testo: 'Eppure condividiamo un cognome, Seto. Vi porto nel mondo che ho costruito: nel frattempo i vostri corpi dormiranno.' },
+                                    { io: true, testo: 'Le nostre coscienze sono state separate dai corpi… dobbiamo uscire da qui.' },
+                                    { chi: 'kaiba', testo: 'Conosco questo sistema. Se è la KaibaCorp ad averlo costruito, c’è un modo per distruggerlo.' }
                                 ]
                             }
                         ]
@@ -1050,11 +1083,12 @@ const storyCampaignsDatabase = [
                                 label: 'Dentro la rete', x: 790, y: 540,
                                 chi: 'Noah Kaiba', chiId: 'noah',
                                 testo: [
-                                    'Benvenuti nel mio mondo. Non è un modo di dire: questo posto l\'ho costruito io, e qui dentro decido io cosa è vero.',
-                                    'Mio padre mi ha messo qui dopo l\'incidente. Ha preso quello che restava di me e l\'ha caricato in una macchina, e poi è andato avanti a vivere.',
-                                    'Poi ha adottato Seto. Un ragazzino preso da un orfanotrofio, e in due anni gli ha dato tutto quello che a me non aveva potuto dare più.',
-                                    'Prima di arrivare fino a me dovrete passare i Cinque: erano il consiglio d\'amministrazione di mio padre, e qui dentro sono ancora ai loro posti.',
-                                    'Vediamo quanto vi piace il mio mondo.'
+                                    { chi: 'noah', testo: 'Benvenuti nel mio mondo. Non è un modo di dire: l’ho costruito io, e qui dentro decido io cosa è vero.' },
+                                    { chi: 'kaiba', testo: 'Chi sei, esattamente? E perché il tuo cognome è Kaiba?' },
+                                    { chi: 'noah', testo: 'Sono il figlio di Gozaburo. Mio padre mi ha chiuso in una macchina dopo il mio incidente, e poi ha adottato te, Seto.' },
+                                    { chi: 'kaiba', testo: 'Un orfano preso a caso. È questo che sono per lui?' },
+                                    { chi: 'noah', testo: 'Un orfano a cui ha dato tutto quello che a me non poteva dare più. Prima di arrivare a me dovrete battere i Cinque: erano il consiglio di mio padre.' },
+                                    { chi: 'mokuba', testo: 'Seto… quel ragazzo parla come uno che non è cresciuto mai.' }
                                 ]
                             },
                             // I cinque dirigenti/Big Five, uno alla volta.
@@ -1116,10 +1150,11 @@ const storyCampaignsDatabase = [
                                 label: 'Anime prigioniere', x: 1010, y: 455,
                                 chi: 'Téa Gardner', chiId: 'tea',
                                 testo: [
-                                    'I Cinque sono caduti, ma nessuno si è svegliato. I corpi sul dirigibile respirano; qui dentro, le loro anime restano chiuse in stanze che Noah può spostare a piacimento.',
-                                    'Mokuba ha seguito la voce di un fratello che non ha mai conosciuto. Noah non vuole soltanto vendicarsi di Kaiba: vuole il corpo di Mokuba per tornare nel mondo reale.',
-                                    'Le cinque isole virtuali si spengono e i ponti convergono sulla torre centrale. Non ci sono più delegati dietro cui nascondersi.',
-                                    'Se Noah vince il prossimo duello, uno di noi uscirà da qui con il volto sbagliato.'
+                                    { chi: 'tea', testo: 'Non si sveglia nessuno. I Cinque sono caduti ma i nostri corpi sul dirigibile dormono ancora.' },
+                                    { chi: 'mokuba', testo: 'Perché Noah non vuole solo vendicarsi di Seto: vuole il mio corpo per tornare nel mondo reale!' },
+                                    { io: true, testo: 'Le isole virtuali si stanno spegnendo. Noah è rimasto da solo, nella torre centrale.' },
+                                    { chi: 'tea', testo: 'Se vince il prossimo duello, uno di noi uscirà da qui con il volto sbagliato.' },
+                                    { chi: 'mokuba', testo: 'Non lo permetterò. Mio fratello l’ha già affrontato una volta.' }
                                 ]
                             },
                             // Superati i Cinque, resta Noah.
@@ -1148,10 +1183,11 @@ const storyCampaignsDatabase = [
                                 label: 'Il vero padrone', x: 1060, y: 300,
                                 chi: 'Gozaburo Kaiba', chiId: 'gozaburo',
                                 testo: [
-                                    'Noah credeva che gli avrei dato il corpo di Seto. Era soltanto uno strumento per intrappolarvi qui e preparare il mio ritorno.',
-                                    'Seto mi ha sottratto la KaibaCorp e l’ha trasformata da industria bellica a società di giochi. Ora prenderò il suo corpo e cancellerò ciò che ha costruito.',
-                                    'La mia coscienza si diffonderà attraverso la rete e sostituirà ogni mente collegata. Il mondo reale diventerà il mio nuovo corpo.',
-                                    'Non vi sfido per un torneo. Dovrete attraversare la forma che ho assunto e raggiungere l’uscita prima che la fortezza virtuale venga distrutta.'
+                                    { chi: 'gozaburo', testo: 'Noah, figlio mio, mi sei stato utile. Credevi davvero che ti avrei dato il corpo di Seto?' },
+                                    { chi: 'noah', testo: 'Padre… ma mi avevi promesso…' },
+                                    { chi: 'gozaburo', testo: 'Eri solo lo strumento per intrappolarli qui. La mia coscienza si diffonderà in tutta la rete e prenderà il posto di ogni mente collegata.' },
+                                    { chi: 'kaiba', testo: 'Gozaburo. Credevo di averti battuto una volta per tutte.' },
+                                    { chi: 'gozaburo', testo: 'Hai preso la mia azienda e l’hai trasformata in una fabbrica di giochi. Cancellerò tutto ciò che hai costruito, Seto, e il mondo reale sarà il mio nuovo corpo.' }
                                 ]
                             },
                             {
@@ -1159,10 +1195,11 @@ const storyCampaignsDatabase = [
                                 label: 'La fuga da Gozaburo', x: 1225, y: 140,
                                 chi: 'Seto Kaiba', chiId: 'kaiba',
                                 testo: [
-                                    'Gozaburo non vuole un duello: sta caricando la propria coscienza su ogni rete del mondo e usa la fortezza come ponte.',
-                                    'Ho ripreso il controllo del dirigibile. Dobbiamo tornare nei nostri corpi e decollare prima che il reattore virtuale collassi.',
-                                    'Yugi e gli altri terranno aperta l’uscita; Mokuba viene con me. Questa volta mio padre non userà più nessuno dei due.',
-                                    'La fortezza esplode dietro il dirigibile. Davanti a noi resta la Torre dei Duelli e Battle City può finalmente riprendere.'
+                                    { chi: 'kaiba', testo: 'Gozaburo non vuole un duello. Sta usando la fortezza come ponte per caricare la sua mente sulla rete del mondo.' },
+                                    { io: true, testo: 'Dobbiamo tornare nei nostri corpi prima che il reattore virtuale collassi.' },
+                                    { chi: 'mokuba', testo: 'Seto, il dirigibile risponde ai comandi! Dobbiamo decollare subito!' },
+                                    { chi: 'kaiba', testo: 'Yugi, tenete aperta l’uscita. Mokuba viene con me. Mio padre non userà più nessuno dei due.' },
+                                    { io: true, testo: 'Andate, Kaiba. Ci vediamo sulla Torre dei Duelli.' }
                                 ]
                             }
                         ]
@@ -1186,10 +1223,12 @@ const storyCampaignsDatabase = [
                                 label: 'Il ritorno', x: 1370, y: 140,
                                 chi: 'Seto Kaiba', chiId: 'kaiba',
                                 testo: [
-                                    'Siamo tornati nei nostri corpi e abbiamo fatto precipitare la fortezza virtuale prima che Gozaburo potesse riversare la propria mente nella rete mondiale.',
-                                    'Il dirigibile può finalmente raggiungere la Torre dei Duelli sull’isola artificiale della KaibaCorp. Le semifinali si svolgeranno lassù.',
-                                    'Joey affronterà Marik; subito dopo, Yugi affronterà me. I vincitori saliranno all’ultimo piano per la finale.',
-                                    'Il torneo riprende adesso. Nessun altro dirottamento, nessun’altra scusa.'
+                                    { chi: 'kaiba', testo: 'Siamo tornati nei nostri corpi, e la fortezza è precipitata prima che Gozaburo potesse invadere la rete mondiale.' },
+                                    { chi: 'mokuba', testo: 'Il dirigibile ha ripreso la rotta: stiamo arrivando alla Torre dei Duelli!' },
+                                    { chi: 'joey', testo: 'Finalmente! Pensavo che quel Noah ci tenesse chiusi lì dentro per sempre.' },
+                                    { chi: 'kaiba', testo: 'Basta chiacchiere. Joey affronterà Marik; subito dopo, Yugi affronterà me. I vincitori saliranno in finale.' },
+                                    { io: true, testo: 'Nessun altro dirottamento, Kaiba?' },
+                                    { chi: 'kaiba', testo: 'Nessuna scusa, stavolta. Il torneo riprende adesso.' }
                                 ]
                             },
                             {
@@ -1208,10 +1247,12 @@ const storyCampaignsDatabase = [
                                 label: 'Una promessa mantenuta', x: 1120, y: 610,
                                 chi: 'Joey Wheeler', chiId: 'joey',
                                 testo: [
-                                    'Non guardarmi così, Yugi. Marik mi ha trascinato in un Gioco delle Ombre, ma non è riuscito a farmi smettere di duellare.',
-                                    'Avevo Jinzo pronto per l’ultimo attacco. Il mio corpo ha ceduto un istante prima che potessi dichiararlo: Marik è passato in finale, ma non mi ha battuto nello spirito.',
-                                    'Kaiba ti aspetta più avanti. Vuole Slifer, vuole dimostrare che il destino è una scusa e probabilmente vuole anche far saltare in aria metà dell’isola.',
-                                    'Vai. Io sarò qui quando torni.'
+                                    { chi: 'joey', testo: 'Non guardarmi così, Yugi. Marik mi ha trascinato in un Gioco delle Ombre, ma non è riuscito a farmi smettere di duellare.' },
+                                    { io: true, testo: 'Hai combattuto fino all’ultimo, Joey. Ero fiero di te.' },
+                                    { chi: 'joey', testo: 'Avevo Jinzo pronto per l’ultimo attacco. Il mio corpo ha ceduto un istante prima che potessi dichiararlo.' },
+                                    { io: true, testo: 'Marik non ti ha battuto nello spirito. Questo è l’importante.' },
+                                    { chi: 'joey', testo: 'Kaiba ti aspetta più avanti, Yugi. Vuole dimostrare che il destino è una scusa.' },
+                                    { chi: 'joey', testo: 'Vai. Io sarò qui quando torni.' }
                                 ]
                             },
                             {
@@ -1228,10 +1269,11 @@ const storyCampaignsDatabase = [
                                 label: 'I tre Dei', x: 875, y: 360,
                                 chi: 'Seto Kaiba', chiId: 'kaiba',
                                 testo: [
-                                    'Hai vinto la semifinale. Non significa che il destino esista; significa soltanto che oggi il tuo deck è stato meno mediocre del solito.',
-                                    'Hai vinto Obelisk secondo la regola dell’ante. Contro Marik avrai bisogno di tutti e tre gli Dei, e io voglio vedere quale scusa inventerai se perderai anche con loro.',
-                                    'La cima della torre è davanti a te. Ra è lassù, insieme all’uomo che ha trasformato l’intero torneo in un Gioco delle Ombre.',
-                                    'Vinci, Yugi. Non per il destino. Perché questa è la mia Battle City.'
+                                    { chi: 'kaiba', testo: 'Hai vinto la semifinale, Yugi. Non significa che il destino esista: oggi il tuo mazzo è stato meno mediocre del solito.' },
+                                    { io: true, testo: 'Hai combattuto con tutto te stesso, Kaiba. Lo sai anche tu.' },
+                                    { chi: 'kaiba', testo: 'Obelisk è tuo, secondo la regola dell’ante. Ma contro Marik avrai bisogno di tutti e tre gli Dei.' },
+                                    { io: true, testo: 'Marik ha trasformato il torneo in un Gioco delle Ombre. Lo fermerò.' },
+                                    { chi: 'kaiba', testo: 'La cima della torre è davanti a te. Vinci, Yugi. Non per il destino: perché questa è la mia Battle City.' }
                                 ]
                             },
                             {
@@ -1264,10 +1306,11 @@ const storyCampaignsDatabase = [
                                 label: 'Verso i ricordi', x: 250, y: 830,
                                 chi: 'Ishizu Ishtar', chiId: 'ishizu',
                                 testo: [
-                                    'Il Faraone deve tornare indietro, in Egitto, dentro i propri ricordi: è l\'unico posto dove il suo nome è ancora scritto.',
-                                    'Là dentro non sarà il Re dei Giochi. Sarà un ragazzo su un trono, con dei sacerdoti attorno e un nemico che non ha ancora un volto.',
-                                    'Quando il nome tornerà, la porta si aprirà. E una porta aperta non si può lasciare aperta per sempre.',
-                                    'Preparati, Yugi. Quello che stai per fare non è salvarlo: è lasciarlo andare.'
+                                    { chi: 'ishizu', testo: 'Il Faraone deve tornare in Egitto, dentro i propri ricordi: è l’unico posto dove il suo nome è ancora scritto.' },
+                                    { chi: 'yugiMuto', testo: 'E io… devo accompagnarlo, vero?' },
+                                    { chi: 'ishizu', testo: 'Là dentro non sarà il Re dei Giochi. Sarà un ragazzo su un trono, con dei sacerdoti attorno e un nemico che non ha ancora un volto.' },
+                                    { io: true, testo: 'Quando troverò il mio nome, la porta si aprirà.' },
+                                    { chi: 'ishizu', testo: 'E una porta aperta non si può lasciare aperta per sempre. Preparatevi: non è salvarlo che dovete fare, ma lasciarlo andare.' }
                                 ]
                             },
                             // --- Dentro i ricordi: il Re dei Ladri ---
@@ -1288,10 +1331,11 @@ const storyCampaignsDatabase = [
                                 label: 'Il Re dei Ladri', x: 1420, y: 190,
                                 chi: 'Bakura', chiId: 'bakura',
                                 testo: [
-                                    'Tremila anni fa ero un ragazzo di Kul Elna, e Kul Elna non esiste più. L\'hanno fusa, casa per casa, per forgiare i vostri sette Oggetti d\'oro.',
-                                    'Io sono sopravvissuto. E da allora mi riprendo quello che è mio, una tomba alla volta.',
-                                    'Stanotte ho portato fino a palazzo il sarcofago di tuo padre, Faraone. Volevo vedere la tua faccia mentre lo aprivo.',
-                                    'Il mio Ka non ha un nome che i tuoi sacerdoti conoscano. Vediamo quanto vale il sangue reale contro l\'odio di un villaggio intero.'
+                                    { chi: 'bakura', testo: 'Tremila anni fa ero un ragazzo di Kul Elna, e Kul Elna non esiste più. L’hanno fusa, casa per casa, per forgiare i vostri sette Oggetti d’oro.' },
+                                    { io: true, testo: 'Quello che dici è terribile, ma non ti dà il diritto di profanare la tomba di mio padre.' },
+                                    { chi: 'bakura', testo: 'Profanare? Stanotte l’ho portato fin qui, nel tuo palazzo, il sarcofago del Faraone. Volevo vedere la tua faccia mentre lo aprivo.' },
+                                    { io: true, testo: 'Allora vedrai che il sangue reale non si piega all’odio.' },
+                                    { chi: 'bakura', testo: 'Vediamo quanto vale il tuo sangue contro l’odio di un villaggio intero.' }
                                 ]
                             },
                             {
@@ -1308,10 +1352,12 @@ const storyCampaignsDatabase = [
                                 label: 'Il sacrificio di Mahad', x: 560, y: 240,
                                 chi: 'Mahad',
                                 testo: [
-                                    'Il ladro è sceso nella tomba di vostro padre, mio Faraone, e io l\'ho seguito là sotto.',
-                                    'L\'Anello del Millennio gli dà un potere che la magia che conosco non basta a fermare. Allora ne userò una che non ho mai usato.',
-                                    'Unirò la mia anima al mio Ka. Da stanotte non sarò più Mahad il sacerdote: diventerò il Mago Nero e continuerò a proteggervi anche oltre la morte.',
-                                    'Quando avrete bisogno di me, chiamatemi. Risponderò, mio Faraone.'
+                                    { nome: 'Mahad', testo: 'Il ladro è sceso nella tomba di vostro padre, mio Faraone. L’ho seguito là sotto.' },
+                                    { io: true, testo: 'Mahad, non devi farlo. L’Anello del Millennio è troppo potente.' },
+                                    { nome: 'Mahad', testo: 'Proprio per questo ne userò una magia che non ho mai usato. Unirò la mia anima al mio Ka.' },
+                                    { io: true, testo: 'Non ti perderò di nuovo, amico mio.' },
+                                    { nome: 'Mahad', testo: 'Da stanotte non sarò più Mahad il sacerdote: sarò il Mago Nero, e continuerò a proteggervi anche oltre la morte.' },
+                                    { nome: 'Mahad', testo: 'Quando avrete bisogno di me, chiamatemi. Risponderò, mio Faraone.' }
                                 ]
                             },
                             // Il Gioco delle Ombre: la partita che Bakura ha
@@ -1335,10 +1381,12 @@ const storyCampaignsDatabase = [
                                 label: 'Atem', x: 855, y: 430,
                                 chi: 'Il Faraone',
                                 testo: [
-                                    'Atem. Il nome attraversa il palazzo, raggiunge i sacerdoti e torna indietro come un’eco rimasta chiusa per tremila anni.',
-                                    'Con il suo nome il Faraone richiama gli Dei, e i tre diventano una sola luce. Zorc non viene sconfitto dalla forza di una carta, ma dal ricordo di chi il Faraone era stato.',
-                                    'Bakura perde il suo tabellone. Il Mondo dei Ricordi comincia a crollare, e la porta fra i vivi e i morti finalmente si apre.',
-                                    'Atem sa adesso chi è. Per attraversare quella porta deve ancora dimostrare di essere pronto a perdere tutto ciò che lo lega al presente.'
+                                    { chi: 'yugiMuto', testo: 'Il tuo nome, Faraone! L’ho trovato! Atem!' },
+                                    { io: true, testo: 'Atem… Sì. Ora ricordo chi sono.' },
+                                    { chi: 'bakura', testo: 'No! Zorc non può perdere! Il mio tabellone…' },
+                                    { testo: 'Con il suo nome il Faraone richiama gli Dei, e i tre diventano una sola luce. Zorc cade, e il Mondo dei Ricordi comincia a crollare.' },
+                                    { chi: 'yugiMuto', testo: 'Ce l’hai fatta, Atem. La porta dell’aldilà si sta aprendo.' },
+                                    { io: true, testo: 'Per attraversarla devo ancora dimostrare di essere pronto a lasciare tutto ciò che mi lega al presente.' }
                                 ]
                             },
                             {
@@ -1346,11 +1394,11 @@ const storyCampaignsDatabase = [
                                 label: 'L\'ultima porta', x: 1225, y: 610,
                                 chi: 'Il Faraone',
                                 testo: [
-                                    'Resta un solo duello, e non è contro un nemico.',
-                                    'Ha ritrovato il suo nome, e con il nome la porta si è aperta. Manca soltanto che qualcuno lo accompagni fin lì.',
-                                    'Per lasciarlo andare devi batterlo. Non c\'è una formula, non c\'è un rito: c\'è una partita, giocata sul serio, come tutte le altre.',
-                                    'E dovrai giocarla per vincere. Lasciarti battere sarebbe tenerlo qui, ed è l\'unica cosa che non gli si può fare.',
-                                    'È l\'ultimo duello del Faraone. Gli hai insegnato tu a giocarlo.'
+                                    { chi: 'yugiMuto', testo: 'Atem… manca un solo duello. E non è contro un nemico.' },
+                                    { io: true, testo: 'Lo so. Per lasciarmi andare, devi battermi.' },
+                                    { chi: 'yugiMuto', testo: 'Non c’è un rito, non c’è una formula. C’è una partita, giocata sul serio, come tutte le altre.' },
+                                    { io: true, testo: 'E dovrai giocarla per vincere. Se ti lasci battere, mi tieni qui, ed è l’unica cosa che non puoi farmi.' },
+                                    { chi: 'yugiMuto', testo: 'Va bene. Ti prometto che non mi tratterrò. Mi hai insegnato tu a giocare questo duello.' }
                                 ]
                             },
                             // Il Duello Cerimoniale: qui non si è il Faraone,
