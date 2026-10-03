@@ -32,6 +32,11 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.28 — Battle City: oggetti (Radar potenziato rivela tutto il distretto,
+ *   Scudo del Duel Disk para un evento negativo o un Blackout), evento
+ *   Blackout (radar spento per 3 mosse) e Missione secondaria (batti un
+ *   Duellante indicato: +2 Carta Locazione). Negozi ed eventi buoni danno
+ *   oggetti.
  * 1.0.27 — Battle City: la legenda della mappa è ancorata in fondo allo
  *   schermo; ogni distretto ha UNA sola Carta Locazione da raccogliere (erano
  *   4), le altre si guadagnano coi duelli puntati.
@@ -551,4 +556,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.27';
+window.GAME_VERSION = '1.0.28';

@@ -388,7 +388,8 @@
 // colonne sonore numerate: "56. Battle for the Millennium" (era mainTheme) e
 // "57. King of Games - Yugi's Final Duel".
 // v140: Battle City, legenda ancorata in basso e una sola Carta Locazione per distretto.
-const CACHE_NAME = 'ygo-duel-arena-v140';
+// v141: Battle City, oggetti (Radar potenziato, Scudo del Duel Disk), Blackout e Missione secondaria.
+const CACHE_NAME = 'ygo-duel-arena-v141';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

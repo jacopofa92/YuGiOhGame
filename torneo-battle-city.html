@@ -280,7 +280,7 @@
     .city-grid {
         position: relative;
         display: grid;
-        width: min(calc(100vw - clamp(20px, 4vw, 56px)), calc(100dvh - 225px));
+        width: min(calc(100vw - clamp(20px, 4vw, 56px)), calc(100dvh - 265px));
         min-width: min(92vw, 320px);
         align-self: center;
         gap: 0;
@@ -546,6 +546,42 @@
         box-shadow: 0 0 8px rgba(34,211,238,.6);
     }
     .legend .legend-strong { color: #fff; font-weight: bold; }
+
+    /* Oggetti del Duel Disk e missione in corso: una riga sotto
+       l'intestazione del distretto. Pulsanti piccoli e leggibili: il Radar
+       potenziato si usa toccandolo, lo Scudo è solo un indicatore (scatta da
+       solo quando serve). */
+    .item-row {
+        align-self: center;
+        width: min(100%, 760px);
+        display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px;
+        margin: 0 0 6px;
+        min-height: 30px;
+    }
+    .item-btn {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 5px 11px;
+        font: inherit; font-size: 0.74rem; font-weight: 700;
+        color: #fff;
+        border-radius: 999px;
+        border: 1px solid rgba(34, 211, 238, 0.4);
+        background: rgba(5, 12, 24, 0.62);
+        backdrop-filter: blur(6px);
+    }
+    button.item-btn { cursor: pointer; }
+    button.item-btn:not(:disabled):active { transform: scale(0.96); }
+    .item-btn:disabled { opacity: 0.45; cursor: default; }
+    .item-btn.item-passive { cursor: default; border-color: rgba(34, 211, 238, 0.22); }
+    .item-btn .item-count { color: var(--bc-cyan-soft); font-variant-numeric: tabular-nums; }
+    .item-chip-quest { border-color: rgba(247, 215, 116, 0.6); color: #f7d774; }
+    .item-chip-blackout { border-color: rgba(255, 138, 122, 0.7); color: #ff8a7a; animation: bcBlackout 1.2s ease-in-out infinite; }
+    @keyframes bcBlackout { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+    @media (prefers-reduced-motion: reduce) { .item-chip-blackout { animation: none; } }
+    /* Il bersaglio della missione: un anello dorato attorno alla pedina. */
+    .city-cell.quest-target::before {
+        border-color: #f7d774 !important;
+        box-shadow: 0 0 14px rgba(247, 215, 116, 0.75) !important;
+    }
 
     .sector-actions { margin-top: 14px; display: flex; gap: 10px; }
     .sector-actions .big-btn { flex: 1; }
@@ -1128,9 +1164,19 @@
         "Trovi un vicolo che taglia mezzo distretto: guadagni tempo prezioso."
     ];
     const EVENT_BAD = [
-        "Un blackout improvviso manda in tilt il tuo Duel Disk: ripartire ti costa una Carta Locazione.",
+        "Il tuo Duel Disk si resetta da solo: ripartire ti costa una Carta Locazione.",
         "Un borseggiatore ti sfila una Carta Locazione dalla tasca e sparisce tra la folla.",
         "La polizia chiude l'isolato: per uscirne devi cedere una Carta Locazione a un Duellante compiacente."
+    ];
+    const BLACKOUT_SCENES = [
+        "Salta la corrente in tutto il distretto: il radar del tuo Duel Disk si spegne.",
+        "Un disturbatore di frequenze della KaibaCorp manda in tilt il tuo radar.",
+        "Un temporale di interferenze copre il segnale: vai a vista."
+    ];
+    const QUEST_SCENES = [
+        "Un passante ti allunga un biglietto: «Quello là in giro ha una Carta Locazione che non merita.»",
+        "Un cronista di strada ti sussurra una soffiata su un Duellante che si crede imbattibile.",
+        "Sul retro di un volantino qualcuno ha scritto un nome e una taglia."
     ];
     const SHOP_SCENES = [
         "Al Kame Game Shop il nonno di Yugi ti mostra la mappa del quartiere.",
@@ -1215,6 +1261,9 @@
         // giro per arrivare a 6 senza duellare). Il grosso delle carte
         // deve arrivare dai duelli puntati.
         { kind: 'locator', count: 1 },
+        // Una Missione secondaria per distretto: una soffiata che indica un
+        // Duellante preciso da battere per un premio (vedi 'quest' in moveToCell).
+        { kind: 'quest', count: 1 },
         { kind: 'event', count: 4 },
         { kind: 'shop', count: 2 }
         // il resto delle celle resta 'empty'
@@ -1232,6 +1281,7 @@
         hunter:   { piece: 'hunter',   label: 'Rare Hunter' },
         locator:  { piece: 'locator',  label: 'Locazione' },
         event:    { piece: 'event',    label: 'Evento' },
+        quest:    { piece: 'quest',    label: 'Missione' },
         shop:     { piece: 'shop',     label: 'Negozio' },
         heliport: { piece: 'heliport', label: 'Decollo' },
         start:    { piece: null,       label: '' }
@@ -1323,6 +1373,56 @@
             e.c.revealed = true;
             e.c.justRevealed = true;
         });
+    }
+
+    // ----------------------------------------------------------------
+    // Oggetti del Duel Disk, Blackout e Missione secondaria.
+    // Tutto vive nello stato del torneo e si azzera con lui. I campi sono
+    // OPZIONALI nello stato salvato (un torneo cominciato prima di questa
+    // versione non li ha): ensureExtras() li crea al primo uso.
+    // ----------------------------------------------------------------
+    const ITEM_MAX = 3;
+    const ITEMS = {
+        radar:  { icon: '📡', nome: 'Radar potenziato', corto: 'Radar', desc: 'Rivela tutto il distretto e ripristina il segnale dopo un blackout.' },
+        shield: { icon: '🛡️', nome: 'Scudo del Duel Disk', corto: 'Scudo', desc: 'Scatta da solo: annulla il prossimo evento negativo o dimezza (per difetto) la prossima posta persa.' }
+    };
+    /** Per quante mosse il radar resta spento dopo un Blackout. */
+    const BLACKOUT_MOVES = 3;
+    /** Premio della Missione secondaria, in Carta Locazione. */
+    const QUEST_REWARD = 2;
+
+    function ensureExtras(state) {
+        if (!state.items || typeof state.items !== 'object') state.items = {};
+        Object.keys(ITEMS).forEach((id) => { if (typeof state.items[id] !== 'number') state.items[id] = 0; });
+        if (typeof state.blackout !== 'number') state.blackout = 0;
+        if (state.quest === undefined) state.quest = null;
+        return state;
+    }
+    /** Aggiunge un oggetto fino al tetto ITEM_MAX. Torna vero se è stato aggiunto. */
+    function giveItem(state, id) {
+        ensureExtras(state);
+        if (state.items[id] >= ITEM_MAX) return false;
+        state.items[id]++;
+        return true;
+    }
+    /** Un oggetto a caso (più spesso il Radar); se uno è al tetto prova l'altro. Torna l'id dato, o null se entrambi al tetto. */
+    function giveRandomItem(state) {
+        const first = Math.random() < 0.55 ? 'radar' : 'shield';
+        const second = first === 'radar' ? 'shield' : 'radar';
+        if (giveItem(state, first)) return first;
+        if (giveItem(state, second)) return second;
+        return null;
+    }
+    /** Consuma uno Scudo se c'è. Torna vero quando ha protetto da qualcosa. */
+    function consumeShield(state) {
+        ensureExtras(state);
+        if (state.items.shield <= 0) return false;
+        state.items.shield--;
+        return true;
+    }
+    /** Il radar è "cieco" mentre dura il Blackout: le celle non ancora attraversate mostrano solo l'Ignoto. */
+    function cellVisible(state, cell) {
+        return !!cell.revealed && (!(state.blackout > 0) || !!cell.resolved);
     }
 
     /** Vero quando nel settore non resta più nulla da fare: tutte le celle con un contenuto sono state risolte. */
@@ -1508,6 +1608,8 @@
                 <ul class="rules-list">
                     <li><span>🃏</span><span>Parti con <strong>${STARTING_LOCATORS} Carta Locazione</strong>. Prima di ogni duello punti <strong>quante ne vuoi</strong>: chi vince si prende la posta.</span></li>
                     <li><span>📡</span><span>Giri la città su una griglia di isolati. Il <strong>Radar del Duel Disk</strong> ti mostra sempre cosa c'è negli isolati confinanti: scegli tu dove passare.</span></li>
+                    <li><span>🛡️</span><span>Nei <strong>Negozi</strong> e in certi eventi trovi <strong>oggetti</strong>: il <strong>Radar potenziato</strong> (toccalo per rivelare tutto il distretto) e lo <strong>Scudo del Duel Disk</strong> (protegge da solo da un evento negativo o dimezza una posta persa). Attenzione ai <strong>Blackout</strong>: il radar si spegne per qualche mossa.</span></li>
+                    <li><span>🎯</span><span>Le <strong>Missioni</strong> ti indicano un Duellante preciso da battere nel distretto: premio extra di Carta Locazione.</span></li>
                     <li><span>🚁</span><span>Con <strong>6 Carta Locazione</strong> si apre la zona di decollo: i <strong>quarti di finale sul dirigibile di Kaiba</strong>.</span></li>
                     <li><span>🗼</span><span>Chi supera i quarti vola alla <strong>Torre Kaiba</strong> per semifinale e finale.</span></li>
                     <li><span>💀</span><span>Se resti a <strong>zero Carta Locazione</strong> durante le preliminari, sei fuori dal torneo.</span></li>
@@ -1656,6 +1758,76 @@
         cityLayoutTimer = setTimeout(() => layoutCityOverlay(document.getElementById('cityGrid')), 120);
     });
 
+    /**
+     * Riga sotto l'intestazione del distretto: Radar potenziato (si tocca
+     * per usarlo), Scudo del Duel Disk (solo indicatore: scatta da solo),
+     * la Missione in corso e, quando c'è, l'avviso di Blackout.
+     */
+    function renderItemRow(state) {
+        const row = document.getElementById('itemRow');
+        if (!row) return;
+        row.innerHTML = '';
+        const tuttoVisibile = state.grid.cells.every((c) => c.revealed);
+        const radarInutile = tuttoVisibile && !(state.blackout > 0);
+
+        const radar = document.createElement('button');
+        radar.type = 'button';
+        radar.className = 'item-btn';
+        radar.id = 'useRadarBtn';
+        radar.title = ITEMS.radar.nome + ': ' + ITEMS.radar.desc;
+        radar.innerHTML = `${ITEMS.radar.icon} ${ITEMS.radar.corto} <span class="item-count">×${state.items.radar}</span>`;
+        radar.disabled = state.items.radar <= 0 || radarInutile;
+        radar.onclick = useRadar;
+        row.appendChild(radar);
+
+        const scudo = document.createElement('span');
+        scudo.className = 'item-btn item-passive';
+        scudo.id = 'shieldBadge';
+        scudo.title = ITEMS.shield.nome + ': ' + ITEMS.shield.desc;
+        scudo.innerHTML = `${ITEMS.shield.icon} ${ITEMS.shield.corto} <span class="item-count">×${state.items.shield}</span>`;
+        row.appendChild(scudo);
+
+        if (state.quest) {
+            const chip = document.createElement('span');
+            chip.className = 'item-btn item-passive item-chip-quest';
+            chip.id = 'questChip';
+            chip.textContent = `🎯 Missione: batti ${nameOf(state.quest.characterId)} (+${state.quest.reward})`;
+            row.appendChild(chip);
+        }
+        if (state.blackout > 0) {
+            const chip = document.createElement('span');
+            chip.className = 'item-btn item-passive item-chip-blackout';
+            chip.id = 'blackoutChip';
+            chip.textContent = `📴 Blackout: radar spento ancora ${state.blackout} ${state.blackout === 1 ? 'mossa' : 'mosse'}`;
+            row.appendChild(chip);
+        }
+    }
+
+    /** Usa un Radar potenziato: rivela TUTTO il distretto e riaccende il radar se era in Blackout. */
+    function useRadar() {
+        const state = loadState();
+        if (!state || state.phase !== 'city' || !state.grid) return;
+        ensureExtras(state);
+        if (state.items.radar <= 0) return;
+        const tuttoVisibile = state.grid.cells.every((c) => c.revealed);
+        if (tuttoVisibile && !(state.blackout > 0)) {
+            showToast('📡 Il radar mostra già tutto il distretto.');
+            return;
+        }
+        state.items.radar--;
+        let nuove = 0;
+        state.grid.cells.forEach((c) => {
+            if (!c.revealed) { c.revealed = true; c.justRevealed = true; nuove++; }
+        });
+        const eraBlackout = state.blackout > 0;
+        state.blackout = 0;
+        logEvent(state, '📡', `Radar potenziato: ${nuove ? `${nuove} isolati rivelati` : 'segnale ripristinato'}${eraBlackout ? ', blackout finito' : ''}.`);
+        saveState(state);
+        if (window.NativeHaptics) NativeHaptics.success();
+        render();
+        showToast(`📡 Radar potenziato: ${nuove ? `<strong>${nuove} isolati rivelati</strong>` : '<strong>segnale ripristinato</strong>'}${eraBlackout ? ', il blackout è finito' : ''}.`);
+    }
+
     function renderCity(state) {
         document.body.classList.add('city-map-active');
         applyPhaseBackdrop('city');
@@ -1663,6 +1835,7 @@
         mainEl.classList.add('map-mode');
         ensureHeliport(state);
 
+        ensureExtras(state);
         const grid = state.grid;
         const reachable = new Set(neighborsOf(grid, grid.playerIndex));
         const exhausted = sectorExhausted(state);
@@ -1676,6 +1849,7 @@
                     <div class="sector-title">Distretto ${state.sector}</div>
                     <div class="sector-hint" id="sectorHint"></div>
                 </div>
+                <div class="item-row" id="itemRow"></div>
                 <div class="city-grid" id="cityGrid" data-sector="${state.sector}" style="grid-template-columns: repeat(${grid.w}, 1fr);"></div>
                 <div class="legend">
                     <span class="legend-strong"><i class="legend-reach"></i>Puoi andarci</span>
@@ -1684,6 +1858,7 @@
                     <span>${BoardPieces.markup('hunter', null, { image: 'images/characters/pedine/rareHunter.png' })}Rare Hunter</span>
                     <span>${BoardPieces.markup('locator')}Carta Locazione</span>
                     <span>${BoardPieces.markup('event')}Evento</span>
+                    <span>${BoardPieces.markup('quest')}Missione</span>
                     <span>${BoardPieces.markup('shop')}Negozio</span>
                     <span>${BoardPieces.markup('heliport')}Decollo</span>
                     <span>${BoardPieces.markup('hidden')}Ignoto</span>
@@ -1721,6 +1896,7 @@
         document.getElementById('sectorHint').textContent = state.locators >= FINALS_THRESHOLD
             ? 'Zona di decollo aperta 🚁'
             : `Ti servono ancora ${FINALS_THRESHOLD - state.locators} Carta Locazione`;
+        renderItemRow(state);
 
         grid.cells.forEach((cell, index) => {
             const el = gridEl.querySelector(`.city-cell[data-index="${index}"]`);
@@ -1734,7 +1910,10 @@
             // (vedi .cell-label), quindi descrive cosa si trova ANDANDOCI.
             let piece;
             let label;
-            if (!cell.revealed) {
+            // Con il radar spento (Blackout) le celle non ancora attraversate
+            // tornano "Ignoto" anche se erano state rivelate.
+            const veduta = cellVisible(state, cell);
+            if (!veduta) {
                 el.classList.add('hidden-cell');
                 piece = 'hidden';
                 label = 'Ignoto';
@@ -1746,6 +1925,11 @@
                 const vuota = cell.kind === 'empty' || cell.kind === 'start';
                 piece = vuota ? null : (cell.resolved ? 'done' : meta.piece);
                 label = (vuota || cell.resolved) ? 'Libero' : meta.label;
+                // Il bersaglio della Missione: anello dorato ed etichetta dedicata.
+                if (state.quest && state.quest.cellIndex === index && !cell.resolved) {
+                    el.classList.add('quest-target');
+                    label = 'Bersaglio';
+                }
             }
             // Il disegno si riscrive solo se cambia: le 25 caselle restano
             // nodi persistenti (vedi il commento sul segnalino più sotto).
@@ -1779,7 +1963,7 @@
                 el.onclick = () => moveToCell(index);
                 el.tabIndex = 0;
                 el.removeAttribute('aria-disabled');
-                el.setAttribute('aria-label', cell.revealed ? (meta.label || 'Isolato libero') : 'Isolato sconosciuto');
+                el.setAttribute('aria-label', veduta ? (meta.label || 'Isolato libero') : 'Isolato sconosciuto');
             } else {
                 el.onclick = null;
                 el.tabIndex = -1;
@@ -1808,6 +1992,12 @@
             btn.textContent = '🚶 Prosegui verso il prossimo distretto';
             btn.onclick = () => {
                 const s = loadState();
+                ensureExtras(s);
+                // La missione vale per UN distretto; il Blackout non si porta
+                // dietro nel successivo.
+                if (s.quest) logEvent(s, '🎯', 'Lasci il distretto: la missione è scaduta.');
+                s.quest = null;
+                s.blackout = 0;
                 s.sector++;
                 buildSector(s);
                 logEvent(s, '🚶', `Ti sposti nel Distretto ${s.sector}.`);
@@ -1826,9 +2016,17 @@
         if (!neighborsOf(grid, grid.playerIndex).includes(index)) return;
         const cell = grid.cells[index];
 
+        ensureExtras(state);
         grid.playerIndex = index;
         revealAround(state, index);
         if (window.NativeHaptics) NativeHaptics.light();
+        // Ogni mossa consuma una delle mosse di Blackout; l'evento che lo
+        // accende (più sotto) parte DOPO questo scalare, quindi dura per
+        // intero le mosse successive.
+        if (state.blackout > 0) {
+            state.blackout--;
+            if (state.blackout === 0) logEvent(state, '📡', 'Il segnale del radar è tornato.');
+        }
 
         if (cell.resolved || cell.kind === 'empty') {
             cell.resolved = true;
@@ -1851,33 +2049,96 @@
             }
             case 'shop': {
                 cell.resolved = true;
-                revealRandomCells(state, 3);
+                // Due isolati rivelati (erano tre) più UN oggetto: Radar
+                // potenziato o Scudo del Duel Disk.
+                revealRandomCells(state, 2);
+                const oggetto = giveRandomItem(state);
                 const scene = pickRandom(SHOP_SCENES);
-                logEvent(state, '🏪', scene);
+                const premio = oggetto
+                    ? `Due isolati rivelati e <strong>${ITEMS[oggetto].icon} ${ITEMS[oggetto].nome}</strong>.`
+                    : 'Due isolati rivelati (hai già il massimo di oggetti).';
+                logEvent(state, '🏪', scene + (oggetto ? ` Ottieni: ${ITEMS[oggetto].nome}.` : ''));
                 saveState(state);
                 render();
-                showToast(`🏪 ${scene} <strong>Tre isolati rivelati sul radar.</strong>`);
+                showToast(`🏪 ${scene} ${premio}`);
+                return;
+            }
+            case 'quest': {
+                cell.resolved = true;
+                // Il bersaglio è un Duellante di QUESTO distretto non ancora
+                // affrontato. Una sola missione alla volta: una seconda
+                // soffiata, o nessun bersaglio rimasto, non assegna nulla.
+                const bersagli = grid.cells
+                    .map((c, i) => ({ c: c, i: i }))
+                    .filter((e) => e.c.kind === 'duelist' && !e.c.resolved);
+                if (state.quest || bersagli.length === 0) {
+                    const nota = state.quest
+                        ? 'Un\'altra soffiata, ma hai già una missione in corso.'
+                        : 'Il biglietto è vecchio: il bersaglio se n\'è già andato.';
+                    logEvent(state, '🎯', nota);
+                    saveState(state);
+                    render();
+                    showToast(`🎯 ${nota}`);
+                    return;
+                }
+                const scelto = pickRandom(bersagli);
+                state.quest = { characterId: scelto.c.characterId, cellIndex: scelto.i, reward: QUEST_REWARD, sector: state.sector };
+                // La soffiata dice anche DOVE: la casella del bersaglio si rivela.
+                if (!scelto.c.revealed) { scelto.c.revealed = true; scelto.c.justRevealed = true; }
+                const scenaMissione = pickRandom(QUEST_SCENES);
+                logEvent(state, '🎯', `${scenaMissione} Missione: sconfiggi ${nameOf(scelto.c.characterId)} (+${QUEST_REWARD}).`);
+                saveState(state);
+                if (window.NativeHaptics) NativeHaptics.success();
+                render();
+                showToast(`🎯 ${scenaMissione} <strong>Missione: sconfiggi ${nameOf(scelto.c.characterId)}</strong> in questo distretto per <strong>+${QUEST_REWARD} Carta Locazione</strong>.`);
                 return;
             }
             case 'event': {
                 cell.resolved = true;
-                const good = Math.random() < 0.5;
-                if (good) {
+                // Tre esiti: buono (40%), cattivo (35%: −1 Carta Locazione) e
+                // Blackout (25%: radar spento per qualche mossa, ma nessuna
+                // carta persa). Lo Scudo protegge dai due cattivi.
+                const roll = Math.random();
+                if (roll < 0.4) {
                     const scene = pickRandom(EVENT_GOOD);
                     revealRandomCells(state, 2);
-                    logEvent(state, '✨', scene);
+                    // Ogni tanto il buon incontro lascia anche un oggetto.
+                    const oggetto = Math.random() < 0.3 ? giveRandomItem(state) : null;
+                    logEvent(state, '✨', scene + (oggetto ? ` Ottieni: ${ITEMS[oggetto].nome}.` : ''));
                     saveState(state);
                     render();
-                    showToast(`✨ ${scene}`);
-                } else {
+                    showToast(`✨ ${scene}${oggetto ? ` <strong>${ITEMS[oggetto].icon} ${ITEMS[oggetto].nome}</strong>.` : ''}`);
+                } else if (roll < 0.75) {
                     const scene = pickRandom(EVENT_BAD);
-                    state.locators = Math.max(0, state.locators - 1);
-                    logEvent(state, '⚠️', scene);
-                    if (state.locators <= 0) state.eliminated = true;
-                    saveState(state);
-                    if (window.NativeHaptics) NativeHaptics.error();
-                    render();
-                    showToast(`⚠️ ${scene} <strong>−1 Carta Locazione</strong>.`);
+                    if (consumeShield(state)) {
+                        logEvent(state, '🛡️', `${scene} Lo Scudo del Duel Disk assorbe il colpo.`);
+                        saveState(state);
+                        render();
+                        showToast(`🛡️ ${scene} <strong>Lo Scudo del Duel Disk ti protegge: nessuna carta persa.</strong>`);
+                    } else {
+                        state.locators = Math.max(0, state.locators - 1);
+                        logEvent(state, '⚠️', scene);
+                        if (state.locators <= 0) state.eliminated = true;
+                        saveState(state);
+                        if (window.NativeHaptics) NativeHaptics.error();
+                        render();
+                        showToast(`⚠️ ${scene} <strong>−1 Carta Locazione</strong>.`);
+                    }
+                } else {
+                    const scene = pickRandom(BLACKOUT_SCENES);
+                    if (consumeShield(state)) {
+                        logEvent(state, '🛡️', `${scene} Lo Scudo del Duel Disk lo respinge.`);
+                        saveState(state);
+                        render();
+                        showToast(`🛡️ ${scene} <strong>Lo Scudo del Duel Disk lo respinge: il radar resta acceso.</strong>`);
+                    } else {
+                        state.blackout = BLACKOUT_MOVES;
+                        logEvent(state, '📴', `${scene} Radar spento per ${BLACKOUT_MOVES} mosse.`);
+                        saveState(state);
+                        if (window.NativeHaptics) NativeHaptics.error();
+                        render();
+                        showToast(`📴 ${scene} <strong>Radar spento per ${BLACKOUT_MOVES} mosse</strong>: le celle nuove non si vedono finché non ci passi.`);
+                    }
                 }
                 return;
             }
@@ -2335,19 +2596,37 @@
         if (state.grid && enc.cellIndex != null && state.grid.cells[enc.cellIndex]) {
             state.grid.cells[enc.cellIndex].resolved = true;
         }
+        ensureExtras(state);
         if (won) {
             state.locators += enc.wager;
             logEvent(state, '⚔️', `Vittoria su ${name} (+${enc.wager}).`);
+            // Missione secondaria: vale solo battendo il bersaglio indicato,
+            // nella sua casella, in questo distretto.
+            let bonusMissione = '';
+            if (state.quest && enc.cellIndex === state.quest.cellIndex && enc.characterId === state.quest.characterId) {
+                state.locators += state.quest.reward;
+                logEvent(state, '🎯', `Missione compiuta: ${name} battuto (+${state.quest.reward}).`);
+                bonusMissione = ` <strong>Missione compiuta: +${state.quest.reward} Carta Locazione!</strong>`;
+                state.quest = null;
+            }
             if (window.NativeHaptics) NativeHaptics.success();
             saveState(state);
-            showToast(`⚔️ Hai sconfitto ${name}! <strong>+${enc.wager} Carta Locazione</strong>.`, reaction);
+            showToast(`⚔️ Hai sconfitto ${name}! <strong>+${enc.wager} Carta Locazione</strong>.${bonusMissione}`, reaction);
         } else {
-            state.locators = Math.max(0, state.locators - enc.wager);
-            logEvent(state, '💀', `Sconfitta contro ${name} (−${enc.wager}).`);
+            // Lo Scudo del Duel Disk dimezza (per difetto) la posta persa:
+            // con una sola Carta Locazione in gioco non si perde niente.
+            let persa = enc.wager;
+            let protetto = false;
+            if (persa > 0 && consumeShield(state)) {
+                persa = Math.floor(enc.wager / 2);
+                protetto = true;
+            }
+            state.locators = Math.max(0, state.locators - persa);
+            logEvent(state, '💀', `Sconfitta contro ${name} (−${persa}${protetto ? ', Scudo del Duel Disk' : ''}).`);
             if (state.locators <= 0) state.eliminated = true;
             if (window.NativeHaptics) NativeHaptics.error();
             saveState(state);
-            showToast(`💀 ${name} ti ha battuto. <strong>−${enc.wager} Carta Locazione</strong>.`, reaction);
+            showToast(`💀 ${name} ti ha battuto. <strong>−${persa} Carta Locazione</strong>${protetto ? ` (lo Scudo ha dimezzato la posta di ${enc.wager})` : ''}.`, reaction);
         }
         return true;
     }

@@ -260,6 +260,17 @@
                 <ellipse cx="31" cy="15.4" rx="17" ry="1.9" fill="#e8f0f8" opacity=".6" class="bp-blink"/>
                 <rect x="30.2" y="15.4" width="1.6" height="3" fill="#3f4e63"/>
             </g>`,
+        // Missione: bersaglio a due anelli con il mirino, rosso come
+        // l'avviso e con un punto centrale che lampeggia.
+        quest: `${SHADOW}
+            <ellipse cx="32" cy="55" rx="15" ry="4.4" fill="url(#bp-glow-amber)" class="bp-breathe"/>
+            <circle cx="32" cy="31" r="21" fill="#3a0a10"/>
+            <circle cx="32" cy="29" r="20" fill="#7f1d1d" stroke="#fecaca" stroke-width="1.3"/>
+            <circle cx="32" cy="29" r="14" fill="#fafafa" stroke="#fecaca" stroke-width=".8"/>
+            <circle cx="32" cy="29" r="8.4" fill="#dc2626"/>
+            <circle cx="32" cy="29" r="3.4" fill="#fafafa" class="bp-blink"/>
+            <path d="M32 4.5 V15 M32 43 V53.5 M7.5 29 H18 M46 29 H56.5" stroke="#fbbf24" stroke-width="2" stroke-linecap="round"/>
+            <ellipse cx="24" cy="17" rx="6" ry="3" fill="#fff" opacity=".3" transform="rotate(-32 24 17)"/>`,
         // Casella ignota: sfera olografica del radar con anelli che
         // ruotano, riflesso e il punto di domanda.
         hidden: `${SHADOW}

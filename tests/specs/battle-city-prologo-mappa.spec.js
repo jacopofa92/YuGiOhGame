@@ -47,7 +47,10 @@ module.exports = {
             });
             t.assert(layout.mainWidth >= layout.viewportWidth - 2,
                 `La mappa deve usare tutta la larghezza dello schermo (${layout.mainWidth}/${layout.viewportWidth})`);
-            t.assert(layout.gridWidth > 540,
+            // A 800px di altezza la griglia è quadrata e limitata dall'ALTEZZA
+            // (100dvh meno intestazione, riga oggetti e legenda): 535px. La
+            // soglia serve solo a escludere il vecchio tetto del contenitore.
+            t.assert(layout.gridWidth > 500,
                 `La griglia desktop non deve restare bloccata al vecchio limite di 640px contenitore (griglia ${layout.gridWidth}px)`);
             t.assert(/citta\.jpg/i.test(layout.background),
                 `Lo sfondo della fase urbana deve essere citta.jpg: ${layout.background}`);
