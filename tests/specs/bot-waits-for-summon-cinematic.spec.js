@@ -64,6 +64,7 @@ module.exports = {
             const attaccoVero = window.resolveAttack;
             window.resolveAttack = function () {
                 if (cinematicaAttiva) { violazioni++; segna('attacco DURANTE la cinematica'); }
+                else if (eventi.some((e) => e.indexOf('cinematica finita') !== -1)) segna('attacco DOPO la cinematica');
                 return attaccoVero.apply(this, arguments);
             };
 
@@ -83,14 +84,29 @@ module.exports = {
 
             botTurn();
 
-            setTimeout(() => {
+            // Niente attesa a tempo fisso (era 11s: sotto carico il bot non
+            // faceva in tempo ad arrivare in Battle Phase e il test leggeva
+            // lo stato troppo presto). Si aspetta il SEGNALE vero: la
+            // cinematica è finita E il bot ha poi attaccato davvero. Il
+            // tetto di 45s serve solo a non restare appesi se il bot non
+            // arriva mai lì (e allora `accesa` o `attaccoDopo` lo dicono).
+            const fine = performance.now() + 45000;
+            const controlla = () => {
                 const accesa = eventi.some((e) => e.indexOf('cinematica accesa') !== -1);
-                ripristina();
-                risolvi({ violazioni: violazioni, accesa: accesa, eventi: eventi });
-            }, 11000);
+                const finita = eventi.some((e) => e.indexOf('cinematica finita') !== -1);
+                const attaccoDopo = finita && eventi.some((e) => e.indexOf('attacco DOPO la cinematica') !== -1);
+                if (attaccoDopo || performance.now() > fine) {
+                    ripristina();
+                    risolvi({ violazioni: violazioni, accesa: accesa, attaccoDopo: attaccoDopo, eventi: eventi });
+                    return;
+                }
+                setTimeout(controlla, 200);
+            };
+            controlla();
         }));
 
         t.assert(esito.accesa, 'Il bot deve arrivare in Battle Phase (è lì che la prova accende la cinematica): senza, non si sta provando nulla');
+        t.assert(esito.attaccoDopo, `Dopo la cinematica il bot deve riprendere e attaccare: ${esito.eventi.join(' | ')}`);
         t.assert(
             esito.violazioni === 0,
             `Il bot ha agito ${esito.violazioni} volte mentre la cinematica era in corso: ${esito.eventi.join(' | ')}`

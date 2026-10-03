@@ -308,7 +308,18 @@ module.exports = {
             await watcher.evaluate(() => {
                 const trap = Object.assign({}, cardDatabase.find((c) => c.id === 40), { uid: 'mp_test_trap_hole' });
                 gameState.playerHand[0] = trap;
+                // Chi non è di turno non può Settare una carta: il server lo
+                // rifiuta (giustamente), quindi qui la Trappola si mette
+                // in campo con la trasmissione della mossa spenta e si
+                // comunica poi la situazione con una fotografia di stato,
+                // che non è legata al turno.
+                // Il broadcast di 'spelltrap' parte in differita, quindi si
+                // filtra quel solo tipo di messaggio invece di spegnere tutto
+                // per la durata della chiamata.
+                const broadcastVero = window.MP_broadcast;
+                window.MP_broadcast = (azione) => { if (azione && azione.kind !== 'spelltrap') broadcastVero(azione); };
                 setSpellTrap(trap, 1, 0);
+                setTimeout(() => DuelEngine.broadcastLocalStatePush(null), 500);
             });
             await actor.waitForFunction(() => !!gameState.botSTField[1], { timeout: 15000 });
             // Una Trappola non può rispondere nel turno in cui è stata

@@ -298,17 +298,25 @@
      * PNG ritagliato; senza, torna la pedina generica (un personaggio
      * senza immagine non deve lasciare un buco).
      */
-    function portraitMarkup(opts) {
+    // Luce di bordo e basamento per tipo: i Rare Hunter restano magenta
+    // come la loro pedina standard, i Duellanti ciano.
+    const PORTRAIT_STYLE = {
+        duelist: { color: '#22d3ee', glow: 'bp-glow-cyan', rim: '125,243,255' },
+        hunter: { color: '#e879f9', glow: 'bp-glow-magenta', rim: '240,171,252' }
+    };
+
+    function portraitMarkup(opts, kind) {
+        const st = PORTRAIT_STYLE[kind] || PORTRAIT_STYLE.duelist;
         // Il personaggio RITAGLIATO (PNG trasparente, vedi
         // images/characters/pedine/) in piedi sul basamento, niente
         // medaglione né sfondo: richiesta dell'utente. Il box è largo e
         // alto quanto serve a farlo entrare mantenendo le proporzioni, con
         // i piedi (xMidYMax) appoggiati al basamento; un filo di luce di
         // bordo ciano lo stacca dallo sfondo scuro della mappa.
-        return `${SHADOW}${base('#22d3ee', 'bp-glow-cyan')}
+        return `${SHADOW}${base(st.color, st.glow)}
             <image href="${opts.image}" x="9" y="3" width="46" height="50" preserveAspectRatio="xMidYMax meet"
                 onerror="BoardPieces._ritrattoMancante(this)"
-                style="filter: drop-shadow(0 0 1.2px rgba(125,243,255,.95)) drop-shadow(0 1.5px 1px rgba(0,0,0,.55))"/>`;
+                style="filter: drop-shadow(0 0 1.2px rgba(${st.rim},.95)) drop-shadow(0 1.5px 1px rgba(0,0,0,.55))"/>`;
     }
 
     // Ritratti la cui immagine non esiste: ricordarli evita di richiederli
@@ -325,16 +333,17 @@
         const svg = imgEl.closest('svg');
         if (!svg) return;
         ritrattiMancanti.add(imgEl.getAttribute('href'));
-        svg.innerHTML = PIECES.duelist;
+        // Si torna alla pedina standard del SUO tipo (Duellante o Rare Hunter).
+        svg.innerHTML = PIECES[svg.dataset.bpKind] || PIECES.duelist;
     }
 
     function markup(kind, variant, opts) {
         let body = PIECES[kind];
-        if (kind === 'duelist' && opts && opts.image && !ritrattiMancanti.has(opts.image)) body = portraitMarkup(opts);
+        if ((kind === 'duelist' || kind === 'hunter') && opts && opts.image && !ritrattiMancanti.has(opts.image)) body = portraitMarkup(opts, kind);
         if (!body) return '';
         ensureDefs();
         const cls = `bp-piece bp-${kind}${variant ? ' bp-' + variant : ''}`;
-        return `<svg class="${cls}" viewBox="0 0 64 64" aria-hidden="true" focusable="false">${body}</svg>`;
+        return `<svg class="${cls}" data-bp-kind="${kind}" viewBox="0 0 64 64" aria-hidden="true" focusable="false">${body}</svg>`;
     }
 
     window.BoardPieces = {

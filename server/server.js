@@ -270,6 +270,86 @@ function isRateLimited(socket) {
     return socket.rateCount > RATE_LIMIT_MAX_MESSAGES;
 }
 
+// ------------------------------------------------------------
+// Controlli anti-imbroglio del RELAY (NON le regole del duello).
+//
+// Il server resta cieco rispetto alla partita: non sa cosa c'è sul campo
+// e non lo deve sapere. Ma qualche invariante si può far rispettare senza
+// il motore, ed è quello che chiude le scorciatoie più banali per barare
+// con un client modificato:
+//   1) il tipo di azione deve essere uno di quelli che il protocollo usa;
+//   2) i campi numerici (indici di zona, nome fase) devono essere sensati;
+//   3) le mosse che si fanno SOLO nel proprio turno (Evocare, attaccare,
+//      calare una carta, cambiare Posizione, avanzare di fase) vengono
+//      inoltrate solo se il mittente è davvero di turno.
+// Le risposte in Catena, le scelte di bersaglio, le attivazioni (anche una
+// Trappola sul turno altrui) e i messaggi di resync NON sono legate al
+// turno: lì chi risponde è per definizione quello che non è di turno.
+// ------------------------------------------------------------
+
+const GAME_ACTION_KINDS = new Set([
+    'phase', 'summon', 'tribute', 'position', 'spelltrap', 'fieldspell', 'attack',
+    'activate', 'chain-response', 'card-choice', 'state-push', 'game-over',
+    'request-resync', 'state-sync', 'room-config', 'ready', 'rps'
+]);
+// Le sole mosse che hanno senso nel turno di chi le manda.
+const TURN_BOUND_KINDS = new Set(['summon', 'tribute', 'position', 'spelltrap', 'fieldspell', 'attack']);
+const PHASE_NAMES = new Set(['draw', 'standby', 'main1', 'battle', 'main2', 'end']);
+// Messaggi che segnano l'inizio di un duello (o la sua fine): il turno
+// tracciato dal server si azzera, così una rivincita nella stessa stanza
+// non eredita il turno di quella prima.
+const TURN_RESET_KINDS = new Set(['game-over', 'ready', 'rps', 'room-config']);
+
+function isSmallIndex(v) {
+    return v === null || v === undefined || (Number.isInteger(v) && v >= 0 && v <= 60);
+}
+
+/**
+ * Torna null se l'azione può essere inoltrata, altrimenti il motivo del rifiuto.
+ * Aggiorna `room.turn` ({ owner, ended }) man mano che passano le fasi.
+ * Il proprietario del turno NON si assume dall'ordine d'ingresso in stanza
+ * (chi comincia lo decide la lobby, anche a sasso-carta-forbice): è chi
+ * manda per primo una fase, poi cambia solo quando chi era di turno ha
+ * chiuso con 'end' e l'altro apre con 'draw'.
+ */
+function validateGameAction(room, senderId, action) {
+    const kind = action.kind;
+    if (typeof kind !== 'string' || !GAME_ACTION_KINDS.has(kind)) return 'azione sconosciuta';
+
+    if (['slotIndex', 'attackerIndex', 'targetIndex', 'handIndex'].some((k) => !isSmallIndex(action[k]))) return 'indice non valido';
+    if (action.indices !== undefined && (!Array.isArray(action.indices) || action.indices.length > 10 || !action.indices.every((i) => Number.isInteger(i) && i >= 0 && i <= 60))) return 'indici non validi';
+
+    if (TURN_RESET_KINDS.has(kind)) {
+        room.turn = null;
+        return null;
+    }
+
+    if (kind === 'phase') {
+        if (typeof action.name !== 'string' || !PHASE_NAMES.has(action.name)) return 'fase sconosciuta';
+        const turn = room.turn;
+        if (!turn) {
+            room.turn = { owner: senderId, ended: action.name === 'end' };
+            return null;
+        }
+        if (turn.owner === senderId) {
+            // Una fase nuova dello stesso giocatore dopo il suo 'end' non
+            // esiste: sarebbe un secondo turno di fila senza che l'altro abbia giocato.
+            if (turn.ended && action.name !== 'end') return 'turno già concluso';
+            if (action.name === 'end') turn.ended = true;
+            return null;
+        }
+        // Mittente non di turno: può solo APRIRE il proprio, e solo dopo che l'altro ha chiuso.
+        if (turn.ended && action.name === 'draw') {
+            room.turn = { owner: senderId, ended: false };
+            return null;
+        }
+        return 'non è il tuo turno';
+    }
+
+    if (TURN_BOUND_KINDS.has(kind) && room.turn && room.turn.owner !== senderId) return 'non è il tuo turno';
+    return null;
+}
+
 function handleClientMessage(socket, raw) {
     if (Buffer.byteLength(raw, 'utf8') > MAX_MESSAGE_BYTES) return; // scartato in silenzio: troppo grande per essere un'azione legittima
     if (isRateLimited(socket)) return;
@@ -345,7 +425,15 @@ function handleClientMessage(socket, raw) {
             const room = rooms.get(socket.roomCode);
             if (!room) return;
             const peerId = otherPlayerId(room, socket.playerId);
-            if (peerId) sendToPlayer(room, peerId, { type: 'game-action', action: msg.action });
+            // Senza un avversario in stanza non c'è nessuno a cui inoltrare,
+            // e nessun duello da controllare.
+            if (!peerId) return;
+            const rifiuto = validateGameAction(room, socket.playerId, msg.action);
+            if (rifiuto) {
+                sendJSON(socket, { type: 'error', message: 'Azione rifiutata dal server: ' + rifiuto + '.' });
+                return;
+            }
+            sendToPlayer(room, peerId, { type: 'game-action', action: msg.action });
             break;
         }
 
@@ -430,4 +518,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { encodeFrame, decodeFrames, generateRoomCode, WS_MAGIC };
+module.exports = { encodeFrame, decodeFrames, generateRoomCode, validateGameAction, WS_MAGIC };

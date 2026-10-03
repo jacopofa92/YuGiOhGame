@@ -32,6 +32,11 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.15 — Velocità del bot (Normale/Veloce) nelle Impostazioni; scarto a
+ *   fine turno e scelta della casella con lo stesso schema dei Tributi;
+ *   Rare Hunter ritagliato sulla mappa di Battle City; il server
+ *   Multiplayer rifiuta azioni fuori turno o malformate.
+ *
  * 1.0.14 — PNG delle pedine ridimensionati (max 320 px): ~10 MB invece di
  *   ~100 MB; gli originali restano in images/characters/avatarTrasparenza/.
  *
@@ -495,4 +500,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.14';
+window.GAME_VERSION = '1.0.15';

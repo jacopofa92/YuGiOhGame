@@ -119,6 +119,21 @@ module.exports = {
             t.assert(!fs.existsSync(path.join(cartella, 'joey.png')) && !fs.existsSync(path.join(cartella, 'duke.png')),
                 'I PNG si chiamano come gli avatar (dukeDevlin.png), non come l\'id (duke.png)');
 
+            // Rare Hunter: ritaglio dedicato, e fallback sulla propria pedina
+            // standard (non quella del Duellante) se il file manca.
+            const hunter = await page.evaluate(() => {
+                const box = document.createElement('div');
+                box.innerHTML = '<div id="hOk">' + BoardPieces.markup('hunter', null, { image: 'images/characters/pedine/rareHunter.png' }) + '</div>'
+                    + '<div id="hKo">' + BoardPieces.markup('hunter', null, { image: 'images/characters/pedine/nonEsisteHunter.png' }) + '</div>';
+                document.body.appendChild(box);
+                return { conImmagine: !!document.querySelector('#hOk image') };
+            });
+            await page.waitForFunction(() => !document.querySelector('#hKo image'), null, { timeout: 5000 });
+            const fallbackHunter = await page.evaluate(() => document.querySelector('#hKo svg').dataset.bpKind);
+            t.assert(hunter.conImmagine, 'Il Rare Hunter deve usare il ritaglio rareHunter.png');
+            t.assert(fallbackHunter === 'hunter','Il fallback di un Rare Hunter resta di tipo hunter');
+            t.assert(fs.existsSync(path.join(cartella, 'rareHunter.png')), 'rareHunter.png deve esistere in pedine/');
+
             t.assert(erroriPagina.length === 0, 'Nessun errore JS deve comparire in pagina: ' + erroriPagina.join(' | '));
         } finally {
             await page.close();

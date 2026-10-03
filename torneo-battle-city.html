@@ -1666,7 +1666,7 @@
                     <span class="legend-strong"><i class="legend-reach"></i>Puoi andarci</span>
                     <span>${BoardPieces.markup('player')}Sei qui</span>
                     <span>${BoardPieces.markup('duelist')}Duellante</span>
-                    <span>${BoardPieces.markup('hunter')}Rare Hunter</span>
+                    <span>${BoardPieces.markup('hunter', null, { image: 'images/characters/pedine/rareHunter.png' })}Rare Hunter</span>
                     <span>${BoardPieces.markup('locator')}Carta Locazione</span>
                     <span>${BoardPieces.markup('event')}Evento</span>
                     <span>${BoardPieces.markup('shop')}Negozio</span>
@@ -1735,9 +1735,9 @@
             // Il disegno si riscrive solo se cambia: le 25 caselle restano
             // nodi persistenti (vedi il commento sul segnalino più sotto).
             // Un Duellante mostra il PERSONAGGIO ritagliato
-            // (images/characters/pedine/<id>.png, senza sfondo); un Rare
-            // Hunter no, resta la sagoma anonima perché chi è si estrae
-            // solo entrandoci. Ogni Duellante PROVA il suo PNG: se il file
+            // (images/characters/pedine/<nome-avatar>.png, senza sfondo); un
+            // Rare Hunter mostra un ritaglio anonimo unico (rareHunter.png)
+            // perché chi è si estrae solo entrandoci. Ogni Duellante PROVA il suo PNG: se il file
             // non c'è, BoardPieces ripiega da solo sulla pedina standard
             // (niente elenco da tenere: basta mettere o togliere il file).
             // Il PNG ha lo stesso nome del file avatar del personaggio
@@ -1745,7 +1745,10 @@
             const avatarDelDuellante = (piece === 'duelist' && cell.characterId) ? getCharacter(cell.characterId) : null;
             const nomeAvatar = avatarDelDuellante && avatarDelDuellante.image
                 ? avatarDelDuellante.image.split('/').pop().replace(/\.[^.]+$/, '') : null;
-            const faccia = nomeAvatar ? `images/characters/pedine/${nomeAvatar}.png` : null;
+            // Il Rare Hunter ha un ritaglio unico, uguale per tutti: chi si
+            // incontra davvero si decide solo entrandoci.
+            const faccia = piece === 'hunter' ? 'images/characters/pedine/rareHunter.png'
+                : (nomeAvatar ? `images/characters/pedine/${nomeAvatar}.png` : null);
             const signature = `${piece || '-'}|${label}|${faccia || ''}`;
             if (el.dataset.content !== signature) {
                 el.innerHTML = `${piece ? BoardPieces.markup(piece, null, faccia ? { image: faccia } : null) : ''}<div class="cell-label">${label}</div>`;

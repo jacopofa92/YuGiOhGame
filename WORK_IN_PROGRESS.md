@@ -14,23 +14,31 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
 
 ## Affidabilità
 
-- [ ] Stabilizzare i test fragili: almeno `bot-waits-for-summon-cinematic`
-      fallisce a volte in mezzo agli altri (dipende da attese a tempo fisso).
-      Sostituire i `waitForTimeout` con attese su segnali veri.
+- [x] `bot-waits-for-summon-cinematic` ora aspetta segnali veri (cinematica
+      finita + attacco avvenuto) invece di 11 s fissi. Gli altri spec con
+      `waitForTimeout` fissi non sono stati rivisti: farlo se ne fallisce uno.
 - [ ] Controllo automatico pre-commit: sintassi (`scripts/check-syntax.js`) più
       ricerca di accenti corrotti (`â€`, `Ã¨`…), per evitare di riscrivere i
       file con PowerShell `Get-Content`/`Set-Content` rovinando gli accenti.
-- [ ] Multiplayer: la logica sta tutta sui client e il server non verifica
-      nulla, quindi si può barare. Accettabile tra amici; da affrontare se si
-      apre a sconosciuti.
+- [x] Multiplayer: il relay ora rifiuta azioni sconosciute, indici assurdi e
+      mosse da turno (Evocare, attaccare, calare carte, avanzare di fase)
+      fuori dal proprio turno (`validateGameAction` in `server/server.js`).
+      RESTA APERTO: il server non conosce il campo, quindi un client
+      modificato può ancora mentire su ciò che fa nel proprio turno (carte
+      che non ha, danni, pescate). Servirebbe far girare il motore anche lato
+      server: da fare solo se si apre a sconosciuti. Il server va ridistribuito
+      dove gira per avere i nuovi controlli.
 
 ## Esperienza di gioco
 
-- [ ] Dare a TUTTE le scelte lo stesso schema già usato per i Tributi: banda
-      evidente + velo scuro + pulsante Annulla (dove annullare ha senso):
-      scarto a fine turno, selezione bersagli, ecc.
+- [x] Schema unico (banda + velo + elementi sopra il velo + Annulla dove ha
+      senso) per Tributo, scarto a fine turno e casella dopo un Sacrificio.
+      I picker a modale (lista carte, Attacco/Difesa) erano già modali con
+      chiusura. NON verificato a occhio nel duello (solo da test): guardare
+      scarto e casella in una partita vera.
 - [ ] Tutorial o partita guidata per chi non conosce Yu-Gi-Oh.
-- [ ] Velocità del bot regolabile (veloce/normale) nelle impostazioni.
+- [x] Velocità del bot regolabile (Normale/Veloce) in Impostazioni → Dispositivo.
+      Accorcia solo le pause di ritmo in `js/ai/bot.js` (`botMs`).
 
 ## Contenuti
 

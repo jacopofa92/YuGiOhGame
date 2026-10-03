@@ -2053,7 +2053,13 @@
         /* Modalità Tributo ben evidente: banda più grande e pulsante di
            bordo, e un velo scuro sul resto dello schermo (sotto i mostri
            sacrificabili, che restano illuminati dal loro contorno). */
-        .tribute-prompt#tributePrompt {
+        /* Schema UNICO per ogni scelta "clicca sul campo/in mano": banda
+           grande + velo scuro + elementi scelti sopra il velo + (solo dove
+           rinunciare ha senso) Annulla. Tributo, scarto a fine turno e
+           casella dopo un Sacrificio lo condividono tramite .selection-banner
+           e le classi su <body> (tribute-mode / discard-mode /
+           placement-mode). */
+        .tribute-prompt.selection-banner {
             font-size: clamp(0.85rem, 2vw, 1.1rem);
             padding: 12px 22px;
             border-width: 2px;
@@ -2072,7 +2078,31 @@
             pointer-events: none;
             transition: opacity .25s ease;
         }
-        body.tribute-mode .tribute-veil { opacity: 1; }
+        body.tribute-mode .tribute-veil,
+        body.discard-mode .tribute-veil,
+        body.placement-mode .tribute-veil { opacity: 1; }
+        /* Etichetta "Obbligatorio" delle scelte che non si possono annullare. */
+        .tribute-prompt-note {
+            font-size: 0.72em;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            opacity: 0.8;
+        }
+        /* Scarto a fine turno: la mano sta sopra il velo e le sue carte pulsano. */
+        body.discard-mode #playerHand {
+            position: relative;
+            z-index: 10085;
+        }
+        body.discard-mode #playerHand .card:not(.selected) {
+            animation: tributeCardPulse 1.2s ease-in-out infinite;
+            cursor: pointer;
+        }
+        /* Casella dopo un Sacrificio: le caselle libere sopra il velo. */
+        body.placement-mode #playerFieldBoard .field-slot.action-highlight {
+            position: relative;
+            z-index: 10085;
+            animation: tributeCardPulse 1.2s ease-in-out infinite;
+        }
         /* I mostri sacrificabili stanno SOPRA il velo. */
         body.tribute-mode #playerFieldBoard .field-slot.tribute-highlight {
             position: relative;
@@ -2086,7 +2116,8 @@
             50%      { box-shadow: 0 0 30px rgba(231,76,60,1); }
         }
         @media (prefers-reduced-motion: reduce) {
-            .tribute-prompt#tributePrompt, body.tribute-mode #playerFieldBoard .field-slot.tribute-highlight .card { animation: none; }
+            .tribute-prompt.selection-banner, body.tribute-mode #playerFieldBoard .field-slot.tribute-highlight .card,
+            body.discard-mode #playerHand .card:not(.selected), body.placement-mode #playerFieldBoard .field-slot.action-highlight { animation: none; }
         }
         /* Pila della Catena — vedi il commento HTML su #chainStack per il
            perché. Riga orizzontale sotto il promemoria Tributo (che occupa
@@ -3700,6 +3731,8 @@
          effetti del livello sbagliato. È anche l'unica pagina in cui quel
          livello cambia davvero qualcosa. -->
     <script src="js/ui/video-quality.js"></script>
+    <!-- Velocità del bot (js/ui/bot-speed.js): letta da js/ai/bot.js. -->
+    <script src="js/ui/bot-speed.js"></script>
     <link rel="stylesheet" href="js/ui/duel-dialogues.css">
     <!-- Visualizzazione ologramma (js/ui/hologram-setting.js): stessa
          ragione di posizione del file qui sopra — scrive `data-ologramma`
@@ -3769,7 +3802,7 @@
          un'Evocazione Tributo è in corso (vedi startTributeSelection() in
          js/actions.js) — prima c'era solo una riga nel log, facile da
          perdere se il pannello log è chiuso (lo è di default). -->
-    <div class="tribute-prompt" id="tributePrompt">
+    <div class="tribute-prompt selection-banner" id="tributePrompt">
         <span class="tribute-prompt-icon">🔺</span>
         <span class="tribute-prompt-text" id="tributePromptText"></span>
         <span class="tribute-prompt-count" id="tributePromptCount"></span>
@@ -3782,10 +3815,20 @@
          startHandDiscardSelection() in js/actions.js) — stessa identica
          banda del promemoria Tributo qui sopra, .tribute-prompt riusata
          di proposito per coerenza visiva. -->
-    <div class="tribute-prompt" id="handDiscardPrompt">
+    <div class="tribute-prompt selection-banner" id="handDiscardPrompt">
         <span class="tribute-prompt-icon">🗑️</span>
         <span class="tribute-prompt-text" id="handDiscardPromptText"></span>
         <span class="tribute-prompt-count" id="handDiscardPromptCount"></span>
+        <span class="tribute-prompt-note">Obbligatorio</span>
+    </div>
+
+    <!-- Promemoria "Scegli la casella" dopo un Sacrificio già pagato: stessa
+         banda e stesso velo degli altri due, senza Annulla (i mostri sono
+         già stati sacrificati, non si torna indietro). -->
+    <div class="tribute-prompt selection-banner" id="placementPrompt">
+        <span class="tribute-prompt-icon">🎯</span>
+        <span class="tribute-prompt-text">Scegli la casella Mostro libera per la carta Evocata</span>
+        <span class="tribute-prompt-note">Obbligatorio</span>
     </div>
 
     <!-- Pila della Catena: richiesta esplicita dell'utente ("gestisci

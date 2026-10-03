@@ -88,8 +88,18 @@ function botTurn() {
                                 });
                         });
                 });
-        }, 500);
+        }, botMs(500));
     });
+}
+
+/**
+ * Pausa di RITMO del bot, scalata dalla preferenza "Velocità del bot"
+ * (js/ui/bot-speed.js). Solo per le pause che esistono per farsi seguire:
+ * le attese con un motivo (modale aperto, cinematica in corso) non passano
+ * di qui e non si accorciano mai.
+ */
+function botMs(ms) {
+    return (window.BotSpeed && typeof BotSpeed.scale === 'function') ? BotSpeed.scale(ms) : ms;
 }
 
 /**
@@ -261,7 +271,7 @@ function botSummonMonster(card, tributeIndices, emptySlotHint, position, faceDow
                 });
                 updateUI();
                 finishSummon(freedSlot);
-            }, 700);
+            }, botMs(700));
         } else {
             finishSummon(emptySlotHint);
         }
@@ -381,7 +391,7 @@ async function botPerformAttacks() {
                     if (gameState.currentPlayer !== 'bot' || gameState.gameOver) { resolve(); return; }
                     botExecuteAttack(attackerItem.index, targetIndex, resolve);
                 });
-            }, 1200);
+            }, botMs(1200));
         });
     }
 }
@@ -504,7 +514,7 @@ function attendiPoi(ms) {
     return new Promise((resolve) => {
         phaseTransitionTimeout = setTimeout(() => {
             waitForSummonCinematics().then(resolve);
-        }, ms);
+        }, botMs(ms));
     });
 }
 
@@ -549,11 +559,11 @@ function attemptBotSpellTrap() {
             const decision = window.BotAI ? BotAI.chooseNextSpellTrapAction(gameState, usedThisTurn) : null;
             if (!decision) { resolve(); return; }
             if (decision.action === 'set') {
-                botSetTrapCard(decision.card, decision.handIndex).then(() => setTimeout(step, 300));
+                botSetTrapCard(decision.card, decision.handIndex).then(() => setTimeout(step, botMs(300)));
             } else {
                 const started = DuelEngine.activateCard('bot', 'hand', decision.handIndex);
                 if (!started) { resolve(); return; } // difensivo: canActivate era già stato controllato da chi ha deciso
-                waitForBotChainToClear(() => { updateUI(); setTimeout(step, 300); });
+                waitForBotChainToClear(() => { updateUI(); setTimeout(step, botMs(300)); });
             }
         };
         step();
@@ -592,7 +602,7 @@ function attemptBotActivateSetCards() {
             if (!decision) { resolve(); return; }
             const started = DuelEngine.activateCard('bot', decision.zone || 'st', decision.index);
             if (!started) { resolve(); return; }
-            waitForBotChainToClear(() => { updateUI(); setTimeout(step, 300); });
+            waitForBotChainToClear(() => { updateUI(); setTimeout(step, botMs(300)); });
         };
         step();
     });

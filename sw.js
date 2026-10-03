@@ -373,7 +373,8 @@
 // v125: Annulla/Esc e modalita' evidente per i Tributi; il bot aspetta i modali aperti.
 // v126: PNG delle pedine rinominati col nome del file avatar (dukeDevlin.png).
 // v127: pedine ridimensionate (max 320 px); originali in avatarTrasparenza/.
-const CACHE_NAME = 'ygo-duel-arena-v127';
+// v128: velocità del bot, schema unico delle scelte, Rare Hunter ritagliato, anti-imbroglio server.
+const CACHE_NAME = 'ygo-duel-arena-v128';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -515,6 +516,7 @@ const APP_SHELL = [
     'js/ui/deck-switcher.js',
     'js/ui/deck-switcher.css',
     'js/ui/video-quality.js',
+    'js/ui/bot-speed.js',
     'js/ui/onboarding.js',
     'js/ui/onboarding.css',
     'js/ui/story-cutscene.js',

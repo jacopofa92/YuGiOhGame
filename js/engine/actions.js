@@ -488,6 +488,7 @@ function handleSlotClick(owner, type, index) {
         if (owner === 'player' && type === 'monster' && !gameState.playerMonsterField[index]) {
             const { card, handIndex, fromRect } = gameState.pendingTributePlacement;
             gameState.pendingTributePlacement = null;
+            setPlacementPrompt(false);
             document.querySelectorAll('.field-slot.action-highlight').forEach((el) => el.classList.remove('action-highlight'));
             openSummonModal(card, index, handIndex, fromRect);
         }
@@ -981,6 +982,7 @@ function resolveTributeSummonPlacement(card, handIndex, fromRect) {
     }
     gameState.pendingTributePlacement = { card, handIndex, fromRect };
     addToLog('🎯 Scegli in quale casella Mostro libera piazzare la carta Evocata.');
+    setPlacementPrompt(true);
     updateUI();
     eligible.forEach((index) => {
         const el = document.querySelector(`.field-slot[data-owner="player"][data-type="monster"][data-index="${index}"]`);
@@ -1004,6 +1006,7 @@ function showHandDiscardPrompt(needed, selectedCount) {
         `Hai più di ${MAX_HAND_SIZE} carte in mano: scarta ${needed} cart${needed > 1 ? 'e' : 'a'}`;
     document.getElementById('handDiscardPromptCount').textContent = `${selectedCount}/${needed}`;
     el.classList.add('show');
+    document.body.classList.add('discard-mode');
 }
 
 function updateHandDiscardPromptCount(selectedCount, needed) {
@@ -1014,6 +1017,14 @@ function updateHandDiscardPromptCount(selectedCount, needed) {
 function hideHandDiscardPrompt() {
     const el = document.getElementById('handDiscardPrompt');
     if (el) el.classList.remove('show');
+    document.body.classList.remove('discard-mode');
+}
+
+/** Banda + velo della scelta "in quale casella piazzare" dopo un Sacrificio (stesso schema di Tributo/scarto). */
+function setPlacementPrompt(visibile) {
+    const el = document.getElementById('placementPrompt');
+    if (el) el.classList.toggle('show', visibile);
+    document.body.classList.toggle('placement-mode', visibile);
 }
 
 /**
@@ -1300,6 +1311,7 @@ function clearSelection() {
     gameState.selectedCard = { type: null, card: null, index: -1 };
     gameState.pendingTributeSummon = null;
     gameState.pendingTributePlacement = null;
+    setPlacementPrompt(false);
     hideTributePrompt();
     document.querySelectorAll('.action-highlight, .selected, .tribute-highlight, .tribute-selected').forEach(el => el.classList.remove('action-highlight', 'selected', 'tribute-highlight', 'tribute-selected'));
     updateCardInfoPanel(null);

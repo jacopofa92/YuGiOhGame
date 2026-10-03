@@ -352,6 +352,17 @@
 
             <div class="settings-row">
                 <div>
+                    <div class="settings-row-label">Velocità del bot</div>
+                    <div class="settings-row-sub">Con "Veloce" l'avversario controllato dal computer fa le sue mosse con pause molto più brevi. Le animazioni e i filmati non si accorciano.</div>
+                </div>
+                <div class="seg" id="botSpeedSeg" role="group" aria-label="Velocità del bot">
+                    <button type="button" class="seg-btn" data-velocita="normale" aria-pressed="true">Normale</button>
+                    <button type="button" class="seg-btn" data-velocita="veloce" aria-pressed="false">Veloce</button>
+                </div>
+            </div>
+
+            <div class="settings-row">
+                <div>
                     <div class="settings-row-label">Visualizzazione ologramma</div>
                     <div class="settings-row-sub" id="hologramSub">Proietta il mostro sopra ogni carta scoperta sul Terreno, come in una vera arena. Puoi spegnerla se preferisci il campo pulito.</div>
                 </div>
@@ -386,6 +397,7 @@
 <script src="js/save-manager.js"></script>
 <script src="js/ui/icon-library.js"></script>
 <script src="js/ui/video-quality.js"></script>
+<script src="js/ui/bot-speed.js"></script>
 <script src="js/ui/hologram-setting.js"></script>
 <script src="js/ui/deck-switcher.js"></script>
 <script src="js/ui/topbar.js"></script>
@@ -478,6 +490,23 @@
         pulsanti.forEach((b) => b.addEventListener('click', () => {
             VideoQuality.set(b.dataset.livello);
             rifletti();
+            if (window.NativeHaptics) NativeHaptics.light();
+        }));
+    }
+
+    // --- Velocità del bot -------------------------------------------
+    // La scelta vive in js/ui/bot-speed.js; bot.js la legge a ogni pausa.
+    const botSpeedSeg = document.getElementById('botSpeedSeg');
+    if (botSpeedSeg && window.BotSpeed) {
+        const pulsantiVelocita = botSpeedSeg.querySelectorAll('.seg-btn');
+        const riflettiVelocita = () => {
+            const attuale = BotSpeed.get();
+            pulsantiVelocita.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.velocita === attuale)));
+        };
+        riflettiVelocita();
+        pulsantiVelocita.forEach((b) => b.addEventListener('click', () => {
+            BotSpeed.set(b.dataset.velocita);
+            riflettiVelocita();
             if (window.NativeHaptics) NativeHaptics.light();
         }));
     }
