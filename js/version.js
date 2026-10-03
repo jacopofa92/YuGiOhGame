@@ -32,6 +32,9 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.14 — PNG delle pedine ridimensionati (max 320 px): ~10 MB invece di
+ *   ~100 MB; gli originali restano in images/characters/avatarTrasparenza/.
+ *
  * 1.0.13 — Pedine di Battle City: i PNG dei Duellanti si chiamano come il
  *   file del loro avatar (dukeDevlin.png, non duke.png).
  *
@@ -492,4 +495,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.13';
+window.GAME_VERSION = '1.0.14';

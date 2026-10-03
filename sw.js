@@ -372,7 +372,8 @@
 // v124: PNG trasparenti dei Duellanti in images/characters/pedine/ (id.png).
 // v125: Annulla/Esc e modalita' evidente per i Tributi; il bot aspetta i modali aperti.
 // v126: PNG delle pedine rinominati col nome del file avatar (dukeDevlin.png).
-const CACHE_NAME = 'ygo-duel-arena-v126';
+// v127: pedine ridimensionate (max 320 px); originali in avatarTrasparenza/.
+const CACHE_NAME = 'ygo-duel-arena-v127';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

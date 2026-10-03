@@ -299,7 +299,7 @@ precedenti.
   (PNG trasparenti forniti a mano; la rimozione automatica dello sfondo non
   dava risultati puliti). Il PNG ha lo stesso NOME del file avatar del
   personaggio, non il suo id: `joeyWheeler.jpg` → `images/characters/pedine/
-  joeyWheeler.png`, `maximillionPegasus.jpg` → `maximillionPegasus.png`.
+  joeyWheeler.png`, `maximillionPegasus.jpg` → `maximillionPegasus.png`. Gli originali a piena risoluzione stanno in `images/characters/avatarTrasparenza/` (non caricati dal gioco); `pedine/` contiene le copie ridimensionate a max 320 px.
   Nessun elenco da tenere: ogni Duellante prova il suo file e, se non c'è,
   `BoardPieces` ripiega da solo sulla pedina standard (`onerror`, con
   memoria dei mancanti). Per aggiungerne uno basta mettere il PNG. Restano
