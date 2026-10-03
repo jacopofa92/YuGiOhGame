@@ -184,6 +184,12 @@ function botSummonMonster(card, tributeIndices, emptySlotHint, position, faceDow
         const cardDef = window.DuelEngine && DuelEngine.getDefinition(card.id);
         if (cardDef && cardDef.cannotBeSet) isFaceDown = false;
     }
+    // Capro Espiatorio (id 434) del bot: in quel turno può solo Settare.
+    // Un'Evocazione scoperta decisa dall'IA diventa un Set in Difesa.
+    if (!isFaceDown && window.DuelEngine && DuelEngine.isSummonBannedThisTurn('bot')) {
+        isFaceDown = true;
+        position = 'defense';
+    }
     gameState.botHand = gameState.botHand.filter(c => c.uid !== card.uid);
     gameState.hasNormalSummoned = true;
 

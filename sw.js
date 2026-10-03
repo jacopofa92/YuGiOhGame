@@ -379,7 +379,8 @@
 // v131: ripulite le vecchie migrazioni della Storia anime.
 // v132: banda delle scelte (Tributo/scarto/casella) a capo su telefono in verticale.
 // v133: ritaglio di Joey per la mappa di Battle City.
-const CACHE_NAME = 'ygo-duel-arena-v133';
+// v134: divieti di Evocazione (282/434/1045) e Velocita' del bot nel menu Impostazioni.
+const CACHE_NAME = 'ygo-duel-arena-v134';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

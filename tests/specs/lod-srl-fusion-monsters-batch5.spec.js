@@ -101,15 +101,17 @@ module.exports = {
             DuelEngine.getDefinition(1045).onSummon(ctx);
             const allyDestroyed = !gameState.playerMonsterField.some((s) => s && s.card.uid === 'ally-1');
             DuelEngine.recomputeStaticEffects();
-            const blockedForPlayer = gameState.otherMonsterSummonsBlockedFor.player;
-            const blockedForBot = gameState.otherMonsterSummonsBlockedFor.bot;
+            // Flag dedicato alle SOLE Special Summon (non quello di 282, che
+            // blocca anche l'Evocazione Normale: 1045 non lo dice).
+            const blockedForPlayer = gameState.specialSummonBlockedFor.player;
+            const blockedForBot = gameState.specialSummonBlockedFor.bot;
             // Verifica REALE: un tentativo di Special Summon di un mostro qualunque per il bot deve fallire.
             const testMonster = { ...cardDatabase.find((c) => c.type === 'monster' && !c.extraDeck), uid: 'blocked-test-1' };
             const specialSummonResult = DuelEngine.actions.specialSummon('bot', testMonster, 0, 'attack');
             return { allyDestroyed: allyDestroyed, blockedForPlayer: blockedForPlayer, blockedForBot: blockedForBot, specialSummonResult: specialSummonResult };
         });
         t.assert(lastWarriorResult.allyDestroyed, 'Deve distruggere l\'altro mostro proprio quando Special Summonata');
-        t.assert(lastWarriorResult.blockedForPlayer && lastWarriorResult.blockedForBot, 'otherMonsterSummonsBlockedFor deve essere true per ENTRAMBI i lati');
+        t.assert(lastWarriorResult.blockedForPlayer && lastWarriorResult.blockedForBot, 'specialSummonBlockedFor deve essere true per ENTRAMBI i lati');
         t.assert(lastWarriorResult.specialSummonResult === false, 'Un tentativo di Special Summon del bot deve fallire davvero mentre questa carta è scoperta');
     }
 };

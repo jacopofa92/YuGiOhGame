@@ -3291,6 +3291,17 @@
 
                 <div class="settings-row">
                     <div>
+                        <div class="settings-row-label">Velocità del bot</div>
+                        <div class="settings-row-sub">Con "Veloce" l'avversario controllato dal computer fa le sue mosse con pause molto più brevi. Le animazioni e i filmati non si accorciano.</div>
+                    </div>
+                    <div class="seg" id="impostazioni-botSpeedSeg" role="group" aria-label="Velocità del bot">
+                        <button type="button" class="seg-btn" data-velocita="normale" aria-pressed="true">Normale</button>
+                        <button type="button" class="seg-btn" data-velocita="veloce" aria-pressed="false">Veloce</button>
+                    </div>
+                </div>
+
+                <div class="settings-row">
+                    <div>
                         <div class="settings-row-label">Visualizzazione ologramma</div>
                         <div class="settings-row-sub">Proietta il mostro sopra ogni carta scoperta sul Terreno, come in una vera arena. Puoi spegnerla se preferisci il campo pulito.</div>
                     </div>
@@ -3424,6 +3435,24 @@
                 pulsantiVideo.forEach((b) => b.addEventListener('click', () => {
                     VideoQuality.set(b.dataset.livello);
                     riflettiVideo();
+                    if (window.NativeHaptics) NativeHaptics.light();
+                    touchSave();
+                }));
+            }
+
+            // --- Velocità del bot ----------------------------------------
+            // La scelta vive in js/ui/bot-speed.js; bot.js la legge a ogni pausa.
+            const botSpeedSeg = document.getElementById('impostazioni-botSpeedSeg');
+            if (botSpeedSeg && window.BotSpeed) {
+                const pulsantiVelocita = botSpeedSeg.querySelectorAll('.seg-btn');
+                const riflettiVelocita = () => {
+                    const attuale = BotSpeed.get();
+                    pulsantiVelocita.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.velocita === attuale)));
+                };
+                riflettiVelocita();
+                pulsantiVelocita.forEach((b) => b.addEventListener('click', () => {
+                    BotSpeed.set(b.dataset.velocita);
+                    riflettiVelocita();
                     if (window.NativeHaptics) NativeHaptics.light();
                     touchSave();
                 }));
@@ -5344,6 +5373,7 @@
     <script src="js/ui/challenge-banner.js"></script>
     <script src="js/ui/icon-library.js"></script>
     <script src="js/ui/video-quality.js"></script>
+    <script src="js/ui/bot-speed.js"></script>
     <!-- L'ologramma serve QUI solo alla vista Impostazioni, per leggere e
          scrivere la scelta: a disegnarlo è duelMonstersCore.html, che
          include il file per conto suo. Senza, l'interruttore resterebbe

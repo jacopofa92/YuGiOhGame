@@ -2626,10 +2626,12 @@
     // ================================================================
 
     // 434 — Capro Espiatorio: Special Summon 4 Token "Pecora" (Bestia/
-    // TERRA/Liv.1/0-0) in Difesa, non sacrificabili. Resta fuori solo
-    // "non puoi Evocare altri mostri in questo turno": nessun divieto a
-    // tempo sull'Evocazione NORMALE esiste in questo motore — vedi il
-    // missingEffectNote su id 434 in cards.json.
+    // TERRA/Liv.1/0-0) in Difesa, non sacrificabili. "Non puoi Evocare
+    // altri mostri nel turno in cui attivi questa carta (ma puoi Set)":
+    // gameState.noSummonTurn[owner] = turno corrente, consultato da
+    // DuelEngine.isSummonBannedThisTurn (Evocazione scoperta in
+    // summonMonster/botSummonMonster, Special Summon in ACTIONS.specialSummon).
+    // Si accende DOPO aver creato i Token, o bloccherebbe i Token stessi.
     CardEffects.register(434, {
         activate(ctx) {
             // cannotBeTributed: il testo reale lo dice, ed e' la meta' del
@@ -2639,7 +2641,9 @@
             const created = ctx.createTokens(ctx.owner, 4,
                 { name: 'Token Pecora', race: 'Bestia', attribute: 'TERRA', level: 1, attack: 0, defense: 0 },
                 { cannotBeTributed: true });
-            ctx.log(`🐑 Capro Espiatorio evoca ${created} Token Pecora!`);
+            gameState.noSummonTurn = gameState.noSummonTurn || {};
+            gameState.noSummonTurn[ctx.owner] = gameState.turn;
+            ctx.log(`🐑 Capro Espiatorio evoca ${created} Token Pecora! Per questo turno puoi solo Settare altri mostri.`);
         }
     });
 

@@ -83,6 +83,10 @@ module.exports = {
         // --- 244: stessa clausola, per i 5 fratelli Kuriboh -----------
         const crepuscolo = await t.evaluate(() => {
             gameState.cannotBeTributedUids = new Set();
+            // Capro Espiatorio (434, sopra) vieta le Evocazioni per il resto
+            // del turno: qui il turno è lo stesso, quindi si azzera a mano il
+            // divieto, o Crepuscolo non riuscirebbe a Special Summonare.
+            gameState.noSummonTurn = {};
             const liv5 = { ...cardDatabase.find((c) => c.type === 'monster' && !c.extraDeck), level: 5, uid: 'liv5-1' };
             gameState.playerMonsterField = [{ card: liv5, position: 'attack', isFaceDown: false, hasAttacked: false, canChangePosition: false }, null, null, null, null];
             gameState.playerHand = [22, 859, 860, 861, 862].map((id, i) => ({ ...cardDatabase.find((c) => c.id === id), uid: `kuri-${i}` }));

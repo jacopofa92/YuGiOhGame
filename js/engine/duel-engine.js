@@ -128,6 +128,17 @@
         return owner === 'player' ? 'bot' : 'player';
     }
 
+    /**
+     * Vero se `owner` non può Evocare (face-up) né Special Summonare mostri
+     * in QUESTO turno: Capro Espiatorio (id 434) lo accende scrivendo il
+     * numero del turno corrente in gameState.noSummonTurn[owner]. Confrontare
+     * con gameState.turn evita qualunque azzeramento a fine turno: il
+     * divieto smette di valere da solo quando il turno cambia.
+     */
+    function isSummonBannedThisTurn(owner) {
+        return !!(gameState.noSummonTurn && gameState.noSummonTurn[owner] === gameState.turn);
+    }
+
     function fieldOf(owner) {
         return owner === 'player' ? gameState.playerMonsterField : gameState.botMonsterField;
     }
@@ -1186,6 +1197,23 @@
             // un semplice `return false` la farebbe sparire nel nulla.
             if (gameState.otherMonsterSummonsBlockedFor && gameState.otherMonsterSummonsBlockedFor[owner] && card.id !== 282) {
                 addToLog(`🚫 Guardiano Falce del Terrore impedisce ogni altra Evocazione: ${card.name} non può essere Special Summonata.`);
+                graveyardOf(owner).push(card);
+                return false;
+            }
+            // L'Ultimo Guerriero di un Altro Pianeta (id 1045): "nessuno dei
+            // due giocatori può Evocare Specialmente mostri" — SOLO la
+            // Special Summon, a differenza di 282 qui sopra (gameState.
+            // specialSummonBlockedFor, ricalcolato ad ogni render).
+            if (gameState.specialSummonBlockedFor && gameState.specialSummonBlockedFor[owner] && card.id !== 1045) {
+                addToLog(`🚫 L'Ultimo Guerriero di un Altro Pianeta impedisce le Special Summon: ${card.name} non può essere Special Summonata.`);
+                graveyardOf(owner).push(card);
+                return false;
+            }
+            // Capro Espiatorio (id 434): niente Evocazioni nel turno in cui
+            // è stato attivato. I suoi stessi Token nascono PRIMA che il
+            // divieto venga acceso, quindi non ne sono toccati.
+            if (isSummonBannedThisTurn(owner)) {
+                addToLog(`🚫 Capro Espiatorio impedisce di Evocare altri mostri in questo turno: ${card.name} non può essere Special Summonata.`);
                 graveyardOf(owner).push(card);
                 return false;
             }
@@ -4141,6 +4169,10 @@
         // ACTIONS.specialSummon qui sotto (unico punto condiviso da OGNI
         // Special Summon del motore).
         gameState.otherMonsterSummonsBlockedFor = { player: false, bot: false };
+        // Divieto delle sole Special Summon (L'Ultimo Guerriero di un Altro
+        // Pianeta, id 1045), per-owner e ricalcolato ad ogni render dal suo
+        // static(): non tocca l'Evocazione Normale/Set.
+        gameState.specialSummonBlockedFor = { player: false, bot: false };
         // Sovrano Oscuro Ha Des (id 1118, Dark Ruler Ha Des): "nega gli
         // effetti dei mostri distrutti in battaglia dai TUOI mostri
         // Demone" — floodgate per-owner, ricalcolato ad ogni render dal
@@ -5508,6 +5540,7 @@
         activateCard: activateCard,
         openDrawResponseWindow: openDrawResponseWindow,
         isChainActive: isChainActive,
+        isSummonBannedThisTurn: isSummonBannedThisTurn,
         applyRemoteChainDecision: applyRemoteChainDecision,
         // Scelte di bersaglio che viaggiano — vedi il blocco dedicato più
         // sopra. Usate da chooseFieldMonsterTarget (card-effects.js) e

@@ -2976,8 +2976,7 @@ const cardDatabase = [
     "attack": 2500,
     "defense": 2000,
     "effect": "Non può essere Evocata Normalmente/Set. Deve essere Special Summonata tramite il proprio effetto. Se \"Guardian Eatos\" viene distrutta e mandata al tuo Cimitero: puoi Special Summonare questa carta dalla mano. Se Special Summonata: puoi equipaggiare 1 \"Falce del Mietitore - Falce del Terrore\" dal tuo Deck a questa carta. Non puoi Evocare Normalmente/Special Summonare altri mostri finché questa carta è in campo. Se mandata dal Terreno al Cimitero: scarta 1 carta, e se lo fai, Special Summona questa carta dal Cimitero.",
-    "artOnly": true,
-    "missingEffectNote": "Manca \"non puoi Evocare Normalmente/Special Summonare altri mostri finche' questa carta e' in campo\" per il lato NORMALE: il divieto di Special Summon c'e' (gameState.otherMonsterSummonsBlockedFor), quello sull'Evocazione Normale non ha un punto equivalente. Tutto il resto e' implementato."
+    "artOnly": true
   },
   {
     "id": 283,
@@ -4756,8 +4755,7 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "quick-play",
     "effect": "Special Summon 4 Token \"Pecora\" (Bestia/TERRA/Livello 1/ATK 0/DEF 0) in Posizione di Difesa. Non possono essere sacrificati per un'Evocazione Tributo. Non puoi Evocare altri mostri nel turno in cui attivi questa carta (ma puoi Set).",
-    "artOnly": true,
-    "missingEffectNote": "Manca \"non puoi Evocare altri mostri nel turno in cui attivi questa carta (ma puoi Set)\": nessun divieto a tempo sull'Evocazione Normale esiste in questo motore. I Token, invece, non sono sacrificabili come da testo."
+    "artOnly": true
   },
   {
     "id": 435,
@@ -12206,7 +12204,6 @@ const cardDatabase = [
     "category": "fusion",
     "extraDeck": true,
     "effect": "Evocabile per Fusione solo con \"Zombyra l'Oscuro\" e \"Maryokutai\". Se questa carta viene Special Summonata: distruggi tutti gli altri mostri che controlli. Nessuno dei due giocatori può Evocare Specialmente mostri.",
-    "missingEffectNote": "Il divieto copre solo la Special Summon (gameState.otherMonsterSummonsBlockedFor), non anche l'Evocazione Normale/Set come dice il testo: quel percorso non ha un checkpoint equivalente.",
     "artOnly": true
   },
   {

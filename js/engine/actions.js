@@ -1405,6 +1405,15 @@ function summonMonster(card, slotIndex, position, handIndex = gameState.selected
         }
     }
     const isFaceDown = position === 'defense' && !forceFaceUp;
+    // Capro Espiatorio (id 434): "non puoi Evocare altri mostri nel turno in
+    // cui attivi questa carta (ma puoi Set)" — un'Evocazione scoperta è
+    // vietata, un Set coperto no (gameState.noSummonTurn, vedi
+    // DuelEngine.isSummonBannedThisTurn).
+    if (!isFaceDown && window.DuelEngine && DuelEngine.isSummonBannedThisTurn('player')) {
+        addToLog(`🚫 Capro Espiatorio impedisce di Evocare altri mostri in questo turno: ${card.name} si può solo Settare.`);
+        clearSelection();
+        return;
+    }
     const handEl = document.querySelectorAll('#playerHand .card')[handIndex] || null;
     const slotEl = document.querySelector(`.field-slot[data-owner="player"][data-type="monster"][data-index="${slotIndex}"]`);
     flyCardToSlot(card, fromRect || handEl, slotEl, () => {

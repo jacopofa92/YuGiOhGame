@@ -969,11 +969,8 @@
     // from Another Planet (Fusione di 625+1042): se Special Summonata,
     // distrugge tutti gli altri mostri che il proprietario controlla e
     // impedisce ogni Special Summon ad entrambi i giocatori
-    // (gameState.otherMonsterSummonsBlockedFor, già esistente per
-    // Guardiano Falce del Terrore id 282 — qui impostato per ENTRAMBI i
-    // lati invece che solo per l'avversario). SEMPLIFICAZIONE (vedi
-    // missingEffectNote): copre solo la Special Summon, non anche
-    // l'Evocazione Normale/Set come da testo reale.
+    // (gameState.specialSummonBlockedFor, per ENTRAMBI i lati). Il testo
+    // parla solo di Special Summon: l'Evocazione Normale/Set resta libera.
     CardEffects.register(1045, {
         fusionMaterials: [625, 1042],
         onSummon(ctx) {
@@ -995,8 +992,12 @@
         // lati (a differenza di Guardiano Falce del Terrore id 282, che
         // blocca solo il proprio controllore).
         static(ctx) {
-            gameState.otherMonsterSummonsBlockedFor.player = true;
-            gameState.otherMonsterSummonsBlockedFor.bot = true;
+            // SOLO le Special Summon (specialSummonBlockedFor), come da
+            // testo: l'Evocazione Normale/Set resta libera per entrambi.
+            // Prima usava otherMonsterSummonsBlockedFor (il flag di 282),
+            // che blocca anche quella — più del testo.
+            gameState.specialSummonBlockedFor.player = true;
+            gameState.specialSummonBlockedFor.bot = true;
         }
     });
 

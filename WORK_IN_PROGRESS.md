@@ -48,9 +48,12 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
 
 ## Contenuti
 
-- [ ] Chiudere insieme le carte con lo stesso bisogno tra le 58 con
-      `missingEffectNote` in `data/cards.json` (es. gruppo "blocca ogni
-      Evocazione": 282, 434, 1045).
+- [x] Gruppo "blocca ogni Evocazione" chiuso (282, 434, 1045): 282 era già a
+      posto (nota falsa), 1045 ora blocca solo le Special Summon come da testo
+      (`specialSummonBlockedFor`), 434 vieta Evocazioni scoperte e Special
+      Summon nel turno (`noSummonTurn`, `DuelEngine.isSummonBannedThisTurn`).
+      Restano 52 carte con `missingEffectNote`: `grep missingEffectNote
+      data/cards.json` e cercare un altro gruppo con lo stesso bisogno.
 - [ ] 6 PNG in `images/characters/avatarTrasparenza/` (e copie in `pedine/`) senza avatar corrispondente
       (Kaiba in Mantello Viola, soldato Grande Guerra, kaibaV2,
       setoKaiba_duelist Kingdom, setoKaiba_forbiddenMemories, yamiYugiV2):
