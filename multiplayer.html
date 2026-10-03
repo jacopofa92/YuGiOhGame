@@ -129,6 +129,17 @@
             <!-- ============ Ingresso ============ -->
             <div data-vista="ingresso">
                 <div class="mp-screen">
+                    <!-- Riga di sistema in testa alla schermata: LED, nome
+                         della rete e orologio, riempito da js/multiplayer/mp-boot.js.
+                         Puro carattere: non porta alcuna informazione di gioco. -->
+                    <div class="mp-sysline" aria-hidden="true">
+                        <span class="mp-sys-led"></span>
+                        <span>KAIBACORP SYSTEM</span>
+                        <span class="mp-sys-sep">//</span>
+                        <span>DUEL LINK NETWORK</span>
+                        <span class="mp-sys-online">LINK READY</span>
+                        <span class="mp-sys-clock" id="mpSysClock">--:--:--</span>
+                    </div>
                     <h2 class="mp-title">Duello Multiplayer</h2>
                     <p class="mp-sub">Sfida un amico online, in tempo reale</p>
 
@@ -293,6 +304,7 @@
      rovescia e prima che l'arena venga caricata. -->
 <script src="js/ui/duel-rps.js"></script>
 <script src="js/multiplayer/network.js"></script>
+<script src="js/multiplayer/mp-boot.js"></script>
 <script src="js/multiplayer/mp-lobby.js"></script>
 </body>
 </html>

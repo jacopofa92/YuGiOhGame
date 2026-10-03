@@ -171,13 +171,18 @@
         if (url !== typed) $('mpServerUrl').value = url;
 
         showStatus('🔌 Connessione al server...');
+        // Console di avvio "KaibaCorp System" (js/multiplayer/mp-boot.js):
+        // fa da schermata di caricamento, anche per il risveglio del server.
+        if (window.MpBoot) MpBoot.apri(url);
         try {
             await net.connect(url);
             rememberServerUrl(url);
             showStatus('✅ Connesso al server.');
+            if (window.MpBoot) await MpBoot.connesso();
             return true;
         } catch (err) {
             showStatus('❌ Impossibile connettersi: ' + err.message, true);
+            if (window.MpBoot) MpBoot.errore(err.message);
             return false;
         }
     }
@@ -208,6 +213,7 @@
     // messaggio l'attesa sembrerebbe un blocco.
     net.on('connect-waking', (info) => {
         showStatus(`⚔️ Preparazione del campo di battaglia... resta connesso!`);
+        if (window.MpBoot) MpBoot.risveglio(info);
     });
 
     // ============================================================

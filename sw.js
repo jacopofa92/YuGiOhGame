@@ -382,7 +382,8 @@
 // v134: divieti di Evocazione (282/434/1045) e Velocita' del bot nel menu Impostazioni.
 // v135: tutte le foto sono .jpg (prima carte e mappe erano .jpeg): i nomi sono cambiati.
 // v136: l'IA decide gli attacchi con ATK/DEF effettivi (bonus e malus inclusi).
-const CACHE_NAME = 'ygo-duel-arena-v136';
+// v137: console di avvio KaibaCorp System nel Multiplayer (mp-boot.js).
+const CACHE_NAME = 'ygo-duel-arena-v137';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -491,6 +492,7 @@ const APP_SHELL = [
     'js/ui/profile-stats.js',
     'js/ui/profile-stats.css',
     'js/ui/visual-effects-library.js',
+    'js/multiplayer/mp-boot.js',
     'js/multiplayer/mp-lobby.js',
     'js/multiplayer/multiplayer.js',
     'js/multiplayer/network.js',
