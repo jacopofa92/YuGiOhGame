@@ -23,12 +23,13 @@
  * stesso modo in due tornei su tre.
  *
  * `duelTrackSempre: true` (facoltativo, insieme a `duelTrack`) — il tema
- * vale in OGNI duello contro quel personaggio, e vince su qualunque
- * musica richiesta dall'URL (scelta in Duello Libero, tappa della Storia,
+ * vale in OGNI duello di Torneo e di Storia contro quel personaggio, e
+ * vince su qualunque musica richiesta dall'URL (tappa della Storia,
  * torneo): lo applica la pagina del duello stessa (duelMonstersCore.html).
+ * NON in Duello Libero, dove la musica la sceglie il giocatore nel menu.
  * Senza questo flag `duelTrack` lo leggono solo le pagine dei tornei.
- * Richiesta esplicita dell'utente per i due Yugi ("usalo sempre in duello
- * se l'avversario è un Yugi qualsiasi").
+ * Richiesta esplicita dell'utente per i due Yugi ("usalo sempre se
+ * l'avversario è un Yugi qualsiasi", poi "in duello libero no").
  *
  * Sta QUI, nell'anagrafica, e non nelle pagine dei tornei come le
  * battute: una battuta cambia col contesto (lo stesso personaggio parla

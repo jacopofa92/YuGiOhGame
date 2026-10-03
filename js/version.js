@@ -33,8 +33,9 @@
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
  * 1.0.25 — Contro Yugi Muto e Yami Yugi suona sempre "King of Games -
- *   Yugi's Final Duel", qualunque musica chieda l'URL (Duello Libero,
- *   Storia, tornei). characters-db.js ora si carica prima dell'audio.
+ *   Yugi's Final Duel", qualunque musica chieda l'URL, ma SOLO in Torneo e
+ *   Storia (in Duello Libero resta la scelta del giocatore).
+ *   characters-db.js ora si carica prima dell'audio.
  *
  * 1.0.24 — Multiplayer: ingresso "KaibaCorp System" (riga di sistema con
  *   orologio, titolo che si decodifica) e console di avvio a righe di

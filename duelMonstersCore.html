@@ -3817,10 +3817,13 @@
         window.DUEL_ARENA_CUSTOM_FIELD = nomeCampo ? (CAMPI_RITIRATI[nomeCampo] || nomeCampo) : null;
         const customMusic = urlParams.get('music');
         // Il tema di un avversario marcato `duelTrackSempre` (oggi i due Yugi,
-        // vedi characters-db.js) vince su qualunque ?music=: è la regola
-        // "contro Yugi suona sempre questo", valida in Duello Libero, Storia
-        // e tornei senza che ciascuno debba ricordarsene.
-        const avversarioDelDuello = (typeof characterDatabase !== 'undefined')
+        // vedi characters-db.js) vince su qualunque ?music=, ma SOLO in
+        // Torneo e Storia. In Duello Libero no: lì la musica la sceglie il
+        // giocatore nel menu e deve sentire quella (richiesta esplicita
+        // dell'utente).
+        const modalitaDelDuello = (urlParams.get('mode') || '').toLowerCase();
+        const temaFissoAmmesso = modalitaDelDuello === 'tournament' || modalitaDelDuello === 'story';
+        const avversarioDelDuello = (temaFissoAmmesso && typeof characterDatabase !== 'undefined')
             ? characterDatabase.find((c) => c.id === urlParams.get('character')) : null;
         const temaFisso = avversarioDelDuello && avversarioDelDuello.duelTrackSempre ? avversarioDelDuello.duelTrack : null;
         const finalTrack = temaFisso

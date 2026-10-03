@@ -1,7 +1,7 @@
-// Contro un Yugi qualsiasi (Yugi Muto, Yami Yugi) in duello suona SEMPRE
-// "King of Games - Yugi's Final Duel", qualunque musica chieda l'URL (scelta
-// in Duello Libero, tappa della Storia, torneo). Contro chiunque altro
-// resta la musica richiesta.
+// Contro un Yugi qualsiasi (Yugi Muto, Yami Yugi) in Torneo e nella Storia
+// suona SEMPRE "King of Games - Yugi's Final Duel", qualunque musica chieda
+// l'URL. In Duello Libero NO: lì resta la musica scelta dal giocatore. Contro
+// chiunque altro resta la musica richiesta.
 //
 // Si apre il duello vero e si legge la traccia caricata nell'<audio>, non il
 // valore calcolato: è quello che il giocatore sente.
@@ -12,7 +12,7 @@ const fs = require('fs');
 
 module.exports = {
     standalone: true,
-    name: 'Duello contro Yugi: sempre il suo tema, contro gli altri la musica richiesta',
+    name: 'Duello contro Yugi: il suo tema in Torneo e Storia, non in Duello Libero',
     async run(t) {
         const RADICE = path.join(__dirname, '..', '..');
         const TEMA = "King of Games - Yugi's Final Duel.mp3";
@@ -31,14 +31,24 @@ module.exports = {
         };
 
         const ALTRA = '07. Preliminary Face-Off.mp3';
-        const yugi = await traccia('mode=free&character=yugiMuto&difficulty=Facile&music=' + encodeURIComponent(ALTRA));
-        const yami = await traccia('mode=free&character=yamiYugi&difficulty=Facile&music=' + encodeURIComponent(ALTRA));
-        const yugiSenzaMusica = await traccia('mode=free&character=yugiMuto&difficulty=Facile');
-        const altro = await traccia('mode=free&character=joey&difficulty=Facile&music=' + encodeURIComponent(ALTRA));
+        const musica = '&music=' + encodeURIComponent(ALTRA);
+        // Torneo e Storia: il tema vince sulla musica richiesta.
+        const yugiTorneo = await traccia('mode=tournament&tournament=battleCity&character=yugiMuto&difficulty=Facile' + musica);
+        const yamiTorneo = await traccia('mode=tournament&tournament=battleCity&character=yamiYugi&difficulty=Facile' + musica);
+        const yugiStoria = await traccia('mode=story&campaign=anime&tappa=anime-1-joey&character=yugiMuto&difficulty=Facile' + musica);
+        const yamiStoriaSenzaMusica = await traccia('mode=story&campaign=anime&tappa=anime-1-joey&character=yamiYugi&difficulty=Facile');
+        // Duello Libero: NO, resta la scelta del giocatore.
+        const yugiLibero = await traccia('mode=free&character=yugiMuto&difficulty=Facile' + musica);
+        const yamiLibero = await traccia('mode=free&character=yamiYugi&difficulty=Facile' + musica);
+        // Contro chiunque altro in Torneo/Storia: la musica richiesta.
+        const altroTorneo = await traccia('mode=tournament&tournament=battleCity&character=joey&difficulty=Facile' + musica);
 
-        t.assert(yugi.endsWith(TEMA), `Yugi Muto: ${yugi}`);
-        t.assert(yami.endsWith(TEMA), `Yami Yugi: ${yami}`);
-        t.assert(yugiSenzaMusica.endsWith(TEMA), `Yugi senza musica richiesta: ${yugiSenzaMusica}`);
-        t.assert(altro.endsWith(ALTRA), `Contro un altro Duellante resta la musica richiesta: ${altro}`);
+        t.assert(yugiTorneo.endsWith(TEMA), `Yugi Muto in torneo: ${yugiTorneo}`);
+        t.assert(yamiTorneo.endsWith(TEMA), `Yami Yugi in torneo: ${yamiTorneo}`);
+        t.assert(yugiStoria.endsWith(TEMA), `Yugi Muto nella Storia: ${yugiStoria}`);
+        t.assert(yamiStoriaSenzaMusica.endsWith(TEMA), `Yami Yugi nella Storia senza musica richiesta: ${yamiStoriaSenzaMusica}`);
+        t.assert(yugiLibero.endsWith(ALTRA), `In Duello Libero contro Yugi Muto resta la musica scelta: ${yugiLibero}`);
+        t.assert(yamiLibero.endsWith(ALTRA), `In Duello Libero contro Yami Yugi resta la musica scelta: ${yamiLibero}`);
+        t.assert(altroTorneo.endsWith(ALTRA), `Contro un altro Duellante in torneo resta la musica richiesta: ${altroTorneo}`);
     }
 };
