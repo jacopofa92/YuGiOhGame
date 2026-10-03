@@ -3770,7 +3770,13 @@
          già caricato". js/audio/audio-manager.js non dipende da nessuno
          degli script del motore (solo DOM/sessionStorage/localStorage),
          quindi può girare per primo senza rischio: il resto della pagina
-         continua a caricarsi mentre il file audio scarica in parallelo. -->
+         continua a caricarsi mentre il file audio scarica in parallelo.
+         characters-db.js sta qui, PRIMA, e non più in basso: serve alla
+         scelta della traccia (il tema fisso dei due Yugi, `duelTrackSempre`,
+         vedi lo script inline qui sotto) e quella scelta si fa prima di far
+         partire l'audio. È solo un elenco di dati, pochi KB, che non dipende
+         da nulla del motore. -->
+    <script src="js/data/characters-db.js"></script>
     <script src="js/audio/audio-manager.js"></script>
     <script src="js/native/app-back-button.js"></script>
     <script src="js/native/haptics.js"></script>
@@ -3810,9 +3816,18 @@
         const nomeCampo = campoRichiesto ? campoRichiesto.split('/').pop() : null;
         window.DUEL_ARENA_CUSTOM_FIELD = nomeCampo ? (CAMPI_RITIRATI[nomeCampo] || nomeCampo) : null;
         const customMusic = urlParams.get('music');
-        const finalTrack = customMusic
-            ? `audio/soundtracks/${customMusic}`
-            : 'audio/soundtracks/32. Seto Kaiba (Tournament Final) HD.mp3';
+        // Il tema di un avversario marcato `duelTrackSempre` (oggi i due Yugi,
+        // vedi characters-db.js) vince su qualunque ?music=: è la regola
+        // "contro Yugi suona sempre questo", valida in Duello Libero, Storia
+        // e tornei senza che ciascuno debba ricordarsene.
+        const avversarioDelDuello = (typeof characterDatabase !== 'undefined')
+            ? characterDatabase.find((c) => c.id === urlParams.get('character')) : null;
+        const temaFisso = avversarioDelDuello && avversarioDelDuello.duelTrackSempre ? avversarioDelDuello.duelTrack : null;
+        const finalTrack = temaFisso
+            ? `audio/soundtracks/${temaFisso}`
+            : (customMusic
+                ? `audio/soundtracks/${customMusic}`
+                : 'audio/soundtracks/32. Seto Kaiba (Tournament Final) HD.mp3');
         initAudioManager({ trackSrc: finalTrack });
     </script>
 
@@ -4224,8 +4239,9 @@
      duel-session.js legge dall'URL chi è l'avversario e dove si torna a
      fine partita, quindi ha bisogno di characters-db.js per i personaggi
      e di duel-cinematics.js per l'intro e la schermata finale. Tutti e tre
-     vanno PRIMA di game-flow.js, che in fondo al file avvia il duello. -->
-<script src="js/data/characters-db.js"></script>
+     vanno PRIMA di game-flow.js, che in fondo al file avvia il duello.
+     (characters-db.js è già caricato in cima alla pagina, prima dell'audio:
+     non va incluso una seconda volta, ridichiarerebbe `characterDatabase`.) -->
 <!-- Sblocco dei Duellanti per il Duello Libero: qui serve perché è
      DuelSession.finish() a segnare lo sblocco quando si vince in un
      Torneo o nella Storia. -->

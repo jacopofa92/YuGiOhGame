@@ -383,7 +383,8 @@
 // v135: tutte le foto sono .jpg (prima carte e mappe erano .jpeg): i nomi sono cambiati.
 // v136: l'IA decide gli attacchi con ATK/DEF effettivi (bonus e malus inclusi).
 // v137: console di avvio KaibaCorp System nel Multiplayer (mp-boot.js).
-const CACHE_NAME = 'ygo-duel-arena-v137';
+// v138: tema fisso "King of Games" contro i due Yugi.
+const CACHE_NAME = 'ygo-duel-arena-v138';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

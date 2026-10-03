@@ -22,6 +22,14 @@
  * sua musica di duello"), estesa a Pegasus che era già trattato allo
  * stesso modo in due tornei su tre.
  *
+ * `duelTrackSempre: true` (facoltativo, insieme a `duelTrack`) — il tema
+ * vale in OGNI duello contro quel personaggio, e vince su qualunque
+ * musica richiesta dall'URL (scelta in Duello Libero, tappa della Storia,
+ * torneo): lo applica la pagina del duello stessa (duelMonstersCore.html).
+ * Senza questo flag `duelTrack` lo leggono solo le pagine dei tornei.
+ * Richiesta esplicita dell'utente per i due Yugi ("usalo sempre in duello
+ * se l'avversario è un Yugi qualsiasi").
+ *
  * Sta QUI, nell'anagrafica, e non nelle pagine dei tornei come le
  * battute: una battuta cambia col contesto (lo stesso personaggio parla
  * diversamente al Cancello del Castello e in cima alla Torre Kaiba), il
@@ -33,11 +41,11 @@ const characterDatabase = [
     // raggruppato per arco narrativo (Duelist Kingdom/Battle City/amici di
     // Domino City come prima): non modificare quest'ordine senza una
     // richiesta esplicita, è come l'utente vuole che appaia il roster. =====
-    { id: 'yugiMuto', name: 'Yugi Muto', title: 'Il Re dei Giochi', image: 'images/characters/yugiMuto.jpg', series: 'main' },
+    { id: 'yugiMuto', name: 'Yugi Muto', title: 'Il Re dei Giochi', image: 'images/characters/yugiMuto.jpg', series: 'main', duelTrack: "King of Games - Yugi's Final Duel.mp3", duelTrackSempre: true },
     { id: 'solomonMuto', name: 'Solomon Muto', title: 'Il Nonno Collezionista', image: 'images/characters/solomonMuto.jpg', series: 'main' },
     { id: 'tea', name: 'Téa Gardner', title: "La Voce dell'Amicizia", image: 'images/characters/teaGardner.jpg', series: 'main' },
     { id: 'joey', name: 'Joey Wheeler', title: 'Il Duellante di Strada', image: 'images/characters/joeyWheeler.jpg', series: 'main' },
-    { id: 'yamiYugi', name: 'Yami Yugi', title: 'Il Faraone', image: 'images/characters/yamiYugi.jpg', series: 'main' },
+    { id: 'yamiYugi', name: 'Yami Yugi', title: 'Il Faraone', image: 'images/characters/yamiYugi.jpg', series: 'main', duelTrack: "King of Games - Yugi's Final Duel.mp3", duelTrackSempre: true },
     { id: 'kaiba', name: 'Seto Kaiba', title: 'Presidente della Kaiba Corporation', image: 'images/characters/setoKaiba.jpg', series: 'main', duelTrack: '32. Seto Kaiba (Tournament Final).mp3' },
     { id: 'rex', name: 'Rex Raptor', title: 'Domatore di Dinosauri', image: 'images/characters/rexRaptor.jpg', series: 'main' },
     { id: 'weevil', name: 'Weevil Underwood', title: 'Maestro degli Insetti', image: 'images/characters/weevilUnderwood.jpg', series: 'main' },

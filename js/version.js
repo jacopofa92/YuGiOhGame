@@ -32,6 +32,10 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.25 — Contro Yugi Muto e Yami Yugi suona sempre "King of Games -
+ *   Yugi's Final Duel", qualunque musica chieda l'URL (Duello Libero,
+ *   Storia, tornei). characters-db.js ora si carica prima dell'audio.
+ *
  * 1.0.24 — Multiplayer: ingresso "KaibaCorp System" (riga di sistema con
  *   orologio, titolo che si decodifica) e console di avvio a righe di
  *   terminale mentre ci si collega, con testo dinamico, barra e cronometro
@@ -535,4 +539,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.24';
+window.GAME_VERSION = '1.0.25';
