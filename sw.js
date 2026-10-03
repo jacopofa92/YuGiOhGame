@@ -378,7 +378,8 @@
 // v130: salvataggi vecchi della Storia anime azzerati invece che migrati.
 // v131: ripulite le vecchie migrazioni della Storia anime.
 // v132: banda delle scelte (Tributo/scarto/casella) a capo su telefono in verticale.
-const CACHE_NAME = 'ygo-duel-arena-v132';
+// v133: ritaglio di Joey per la mappa di Battle City.
+const CACHE_NAME = 'ygo-duel-arena-v133';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

@@ -71,4 +71,6 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
 ## In pausa
 
 - [ ] Pedine di Battle City (attività sospesa dall'utente): riprendere da qui.
-      Stato: pedine SVG ricche + ritagli PNG per id; vedi `PROJECT_MAP.md`.
+      Stato: pedine SVG ricche + ritagli PNG col nome dell'avatar; tutti gli 8
+      Duellanti della mappa (incluso Joey) e il Rare Hunter hanno il ritaglio,
+      nessun lavoro concreto in sospeso. Vedi `PROJECT_MAP.md`.

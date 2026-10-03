@@ -32,6 +32,8 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.20 — Ritaglio di Joey (joeyWheeler.png) sulla mappa di Battle City.
+ *
  * 1.0.19 — La banda delle scelte (Tributo, scarto, casella) va a capo su
  *   telefono in verticale invece di uscire dallo schermo.
  *
@@ -515,4 +517,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.19';
+window.GAME_VERSION = '1.0.20';
