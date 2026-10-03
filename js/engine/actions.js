@@ -1414,6 +1414,13 @@ function summonMonster(card, slotIndex, position, handIndex = gameState.selected
         clearSelection();
         return;
     }
+    // "Puoi controllarne solo 1 scoperto" (id 899): con una copia già
+    // scoperta questa si può solo Settare, come per Capro Espiatorio.
+    if (!isFaceDown && window.DuelEngine && DuelEngine.isFaceUpDuplicateBlocked('player', card)) {
+        addToLog(`🚫 ${card.name}: puoi controllarne solo 1 scoperto. Si può solo Settare.`);
+        clearSelection();
+        return;
+    }
     const handEl = document.querySelectorAll('#playerHand .card')[handIndex] || null;
     const slotEl = document.querySelector(`.field-slot[data-owner="player"][data-type="monster"][data-index="${slotIndex}"]`);
     flyCardToSlot(card, fromRect || handEl, slotEl, () => {

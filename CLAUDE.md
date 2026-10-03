@@ -3580,7 +3580,9 @@ priorità o richiedono un refactor ampio):
 ## Carte con limiti noti (da riprendere)
 
 **Fonte di verità: `grep missingEffectNote data/cards.json`, e nient'altro.**
-55 risultati dopo la revisione completa descritta più sopra. Questa
+48 risultati (erano 55 dopo la revisione completa descritta più sopra,
+poi 52 contati di nuovo, poi chiuse 142/511/512/899 — vedi `def.uniqueFaceUp`
+in duel-engine.js e il Castello/Cannoni in card-effects-3.js). Questa
 sezione è solo una mappa per orientarsi: ogni carta porta la propria
 nota per esteso, con il motivo preciso. **Non ricopiare qui i motivi** —
 è così che le due copie sono andate alla deriva l'ultima volta.
@@ -3592,10 +3594,10 @@ carta nuova e nessuno li aggiorna — si dice dove contarli).
 
 Tre famiglie, da non confondere.
 
-**A — scostamento reale ancora aperto (33 carte).** La carta si comporta
+**A — scostamento reale ancora aperto (29 carte).** La carta si comporta
 diversamente dal testo, e chiuderla richiede infrastruttura che non
-esiste: 142, 146, 154, 198, 282, 420, 423, 434, 469, 511, 512, 523, 772,
-882, 887, 888, 890, 891, 899, 900, 901, 1001, 1030, 1035, 1040, 1043,
+esiste: 146, 154, 198, 282, 420, 423, 434, 469, 523, 772,
+882, 887, 888, 890, 891, 900, 901, 1001, 1030, 1035, 1040, 1043,
 1045, 1059, 1080, 1110, 1113, 1114, 1121.
 
 Due sotto-gruppi con lo stesso bisogno, quindi i primi candidati per un

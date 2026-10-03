@@ -32,6 +32,10 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.31 — Quattro carte allineate al testo: Capo dei Guardiani della Tomba
+ *   (solo 1 copia scoperta), Castello delle Illusioni Oscure (+200 al flip e
+ *   a ogni Standby Phase per 4 volte), Cannone Drago XY/XYZ (scarta 1
+ *   carta per distruggere una carta dell'avversario).
  * 1.0.30 — Multiplayer: mentre il server si sveglia, la riga di stato
  *   diventa un terminale KaibaCorp (titolo con glitch RGB, scanline,
  *   righe scritte a mano, barra senza fine). Sempre in pagina, mai modali.
@@ -562,4 +566,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.30';
+window.GAME_VERSION = '1.0.31';

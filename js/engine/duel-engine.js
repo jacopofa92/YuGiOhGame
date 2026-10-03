@@ -139,6 +139,22 @@
         return !!(gameState.noSummonTurn && gameState.noSummonTurn[owner] === gameState.turn);
     }
 
+    /**
+     * Vero se `card` non può comparire SCOPERTA perché `owner` ne controlla
+     * già una copia scoperta e la carta dice "puoi controllarne solo 1
+     * scoperto" (def.uniqueFaceUp: Capo dei Guardiani della Tomba, id 899).
+     * Vale per le copie con lo stesso nome (non per qualunque mostro): si
+     * confronta l'id. Un Set coperto resta sempre permesso, come da testo.
+     * Resta fuori il caso di una seconda copia che si GIRA scoperta da
+     * coperta mentre la prima è già scoperta: richiederebbe di scegliere
+     * quale delle due lascia il campo, e non c'è un'interfaccia per farlo.
+     */
+    function isFaceUpDuplicateBlocked(owner, card) {
+        const def = card && getDefinition(card.id);
+        if (!def || !def.uniqueFaceUp) return false;
+        return fieldOf(owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === card.id && slot.card.uid !== card.uid);
+    }
+
     function fieldOf(owner) {
         return owner === 'player' ? gameState.playerMonsterField : gameState.botMonsterField;
     }
@@ -1212,6 +1228,11 @@
             // Capro Espiatorio (id 434): niente Evocazioni nel turno in cui
             // è stato attivato. I suoi stessi Token nascono PRIMA che il
             // divieto venga acceso, quindi non ne sono toccati.
+            if (isFaceUpDuplicateBlocked(owner, card)) {
+                addToLog(`🚫 ${card.name}: puoi controllarne solo 1 scoperto, non può essere Special Summonata.`);
+                graveyardOf(owner).push(card);
+                return false;
+            }
             if (isSummonBannedThisTurn(owner)) {
                 addToLog(`🚫 Capro Espiatorio impedisce di Evocare altri mostri in questo turno: ${card.name} non può essere Special Summonata.`);
                 graveyardOf(owner).push(card);
@@ -5541,6 +5562,7 @@
         openDrawResponseWindow: openDrawResponseWindow,
         isChainActive: isChainActive,
         isSummonBannedThisTurn: isSummonBannedThisTurn,
+        isFaceUpDuplicateBlocked: isFaceUpDuplicateBlocked,
         applyRemoteChainDecision: applyRemoteChainDecision,
         // Scelte di bersaglio che viaggiano — vedi il blocco dedicato più
         // sopra. Usate da chooseFieldMonsterTarget (card-effects.js) e

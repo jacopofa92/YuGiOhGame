@@ -2885,7 +2885,12 @@
     // (vedi missingEffectNote): "puoi controllare solo 1 copia scoperta"
     // non applicata (nessun controllo generico di unicità esiste in
     // questo motore); bersaglio da rianimare auto-selezionato.
+    // AGGIORNAMENTO: l'unicità ora esiste, def.uniqueFaceUp, letto da
+    // DuelEngine.isFaceUpDuplicateBlocked (Evocazione Normale del giocatore
+    // e del bot, Special Summon). Resta fuori solo una seconda copia che si
+    // GIRA scoperta da coperta con la prima già scoperta.
     CardEffects.register(899, {
+        uniqueFaceUp: true,
         onSummon(ctx) {
             if (ctx.summonedVia !== 'normal') return;
             if (ctx.findEmptyMonsterSlot(ctx.owner) === -1) return;

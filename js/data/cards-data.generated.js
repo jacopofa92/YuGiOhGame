@@ -1374,8 +1374,7 @@ const cardDatabase = [
     "attack": 920,
     "defense": 1930,
     "effect": "FLIP: aumenta di 200 punti ATK/DEF di tutti i mostri Tipo Zombie, e continua ad aumentarli di altri 200 punti ad ogni tua Standby Phase, finché resta scoperta in campo (fino al tuo 4° turno dopo l'attivazione).",
-    "artOnly": true,
-    "missingEffectNote": "Il bonus resta fisso a +200 ATK/DEF per ogni Zombie: manca l'escalation di altri +200 ad ogni propria Standby Phase (fino al 4o turno)."
+    "artOnly": true
   },
   {
     "id": 143,
@@ -5645,8 +5644,7 @@ const cardDatabase = [
     "extraDeck": true,
     "category": "fusion",
     "effect": "Deve prima essere Special Summonato (dal tuo Extra Deck) bandendo le carte sopra indicate che controlli (non stai usando \"Fusione\"). Non può essere Special Summonato dal Cimitero. Puoi scartare 1 carta, poi scegliere come bersaglio 1 Magia/Trappola scoperta controllata dal tuo avversario; distruggila.",
-    "artOnly": true,
-    "missingEffectNote": "E' implementata solo la condizione di Special Summon (bandendo i materiali). Manca l'effetto attivabile: scarta 1 carta per distruggere 1 Magia/Trappola scoperta dell'avversario."
+    "artOnly": true
   },
   {
     "id": 512,
@@ -5661,8 +5659,7 @@ const cardDatabase = [
     "extraDeck": true,
     "category": "fusion",
     "effect": "Deve prima essere Special Summonato (dal tuo Extra Deck) bandendo le carte sopra indicate che controlli (non stai usando \"Fusione\"). Non può essere Special Summonato dal Cimitero. Puoi scartare 1 carta, poi scegliere come bersaglio 1 carta controllata dal tuo avversario; distruggila.",
-    "artOnly": true,
-    "missingEffectNote": "E' implementata solo la condizione di Special Summon (bandendo i materiali). Manca l'effetto attivabile: scarta 1 carta per distruggere 1 carta qualsiasi dell'avversario."
+    "artOnly": true
   },
   {
     "id": 513,
@@ -10177,7 +10174,6 @@ const cardDatabase = [
     "attack": 1900,
     "defense": 1200,
     "effect": "Puoi controllare solo 1 \"Capo dei Guardiani della Tomba\" scoperto. Il tuo Cimitero non è influenzato da \"Necrovalley\". Quando questa carta viene Evocata Tributo: puoi scegliere come bersaglio 1 mostro Guardiani della Tomba nel tuo Cimitero; Evocalo Specialmente.",
-    "missingEffectNote": "Il vincolo \"puoi controllarne solo 1 scoperto\" non e' applicato: nessun controllo di unicita' per nome esiste in questo motore.",
     "artOnly": true
   },
   {

@@ -939,16 +939,70 @@
     // ottiene bandendo "Cannone Testa X" (id 510) + "Testa di Drago Y"
     // (id 513); 512 bandendo lo stesso 511 già in campo + "Carro Armato
     // Metallico Z" (id 515).
-    // Vedi missingEffectNote su id 511/512 in cards.json: manca
-    // l'effetto attivabile di entrambe (scarta 1 carta per distruggere 1
-    // carta/Magia-Trappola avversaria) — solo la condizione di
-    // Evocazione è implementata.
+    // Effetto attivabile (Ignition, dalla zona Mostro): "puoi scartare 1
+    // carta, poi scegliere come bersaglio 1 Magia/Trappola scoperta (511)
+    // o 1 carta qualsiasi (512) controllata dall'avversario; distruggila".
+    // Nessun limite di una volta per turno nel testo: lo limita da solo il
+    // costo dello scarto. Le due carte condividono la stessa funzione e
+    // differiscono solo per cosa si può scegliere.
+    //
+    // Lo scarto e la scelta sono due scelte del giocatore IN SEQUENZA: la
+    // seconda vive dentro la callback della prima, perché i picker sono
+    // asincroni. Il bersaglio si raccoglie PRIMA di pagare (in
+    // canActivate), così non si scarta una carta quando non c'è nulla da
+    // distruggere.
+    // Non copre la Magia Terreno dell'avversario (collectFieldTargets non la
+    // elenca): resta fuori dal "qualsiasi carta" di 512.
     // ================================================================
+    function bersagliCannoneDrago(ctx, qualsiasiCarta) {
+        return collectFieldTargets(ctx, {
+            owner: 'opponent',
+            zone: qualsiasiCarta ? 'both' : 'st',
+            includiCoperte: qualsiasiCarta
+        });
+    }
+    function attivaCannoneDrago(ctx, nome, qualsiasiCarta) {
+        if (bersagliCannoneDrago(ctx, qualsiasiCarta).length === 0) return;
+        offerHandDiscardChoice(ctx, {
+            title: `🐉 ${nome}`,
+            text: 'Scegli la carta da scartare come costo.'
+        }, (scartata) => {
+            // Si ricalcolano DOPO lo scarto: una reazione allo scarto
+            // (es. Roc dalla Valle della Foschia) può aver cambiato il Terreno.
+            const candidati = bersagliCannoneDrago(ctx, qualsiasiCarta);
+            if (candidati.length === 0) {
+                ctx.log(`🐉 ${nome} scarta ${scartata.name}, ma non c'è più nulla da distruggere.`);
+                return;
+            }
+            chooseFieldCardTarget(ctx, candidati, {
+                title: `🐉 ${nome}`,
+                text: qualsiasiCarta ? 'Scegli 1 carta dell\'avversario da distruggere.' : 'Scegli 1 Magia/Trappola scoperta dell\'avversario da distruggere.'
+            }, (scelto) => {
+                if (scelto.zone === 'monster') {
+                    const esito = ctx.destroyTargetedMonster(scelto.owner, scelto.index);
+                    if (!esito.allowed) { ctx.log(`🐉 ${nome} scarta ${scartata.name}, ma il bersaglio si è sottratto!`); return; }
+                    ctx.log(`🐉 ${nome} scarta ${scartata.name} e distrugge ${esito.card.name}!`);
+                } else {
+                    const nomeBersaglio = scelto.card.name;
+                    ctx.destroySpellTrap(scelto.owner, scelto.index);
+                    ctx.log(`🐉 ${nome} scarta ${scartata.name} e distrugge ${nomeBersaglio}!`);
+                }
+            });
+        });
+    }
     CardEffects.register(511, {
-        banishFusionMaterials: [510, 513]
+        banishFusionMaterials: [510, 513],
+        canActivate(ctx) {
+            return ctx.hand(ctx.owner).length > 0 && bersagliCannoneDrago(ctx, false).length > 0;
+        },
+        activate(ctx) { attivaCannoneDrago(ctx, 'Cannone Drago XY', false); }
     });
     CardEffects.register(512, {
-        banishFusionMaterials: [511, 515]
+        banishFusionMaterials: [511, 515],
+        canActivate(ctx) {
+            return ctx.hand(ctx.owner).length > 0 && bersagliCannoneDrago(ctx, true).length > 0;
+        },
+        activate(ctx) { attivaCannoneDrago(ctx, 'Cannone Drago XYZ', true); }
     });
 
     // ================================================================
@@ -1401,17 +1455,36 @@
     // entrambi i giocatori) finché questa carta resta scoperta in campo
     // — la condizione "FLIP" è già implicita: static() qui sotto viene
     // richiamato SOLO mentre la carta è scoperta (vedi recomputeStaticEffects).
-    // Vedi missingEffectNote su id 142 in cards.json: manca l'escalation
-    // (+200 aggiuntivi ad ogni Standby Phase, fino al 4° turno) — resta
-    // fisso a +200, senza scadenza.
+    // Testo esatto (YGOPRODeck): "FLIP: tutti i mostri Zombie guadagnano
+    // 200 ATK e DEF. Durante ciascuna delle tue prossime 4 Standby Phase
+    // ognuno di essi guadagna altri 200 ATK e DEF. Questi effetti durano
+    // finché questa carta è scoperta in campo." Quindi al massimo +1000.
+    //
+    // `card.__castelloPassi` conta i +200 già maturati (1 al flip, poi uno
+    // per ogni propria Standby Phase, fino a 5). Nasce solo da onFlip: una
+    // copia messa scoperta senza girarsi non attiva nulla, come da testo.
+    // Vive sulla carta e non in gameState, così il conteggio riparte da
+    // zero quando la carta viene girata di nuovo ed è una copia a sé.
     // ================================================================
     CardEffects.register(142, {
+        onFlip(ctx) {
+            ctx.card.__castelloPassi = 1;
+        },
+        onStandbyPhase(ctx) {
+            if (typeof ctx.card.__castelloPassi !== 'number' || ctx.card.__castelloPassi >= 5) return;
+            ctx.card.__castelloPassi++;
+            ctx.log(`🏰 Castello delle Illusioni Oscure: gli Zombie guadagnano altri 200 ATK/DEF (+${ctx.card.__castelloPassi * 200} in tutto).`);
+        },
         static(ctx) {
+            const sorgente = ctx.card || (ctx.slot && ctx.slot.card);
+            const passi = sorgente && sorgente.__castelloPassi;
+            if (typeof passi !== 'number') return;
+            const bonus = 200 * passi;
             ['player', 'bot'].forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
                     if (!slot || slot.isFaceDown || slot.card.race !== 'Zombie') return;
                     const e = gameState.atkDefBonus[slot.card.uid] || { atk: 0, def: 0 };
-                    gameState.atkDefBonus[slot.card.uid] = { atk: e.atk + 200, def: e.def + 200 };
+                    gameState.atkDefBonus[slot.card.uid] = { atk: e.atk + bonus, def: e.def + bonus };
                 });
             });
         }

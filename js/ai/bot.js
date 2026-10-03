@@ -190,6 +190,13 @@ function botSummonMonster(card, tributeIndices, emptySlotHint, position, faceDow
         isFaceDown = true;
         position = 'defense';
     }
+    // "Puoi controllarne solo 1 scoperto" (id 899): con una copia già
+    // scoperta il bot la Setta invece di Evocarla (stesso trattamento
+    // del lato giocatore in summonMonster()).
+    if (!isFaceDown && window.DuelEngine && DuelEngine.isFaceUpDuplicateBlocked('bot', card)) {
+        isFaceDown = true;
+        position = 'defense';
+    }
     gameState.botHand = gameState.botHand.filter(c => c.uid !== card.uid);
     gameState.hasNormalSummoned = true;
 
