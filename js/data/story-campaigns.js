@@ -232,7 +232,7 @@ const storyCampaignsDatabase = [
             'images/maps/storia_mappa_principale_sei_isole.jpg',
             'images/fields/mobile/rovine_1.jpg'
         ],
-        musica: 'mainTheme.mp3',
+        musica: '56. Battle for the Millennium.mp3',
         // A duellare non è Yugi: è l'altro, quello che si sveglia quando il
         // Puzzle è al collo. È tutto il punto della serie.
         protagonista: { name: 'Yami Yugi', title: 'Il Re dei Giochi', image: 'images/characters/yamiYugi.jpg', icon: '🧩' },

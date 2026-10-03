@@ -15,7 +15,7 @@ module.exports = {
     name: 'Duello contro Yugi: il suo tema in Torneo e Storia, non in Duello Libero',
     async run(t) {
         const RADICE = path.join(__dirname, '..', '..');
-        const TEMA = "King of Games - Yugi's Final Duel.mp3";
+        const TEMA = "57. King of Games - Yugi's Final Duel.mp3";
         t.assert(fs.existsSync(path.join(RADICE, 'audio', 'soundtracks', TEMA)), 'Il file del tema deve esistere in audio/soundtracks/');
 
         const traccia = async (query) => {

@@ -171,18 +171,16 @@
         if (url !== typed) $('mpServerUrl').value = url;
 
         showStatus('🔌 Connessione al server...');
-        // Console di avvio "KaibaCorp System" (js/multiplayer/mp-boot.js):
-        // fa da schermata di caricamento, anche per il risveglio del server.
-        if (window.MpBoot) MpBoot.apri(url);
+        avviaAttesaServer();
         try {
             await net.connect(url);
+            fermaAttesaServer();
             rememberServerUrl(url);
             showStatus('✅ Connesso al server.');
-            if (window.MpBoot) await MpBoot.connesso();
             return true;
         } catch (err) {
+            fermaAttesaServer();
             showStatus('❌ Impossibile connettersi: ' + err.message, true);
-            if (window.MpBoot) MpBoot.errore(err.message);
             return false;
         }
     }
@@ -212,9 +210,46 @@
     // nessuno gioca e ci mette circa un minuto a tornare su. Senza questo
     // messaggio l'attesa sembrerebbe un blocco.
     net.on('connect-waking', (info) => {
-        showStatus(`⚔️ Preparazione del campo di battaglia... resta connesso!`);
-        if (window.MpBoot) MpBoot.risveglio(info);
+        attesa.risveglio = true;
+        attesa.tentativo = (info && info.attempt) || (attesa.tentativo + 1);
+        mostraAttesaServer();
     });
+
+    // --- Attesa del server, scritta in pagina -------------------------
+    // Mentre il server gratuito si sveglia (fino a circa un minuto) la riga
+    // di stato sotto i pulsanti racconta cosa succede e cambia frase ogni
+    // pochi secondi, con il tempo trascorso: nessuna finestra sopra la
+    // pagina, il resto della lobby resta com'è (richiesta esplicita
+    // dell'utente: "niente modali"). Il tempo è reale; le frasi sono solo
+    // compagnia, non descrivono passaggi veri del server.
+    const FRASI_ATTESA = [
+        'Il server si sta risvegliando',
+        'Sto preparando la sala duello',
+        'Controllo che tutto sia pronto',
+        'Ancora un momento, ci siamo quasi',
+        'Il server gratuito si riavvia da fermo'
+    ];
+    const attesa = { timer: null, inizio: 0, risveglio: false, tentativo: 0 };
+
+    function mostraAttesaServer() {
+        if (!attesa.risveglio) return;
+        const secondi = Math.max(0, Math.round((Date.now() - attesa.inizio) / 1000));
+        // La frase cambia ogni 4 secondi, il tempo ogni secondo.
+        const frase = FRASI_ATTESA[Math.floor(secondi / 4) % FRASI_ATTESA.length];
+        const nota = secondi >= 25 ? ' Può servire fino a un minuto: resta su questa pagina.' : '';
+        showStatus(`⏳ ${frase}… (${secondi} s, tentativo ${Math.max(1, attesa.tentativo)}).${nota}`);
+    }
+    function avviaAttesaServer() {
+        fermaAttesaServer();
+        attesa.inizio = Date.now();
+        attesa.risveglio = false;
+        attesa.tentativo = 0;
+        attesa.timer = setInterval(mostraAttesaServer, 1000);
+    }
+    function fermaAttesaServer() {
+        if (attesa.timer) { clearInterval(attesa.timer); attesa.timer = null; }
+        attesa.risveglio = false;
+    }
 
     // ============================================================
     // Sala d'attesa

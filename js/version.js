@@ -32,6 +32,13 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.26 — Multiplayer: tolti la console a finestra e lo stile "KaibaCorp
+ *   System" (non piacevano); mentre il server si sveglia l'attesa è scritta
+ *   in pagina, sotto i pulsanti, con frasi che cambiano e il tempo
+ *   trascorso, senza modali. Colonne sonore numerate: mainTheme.mp3 è ora
+ *   "56. Battle for the Millennium.mp3", il tema di Yugi
+ *   "57. King of Games - Yugi's Final Duel.mp3" (riferimenti aggiornati).
+ *
  * 1.0.25 — Contro Yugi Muto e Yami Yugi suona sempre "King of Games -
  *   Yugi's Final Duel", qualunque musica chieda l'URL, ma SOLO in Torneo e
  *   Storia (in Duello Libero resta la scelta del giocatore).
@@ -540,4 +547,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.25';
+window.GAME_VERSION = '1.0.26';

@@ -384,7 +384,10 @@
 // v136: l'IA decide gli attacchi con ATK/DEF effettivi (bonus e malus inclusi).
 // v137: console di avvio KaibaCorp System nel Multiplayer (mp-boot.js).
 // v138: tema fisso "King of Games" contro i due Yugi.
-const CACHE_NAME = 'ygo-duel-arena-v138';
+// v139: Multiplayer senza console a finestra (attesa del server scritta in pagina);
+// colonne sonore numerate: "56. Battle for the Millennium" (era mainTheme) e
+// "57. King of Games - Yugi's Final Duel".
+const CACHE_NAME = 'ygo-duel-arena-v139';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -493,7 +496,6 @@ const APP_SHELL = [
     'js/ui/profile-stats.js',
     'js/ui/profile-stats.css',
     'js/ui/visual-effects-library.js',
-    'js/multiplayer/mp-boot.js',
     'js/multiplayer/mp-lobby.js',
     'js/multiplayer/multiplayer.js',
     'js/multiplayer/network.js',

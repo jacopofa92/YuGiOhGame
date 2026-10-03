@@ -42,11 +42,11 @@ const characterDatabase = [
     // raggruppato per arco narrativo (Duelist Kingdom/Battle City/amici di
     // Domino City come prima): non modificare quest'ordine senza una
     // richiesta esplicita, è come l'utente vuole che appaia il roster. =====
-    { id: 'yugiMuto', name: 'Yugi Muto', title: 'Il Re dei Giochi', image: 'images/characters/yugiMuto.jpg', series: 'main', duelTrack: "King of Games - Yugi's Final Duel.mp3", duelTrackSempre: true },
+    { id: 'yugiMuto', name: 'Yugi Muto', title: 'Il Re dei Giochi', image: 'images/characters/yugiMuto.jpg', series: 'main', duelTrack: "57. King of Games - Yugi's Final Duel.mp3", duelTrackSempre: true },
     { id: 'solomonMuto', name: 'Solomon Muto', title: 'Il Nonno Collezionista', image: 'images/characters/solomonMuto.jpg', series: 'main' },
     { id: 'tea', name: 'Téa Gardner', title: "La Voce dell'Amicizia", image: 'images/characters/teaGardner.jpg', series: 'main' },
     { id: 'joey', name: 'Joey Wheeler', title: 'Il Duellante di Strada', image: 'images/characters/joeyWheeler.jpg', series: 'main' },
-    { id: 'yamiYugi', name: 'Yami Yugi', title: 'Il Faraone', image: 'images/characters/yamiYugi.jpg', series: 'main', duelTrack: "King of Games - Yugi's Final Duel.mp3", duelTrackSempre: true },
+    { id: 'yamiYugi', name: 'Yami Yugi', title: 'Il Faraone', image: 'images/characters/yamiYugi.jpg', series: 'main', duelTrack: "57. King of Games - Yugi's Final Duel.mp3", duelTrackSempre: true },
     { id: 'kaiba', name: 'Seto Kaiba', title: 'Presidente della Kaiba Corporation', image: 'images/characters/setoKaiba.jpg', series: 'main', duelTrack: '32. Seto Kaiba (Tournament Final).mp3' },
     { id: 'rex', name: 'Rex Raptor', title: 'Domatore di Dinosauri', image: 'images/characters/rexRaptor.jpg', series: 'main' },
     { id: 'weevil', name: 'Weevil Underwood', title: 'Maestro degli Insetti', image: 'images/characters/weevilUnderwood.jpg', series: 'main' },

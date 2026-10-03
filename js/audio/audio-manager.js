@@ -9,7 +9,7 @@
  * che include questo script — così la traccia prosegue (con al più
  * un impercettibile scarto) invece di ripartire da capo.
  *
- * Per ora la traccia è "cablata" su un solo brano (mainTheme.mp3),
+ * Per ora la traccia è "cablata" su un solo brano (56. Battle for the Millennium.mp3),
  * usato ovunque. In futuro basterà passare un trackSrc diverso a
  * initAudioManager() (es. per una colonna sonora dedicata alle
  * battaglie) perché il resto — continuità, mute, salvataggio — resti
@@ -28,7 +28,7 @@
 (function () {
     'use strict';
 
-    const DEFAULT_TRACK = 'audio/soundtracks/mainTheme.mp3';
+    const DEFAULT_TRACK = 'audio/soundtracks/56. Battle for the Millennium.mp3';
     const KEY_MUTED = 'duelArenaMusicMuted';
     const KEY_TIME = 'duelArenaMusicTime';
     const KEY_TRACK = 'duelArenaMusicTrack';

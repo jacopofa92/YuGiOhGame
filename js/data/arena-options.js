@@ -83,7 +83,7 @@
         { file: '35. High Mages.mp3', nome: 'Alti Maghi' },
         { file: '37. Seto.mp3', nome: 'Seto' },
         { file: '43. Darknite-Nitemare (3D).mp3', nome: 'Darknite & Nitemare' },
-        { file: 'mainTheme.mp3', nome: 'Battle for the Millennium' }
+        { file: '56. Battle for the Millennium.mp3', nome: 'Battle for the Millennium' }
     ];
 
     /** Il valore con cui un'opzione dichiara "scegline una a caso al momento del duello". */
