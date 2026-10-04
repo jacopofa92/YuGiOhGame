@@ -37,6 +37,15 @@ esplicita dell'utente, vale per ogni sessione).
   su tutti i .js in un paio di secondi: è il modo più veloce per
   scoprire se una modifica ha rotto un file — molto prima che i test
   falliscano tutti insieme con un errore criptico.
+- **Controllo pre-commit** (`.githooks/pre-commit` → `scripts/pre-commit.js`):
+  sintassi dei .js in stage, accenti corrotti nelle righe aggiunte (la
+  "è" trasformata in una A con tilde più un simbolo; una riga che deve
+  citarli davvero porta il marcatore `[ok-accenti]`), BOM UTF-8, e
+  `data/cards.json` in stage senza il file
+  generato. Si attiva UNA volta per clone con `npm run hooks` (imposta
+  `core.hooksPath`, che non viaggia col repository); su questo PC è già
+  attivo. Se ferma un commit, si corregge il problema: non si salta con
+  `--no-verify`.
 - Multiplayer richiede `server/server.js` (Node nativo, nessuna
   dipendenza) — vedi `README.md` per come avviarlo.
 

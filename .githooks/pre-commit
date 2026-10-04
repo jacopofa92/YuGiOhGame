@@ -1,0 +1,4 @@
+#!/bin/sh
+# Controlli veloci prima di ogni commit: vedi scripts/pre-commit.js.
+# Si attiva una volta per clone con `npm run hooks`.
+exec node scripts/pre-commit.js
