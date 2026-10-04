@@ -2480,7 +2480,8 @@ priorità o richiedono un refactor ampio):
     `chooseFieldMonsterTarget`: le 9 carte sopra sono migrazioni a
     quello, tutte con la stessa trasformazione meccanica (il corpo va
     dentro la callback, perché la scelta è ASINCRONA).
-  - **Backlog ancora aperto, con il metodo per riprenderlo**: restano 34
+  - **Backlog ancora aperto, con il metodo per riprenderlo** (ricontato e
+    chiuso in 1.0.40, vedi «Carte che promettono una scelta» in fondo): restano 34
     carte con un bersaglio sul Terreno auto-scelto (da 46) più quelle su mano/
     Cimitero/Deck non ancora migrate. I due script di audit stanno nello
     scratchpad di sessione ma sono riscrivibili in pochi minuti: la
@@ -3793,6 +3794,20 @@ risposta ora risulta "già usato nel turno" (`segnaUsoEffettoMostro`), e
 la carta che apre una Catena non viene più riproposta come risposta a
 sé stessa (la Spada 396, il cui "una volta per turno" scatta alla
 risoluzione, lo faceva). Spec: `finestra-di-priorita.spec.js`.
+
+*Carte che promettono una scelta e scelgono da sole* (giro 1.0.40): un
+audit che incrocia il TESTO (una parola di scelta: "scegli", "bersaglio",
+"a tua scelta") col CODICE (nessun helper di scelta, e un `find`/
+`findIndex`/`[0]`/`sort` su una zona) ne ha trovate 21; tolti i falsi
+positivi (bersaglio obbligato, effetti passivi, helper chiamato da una
+funzione fuori dal blocco `register`) ne restavano 7, tutte chiuse: 548,
+289, 220, 881, 742, 792, 363 (`scelte-che-mancavano-2.spec.js`). Nuovo
+helper `chooseFieldTargetsInSequence(ctx, passi, onDone)` per "scegli N
+bersagli sul Terreno" uno alla volta, ciascuno col checkpoint e il numero
+totale di bersagli: **usarlo per ogni carta futura di quella forma**. Una
+scelta che spetta all'AVVERSARIO si fa con `chooseOption({ chooser })` o
+con `chooseFieldCardTarget` su un contesto della vittima
+(`DuelEngine.makeContext(vittima, ...)`), come in Bara Oscura (792).
 
 **C — la scelta la fa il motore, non il giocatore: nessuna carta.** Le
 ultime sei (100, 883, 885, 889, 895, 1120) sono state chiuse con

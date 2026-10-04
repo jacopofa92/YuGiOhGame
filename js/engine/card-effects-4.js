@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { chooseOption, chooseFieldCardTargetWaiting, attendiScelta, findEquipTarget, equipToChosenTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, resolveSpecialSummonTributeCost, chooseCardFromList, maxRitualTributeLevel, performRitualTribute } = window.CardEffectsShared;
+    const { chooseFieldTargetsInSequence, chooseOption, chooseFieldCardTargetWaiting, attendiScelta, findEquipTarget, equipToChosenTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, resolveSpecialSummonTributeCost, chooseCardFromList, maxRitualTributeLevel, performRitualTribute } = window.CardEffectsShared;
 
     // ================================================================
     // BATCH 7: rientro in campo dopo una distruzione (onOwnMonsterDestroyed,
@@ -1311,32 +1311,38 @@
     // ================================================================
     // 548 — Attacco a Doppia Punta (Trappola Normale)
     // Scegli e distruggi 2 dei tuoi mostri e 1 mostro del tuo avversario.
-    // SEMPLIFICAZIONE: nessuna UI di selezione multipla — distrugge da
-    // sola i 2 propri mostri più deboli e quello avversario più forte
-    // (stesso spirito "il motore sceglie" già usato per altre carte
-    // "scegli N carte" in questo file).
+    // I tre bersagli li sceglie il giocatore, uno alla volta
+    // (chooseFieldTargetsInSequence), e si distruggono insieme solo alla
+    // fine, come nel gioco vero. Il bot sceglie come prima: i suoi 2 più
+    // deboli e il più forte dell'avversario (ordine dei candidati).
     // ================================================================
     CardEffects.register(548, {
         canActivate(ctx) {
             return ctx.field(ctx.owner).filter((s) => s).length >= 2 && ctx.field(ctx.opponent).some((s) => s);
         },
         activate(ctx) {
-            const ownSlots = ctx.field(ctx.owner).map((s, i) => ({ s, i })).filter((x) => x.s);
-            ownSlots.sort((a, b) => DuelEngine.getEffectiveAtk(a.s.card) - DuelEngine.getEffectiveAtk(b.s.card));
-            ownSlots.slice(0, 2).forEach((x) => ctx.destroyMonster(ctx.owner, x.i));
-            let bestOppIdx = -1;
-            let bestOppCard = null;
-            ctx.field(ctx.opponent).forEach((s, i) => {
-                if (s && (!bestOppCard || DuelEngine.getEffectiveAtk(s.card) > DuelEngine.getEffectiveAtk(bestOppCard))) {
-                    bestOppIdx = i;
-                    bestOppCard = s.card;
+            const fine = attendiScelta(ctx);
+            const atk = (c) => DuelEngine.getEffectiveAtk(c.card);
+            const propri = () => collectFieldTargets(ctx, { zone: 'monster', owner: 'self', includiCoperte: true }).sort((a, b) => atk(a) - atk(b));
+            const avversari = () => collectFieldTargets(ctx, { zone: 'monster', owner: 'opponent', includiCoperte: true }).sort((a, b) => atk(b) - atk(a));
+            chooseFieldTargetsInSequence(ctx, [
+                { candidati: propri, title: '⚔️ Attacco a Doppia Punta', text: 'Scegli il primo dei tuoi 2 mostri da distruggere.' },
+                { candidati: propri, title: '⚔️ Attacco a Doppia Punta', text: 'Scegli il secondo dei tuoi mostri da distruggere.' },
+                { candidati: avversari, title: '⚔️ Attacco a Doppia Punta', text: 'Scegli il mostro avversario da distruggere.' }
+            ], (finali) => {
+                try {
+                    // Si distruggono per uid, non per indice: un mostro che
+                    // lascia il Terreno può far scattare reazioni che
+                    // spostano gli altri.
+                    finali.forEach((f) => {
+                        const idx = ctx.field(f.owner).findIndex((s) => s && s.card.uid === f.card.uid);
+                        if (idx !== -1) ctx.destroyMonster(f.owner, idx);
+                    });
+                    ctx.log('⚔️ Attacco a Doppia Punta sacrifica 2 tuoi mostri per distruggere un mostro avversario!');
+                } finally {
+                    fine();
                 }
             });
-            if (bestOppIdx !== -1) {
-                const decl = ctx.declareTarget(ctx.opponent, bestOppIdx, { totalTargetCount: 1 });
-                if (decl.allowed) ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
-            }
-            ctx.log('⚔️ Attacco a Doppia Punta sacrifica 2 tuoi mostri per distruggere un mostro avversario!');
         }
     });
 

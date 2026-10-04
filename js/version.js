@@ -32,6 +32,11 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.40 — Sette carte ti lasciano scegliere davvero: Attacco a Doppia
+ *   Punta, Lady Arpia Formazione della Fenice, Mago dell'Esplosione,
+ *   Nobile dello Sterminio e Cappelli Magici scelgono i bersagli che vuoi
+ *   tu; con Scuotiterra dichiari gli Attributi e l'avversario ne sceglie
+ *   uno; con Bara Oscura è chi la subisce a decidere cosa perdere.
  * 1.0.39 — Gli Effetti Veloci si usano anche quando l'avversario non fa
  *   niente: nel suo turno, in Standby, all'inizio della Battle Phase e
  *   prima della fine del turno ti viene chiesto se vuoi attivarli (Ninja
@@ -601,4 +606,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.39';
+window.GAME_VERSION = '1.0.40';

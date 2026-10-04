@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { chooseFieldCardTargetWaiting, attendiScelta, chooseOption, isHarpieLadySupport, findEquipTarget, equipToChosenTarget, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, chooseCardFromList, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost, maxRitualTributeLevel, performRitualTribute, releaseRelinquishedTarget, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach, destroyTargetingSpellIfItStays, victimChoosesDiscard } = window.CardEffectsShared;
+    const { chooseFieldTargetsInSequence, chooseFieldCardTargetWaiting, attendiScelta, chooseOption, isHarpieLadySupport, findEquipTarget, equipToChosenTarget, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, chooseCardFromList, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost, maxRitualTributeLevel, performRitualTribute, releaseRelinquishedTarget, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach, destroyTargetingSpellIfItStays, victimChoosesDiscard } = window.CardEffectsShared;
 
     // ================================================================
     // 835 — Ingranaggio Antico / Ancient Gear
@@ -1356,28 +1356,78 @@
     // 220 — Scuotiterra / Earthquake... (Trappola Normale)
     // Scegli 2 Attributi; l'avversario ne sceglie 1: distruggi tutti i
     // mostri scoperti con quell'Attributo.
-    // SEMPLIFICAZIONE: la scelta dell'avversario è simulata a caso tra i
-    // 2 Attributi con più mostri scoperti sul Terreno.
+    // Tre scelte vere (chooseOption): chi attiva dichiara i due Attributi,
+    // poi è l'AVVERSARIO a scegliere quale dei due si applica — se
+    // l'avversario è il giocatore, la domanda arriva a lui. Prima la scelta
+    // dell'avversario era un lancio a caso fra i due Attributi più
+    // presenti, e chi attivava non dichiarava nulla.
+    // Il bot dichiara gli Attributi che colpiscono più mostri avversari
+    // che propri, e da avversario sceglie quello che gli costa meno.
     // ------------------------------------------------------------------
+    const SCUOTITERRA_ATTRIBUTI = ['LUCE', 'OSCURITÀ', 'TERRA', 'ACQUA', 'FUOCO', 'VENTO', 'DIVINO'];
+    function scuotiterraConta(ctx, attributo, owner) {
+        return ctx.field(owner).filter((s) => s && !s.isFaceDown && s.card.attribute === attributo).length;
+    }
+    function scuotiterraOpzioni(ctx, escludi) {
+        // Prima gli Attributi presenti sul Terreno, poi gli altri: dichiarare
+        // un Attributo che nessuno ha è legale, ma raramente utile.
+        return SCUOTITERRA_ATTRIBUTI
+            .filter((a) => a !== escludi)
+            .map((a) => ({ a, n: scuotiterraConta(ctx, a, 'player') + scuotiterraConta(ctx, a, 'bot') }))
+            .sort((x, y) => y.n - x.n)
+            .map((x) => ({ value: x.a, label: `${x.a} (${x.n} scoperti sul Terreno)` }));
+    }
     CardEffects.register(220, {
         canActivate(ctx) {
             return ['player', 'bot'].some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown));
         },
         activate(ctx) {
-            const attrCounts = {};
-            ['player', 'bot'].forEach((owner) => {
-                ctx.field(owner).forEach((s) => { if (s && !s.isFaceDown) attrCounts[s.card.attribute] = (attrCounts[s.card.attribute] || 0) + 1; });
-            });
-            const attrs = Object.keys(attrCounts).sort((a, b) => attrCounts[b] - attrCounts[a]).slice(0, 2);
-            if (attrs.length === 0) return;
-            const chosen = ctx.randomPick(attrs);
-            let count = 0;
-            ['player', 'bot'].forEach((owner) => {
-                ctx.field(owner).forEach((slot, index) => {
-                    if (slot && !slot.isFaceDown && slot.card.attribute === chosen) { ctx.destroyMonster(owner, index); count++; }
+            const fine = attendiScelta(ctx);
+            // Per chi attiva: quanto conviene un Attributo (mostri avversari
+            // colpiti meno i propri).
+            const vantaggio = (a) => scuotiterraConta(ctx, a, ctx.opponent) - scuotiterraConta(ctx, a, ctx.owner);
+            const migliorePerChiAttiva = (escludi) => SCUOTITERRA_ATTRIBUTI
+                .filter((a) => a !== escludi)
+                .reduce((best, a) => (vantaggio(a) > vantaggio(best) ? a : best), SCUOTITERRA_ATTRIBUTI.find((a) => a !== escludi));
+            chooseOption(ctx, {
+                title: '🌍 Scuotiterra',
+                text: 'Dichiara il primo Attributo.',
+                options: scuotiterraOpzioni(ctx, null),
+                pickForBot: () => migliorePerChiAttiva(null)
+            }, (primo) => {
+                chooseOption(ctx, {
+                    title: '🌍 Scuotiterra',
+                    text: `Dichiara il secondo Attributo (il primo è ${primo}).`,
+                    options: scuotiterraOpzioni(ctx, primo),
+                    pickForBot: () => migliorePerChiAttiva(primo)
+                }, (secondo) => {
+                    chooseOption(ctx, {
+                        chooser: ctx.opponent,
+                        title: '🌍 Scuotiterra',
+                        text: `L'avversario ha dichiarato ${primo} e ${secondo}: scegli quale Attributo viene distrutto.`,
+                        options: [primo, secondo].map((a) => ({
+                            value: a,
+                            label: `${a} (tuoi ${scuotiterraConta(ctx, a, ctx.opponent)}, suoi ${scuotiterraConta(ctx, a, ctx.owner)})`
+                        })),
+                        // Da avversario, il bot sceglie l'Attributo che gli
+                        // costa meno rispetto a quanto costa a chi attiva.
+                        pickForBot: () => (vantaggio(primo) <= vantaggio(secondo) ? primo : secondo)
+                    }, (scelto) => {
+                        try {
+                            const chosen = scelto || primo;
+                            let count = 0;
+                            ['player', 'bot'].forEach((owner) => {
+                                ctx.field(owner).forEach((slot, index) => {
+                                    if (slot && !slot.isFaceDown && slot.card.attribute === chosen) { ctx.destroyMonster(owner, index); count++; }
+                                });
+                            });
+                            ctx.log(`🌍 Scuotiterra: dichiarati ${primo} e ${secondo}, ${ctx.opponent === 'player' ? 'scegli' : 'il bot sceglie'} ${chosen}: distrutti ${count} mostri!`);
+                        } finally {
+                            fine();
+                        }
+                    });
                 });
             });
-            ctx.log(`🌍 Scuotiterra: l'avversario sceglie ${chosen}, distrutti ${count} mostri!`);
         }
     });
 
@@ -1437,28 +1487,34 @@
         },
         activate(ctx) {
             const harpieCount = ctx.field(ctx.owner).filter((s) => s && !s.isFaceDown && (isHarpieLadySupport(s.card) || s.card.name === 'Sorelle Lady Arpia')).length;
-            const field = ctx.field(ctx.opponent);
-            // Quanti bersagli: tanti quante le Lady Arpia, e si prendono i
-            // più forti — il danno finale è pari all'ATK più alto fra i
-            // distrutti, quindi è anche la scelta che conviene. Ognuno passa
-            // dal checkpoint di targeting, col numero TOTALE di bersagli
-            // (Specchietto della Fata reagisce solo a un bersaglio singolo).
-            const bersagli = field.map((slot, index) => ({ slot, index }))
-                .filter((x) => x.slot)
-                .sort((a, b) => (b.slot.card.attack || 0) - (a.slot.card.attack || 0))
-                .slice(0, harpieCount);
-            let destroyed = 0, maxAtk = 0;
-            bersagli.forEach((b) => {
-                const decl = ctx.declareTarget(ctx.opponent, b.index, { totalTargetCount: bersagli.length });
-                if (!decl.allowed) return;
-                const slot = ctx.field(decl.targetOwner)[decl.targetIndex];
-                if (!slot) return;
-                maxAtk = Math.max(maxAtk, slot.card.attack || 0);
-                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
-                destroyed++;
+            // Quanti bersagli: tanti quante le Lady Arpia (o tutti i mostri
+            // avversari, se sono di meno). Li sceglie il giocatore, uno alla
+            // volta; il bot prende i più forti, che è anche la scelta che
+            // conviene (il danno è l'ATK originale più alto fra i distrutti).
+            const fine = attendiScelta(ctx);
+            const avversari = () => collectFieldTargets(ctx, { zone: 'monster', owner: 'opponent', includiCoperte: true })
+                .sort((a, b) => (b.card.attack || 0) - (a.card.attack || 0));
+            const quanti = Math.min(harpieCount, avversari().length);
+            const passi = [];
+            for (let n = 0; n < quanti; n++) {
+                passi.push({ candidati: avversari, title: '🦅 Lady Arpia Formazione della Fenice', text: `Scegli il mostro avversario da distruggere (${n + 1} di ${quanti}).` });
+            }
+            chooseFieldTargetsInSequence(ctx, passi, (finali) => {
+                try {
+                    let destroyed = 0, maxAtk = 0;
+                    finali.forEach((f) => {
+                        const idx = ctx.field(f.owner).findIndex((s) => s && s.card.uid === f.card.uid);
+                        if (idx === -1) return;
+                        maxAtk = Math.max(maxAtk, f.card.attack || 0);
+                        ctx.destroyMonster(f.owner, idx);
+                        destroyed++;
+                    });
+                    if (maxAtk > 0) ctx.dealDamage(ctx.opponent, maxAtk);
+                    ctx.log(`🦅 Lady Arpia Formazione della Fenice distrugge ${destroyed} mostri e infligge ${maxAtk} danni!`);
+                } finally {
+                    fine();
+                }
             });
-            if (maxAtk > 0) ctx.dealDamage(ctx.opponent, maxAtk);
-            ctx.log(`🦅 Lady Arpia Formazione della Fenice distrugge ${destroyed} mostri e infligge ${maxAtk} danni!`);
         }
     });
 
@@ -2369,9 +2425,11 @@
     });
 
     // 881 — Nobile dello Sterminio / Nobleman of Extermination (Magia
-    // Normale): distruggi+bandisci 1 Magia/Trappola coperta AVVERSARIA
-    // (bersaglio auto-selezionato, stesso stile di Cambio di Cuore id
-    // 147) — riusa card.mustBanishOnLeavingField + il redirect condiviso
+    // Normale): distruggi+bandisci 1 Magia/Trappola coperta, scelta dal
+    // giocatore fra quelle di entrambi i lati (le avversarie compaiono col
+    // retro nella lista: sceglierne una non deve rivelarla). Il bot prende
+    // la prima coperta avversaria, come prima.
+    // Riusa card.mustBanishOnLeavingField + il redirect condiviso
     // in ACTIONS.destroySpellTrap (duel-engine.js, esteso qui per la
     // prima volta dai soli mostri anche alle Magie/Trappole). Se era una
     // Trappola, bandisce anche ogni copia rimasta in ENTRAMBI i Deck.
@@ -2380,20 +2438,34 @@
             return ['player', 'bot'].some((owner) => ctx.stField(owner).some((s) => s && s.isFaceDown));
         },
         activate(ctx) {
-            let targetOwner = null, targetIndex = -1;
-            [ctx.opponent, ctx.owner].some((owner) => {
-                const idx = ctx.stField(owner).findIndex((s) => s && s.isFaceDown);
-                if (idx !== -1) { targetOwner = owner; targetIndex = idx; return true; }
-                return false;
+            // Avversarie prima: il bot prende il primo candidato.
+            const coperta = (card, owner, slot) => !!slot.isFaceDown;
+            const candidati = collectFieldTargets(ctx, { zone: 'st', owner: 'opponent', includiCoperte: true, filter: coperta })
+                .concat(collectFieldTargets(ctx, { zone: 'st', owner: 'self', includiCoperte: true, filter: coperta }));
+            if (candidati.length === 0) return;
+            const fine = attendiScelta(ctx);
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '⚔️ Nobile dello Sterminio',
+                text: 'Scegli la Magia o Trappola coperta da distruggere e bandire.',
+                onCancel: () => fine()
+            }, (scelto) => {
+                try {
+                    const idx = ctx.stField(scelto.owner).findIndex((s) => s && s.card.uid === scelto.card.uid);
+                    if (idx !== -1) nobileSterminioColpisce(ctx, scelto.owner, idx);
+                } finally {
+                    fine();
+                }
             });
-            if (targetOwner === null) return;
-            const decl = ctx.declareTarget(targetOwner, targetIndex, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const slot = ctx.stField(decl.targetOwner)[decl.targetIndex];
+        }
+    });
+
+    function nobileSterminioColpisce(ctx, targetOwner, targetIndex) {
+        {
+            const slot = ctx.stField(targetOwner)[targetIndex];
             if (!slot) return;
             const card = slot.card;
             card.mustBanishOnLeavingField = true;
-            ctx.destroySpellTrap(decl.targetOwner, decl.targetIndex);
+            ctx.destroySpellTrap(targetOwner, targetIndex);
             ctx.log(`⚔️ Nobile dello Sterminio bandisce ${card.name}!`);
             if (card.type === 'trap') {
                 ['playerDeck', 'botDeck'].forEach((deckKey) => {
@@ -2407,7 +2479,7 @@
                 });
             }
         }
-    });
+    }
 
     // 882 — Oppressione Reale / Royal Oppression (Trappola CONTINUA): nega
     // e distrugge un'Evocazione Speciale altrui pagando 800 LP, stesso

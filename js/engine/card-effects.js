@@ -883,6 +883,59 @@
     }
 
     /**
+     * Più bersagli sul Terreno scelti UNO ALLA VOLTA, per le carte che
+     * dicono "scegli 2 dei tuoi mostri e 1 del tuo avversario" (Attacco a
+     * Doppia Punta id 548) o "un numero di mostri pari a..." (Lady Arpia
+     * Formazione della Fenice id 289). Prima quelle carte sceglievano da
+     * sole i più deboli/più forti.
+     *
+     * `passi`: array di { candidati(giaScelti) -> candidati, title, text },
+     * un elemento per bersaglio. La funzione riceve le carte già scelte
+     * nei passi precedenti (array di candidati finali), così lo stesso
+     * mostro non si sceglie due volte. Un passo senza candidati si salta.
+     *
+     * Ogni passo passa da chooseFieldCardTarget con `dichiara: true` e il
+     * numero TOTALE di bersagli (Specchietto della Fata reagisce solo a un
+     * bersaglio singolo): un bersaglio che si sottrae al checkpoint
+     * semplicemente non entra fra i finali. Chiudere la lista la riapre:
+     * l'effetto si sta già risolvendo. In Multiplayer ogni scelta viaggia
+     * come sempre; il bot prende il primo candidato di ogni passo, quindi
+     * chi chiama li ordina dal preferito.
+     *
+     * NON tocca le carte: `onDone(finali)` decide cosa farne, ed è anche il
+     * punto in cui va chiusa un'eventuale attendiScelta. Torna false se il
+     * primo passo non ha candidati (e allora chiama comunque onDone([])).
+     */
+    function chooseFieldTargetsInSequence(ctx, passi, onDone) {
+        const finali = [];
+        const totale = passi.length;
+        let i = 0;
+        const prossimo = () => {
+            while (i < passi.length) {
+                const passo = passi[i];
+                const usati = new Set(finali.map((f) => f.card.uid));
+                const candidati = (passo.candidati(finali.slice()) || []).filter((c) => c && c.card && !usati.has(c.card.uid));
+                i++;
+                if (candidati.length === 0) continue;
+                const apri = () => chooseFieldCardTarget(ctx, candidati, {
+                    title: passo.title,
+                    text: passo.text,
+                    dichiara: true,
+                    totalTargetCount: totale,
+                    onNegato: prossimo,
+                    onCancel: apri
+                }, (scelto) => { finali.push(scelto); prossimo(); });
+                apri();
+                return;
+            }
+            onDone(finali);
+        };
+        const primi = passi.length ? (passi[0].candidati([]) || []) : [];
+        prossimo();
+        return primi.length > 0;
+    }
+
+    /**
      * Scelta fra OPZIONI con un'etichetta, non fra carte: dichiarare una
      * categoria (Mostro/Magia/Trappola, un Tipo di mostro) o scegliere fra
      * due effetti. Gemella di chooseFieldCardTarget per le scelte che non
@@ -1688,5 +1741,5 @@
         return ctx.hand(ctx.owner).filter((c) => !selfUid || c.uid !== selfUid);
     }
 
-    window.CardEffectsShared = { attendiScelta, chooseOption, chooseFieldCardTargetWaiting, dichiaraBersaglioScelto, otherHandCards, blockBanishFromField, isHarpieLadySupport, findEquipTarget, collectEquipTargets, equipToChosenTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchZoneWithChoice, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, chooseCardFromList, chooseUpToNFromList, destroyTargetingSpellIfItStays, victimChoosesDiscard, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost, resolveSpecialSummonTributeCost, attachUnionMonster, maxRitualTributeLevel, performRitualTribute, findPetitMothReadyForCocoonSummon, releaseRelinquishedTarget, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach, returnSpellTrapToHand };
+    window.CardEffectsShared = { chooseFieldTargetsInSequence, attendiScelta, chooseOption, chooseFieldCardTargetWaiting, dichiaraBersaglioScelto, otherHandCards, blockBanishFromField, isHarpieLadySupport, findEquipTarget, collectEquipTargets, equipToChosenTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchZoneWithChoice, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, chooseCardFromList, chooseUpToNFromList, destroyTargetingSpellIfItStays, victimChoosesDiscard, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost, resolveSpecialSummonTributeCost, attachUnionMonster, maxRitualTributeLevel, performRitualTribute, findPetitMothReadyForCocoonSummon, releaseRelinquishedTarget, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach, returnSpellTrapToHand };
 })();

@@ -1972,27 +1972,56 @@
             const emptySlots = ctx.field(ctx.owner).filter((s) => !s).length;
             return hasOwnMonster && emptySlots >= 2;
         },
+        // Le 2 Magie/Trappole dal Deck e il mostro li sceglie il giocatore
+        // (prima: le ultime due trovate nel Deck e il primo mostro in
+        // campo). Il bot prende le prime due e il suo mostro più forte, il
+        // più utile da nascondere. In Multiplayer il Deck dell'avversario
+        // non esiste su questo client: lì non si fa nulla, e la fotografia
+        // di stato di chi ha attivato allinea il Terreno.
         activate(ctx) {
+            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deck = gameState[deckKey];
+            if (!Array.isArray(deck)) return;
+            const magieTrappole = deck.filter((c) => c.type === 'spell' || c.type === 'trap');
+            if (magieTrappole.length < 2 || !ctx.field(ctx.owner).some((s) => s)) return;
+            const fine = attendiScelta(ctx);
+            chooseUpToNFromList(ctx, magieTrappole, 2, {
+                min: 2,
+                title: '🎩 Cappelli Magici',
+                text: 'Scegli 2 Magie/Trappole dal tuo Deck da nascondere sotto i cappelli.'
+            }, (dalDeck) => {
+                const atk = (c) => DuelEngine.getEffectiveAtk(c.card);
+                const scegliMostro = () => chooseFieldCardTarget(ctx,
+                    collectFieldTargets(ctx, { zone: 'monster', owner: 'self', includiCoperte: true }).sort((a, b) => atk(b) - atk(a)), {
+                        title: '🎩 Cappelli Magici',
+                        text: 'Scegli il tuo mostro da nascondere fra i cappelli.',
+                        onCancel: scegliMostro
+                    }, (scelto) => {
+                        try {
+                            const idx = ctx.field(ctx.owner).findIndex((s) => s && s.card.uid === scelto.card.uid);
+                            if (idx !== -1 && dalDeck.length === 2) cappelliMagiciApplica(ctx, dalDeck, idx);
+                        } finally {
+                            fine();
+                        }
+                    });
+                if (!scegliMostro()) fine();
+            });
+        }
+    });
+
+    function cappelliMagiciApplica(ctx, scelteDalDeck, monsterIndex) {
+        {
             const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
             const countKey = ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount';
             const deck = gameState[deckKey];
             const chosen = [];
-            for (let i = deck.length - 1; i >= 0 && chosen.length < 2; i--) {
-                if (deck[i].type === 'spell' || deck[i].type === 'trap') chosen.push(deck.splice(i, 1)[0]);
-            }
-            if (chosen.length < 2) {
-                deck.push(...chosen);
-                return;
-            }
+            scelteDalDeck.forEach((card) => {
+                const i = deck.indexOf(card);
+                if (i !== -1) chosen.push(deck.splice(i, 1)[0]);
+            });
             gameState[countKey] = deck.length;
 
             const field = ctx.field(ctx.owner);
-            const monsterIndex = field.findIndex((s) => s);
-            if (monsterIndex === -1) {
-                deck.push(...chosen);
-                gameState[countKey] = deck.length;
-                return;
-            }
             field[monsterIndex].isFaceDown = true;
             field[monsterIndex].position = 'defense';
 
@@ -2014,7 +2043,7 @@
             gameState.pendingMagicalHatsDestroy[ctx.owner] = (gameState.pendingMagicalHatsDestroy[ctx.owner] || []).concat(pendingDestroy);
             ctx.log("🎩 Cappelli Magici mette coperti in Difesa 2 carte del Deck travestite da Mostri e il proprio mostro!");
         }
-    });
+    }
 
     // ================================================================
     // 364 — Labirinto Magico / Magical Labyrinth (Magia Equipaggiamento)

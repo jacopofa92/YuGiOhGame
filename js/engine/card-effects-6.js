@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { chooseFieldCardTargetWaiting, attendiScelta, blockBanishFromField, isHarpieLadySupport, findEquipTarget, equipToChosenTarget, attachEquip, equippedTarget, searchZoneWithChoice, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, collectFieldTargets, offerHandDiscardChoice, resolveSpecialSummonBanishCost, attachUnionMonster, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach, victimChoosesDiscard } = window.CardEffectsShared;
+    const { chooseOption, chooseFieldCardTargetWaiting, attendiScelta, blockBanishFromField, isHarpieLadySupport, findEquipTarget, equipToChosenTarget, attachEquip, equippedTarget, searchZoneWithChoice, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, collectFieldTargets, offerHandDiscardChoice, resolveSpecialSummonBanishCost, attachUnionMonster, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach, victimChoosesDiscard } = window.CardEffectsShared;
 
     // ================================================================
     // 732 — Esplosione a Catena / Blast with Chain (Trappola Normale,
@@ -383,26 +383,38 @@
             const maxAtk = count * 700;
             return ['player', 'bot'].some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown && DuelEngine.getEffectiveAtk(s.card) <= maxAtk));
         },
+        // Il bersaglio lo sceglie il giocatore fra i mostri scoperti con ATK
+        // alla portata dei Segnalini, e si rimuovono solo quelli che servono
+        // ("un numero qualsiasi": togliere più del necessario non ha senso e
+        // brucerebbe i Segnalini per il prossimo uso). Prima sceglieva da
+        // solo il mostro con l'ATK più alto, anche uno PROPRIO, e azzerava
+        // tutti i Segnalini. Il bot prende l'avversario più forte.
         activate(ctx) {
             const count = ctx.card.spellCounters || 0;
             if (count === 0) return;
-            const maxAtk = count * 700;
-            const candidates = [];
-            ['player', 'bot'].forEach((owner) => {
-                ctx.field(owner).forEach((slot, index) => {
-                    if (slot && !slot.isFaceDown && DuelEngine.getEffectiveAtk(slot.card) <= maxAtk) candidates.push({ owner, index, card: slot.card });
-                });
+            const atk = (c) => DuelEngine.getEffectiveAtk(c.card);
+            const allaPortata = (card) => DuelEngine.getEffectiveAtk(card) <= count * 700;
+            const candidati = collectFieldTargets(ctx, { zone: 'monster', owner: 'opponent', filter: allaPortata }).sort((a, b) => atk(b) - atk(a))
+                .concat(collectFieldTargets(ctx, { zone: 'monster', owner: 'self', filter: allaPortata }).sort((a, b) => atk(b) - atk(a)));
+            if (candidati.length === 0) return;
+            const fine = attendiScelta(ctx);
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '🎆 Mago dell\'Esplosione',
+                text: `Hai ${count} Segnalini Magia (fino a ${count * 700} ATK). Scegli il mostro da distruggere: si rimuovono solo i Segnalini necessari.`,
+                dichiara: true,
+                onNegato: fine,
+                onCancel: fine
+            }, (scelto) => {
+                try {
+                    const servono = Math.max(1, Math.ceil(atk(scelto) / 700));
+                    ctx.card.spellCounters = Math.max(0, count - servono);
+                    const finalName = scelto.card.name;
+                    ctx.destroyMonster(scelto.owner, scelto.index);
+                    ctx.log(`🎆 Mago dell'Esplosione rimuove ${servono} Segnalini e distrugge ${finalName}!`);
+                } finally {
+                    fine();
+                }
             });
-            if (candidates.length === 0) return;
-            const choice = candidates.reduce((best, c) => (DuelEngine.getEffectiveAtk(c.card) > DuelEngine.getEffectiveAtk(best.card) ? c : best));
-            const decl = ctx.declareTarget(choice.owner, choice.index, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
-            if (!finalSlot) return;
-            const finalName = finalSlot.card.name;
-            ctx.card.spellCounters = 0;
-            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
-            ctx.log(`🎆 Mago dell'Esplosione rimuove ${count} Segnalini e distrugge ${finalName}!`);
         }
     });
 
@@ -1745,30 +1757,57 @@
     // esegue 1 di: scarta 1 carta a caso dalla propria mano, o distrugge
     // 1 mostro sul proprio Terreno — onSTDestroyed (nuovo hook in
     // duel-engine.js/ctx.destroySpellTrap).
-    // SEMPLIFICAZIONE: "il tuo avversario sceglie" diventa una scelta
-    // automatica 50/50 — nessuna UI di scelta esiste per questo tipo di
-    // reazione automatica (stesso schema di altre scelte auto-decise in
-    // questo file, es. Scatola delle Fate id 232).
+    // Le due scelte sono della VITTIMA (chooseOption con chooser, poi
+    // chooseFieldCardTarget su un contesto di chi subisce): quale effetto
+    // eseguire e, se distrugge, quale dei suoi mostri. Prima era un lancio
+    // 50/50 e poi il primo mostro trovato. Nessun "bersaglio" nel testo,
+    // quindi nessun checkpoint di targeting. Il bot da vittima scarta se
+    // ha più di 2 carte in mano, altrimenti sacrifica il suo mostro più
+    // debole.
     // ================================================================
     CardEffects.register(792, {
         onSTDestroyed(ctx) {
             if (!ctx.wasFaceDown) return;
-            const noMonsters = ctx.field(ctx.opponent).every((s) => !s);
-            const discardOption = noMonsters || ctx.random() < 0.5;
-            if (discardOption) {
-                const discarded = ctx.discardRandomFromHand(ctx.opponent);
-                if (discarded) ctx.log(`⚰️ Bara Oscura: ${ctx.opponent === 'player' ? 'scarti' : 'il bot scarta'} ${discarded.name}!`);
-            } else {
-                const index = ctx.field(ctx.opponent).findIndex((s) => s);
-                if (index === -1) return;
-                const decl = ctx.declareTarget(ctx.opponent, index, { totalTargetCount: 1 });
-                if (!decl.allowed) return;
-                const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
-                if (!targetSlot) return;
-                const name = targetSlot.card.name;
-                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
-                ctx.log(`⚰️ Bara Oscura: ${ctx.opponent === 'player' ? 'perdi' : 'il bot perde'} ${name}!`);
-            }
+            const vittima = ctx.opponent;
+            const tu = vittima === 'player';
+            const haMano = ctx.hand(vittima).length > 0;
+            const haMostri = ctx.field(vittima).some((s) => s);
+            if (!haMano && !haMostri) return;
+            const scarta = () => {
+                const discarded = ctx.discardRandomFromHand(vittima);
+                if (discarded) ctx.log(`⚰️ Bara Oscura: ${tu ? 'scarti' : 'il bot scarta'} ${discarded.name}!`);
+            };
+            const distruggi = () => {
+                // Contesto di chi subisce: chooseFieldCardTarget fa scegliere
+                // ctx.owner, e qui a scegliere è la vittima.
+                const vctx = DuelEngine.makeContext(vittima, { card: ctx.card });
+                const candidati = collectFieldTargets(vctx, { zone: 'monster', owner: 'self', includiCoperte: true })
+                    .sort((a, b) => DuelEngine.getEffectiveAtk(a.card) - DuelEngine.getEffectiveAtk(b.card));
+                chooseFieldCardTarget(vctx, candidati, {
+                    title: '⚰️ Bara Oscura',
+                    text: 'Scegli quale dei tuoi mostri distruggere.',
+                    // Obbligatorio: chiudere la lista la riapre.
+                    onCancel: () => setTimeout(distruggi, 0)
+                }, (scelto) => {
+                    const idx = ctx.field(vittima).findIndex((s) => s && s.card.uid === scelto.card.uid);
+                    if (idx === -1) return;
+                    ctx.destroyMonster(vittima, idx);
+                    ctx.log(`⚰️ Bara Oscura: ${tu ? 'perdi' : 'il bot perde'} ${scelto.card.name}!`);
+                });
+            };
+            chooseOption(ctx, {
+                chooser: vittima,
+                title: '⚰️ Bara Oscura',
+                text: 'La Bara Oscura dell\'avversario è stata distrutta: scegli cosa subire.',
+                options: [
+                    haMano ? { value: 'scarta', label: 'Scarta 1 carta a caso dalla mano', icon: '🗑️' } : null,
+                    haMostri ? { value: 'distruggi', label: 'Distruggi 1 tuo mostro a scelta', icon: '💀' } : null
+                ],
+                pickForBot: () => ((haMano && (ctx.hand(vittima).length > 2 || !haMostri)) ? 'scarta' : 'distruggi')
+            }, (scelta) => {
+                if (scelta === 'distruggi') distruggi();
+                else scarta();
+            });
         }
     });
 

@@ -76,6 +76,9 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
 - [x] Finestra di priorità per gli Effetti Veloci (396, 459, 1059, 1.0.39):
       `DuelEngine.openPriorityWindow` in Standby, inizio Battle Phase e fine
       turno dell'avversario; spenta in Multiplayer.
+- [x] Carte che promettono una scelta e scelgono da sole (1.0.40): audit
+      testo↔codice, 7 carte chiuse (548, 289, 220, 881, 742, 792, 363),
+      helper `chooseFieldTargetsInSequence`.
 - [ ] Note restanti (3): 192 (immunità ai soli effetti mirati); 235 e la
       metà Magia/Trappola di 622 (checkpoint sincrono, scelgono da sole).
 - [ ] 6 PNG in `images/characters/avatarTrasparenza/` (e copie in `pedine/`) senza avatar corrispondente
