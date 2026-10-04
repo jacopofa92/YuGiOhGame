@@ -19,12 +19,14 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
       `waitForTimeout` fissi non sono stati rivisti: farlo se ne fallisce uno.
 - [x] Vecchie migrazioni della Storia anime tolte (salvataggi precedenti al
       timbro di base azzerati, 1.0.17-1.0.18).
-- [ ] La CI di GitHub falliva a ogni push: ho sistemato `storia-aree-macro`
-      (salvataggi vecchi della Storia azzerati), ma non so se ora è verde.
-      Controllare l'esito dell'ultimo push; se è ancora rossa servono i log.
-- [ ] Controllo automatico pre-commit: sintassi (`scripts/check-syntax.js`) più
-      ricerca di accenti corrotti (`â€`, `Ã¨`…), per evitare di riscrivere i
-      file con PowerShell `Get-Content`/`Set-Content` rovinando gli accenti.
+- [x] CI di GitHub verde (dal commit 275f0df, 1.0.33). Lo stato delle run si
+      legge senza login: `https://api.github.com/repos/jacopofa92/YuGiOhGame/actions/runs`
+      (i log dei singoli test invece richiedono l'accesso). Azioni portate a
+      v5 e Node 24, come in locale.
+- [x] Controllo automatico pre-commit (`.githooks/pre-commit` →
+      `scripts/pre-commit.js`): sintassi dei .js in stage, accenti corrotti
+      nelle righe aggiunte, BOM, `cards.json` senza file generato. Su un
+      clone nuovo va attivato con `npm run hooks`.
 - [x] Multiplayer: il relay ora rifiuta azioni sconosciute, indici assurdi e
       mosse da turno (Evocare, attaccare, calare carte, avanzare di fase)
       fuori dal proprio turno (`validateGameAction` in `server/server.js`).
@@ -52,8 +54,11 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
       posto (nota falsa), 1045 ora blocca solo le Special Summon come da testo
       (`specialSummonBlockedFor`), 434 vieta Evocazioni scoperte e Special
       Summon nel turno (`noSummonTurn`, `DuelEngine.isSummonBannedThisTurn`).
-      Restano 52 carte con `missingEffectNote`: `grep missingEffectNote
-      data/cards.json` e cercare un altro gruppo con lo stesso bisogno.
+- [x] Tutti gli scostamenti reali dal testo chiusi (1.0.31-1.0.33). Restano
+      26 `missingEffectNote`, nessuno nella famiglia A: 18 promemoria su
+      limiti del motore e 8 carte in cui sceglie il motore (vedi CLAUDE.md,
+      "Carte con limiti noti"). Prossimo candidato: un meccanismo per far
+      scegliere a chi SUBISCE l'effetto (761, 873).
 - [ ] 6 PNG in `images/characters/avatarTrasparenza/` (e copie in `pedine/`) senza avatar corrispondente
       (Kaiba in Mantello Viola, soldato Grande Guerra, kaibaV2,
       setoKaiba_duelist Kingdom, setoKaiba_forbiddenMemories, yamiYugiV2):
@@ -71,9 +76,7 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
 - [ ] La lista di `<script>` è duplicata a mano in molte pagine HTML: spostarla
       in un unico file condiviso caricato da tutte.
 
-## In pausa
+## Battle City
 
-- [ ] Pedine di Battle City (attività sospesa dall'utente): riprendere da qui.
-      Stato: pedine SVG ricche + ritagli PNG col nome dell'avatar; tutti gli 8
-      Duellanti della mappa (incluso Joey) e il Rare Hunter hanno il ritaglio,
-      nessun lavoro concreto in sospeso. Vedi `PROJECT_MAP.md`.
+- [x] Pedine verificate: i 20 personaggi che possono comparire hanno il loro
+      PNG col nome dell'avatar, nessun ripiego sulla pedina generica.
