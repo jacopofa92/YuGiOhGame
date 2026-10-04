@@ -1291,15 +1291,14 @@
     // 1059 — Amuleto di Shabti / Charm of Shabti: "durante il turno di uno
     // dei due giocatori: puoi scartare questa carta; fino alla End Phase, i
     // mostri Guardiani della Tomba che controlli non possono essere
-    // distrutti in battaglia". Due momenti in cui il motore la offre:
+    // distrutti in battaglia". Tre momenti in cui il motore la offre:
     //  - dalla MANO quando l'avversario dichiara un attacco contro un tuo
     //    Guardiano della Tomba (onAttackDeclare: findTriggerCandidates guarda
     //    anche la mano, come per Kuriboh; consumeCandidateCard la scarta) —
     //    è il momento in cui l'effetto serve davvero;
     //  - dalla mano nella tua Main Phase, cliccandola (activate: activateCard
-    //    scarta da sé un mostro attivato dalla mano, come Thunder Dragon).
-    // Non in ogni istante del turno altrui in cui non succede nulla: per
-    // quello servirebbe una finestra di priorità a ogni cambio fase.
+    //    scarta da sé un mostro attivato dalla mano, come Thunder Dragon);
+    //  - dalla mano durante la Battle Phase avversaria (il terzo, più sotto).
     // La protezione è gameState.battleProtectionByName, letta da
     // cardIsIndestructibleByBattle in actions.js.
     const eGuardianoDellaTomba = (card) => !!(card && card.name && card.name.includes('Guardiani della Tomba'));
@@ -1308,6 +1307,15 @@
         gameState.battleProtectionByName.push({ owner: ctx.owner, turn: gameState.turn, nameIncludes: 'Guardiani della Tomba' });
         ctx.log('🏺 Amuleto di Shabti: fino alla End Phase i tuoi Guardiani della Tomba non possono essere distrutti in battaglia!');
     }
+    // Terzo momento: Effetto Veloce dalla MANO durante la Battle Phase
+    // dell'avversario (canRespondFromHand/activateFromHand), sia in risposta
+    // a una Catena sia nella finestra di priorità all'inizio della sua
+    // Battle Phase (DuelEngine.openPriorityWindow). Ristretto alla Battle
+    // Phase avversaria, e a quando la protezione non è già attiva: fuori da
+    // lì l'effetto non protegge da niente, e offrirlo a ogni Catena
+    // vorrebbe dire sprecarlo.
+    const giaProtetto = (owner) => (gameState.battleProtectionByName || [])
+        .some((p) => p.owner === owner && p.turn === gameState.turn && p.nameIncludes === 'Guardiani della Tomba');
     CardEffects.register(1059, {
         canActivate(ctx) {
             const campo = ctx.field(ctx.owner);
@@ -1318,7 +1326,17 @@
             return campo.some((s) => s && !s.isFaceDown && eGuardianoDellaTomba(s.card));
         },
         activate(ctx) { amuletoDiShabti(ctx); },
-        onAttackDeclare(ctx) { amuletoDiShabti(ctx); }
+        onAttackDeclare(ctx) { amuletoDiShabti(ctx); },
+        canRespondFromHand: true,
+        canActivateFromHand(ctx) {
+            if (gameState.phase !== 'battle' || gameState.currentPlayer === ctx.owner) return false;
+            if (giaProtetto(ctx.owner)) return false;
+            return ctx.field(ctx.owner).some((s) => s && !s.isFaceDown && eGuardianoDellaTomba(s.card));
+        },
+        activateFromHand(ctx) { amuletoDiShabti(ctx); },
+        // Il bot la usa all'inizio della Battle Phase avversaria: è proprio
+        // il momento per cui esiste (canActivateFromHand fa già il resto).
+        botInFinestraDiPriorita: true
     });
 
     // ================================================================

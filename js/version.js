@@ -32,6 +32,11 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.39 — Gli Effetti Veloci si usano anche quando l'avversario non fa
+ *   niente: nel suo turno, in Standby, all'inizio della Battle Phase e
+ *   prima della fine del turno ti viene chiesto se vuoi attivarli (Ninja
+ *   d'Assalto, Spada Sigillante di Orichalcos, Amuleto di Shabti). La Spada,
+ *   cliccata nel tuo turno, ti fa scegliere quale abilità usare.
  * 1.0.38 — Oppressione Reale scoperta la può usare anche l'avversario di
  *   chi la controlla, pagando lui: "uno dei due giocatori", come da testo.
  * 1.0.37 — Le carte che proteggono dal "bersaglio" funzionano contro tutto:
@@ -596,4 +601,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.38';
+window.GAME_VERSION = '1.0.39';

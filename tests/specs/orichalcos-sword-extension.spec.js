@@ -22,6 +22,10 @@ module.exports = {
             sword.equippedToUid = 'equipped-1';
             gameState.playerFieldSpell = { card: someFieldSpell, isFaceDown: false };
             gameState.orichalcosExtendedNegationUidsFor = { player: new Set(), bot: new Set() };
+            // Mano vuota: niente Effetto Veloce disponibile, quindi il click
+            // va dritto all'estensione invece di chiedere quale abilità usare
+            // (la scelta fra le due è provata in finestra-di-priorita.spec.js).
+            gameState.playerHand = [];
 
             const ctx = DuelEngine.makeContext('player', { card: sword, zone: 'st', index: 0 });
             const canExtend = DuelEngine.getDefinition(396).canActivate(ctx);

@@ -4293,8 +4293,7 @@
     "type": "spell",
     "subtype": "equip",
     "effect": "Gli effetti del mostro equipaggiato vengono negati. Se hai una carta nella tua Field Zone: puoi scegliere come bersaglio 1 mostro Effetto che controlli; quel mostro guadagna questo effetto fino alla fine del turno del tuo avversario (solo una volta per turno). Effetto Veloce, una volta per turno: puoi mandare 1 carta dalla mano al Cimitero, poi scegli come bersaglio 1 carta scoperta sul Terreno; distruggila.",
-    "artOnly": true,
-    "missingEffectNote": "Tutte e tre le clausole sono implementate. Come ogni Effetto Veloce di questo motore, risponde solo quando una Chain e' gia' aperta da un'attivazione: nessuna fase apre una finestra di priorita' se non sta succedendo nulla."
+    "artOnly": true
   },
   {
     "id": 397,
@@ -5026,8 +5025,7 @@
     "attack": 1700,
     "defense": 1200,
     "effect": "Effetto Veloce: puoi bandire 2 mostri OSCURITÀ dal tuo Cimitero; bandisci questa carta scoperta fino alla End Phase. Puoi usare questo effetto solo una volta per turno.",
-    "artOnly": true,
-    "missingEffectNote": "Implementata come vero Effetto Veloce. Come ogni Effetto Veloce di questo motore, risponde solo quando una Chain e' gia' aperta da un'attivazione: nessuna fase apre una finestra di priorita' se non sta succedendo nulla."
+    "artOnly": true
   },
   {
     "id": 460,
@@ -12337,7 +12335,6 @@
     "attack": 100,
     "defense": 100,
     "effect": "Durante il turno di uno dei due giocatori: puoi scartare questa carta; fino alla End Phase, i mostri \"Custode della Tomba\" che controlli non possono essere distrutti in battaglia.",
-    "missingEffectNote": "Si attiva dalla mano in due momenti: quando l'avversario dichiara un attacco contro un tuo Guardiano della Tomba, e nella tua Main Phase. Non in ogni istante del turno altrui in cui non succede nulla: servirebbe una finestra di priorità a ogni cambio fase.",
     "artOnly": true
   },
   {

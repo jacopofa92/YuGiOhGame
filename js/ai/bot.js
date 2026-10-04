@@ -2,7 +2,14 @@ function botTurn() {
     clearPhaseTransitionTimeout();
     enterDrawPhase(false, () => {
         enterStandbyPhase(false);
-        phaseTransitionTimeout = setTimeout(() => {
+        // Finestra di priorità per il giocatore durante la Standby Phase del
+        // bot (DuelEngine.openPriorityWindow): se ha un Effetto Veloce
+        // utilizzabile glielo offre, altrimenti prosegue subito. Il resto
+        // del turno parte solo a finestra chiusa.
+        const dopoLaStandby = (fn) => (window.DuelEngine && typeof DuelEngine.openPriorityWindow === 'function')
+            ? DuelEngine.openPriorityWindow('player', 'standby', fn)
+            : fn();
+        dopoLaStandby(() => { phaseTransitionTimeout = setTimeout(() => {
             enterMainPhase1();
             // PRIMA di Evocare: se in mano c'è una Magia come Buco Nero
             // (distrugge anche il proprio Terreno) e vale davvero la pena
@@ -76,8 +83,10 @@ function botTurn() {
                     // Attende che il banner "Battaglia" (stesso stile e stessa
                     // durata delle altre fasi, ~1.3s) finisca prima di far
                     // partire gli attacchi del bot — e, di nuovo, che non ci
-                    // sia una cinematica ancora a schermo.
-                    return attendiPoi(1400)
+                    // sia una cinematica ancora a schermo. Prima ancora,
+                    // l'eventuale Effetto Veloce del giocatore all'inizio
+                    // della Battle Phase deve essersi risolto.
+                    return waitForPriorityWindow().then(() => attendiPoi(1400))
                         .then(() => {
                             if (gameState.currentPlayer !== 'bot' || gameState.gameOver) return;
                             // Anche qui: un'Evocazione Speciale durante la
@@ -110,7 +119,26 @@ function botTurn() {
                                 });
                         });
                 });
-        }, botMs(500));
+        }, botMs(500)); });
+    });
+}
+
+/**
+ * Si risolve quando la finestra di priorità "a vuoto" (un Effetto Veloce
+ * del giocatore all'inizio della Battle Phase del bot, vedi
+ * DuelEngine.openPriorityWindow) è chiusa, Catena compresa. Senza, il bot
+ * attaccherebbe mentre la Catena aperta dal giocatore si sta ancora
+ * risolvendo: il modale si chiude al click, ma la risoluzione dura ancora
+ * qualche secondo.
+ */
+function waitForPriorityWindow() {
+    return new Promise((resolve) => {
+        const poll = () => {
+            const aperta = window.DuelEngine && typeof DuelEngine.isPriorityWindowOpen === 'function' && DuelEngine.isPriorityWindowOpen();
+            if (aperta) { setTimeout(poll, 150); return; }
+            resolve();
+        };
+        poll();
     });
 }
 

@@ -1103,7 +1103,11 @@
         window.DuelEngineUI.openCardListPicker(candidates, {
             title: (options && options.title) || '🗑️ Scarta una carta',
             text: (options && options.text) || 'Scegli quale carta scartare dalla mano.',
-            onSelect: (card) => doDiscard(card)
+            onSelect: (card) => doDiscard(card),
+            // Facoltativo: serve a chi ha chiesto di essere aspettato
+            // (attendiScelta), che deve sapere anche quando il giocatore
+            // chiude senza scartare.
+            onCancel: options && typeof options.onCancel === 'function' ? options.onCancel : undefined
         });
         return true;
     }

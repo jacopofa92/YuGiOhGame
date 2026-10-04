@@ -3688,14 +3688,15 @@ priorità o richiedono un refactor ampio):
 ## Carte con limiti noti (da riprendere)
 
 **Fonte di verità: `grep missingEffectNote data/cards.json`, e nient'altro.**
-6 risultati (erano 55 dopo la revisione completa descritta più sopra,
+3 risultati (erano 55 dopo la revisione completa descritta più sopra,
 poi 52 contati di nuovo; chiuse in tre giri 142/511/512/899, poi
 420/523/772/880/901/1040/1043/1113/1114/1121, poi tutte le 17 della
 famiglia A, poi 873 con la scelta di chi subisce, poi le 6 della
 famiglia C con le scelte che la battaglia aspetta, poi 761 e 890 col
 censimento dei ritorni in mano e degli spostamenti dal Cimitero, poi
 dieci note sulla copertura del checkpoint di targeting con l'audit
-1.0.37, poi 882 con le carte usabili da entrambi (1.0.38) — vedi il bullet
+1.0.37, poi 882 con le carte usabili da entrambi (1.0.38), poi
+396/459/1059 con la finestra di priorità (1.0.39) — vedi il bullet
 «Meccanismi generici per i missingEffectNote» qui sopra e l'aggiornamento
 1.0.35 sulla regola di `onAttackDeclare`). Questa
 sezione è solo una mappa per orientarsi: ogni carta porta la propria
@@ -3722,8 +3723,8 @@ sua mano vera) e allinea l'altro con la propria fotografia di stato.
 **Usarlo per ogni futura carta "l'avversario scarta 1 carta a sua
 scelta"** (761, 873; spec `scelta-di-chi-subisce.spec.js`).
 
-**B — implementata, il limite è del motore (6 carte).** La nota è un
-promemoria, non lavoro arretrato: 192, 235, 396, 459, 622, 1059.
+**B — implementata, il limite è del motore (3 carte).** La nota è un
+promemoria, non lavoro arretrato: 192, 235, 622.
 
 *Carte usabili da "uno dei due giocatori"* (chiuso in 1.0.38):
 `def.usableByEitherPlayer` rende una carta SCOPERTA sul Terreno di chi la
@@ -3768,15 +3769,30 @@ o la suite fallisce.** Il limite che resta è di forma, non di
 copertura: il checkpoint è SINCRONO, quindi una reazione che sceglie un
 nuovo bersaglio (235, metà Magia/Trappola di 622) sceglie da sola.
 
-L'altro limite condiviso, deliberato:
-
-*Effetto Veloce solo dentro una Chain già aperta*
-(`findSpellTrapQuickEffectCandidates`/`findMonsterQuickEffectCandidates`):
-nessuna carta può attivarsi "a piacere" in un momento in cui non sta
-succedendo nulla, e nessuna può attivarsi dalla MANO durante il turno
-altrui. Servirebbe una vera finestra di priorità ad ogni cambio fase —
-un cambiamento al cuore del game loop, da fare solo su richiesta
-esplicita.
+*Finestra di priorità per gli Effetti Veloci* (chiuso in 1.0.39, su
+richiesta esplicita): `DuelEngine.openPriorityWindow(chi, momento, onDone)`
+dà a chi NON è di turno un momento per un Effetto Veloce anche quando
+nessuno ha attivato nulla — in TRE punti del turno, non ad ogni cambio
+fase: Standby (`enterStandbyPhase` per il giocatore, `botTurn` per il
+bot), inizio Battle Phase (`enterBattlePhase`; il bot aspetta con
+`waitForPriorityWindow` prima di attaccare, `executeAttack` rifiuta
+mentre è aperta) e fine turno (`passaIlTurnoDopoLaPriorita`). Candidati:
+gli stessi Effetti Veloci offerti in risposta a una Catena (mostri e
+Magie/Trappole scoperte con `canRespondAsQuickEffect`, mano con
+`canRespondFromHand`) — **non** le Trappole coperte né le Magie Veloci
+in mano, apposta, per non trasformare ogni passaggio di fase in una
+domanda. Senza candidati `onDone` parte SUBITO e in modo sincrono, quindi
+un duello senza queste carte scorre esattamente come prima. Un rifiuto
+non si ripropone nello stesso turno (`gameState.quickEffectsDeclined`).
+Il bot ci usa solo le carte che lo dichiarano utili
+(`def.botInFinestraDiPriorita`, booleano o funzione(ctx)). **Spenta in
+Multiplayer**: i due client non hanno un accordo su quando aprirla —
+lì un Effetto Veloce resta utilizzabile solo in risposta a una Catena.
+Due difetti chiusi insieme: un mostro che usa il suo Effetto Veloce in
+risposta ora risulta "già usato nel turno" (`segnaUsoEffettoMostro`), e
+la carta che apre una Catena non viene più riproposta come risposta a
+sé stessa (la Spada 396, il cui "una volta per turno" scatta alla
+risoluzione, lo faceva). Spec: `finestra-di-priorita.spec.js`.
 
 **C — la scelta la fa il motore, non il giocatore: nessuna carta.** Le
 ultime sei (100, 883, 885, 889, 895, 1120) sono state chiuse con

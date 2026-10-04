@@ -42,7 +42,16 @@ module.exports = {
         // 2) activateAsQuickEffect: scarta 1 carta, distrugge un mostro
         // dell'avversario (priorità al campo avversario), rispetta il
         // limite una volta per turno.
-        const r2 = await t.evaluate(() => {
+        const scegliPrimoBersaglio = async () => {
+            await t.page.waitForFunction(() => document.getElementById('cardListPickerModal').classList.contains('open'), null, { timeout: 5000 });
+            return t.evaluate(() => {
+                const voci = document.querySelectorAll('#cardListPickerModal .card-list-item');
+                voci[0].click();
+                return voci.length;
+            });
+        };
+        const r2 = {};
+        await t.evaluate(() => {
             const sword2 = { ...cardDatabase.find((c) => c.id === 396), uid: 'sword-2', equippedToOwner: 'player', equippedToIndex: 0, equippedToUid: 'monster-2' };
             const monster2 = { ...cardDatabase.find((c) => c.type === 'monster' && c.subtype === 'effect' && !c.extraDeck), uid: 'monster-2' };
             const oppMonster = { ...cardDatabase.find((c) => c.type === 'monster' && !c.extraDeck), uid: 'oppmon-2' };
@@ -54,15 +63,18 @@ module.exports = {
             gameState.botMonsterField = [{ card: oppMonster, position: 'attack', isFaceDown: false }, null, null, null, null];
 
             DuelEngine.getDefinition(396).activateAsQuickEffect(DuelEngine.makeContext('player', { card: sword2 }));
-            const secondAttemptAllowed = DuelEngine.getDefinition(396).canActivateAsQuickEffect(DuelEngine.makeContext('player', { card: sword2 }));
-
-            return {
-                handEmpty: gameState.playerHand.length === 0,
-                fodderInGraveyard: gameState.playerGraveyard.some((c) => c.uid === 'fodder-2'),
-                oppMonsterDestroyed: !gameState.botMonsterField.some((s) => s && s.card.uid === 'oppmon-2'),
-                secondAttemptAllowed
-            };
         });
+        // Il bersaglio lo sceglie il giocatore: le carte avversarie sono in
+        // testa alla lista, si clicca la prima.
+        const nomiR2 = await scegliPrimoBersaglio();
+        const r2b = await t.evaluate(() => ({
+            handEmpty: gameState.playerHand.length === 0,
+            fodderInGraveyard: gameState.playerGraveyard.some((c) => c.uid === 'fodder-2'),
+            oppMonsterDestroyed: !gameState.botMonsterField.some((s) => s && s.card.uid === 'oppmon-2'),
+            secondAttemptAllowed: DuelEngine.getDefinition(396).canActivateAsQuickEffect(DuelEngine.makeContext('player', { card: gameState.playerSTField[0].card }))
+        }));
+        Object.assign(r2, r2b);
+        t.assert(nomiR2 >= 2, `La Spada propone più bersagli fra cui scegliere (${nomiR2})`);
         t.assert(r2.handEmpty, 'Deve scartare la carta dalla mano come costo');
         t.assert(r2.fodderInGraveyard, 'La carta scartata deve finire nel Cimitero');
         t.assert(r2.oppMonsterDestroyed, "Deve distruggere il mostro dell'avversario (priorità al campo avversario)");
@@ -72,7 +84,7 @@ module.exports = {
         // carta scoperta in zona Magia/Trappola (il testo reale copre "1
         // carta scoperta sul Terreno", non solo i mostri — a differenza del
         // checkpoint di targeting condiviso, che legge solo la zona Mostro).
-        const r3 = await t.evaluate(() => {
+        await t.evaluate(() => {
             const sword3 = { ...cardDatabase.find((c) => c.id === 396), uid: 'sword-3', equippedToOwner: 'player', equippedToIndex: 0, equippedToUid: 'monster-3' };
             const monster3 = { ...cardDatabase.find((c) => c.type === 'monster' && c.subtype === 'effect' && !c.extraDeck), uid: 'monster-3' };
             const oppSpell = { ...cardDatabase.find((c) => c.type === 'spell' && c.subtype === 'continuous'), uid: 'oppspell-3' };
@@ -86,12 +98,12 @@ module.exports = {
             gameState.botGraveyard = [];
 
             DuelEngine.getDefinition(396).activateAsQuickEffect(DuelEngine.makeContext('player', { card: sword3 }));
-
-            return {
-                oppSpellDestroyed: !gameState.botSTField.some((s) => s && s.card.uid === 'oppspell-3'),
-                oppSpellInGraveyard: gameState.botGraveyard.some((c) => c.uid === 'oppspell-3')
-            };
         });
+        await scegliPrimoBersaglio();
+        const r3 = await t.evaluate(() => ({
+            oppSpellDestroyed: !gameState.botSTField.some((s) => s && s.card.uid === 'oppspell-3'),
+            oppSpellInGraveyard: gameState.botGraveyard.some((c) => c.uid === 'oppspell-3')
+        }));
         t.assert(r3.oppSpellDestroyed, 'Senza mostri scoperti disponibili, deve poter distruggere una Magia/Trappola scoperta dell\'avversario');
         t.assert(r3.oppSpellInGraveyard, 'La carta distrutta deve finire nel Cimitero');
 

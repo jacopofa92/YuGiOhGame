@@ -56,9 +56,10 @@ function handleCardClickInner(card, sourceType, sourceIndex, sourceOwner, isFace
     const isMainPhase = gameState.phase === 'main1' || gameState.phase === 'main2';
     // Le Magie Veloci (subtype 'quick-play') sono per testo reale attivabili
     // in QUALUNQUE momento in cui il giocatore avrebbe priorità, non solo in
-    // Main Phase — a differenza di una Magia Normale. Questo motore non
-    // modella una vera finestra di priorità ad ogni fase (vedi il limite
-    // "Effetto Veloce" già documentato in CLAUDE.md), ma almeno la Battle
+    // Main Phase — a differenza di una Magia Normale. La finestra di
+    // priorità a vuoto del turno avversario (DuelEngine.openPriorityWindow)
+    // offre solo Effetti Veloci di carte già scoperte o dalla mano con
+    // canRespondFromHand, non Magie Veloci da giocare (vedi CLAUDE.md), ma almeno la Battle
     // Phase del proprio turno è un momento reale e comune in cui il
     // giocatore le vorrebbe giocare (es. Tifone dello Spazio Mistico prima
     // del Damage Step, Controllore del Nemico per cambiare Posizione a un
@@ -1938,6 +1939,15 @@ function changeMonsterPosition(slotIndex) {
  * "l'attacco è già stato dichiarato, può procedere?").
  */
 function executeAttack(attackerIndex, targetIndex) {
+    // Niente attacchi con una Catena o una finestra di priorità ancora
+    // aperta (es. il bot ha attivato un Effetto Veloce all'inizio della tua
+    // Battle Phase, vedi DuelEngine.openPriorityWindow): l'attacco
+    // partirebbe nel mezzo della sua risoluzione. Stessa guardia di
+    // nextPhase()/endTurn() in game-flow.js.
+    if (window.DuelEngine && (DuelEngine.isChainActive() || (DuelEngine.isPriorityWindowOpen && DuelEngine.isPriorityWindowOpen()))) {
+        addToLog('⏳ Aspetta che la Catena si risolva prima di attaccare.');
+        return;
+    }
     // Il pannello informazioni carta (hover/tap su una carta qualsiasi)
     // può restare aperto da prima del trascinamento — richiesta esplicita
     // dell'utente: dichiarare un attacco (bersaglio mostro o diretto) lo
@@ -3552,13 +3562,29 @@ window.DuelEngineUI = {
      * propone solo la prima — una vera scelta multipla è un'estensione
      * futura di questo stesso file.
      */
-    promptDefenderResponse(candidates, respond, triggerCard) {
+    promptDefenderResponse(candidates, respond, triggerCard, testoMomento, triggerIsOwn) {
         const choice = candidates[0];
+        // Finestra di priorità "a vuoto" (openPriorityWindow, duel-engine.js):
+        // nessuno ha attivato nulla, quindi non c'è una carta a cui
+        // rispondere — si dice in che momento del turno ci si trova.
+        if (testoMomento) {
+            this.openActivateModal(choice.card, {
+                title: '⚡ Effetto Veloce',
+                text: `${testoMomento}. Vuoi attivare ${choice.card.name}?`,
+                onConfirm: () => respond(choice),
+                onCancel: () => respond(null)
+            });
+            return;
+        }
         // #activateModalText è un <p> semplice (nessun white-space: pre-line
         // in CSS): un "\n" collasserebbe comunque in uno spazio, quindi il
         // testo è pensato per restare leggibile anche come un'unica frase
         // continua, non per andare a capo davvero.
-        const text = triggerCard
+        // triggerIsOwn: in cima alla Catena c'è una carta TUA (l'avversario ha
+        // passato e la priorità è tornata a te).
+        const text = (triggerCard && triggerIsOwn)
+            ? `In cima alla Catena c'è la tua ${triggerCard.name} e l'avversario non ha risposto. Vuoi aggiungere anche ${choice.card.name}?`
+            : triggerCard
             ? `L'avversario ha attivato ${triggerCard.name}: «${((typeof formatCardText === 'function') ? formatCardText(triggerCard.effect, triggerCard) : triggerCard.effect) || 'nessuna descrizione disponibile'}». Vuoi rispondere con ${choice.card.name}?`
             : `L'avversario ha agito. Vuoi attivare ${choice.card.name} in risposta?`;
         // `triggerCard` è presente SOLO per le risposte dentro una vera

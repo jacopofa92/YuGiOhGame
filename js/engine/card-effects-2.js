@@ -2543,12 +2543,13 @@
     // quindi nessuna ambiguità su quale invocare risponde da una Chain
     // già aperta o da un click manuale in Main Phase — stesso identico
     // canActivate/activate in entrambi i casi. Il "una volta per turno"
-    // è già garantito da gameState.usedIgnitionThisTurn (lo stesso gate
-    // di ogni altro effetto Ignition, riusato invariato da
-    // findMonsterQuickEffectCandidates). SEMPLIFICAZIONE residua, stesso
-    // standard di id 396: risponde solo quando una Chain è già aperta da
-    // un'attivazione altrui (o propria), non in ogni momento teorico del
-    // turno avversario in cui non succede nulla.
+    // è gameState.usedIgnitionThisTurn (lo stesso gate di ogni effetto
+    // Ignition), segnato anche quando risponde a una Catena o usa la
+    // finestra di priorità (segnaUsoEffettoMostro, duel-engine.js). Oltre
+    // che in risposta a una Catena, la si può usare nella finestra di
+    // priorità a vuoto del turno avversario (DuelEngine.openPriorityWindow).
+    // Il bot non la usa lì (niente botInFinestraDiPriorita): bandirsi senza
+    // una minaccia da schivare brucerebbe il costo per niente.
     // ================================================================
     CardEffects.register(459, {
         canRespondAsQuickEffect: true,

@@ -73,11 +73,11 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
       Great Dezard e Fushioh Richie.
 - [x] "Uno dei due giocatori può pagare" (882, 1.0.38):
       `usableByEitherPlayer`.
-- [ ] Note restanti (6): finestra di priorità a ogni cambio fase per gli
-      Effetti Veloci (396, 459, 1059: la più rischiosa, tocca il ciclo di
-      gioco, solo su richiesta esplicita); 192 (immunità ai soli effetti
-      mirati); 235 e la metà Magia/Trappola di 622 (checkpoint sincrono,
-      scelgono da sole).
+- [x] Finestra di priorità per gli Effetti Veloci (396, 459, 1059, 1.0.39):
+      `DuelEngine.openPriorityWindow` in Standby, inizio Battle Phase e fine
+      turno dell'avversario; spenta in Multiplayer.
+- [ ] Note restanti (3): 192 (immunità ai soli effetti mirati); 235 e la
+      metà Magia/Trappola di 622 (checkpoint sincrono, scelgono da sole).
 - [ ] 6 PNG in `images/characters/avatarTrasparenza/` (e copie in `pedine/`) senza avatar corrispondente
       (Kaiba in Mantello Viola, soldato Grande Guerra, kaibaV2,
       setoKaiba_duelist Kingdom, setoKaiba_forbiddenMemories, yamiYugiV2):

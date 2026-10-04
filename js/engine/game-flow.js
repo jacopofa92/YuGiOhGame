@@ -1335,7 +1335,15 @@ function enterStandbyPhase(autoAdvance = true) {
     }
     updateUI();
     if (autoAdvance) {
-        schedulePhaseTransition(() => enterMainPhase1(), 500);
+        // Finestra di priorità per chi non è di turno (vedi
+        // passaIlTurnoDopoLaPriorita più sotto): senza candidati prosegue
+        // subito. Nel turno del bot (autoAdvance false) la apre botTurn.
+        const nonDiTurno = gameState.currentPlayer === 'player' ? 'bot' : 'player';
+        if (window.DuelEngine && typeof DuelEngine.openPriorityWindow === 'function') {
+            DuelEngine.openPriorityWindow(nonDiTurno, 'standby', () => schedulePhaseTransition(() => enterMainPhase1(), 500));
+        } else {
+            schedulePhaseTransition(() => enterMainPhase1(), 500);
+        }
     }
 }
 
@@ -1413,6 +1421,15 @@ function enterBattlePhase() {
         DuelEngine.firePhaseTrigger('onBattlePhaseStart', 'bot');
     }
     updateUI();
+    // Finestra di priorità per chi non è di turno, prima degli attacchi
+    // (vedi passaIlTurnoDopoLaPriorita più sotto). Il bot, nel suo turno,
+    // aspetta che si chiuda prima di attaccare (DuelEngine.isPriorityWindowOpen,
+    // botTurn in bot.js); il giocatore non può dichiarare attacchi mentre il
+    // modale o la Catena sono aperti.
+    if (window.DuelEngine && typeof DuelEngine.openPriorityWindow === 'function') {
+        const nonDiTurno = gameState.currentPlayer === 'player' ? 'bot' : 'player';
+        DuelEngine.openPriorityWindow(nonDiTurno, 'battle', () => updateUI());
+    }
 }
 
 /**
@@ -1679,7 +1696,7 @@ function enterEndPhase() {
     if (excess > 0) {
         if (gameState.currentPlayer === 'player' && typeof startHandDiscardSelection === 'function') {
             startHandDiscardSelection(excess, () => {
-                schedulePhaseTransition(changeTurn, 700);
+                passaIlTurnoDopoLaPriorita(700);
             });
             return;
         }
@@ -1696,7 +1713,23 @@ function enterEndPhase() {
         }
     }
 
-    schedulePhaseTransition(changeTurn, 1500);
+    passaIlTurnoDopoLaPriorita(1500);
+}
+
+/**
+ * Prima che il turno passi, chi NON è di turno ha un'ultima occasione per
+ * un Effetto Veloce (DuelEngine.openPriorityWindow, duel-engine.js): se ne
+ * ha uno utilizzabile gli viene offerto, altrimenti si prosegue subito e
+ * il cambio turno parte esattamente come prima. Uno dei tre momenti della
+ * finestra di priorità, insieme a Standby Phase e inizio Battle Phase.
+ */
+function passaIlTurnoDopoLaPriorita(delay) {
+    const nonDiTurno = gameState.currentPlayer === 'player' ? 'bot' : 'player';
+    if (window.DuelEngine && typeof DuelEngine.openPriorityWindow === 'function') {
+        DuelEngine.openPriorityWindow(nonDiTurno, 'end', () => schedulePhaseTransition(changeTurn, delay));
+        return;
+    }
+    schedulePhaseTransition(changeTurn, delay);
 }
 
 /**

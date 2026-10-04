@@ -3385,7 +3385,7 @@
      * risposte possibili mentre di là ne ha una. Anche "non ho nulla da
      * giocare" deve arrivare da lui.
      */
-    function askResponder(responderOwner, candidates, callback, triggerCard) {
+    function askResponder(responderOwner, candidates, callback, triggerCard, testoMomento, triggerIsOwn) {
         if (isRemoteResponder(responderOwner)) {
             awaitRemoteChainDecision(candidates, callback);
             return;
@@ -3398,7 +3398,7 @@
         offerChoice(responderOwner, candidates, (choice) => {
             if (isMultiplayer()) broadcastChainDecision(choice);
             callback(choice);
-        }, triggerCard);
+        }, triggerCard, testoMomento, triggerIsOwn);
     }
 
     /**
@@ -3560,7 +3560,7 @@
      * viene quindi mai raggiunto — l'euristica dell'IA non decide più per
      * una persona vera.
      */
-    function offerChoice(responderOwner, candidates, callback, triggerCard) {
+    function offerChoice(responderOwner, candidates, callback, triggerCard, testoMomento, triggerIsOwn) {
         if (responderOwner === 'bot') {
             // Decisione delegata a BotAI (js/ai/ai-controller.js — livello
             // di difficoltà attivo in gameState.botDifficulty), con ripiego
@@ -3571,7 +3571,7 @@
             // Chain in pratica).
             callback(window.BotAI ? BotAI.chooseChainResponse(candidates) : candidates[0]);
         } else if (window.DuelEngineUI && typeof window.DuelEngineUI.promptDefenderResponse === 'function') {
-            window.DuelEngineUI.promptDefenderResponse(candidates, callback, triggerCard);
+            window.DuelEngineUI.promptDefenderResponse(candidates, callback, triggerCard, testoMomento, triggerIsOwn);
         } else {
             // Nessuna UI disponibile: per sicurezza non attiva nulla,
             // invece di bloccare il duello.
@@ -4218,6 +4218,120 @@
     }
 
     /**
+     * Finestra di priorità "a vuoto": in un momento in cui nessuno ha
+     * attivato nulla, chi NON è di turno può usare un Effetto Veloce.
+     *
+     * Prima di questa funzione un Effetto Veloce (Ninja d'Assalto id 459,
+     * l'Effetto Veloce della Spada Sigillante di Orichalcos id 396,
+     * l'Amuleto di Shabti id 1059 dalla mano) poteva partire solo in
+     * risposta a un'attivazione altrui già in corso: se l'avversario non
+     * attivava niente, il turno passava senza che ci fosse mai un momento
+     * per usarlo. Il gioco vero apre la priorità ad ogni passaggio di fase.
+     *
+     * Qui la si apre in TRE momenti del turno, scelti perché sono quelli in
+     * cui un Effetto Veloce serve davvero e per non riempire il turno di
+     * domande: Standby Phase, inizio della Battle Phase, End Phase (vedi i
+     * chiamanti in game-flow.js e bot.js). E SOLO se chi risponde ha
+     * davvero un candidato: senza, `onDone` parte subito e in modo
+     * SINCRONO, cioè il turno scorre esattamente come prima. I candidati
+     * sono gli stessi Effetti Veloci già offerti in risposta a una Catena
+     * (mostri, Magie/Trappole scoperte, carte in mano con canRespondFromHand)
+     * — NON le Trappole coperte: offrirle ad ogni passaggio di fase
+     * cambierebbe il ritmo di ogni duello, e il bot le brucerebbe a vuoto.
+     *
+     * Se chi risponde attiva qualcosa, la sua attivazione diventa il primo
+     * link di una Catena vera (openActivationWindow): l'altro può
+     * rispondere come sempre, e `onDone` parte a Catena risolta.
+     *
+     * Spenta in Multiplayer: i due client non si accordano su quando
+     * aprirla (le fasi le avanza chi è di turno), stessa scelta già fatta
+     * per la seconda finestra di risposta alle Evocazioni.
+     *
+     * `momento` ('standby' | 'battle' | 'end') serve al testo del prompt.
+     */
+    let priorityWindowOpen = false;
+    const PRIORITY_MOMENT_TEXT = {
+        standby: 'durante la Standby Phase',
+        battle: 'all\'inizio della Battle Phase',
+        end: 'prima della fine del turno'
+    };
+    function openPriorityWindow(responderOwner, momento, onDone) {
+        const finish = typeof onDone === 'function' ? onDone : function () {};
+        if (isMultiplayer() || gameState.gameOver || priorityWindowOpen || isChainActive()) { finish(); return; }
+        const usati = new Set();
+        let candidates = [
+            ...findMonsterQuickEffectCandidates(responderOwner, usati),
+            ...findSpellTrapQuickEffectCandidates(responderOwner, usati),
+            ...findHandQuickEffectCandidates(responderOwner, usati)
+        ];
+        // Il bot, in una finestra a vuoto, usa solo gli Effetti Veloci che
+        // lo dichiarano utili in quel momento (`def.botInFinestraDiPriorita`,
+        // booleano o funzione(ctx)): un effetto pensato per schivare una
+        // rimozione (Ninja d'Assalto si bandisce) usato senza motivo
+        // brucerebbe il costo a vuoto. In risposta a una Catena il bot
+        // continua a decidere come sempre.
+        if (responderOwner === 'bot') {
+            candidates = candidates.filter((c) => {
+                const regola = c.def && c.def.botInFinestraDiPriorita;
+                if (typeof regola === 'function') return !!regola(makeContext('bot', { card: c.card, zone: c.zone, index: c.index }));
+                return !!regola;
+            });
+        }
+        // Una carta rifiutata non si ripropone fino alla fine del turno: con
+        // Ninja d'Assalto in campo, altrimenti, ogni turno del bot farebbe la
+        // stessa domanda tre volte (Standby, Battle Phase, End Phase).
+        const rifiutate = (gameState.quickEffectsDeclined && gameState.quickEffectsDeclined.turn === gameState.turn)
+            ? gameState.quickEffectsDeclined.uids : new Set();
+        candidates = candidates.filter((c) => !rifiutate.has(c.card.uid));
+        if (candidates.length === 0) { finish(); return; }
+        priorityWindowOpen = true;
+        const chiudi = () => { priorityWindowOpen = false; finish(); };
+        const ricordaRifiuto = () => {
+            if (!gameState.quickEffectsDeclined || gameState.quickEffectsDeclined.turn !== gameState.turn) {
+                gameState.quickEffectsDeclined = { turn: gameState.turn, uids: new Set() };
+            }
+            candidates.forEach((c) => gameState.quickEffectsDeclined.uids.add(c.card.uid));
+        };
+        const testo = `${responderOwner === 'player' ? 'Il turno dell\'avversario è' : 'Il tuo turno è'} ${PRIORITY_MOMENT_TEXT[momento] || 'a un passaggio di fase'}`;
+        askResponder(responderOwner, candidates, (choice) => {
+            if (!choice) { ricordaRifiuto(); chiudi(); return; }
+            consumeCandidateCard(responderOwner, choice);
+            segnaUsoEffettoMostro(choice);
+            if (window.FX) FX.playCardActivateCenterScreen(choice.card);
+            addToLog(`⚡ ${responderOwner === 'player' ? 'Attivi' : 'Il bot attiva'} ${choice.card.name} (Effetto Veloce)!`);
+            openActivationWindow({
+                owner: responderOwner,
+                card: choice.card,
+                handlerName: choice.handEffect ? 'activateFromHand' : (choice.quickEffect ? 'activateAsQuickEffect' : 'activate'),
+                def: choice.def,
+                ctx: makeContext(responderOwner, { card: choice.card, zone: choice.zone, index: choice.index }),
+                isManualActivation: true,
+                alreadyAnnounced: true,
+                activatedAt: Date.now()
+            }, chiudi);
+        }, null, testo);
+    }
+
+    /**
+     * Un mostro che usa il suo effetto fuori da activateCard (un Effetto
+     * Veloce in risposta, o in una finestra di priorità) deve comunque
+     * risultare "già usato in questo turno": canActivate lo legge da
+     * gameState.usedIgnitionThisTurn, che finora segnava SOLO activateCard
+     * — per cui Ninja d'Assalto (id 459, "una sola volta per turno")
+     * poteva rispondere a ogni Catena dello stesso turno.
+     */
+    function segnaUsoEffettoMostro(choice) {
+        if (!choice || choice.zone !== 'monster' || !choice.card) return;
+        gameState.usedIgnitionThisTurn = gameState.usedIgnitionThisTurn || {};
+        gameState.usedIgnitionThisTurn[choice.card.uid] = true;
+    }
+
+    /** Vero mentre una finestra di priorità a vuoto è aperta (Catena compresa): il bot la aspetta. */
+    function isPriorityWindowOpen() {
+        return priorityWindowOpen;
+    }
+
+    /**
      * Apre la finestra di priorità dopo un'attivazione MANUALE (Magia,
      * Trappola, effetto Ignition — vedi activateCard più sotto): il link
      * `initialLink` (l'attivazione stessa, già "pagata"/spostata di zona)
@@ -4251,6 +4365,13 @@
         if (typeof renderChainStack === 'function') renderChainStack();
 
         const usedUidsBySide = { player: new Set(), bot: new Set() };
+        // La carta che ha aperto la Catena è già un suo link: non può
+        // rispondere a sé stessa. Senza, una carta che RESTA in campo e il
+        // cui limite "una volta per turno" scatta solo alla risoluzione
+        // (l'Effetto Veloce della Spada Sigillante di Orichalcos, id 396)
+        // veniva riproposta a chi l'aveva appena attivata, appena
+        // l'avversario passava.
+        if (initialLink.card && initialLink.card.uid) usedUidsBySide[initialLink.owner].add(initialLink.card.uid);
         let consecutivePasses = 0;
         let totalRounds = 0;
         let turnToRespond = initialLink.owner === 'player' ? 'bot' : 'player';
@@ -4281,6 +4402,10 @@
             // versione breve, che è già il suo comportamento previsto.
             const topLink = chain.links[chain.links.length - 1];
             const triggerCard = topLink ? topLink.card : null;
+            // In cima può esserci una carta di chi risponde (l'avversario ha
+            // passato e la priorità è tornata a lui): il prompt non deve dire
+            // "l'avversario ha attivato".
+            const triggerIsOwn = !!(topLink && topLink.owner === responderOwner);
             askResponder(responderOwner, candidates, (choice) => {
                 if (!choice) {
                     consecutivePasses++;
@@ -4292,6 +4417,7 @@
                 totalRounds++;
                 usedUidsBySide[responderOwner].add(choice.card.uid);
                 consumeCandidateCard(responderOwner, choice);
+                segnaUsoEffettoMostro(choice);
                 chain.links.push({
                     owner: responderOwner,
                     card: choice.card,
@@ -4308,7 +4434,7 @@
                 if (typeof renderChainStack === 'function') renderChainStack();
                 turnToRespond = responderOwner === 'player' ? 'bot' : 'player';
                 askNextRound();
-            }, triggerCard);
+            }, triggerCard, null, triggerIsOwn);
         };
 
         const duration = (window.FX && FX.ACTIVATE_CENTER_DURATION_MS) || 2000;
@@ -5991,6 +6117,8 @@
         hasUnionProtector: hasUnionProtector,
         getDamageStepBonus: getDamageStepBonus,
         runBeforeDamageCalculation: runBeforeDamageCalculation,
+        openPriorityWindow: openPriorityWindow,
+        isPriorityWindowOpen: isPriorityWindowOpen,
         canSpecialSummonFromHand: canSpecialSummonFromHand,
         trySpecialSummonFromHand: trySpecialSummonFromHand,
         getBanishFusableExtraDeckMonsters: getBanishFusableExtraDeckMonsters,

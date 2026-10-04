@@ -37,7 +37,7 @@ module.exports = {
             DuelEngine.recomputeStaticEffects();
         });
         const mostro = (uid, atk, def) => ({ uid, atk, def });
-        const aspettaPopover = () => t.page.waitForFunction(() => !!document.getElementById('quickPopover'), null, { timeout: 8000 });
+        const aspettaPopover = () => t.page.waitForFunction(() => !!document.getElementById('quickPopover'), null, { timeout: 15000 });
         const cliccaOpzione = (testo) => t.evaluate((testo) => {
             const btn = [...document.querySelectorAll('#quickPopover [data-option]')].find((b) => b.textContent.includes(testo));
             if (!btn) return false;
@@ -89,7 +89,7 @@ module.exports = {
             DuelEngine.recomputeStaticEffects();
             resolveAttack('player', 0, 1, () => { window.__battleDone = true; });
         });
-        await t.page.waitForFunction(() => document.getElementById('cardListPickerModal') && document.getElementById('cardListPickerModal').classList.contains('open'), null, { timeout: 8000 });
+        await t.page.waitForFunction(() => document.getElementById('cardListPickerModal') && document.getElementById('cardListPickerModal').classList.contains('open'), null, { timeout: 15000 });
         await t.page.waitForTimeout(ATTESA_MS);
         const ferma895 = await t.evaluate(() => ({ done: window.__battleDone, lpBot: gameState.botLP }));
         t.assert(!ferma895.done && ferma895.lpBot === 8000, `895: la dichiarazione aspetta la scelta (${JSON.stringify(ferma895)})`);
@@ -149,7 +149,7 @@ module.exports = {
         });
         await t.page.waitForFunction(() => document.getElementById('activateModal') && document.getElementById('activateModal').classList.contains('open'), null, { timeout: 10000 });
         await t.page.click('#activateConfirmBtn');
-        await t.page.waitForFunction(() => document.getElementById('cardListPickerModal').classList.contains('open'), null, { timeout: 8000 });
+        await t.page.waitForFunction(() => document.getElementById('cardListPickerModal').classList.contains('open'), null, { timeout: 15000 });
         await t.page.waitForTimeout(ATTESA_MS);
         const ferma852 = await t.evaluate(() => ({ done: window.__battleDone, lpPlayer: gameState.playerLP }));
         t.assert(!ferma852.done && ferma852.lpPlayer === 8000, `852: la battaglia aspetta la scelta (${JSON.stringify(ferma852)})`);

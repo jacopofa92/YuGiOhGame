@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { chooseFieldCardTargetWaiting, attendiScelta, findEquipTarget, equipToChosenTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, resolveSpecialSummonTributeCost, chooseCardFromList, maxRitualTributeLevel, performRitualTribute } = window.CardEffectsShared;
+    const { chooseOption, chooseFieldCardTargetWaiting, attendiScelta, findEquipTarget, equipToChosenTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, resolveSpecialSummonTributeCost, chooseCardFromList, maxRitualTributeLevel, performRitualTribute } = window.CardEffectsShared;
 
     // ================================================================
     // BATCH 7: rientro in campo dopo una distruzione (onOwnMonsterDestroyed,
@@ -477,105 +477,181 @@
     // changeTurn/game-flow.js) perché monsterEffectsNegatedUidsFor viene
     // azzerato e ricostruito da zero ad OGNI render dalla sola clausola
     // base — vedi il commento in recomputeStaticEffects (duel-engine.js)
-    // che re-inietta questo store lì. SEMPLIFICAZIONE: sceglie da sola il
-    // primo mostro Effetto idoneo (priorità al proprio campo) invece di
-    // un'interfaccia di selezione dedicata, stesso spirito di ogni altra
-    // scelta automatica in questo file.
+    // che re-inietta questo store lì. Il mostro a cui estendere lo
+    // sceglie il giocatore (orichalcosEstendi).
     // Terza clausola ("Effetto Veloce una volta per turno: scarta 1
     // carta per distruggere 1 carta scoperta sul Terreno", utilizzabile
-    // anche durante il turno avversario) ora implementata tramite
+    // anche durante il turno avversario) tramite
     // canActivateAsQuickEffect/activateAsQuickEffect — coppia di hook
-    // DEDICATA (findSpellTrapQuickEffectCandidates, duel-engine.js,
-    // gemella di findMonsterQuickEffectCandidates già esistente per i
-    // mostri) invece di riusare canActivate/activate: questa carta ha
-    // GIÀ due abilità diverse dietro quella coppia (aggancio ed
-    // estensione), la terza ne aveva bisogno di una propria per non
-    // creare ambiguità su quale abilità si sta invocando. Risponde
-    // offerta nella stessa finestra di priorità di una Trappola Set
-    // (openActivationWindow), quindi copre il caso reale più comune di
-    // un Effetto Veloce ("in risposta a un'attivazione altrui"), non
-    // ogni momento teorico del turno avversario — nessuna fase di gioco
-    // apre MAI una finestra di priorità senza che qualcuno abbia già
-    // attivato qualcosa in questo motore (vedi il commento su
-    // findSpellTrapQuickEffectCandidates), quindi "attivala mentre non
-    // succede nulla" resta fuori scala: richiederebbe una vera finestra
-    // di priorità ad ogni fase, toccando OGNI cambio fase del motore.
-    // Il bersaglio Mostro passa dal checkpoint di targeting condiviso
-    // (ctx.declareTarget); un bersaglio in zona Magia/Trappola no —
-    // quel checkpoint legge solo fieldOf, mai stFieldOf (limite
-    // pre-esistente di questo motore, non specifico di questa carta).
+    // DEDICATA (findSpellTrapQuickEffectCandidates, duel-engine.js)
+    // invece di riusare canActivate/activate, che servono già ad
+    // aggancio ed estensione. Raggiungibile in tre modi: in risposta a
+    // una Catena aperta (openActivationWindow), nella finestra di
+    // priorità a vuoto del turno avversario (DuelEngine.openPriorityWindow:
+    // Standby, inizio Battle Phase, fine turno), e cliccando la carta
+    // nel proprio turno — lì, se è disponibile anche l'estensione, si
+    // sceglie quale delle due usare. Bersaglio e scarto li sceglie il
+    // giocatore, e il bersaglio passa dal checkpoint di targeting.
     // ================================================================
     CardEffects.register(396, {
         continuous: true,
         repeatableWhileContinuous: true,
         canRespondAsQuickEffect: true,
+        // Già agganciata, la carta ha DUE abilità attivabili cliccandola nel
+        // proprio turno: l'estensione e l'Effetto Veloce. Prima il click
+        // portava sempre e solo all'estensione, quindi l'Effetto Veloce nel
+        // proprio turno era irraggiungibile; ora, se sono disponibili tutte
+        // e due, si sceglie (chooseOption).
         canActivate(ctx) {
-            if (ctx.card.equippedToOwner) {
-                const fieldSpellKey = ctx.owner === 'player' ? 'playerFieldSpell' : 'botFieldSpell';
-                if (!gameState[fieldSpellKey] || gameState[fieldSpellKey].isFaceDown) return false;
-                if (ctx.hasUsedOncePerTurn(`orichalcos-extend:${ctx.card.uid}`)) return false;
-                const equippedUid = equippedTarget(ctx).uid;
-                return ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.subtype === 'effect' && slot.card.uid !== equippedUid);
-            }
+            if (ctx.card.equippedToOwner) return orichalcosPuoEstendere(ctx) || orichalcosPuoEffettoVeloce(ctx);
             return findEquipTarget(ctx) !== -1;
         },
         activate(ctx) {
-            if (ctx.card.equippedToOwner) {
-                ctx.markUsedOncePerTurn(`orichalcos-extend:${ctx.card.uid}`);
-                const equippedUid = equippedTarget(ctx).uid;
-                const target = ctx.field(ctx.owner).find((slot) => slot && !slot.isFaceDown && slot.card.subtype === 'effect' && slot.card.uid !== equippedUid);
-                if (!target) return;
-                gameState.orichalcosExtendedNegationUidsFor = gameState.orichalcosExtendedNegationUidsFor || { player: new Set(), bot: new Set() };
-                gameState.orichalcosExtendedNegationUidsFor[ctx.owner].add(target.card.uid);
-                ctx.log(`⚔️ Spada Sigillante di Orichalcos estende la negazione effetti a ${target.card.name} fino alla fine del turno avversario!`);
+            if (!ctx.card.equippedToOwner) { equipToChosenTarget(ctx); return; }
+            const fine = attendiScelta(ctx);
+            const puoEstendere = orichalcosPuoEstendere(ctx);
+            const puoVeloce = orichalcosPuoEffettoVeloce(ctx);
+            // Con una sola abilità disponibile non si chiede nulla. Le due
+            // condizioni leggono solo stato pubblico (Magia Terreno, Terreno,
+            // numero di carte in mano), quindi in Multiplayer i due client
+            // saltano la scelta insieme e le code delle scelte restano
+            // accoppiate.
+            if (!puoEstendere || !puoVeloce) {
+                if (puoVeloce) orichalcosEffettoVeloce(ctx, fine);
+                else orichalcosEstendi(ctx, fine);
                 return;
             }
-            equipToChosenTarget(ctx);
-        },
-        canActivateAsQuickEffect(ctx) {
-            if (!ctx.card.equippedToOwner) return false;
-            if (ctx.hasUsedOncePerTurn(`orichalcos-quick:${ctx.card.uid}`)) return false;
-            if (ctx.hand(ctx.owner).length === 0) return false;
-            return ['player', 'bot'].some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown) || ctx.stField(owner).some((s) => s && !s.isFaceDown));
-        },
-        activateAsQuickEffect(ctx) {
-            const hand = ctx.hand(ctx.owner);
-            if (hand.length === 0) return;
-            const candidates = [];
-            ['player', 'bot'].forEach((owner) => {
-                ctx.field(owner).forEach((s, i) => { if (s && !s.isFaceDown) candidates.push({ owner: owner, zone: 'monster', index: i, card: s.card }); });
-                ctx.stField(owner).forEach((s, i) => { if (s && !s.isFaceDown) candidates.push({ owner: owner, zone: 'st', index: i, card: s.card }); });
+            chooseOption(ctx, {
+                title: '⚔️ Spada Sigillante di Orichalcos',
+                text: 'Quale abilità usi?',
+                options: [
+                    { value: 'estendi', label: 'Estendi la negazione a un tuo mostro', icon: '🔗' },
+                    { value: 'veloce', label: 'Scarta 1 carta e distruggi', icon: '💥' }
+                ],
+                pickForBot: () => (orichalcosAvversarioHaScoperte(ctx) ? 'veloce' : 'estendi')
+            }, (scelta) => {
+                if (scelta === 'veloce') { orichalcosEffettoVeloce(ctx, fine); return; }
+                orichalcosEstendi(ctx, fine);
             });
-            if (candidates.length === 0) return;
-            ctx.markUsedOncePerTurn(`orichalcos-quick:${ctx.card.uid}`);
-            const discarded = ctx.discardChosenFromHand(ctx.owner, 0);
-            // Sceglie da sola: priorità a un bersaglio dell'avversario (più
-            // utile), stesso spirito di ogni altra scelta automatica in
-            // questo file.
-            const target = candidates.find((c) => c.owner === ctx.opponent) || candidates[0];
-            if (target.zone === 'monster') {
-                const decl = ctx.declareTarget(target.owner, target.index, { totalTargetCount: 1 });
-                if (!decl.allowed) {
-                    ctx.log(`⚔️ Spada Sigillante di Orichalcos scarta ${discarded.name}, ma il bersaglio si è sottratto!`);
-                    return;
-                }
-                const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
-                if (!targetSlot) return;
-                const destroyedName = targetSlot.card.name;
-                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
-                ctx.log(`⚔️ Spada Sigillante di Orichalcos scarta ${discarded.name} e distrugge ${destroyedName}!`);
-            } else {
-                const destroyedName = target.card.name;
-                ctx.destroySpellTrap(target.owner, target.index);
-                ctx.log(`⚔️ Spada Sigillante di Orichalcos scarta ${discarded.name} e distrugge ${destroyedName}!`);
-            }
         },
+        canActivateAsQuickEffect(ctx) { return orichalcosPuoEffettoVeloce(ctx); },
+        // Il bot usa questo Effetto Veloce anche in una finestra di priorità
+        // a vuoto (DuelEngine.openPriorityWindow) solo se c'è una carta
+        // scoperta dell'AVVERSARIO da distruggere: altrimenti scarterebbe
+        // per distruggere una carta propria.
+        botInFinestraDiPriorita(ctx) { return orichalcosAvversarioHaScoperte(ctx); },
+        activateAsQuickEffect(ctx) { orichalcosEffettoVeloce(ctx, attendiScelta(ctx)); },
         isEquip: true,
         static(ctx) {
             const t = equippedTarget(ctx);
             gameState.monsterEffectsNegatedUidsFor[ctx.card.equippedToOwner].add(t.uid);
         }
     });
+
+    function orichalcosPuoEstendere(ctx) {
+        const fieldSpellKey = ctx.owner === 'player' ? 'playerFieldSpell' : 'botFieldSpell';
+        if (!gameState[fieldSpellKey] || gameState[fieldSpellKey].isFaceDown) return false;
+        if (ctx.hasUsedOncePerTurn(`orichalcos-extend:${ctx.card.uid}`)) return false;
+        const equippedUid = equippedTarget(ctx).uid;
+        return ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.subtype === 'effect' && slot.card.uid !== equippedUid);
+    }
+
+    function orichalcosPuoEffettoVeloce(ctx) {
+        if (!ctx.card.equippedToOwner) return false;
+        if (ctx.hasUsedOncePerTurn(`orichalcos-quick:${ctx.card.uid}`)) return false;
+        if (ctx.hand(ctx.owner).length === 0) return false;
+        return ['player', 'bot'].some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown) || ctx.stField(owner).some((s) => s && !s.isFaceDown));
+    }
+
+    function orichalcosAvversarioHaScoperte(ctx) {
+        return ctx.field(ctx.opponent).some((s) => s && !s.isFaceDown)
+            || ctx.stField(ctx.opponent).some((s) => s && !s.isFaceDown);
+    }
+
+    /**
+     * Estensione della Spada: "scegli come bersaglio 1 mostro Effetto che
+     * controlli; guadagna questo effetto fino alla fine del turno del tuo
+     * avversario". Il mostro lo sceglie il giocatore (prima: il primo
+     * idoneo) e passa dal checkpoint di targeting. `fine` chiude l'attesa
+     * della Catena su ogni strada.
+     */
+    function orichalcosEstendi(ctx, fine) {
+        const equippedUid = equippedTarget(ctx).uid;
+        const candidati = collectFieldTargets(ctx, {
+            zone: 'monster', owner: 'self',
+            filter: (card) => card.subtype === 'effect' && card.uid !== equippedUid
+        });
+        if (candidati.length === 0) { fine(); return; }
+        ctx.markUsedOncePerTurn(`orichalcos-extend:${ctx.card.uid}`);
+        chooseFieldCardTarget(ctx, candidati, {
+            title: '⚔️ Spada Sigillante di Orichalcos',
+            text: 'Scegli il tuo mostro Effetto a cui estendere la negazione fino alla fine del turno avversario.',
+            dichiara: true,
+            onNegato: fine,
+            onCancel: fine
+        }, (scelto) => {
+            try {
+                gameState.orichalcosExtendedNegationUidsFor = gameState.orichalcosExtendedNegationUidsFor || { player: new Set(), bot: new Set() };
+                gameState.orichalcosExtendedNegationUidsFor[ctx.owner].add(scelto.card.uid);
+                ctx.log(`⚔️ Spada Sigillante di Orichalcos estende la negazione effetti a ${scelto.card.name} fino alla fine del turno avversario!`);
+            } finally {
+                fine();
+            }
+        });
+    }
+
+    /**
+     * Effetto Veloce della Spada: scarta 1 carta (costo), poi distruggi 1
+     * carta scoperta sul Terreno. Usato sia dalla risposta in Catena/finestra
+     * di priorità (activateAsQuickEffect) sia dal click nel proprio turno
+     * (activate). `fine` chiude l'attesa della Catena su ogni strada.
+     */
+    function orichalcosEffettoVeloce(ctx, fine) {
+        {
+            if (ctx.hand(ctx.owner).length === 0) { fine(); return; }
+            // Prima lo scarto (il costo), poi il bersaglio: tutte e due scelte
+            // del giocatore — prima si scartava sempre la prima carta della
+            // mano e si colpiva la prima carta avversaria trovata. Il bot
+            // scarta e colpisce come prima: offerHandDiscardChoice/
+            // chooseFieldCardTarget prendono il primo candidato, e i
+            // candidati avversari vengono per primi.
+            const aperto = offerHandDiscardChoice(ctx, {
+                title: '⚔️ Spada Sigillante di Orichalcos',
+                text: 'Scegli quale carta scartare per distruggere 1 carta scoperta sul Terreno.',
+                // Chiudere senza scartare = rinunciare: niente costo, niente
+                // effetto, e la Catena riparte.
+                onCancel: () => fine()
+            }, (discarded) => {
+                ctx.markUsedOncePerTurn(`orichalcos-quick:${ctx.card.uid}`);
+                const candidati = collectFieldTargets(ctx, { owner: 'opponent' })
+                    .concat(collectFieldTargets(ctx, { owner: 'self' }));
+                if (candidati.length === 0) { fine(); return; }
+                const scegliBersaglio = () => chooseFieldCardTarget(ctx, candidati, {
+                    title: '⚔️ Spada Sigillante di Orichalcos',
+                    text: 'Scegli la carta scoperta da distruggere.',
+                    dichiara: true,
+                    onNegato: () => {
+                        ctx.log(`⚔️ Spada Sigillante di Orichalcos scarta ${discarded.name}, ma il bersaglio si è sottratto!`);
+                        fine();
+                    },
+                    // Lo scarto è già pagato: chiudere la lista non annulla
+                    // l'effetto, la riapre.
+                    onCancel: scegliBersaglio
+                }, (scelto) => {
+                    try {
+                        const destroyedName = scelto.card.name;
+                        if (scelto.zone === 'monster') ctx.destroyMonster(scelto.owner, scelto.index);
+                        else ctx.destroySpellTrap(scelto.owner, scelto.index);
+                        ctx.log(`⚔️ Spada Sigillante di Orichalcos scarta ${discarded.name} e distrugge ${destroyedName}!`);
+                    } finally {
+                        fine();
+                    }
+                });
+                scegliBersaglio();
+            });
+            if (!aperto) fine();
+        }
+    }
 
     // ================================================================
     // 397 — Scelta Dolorosa (Magia Normale)
