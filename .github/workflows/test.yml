@@ -6,6 +6,10 @@ name: Test suite
 # rilancia i test a mano. Questo job la esegue automaticamente ad ogni
 # push/PR su main, così un fallimento appare direttamente su GitHub.
 
+# Node 24 e azioni v5: le v4 di checkout/setup-node giravano su Node 20,
+# deprecato da GitHub (avviso a ogni run). 24 è anche la versione usata in
+# locale per lanciare la suite, così CI e sviluppo non divergono.
+
 on:
   push:
     branches: [main]
@@ -24,10 +28,10 @@ jobs:
   sintassi:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version: '24'
       - name: Controlla la sintassi di tutti i file .js
         run: npm run check
 
@@ -37,10 +41,10 @@ jobs:
     # accendere un browser e aspettare otto minuti per scoprirlo.
     needs: sintassi
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version: '24'
       - name: Installa dipendenze (solo per la suite di test — il gioco non ne ha bisogno)
         run: npm ci
       - name: Installa Chromium per Playwright
