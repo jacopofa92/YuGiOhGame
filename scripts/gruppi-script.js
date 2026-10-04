@@ -40,5 +40,21 @@ module.exports = {
         'js/engine/card-effects-6.js',
         'js/engine/card-effects-7.js',
         'js/engine/card-effects-8.js'
+    ],
+
+    // La partita vera e propria: stato, regole del turno, disegno del campo
+    // e azioni del giocatore. Solo duelMonstersCore.html (e, attraverso
+    // lei, la pagina del Multiplayer, che ne esegue gli script) più
+    // l'elenco offline di sw.js.
+    // ORDINE: duel-sandbox.js e stato.js/fasi.js PRIMA di game-flow.js,
+    // perché il fondo di game-flow.js avvia il duello in modo sincrono
+    // appena il file è letto (DuelSession.start -> initGame ->
+    // resetGameState, in fasi.js).
+    partita: [
+        'js/engine/duel-sandbox.js',
+        'js/engine/stato.js',
+        'js/engine/fasi.js',
+        'js/engine/game-flow.js',
+        'js/engine/actions.js'
     ]
 };

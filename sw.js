@@ -449,8 +449,17 @@ const APP_SHELL = [
     'assets/fonts/cinzel/Cinzel-Variable.ttf',
     'assets/fonts/cinzel/OFL.txt',
     'js/ui/sfide-view.css',
-    'js/engine/actions.js',
+    // Mancava duel-sandbox.js: duelMonstersCore.html lo carica (è quello
+    // che allestisce lo stato iniziale del "Duello Demo"), ma non era mai
+    // finito qui, quindi offline la pagina del duello si apriva monca.
+    // Trovato dal guardrail tests/specs/guardrail-script-delle-pagine.spec.js.
+    // gruppo-script:partita
+    'js/engine/duel-sandbox.js',
+    'js/engine/stato.js',
+    'js/engine/fasi.js',
     'js/engine/game-flow.js',
+    'js/engine/actions.js',
+    // /gruppo-script:partita
     // gruppo-script:motore
     'js/engine/duel-engine.js',
     'js/engine/effect-templates.js',
@@ -464,12 +473,6 @@ const APP_SHELL = [
     'js/engine/card-effects-7.js',
     'js/engine/card-effects-8.js',
     // /gruppo-script:motore
-    // Mancava: duelMonstersCore.html lo carica (è quello che allestisce
-    // lo stato iniziale del "Duello Demo"), ma non era mai finito qui,
-    // quindi offline la pagina del duello si apriva monca. Trovato dal
-    // guardrail tests/specs/guardrail-script-delle-pagine.spec.js, al
-    // suo primo giro — è esattamente il buco silenzioso per cui esiste.
-    'js/engine/duel-sandbox.js',
     'js/ai/ai-controller.js',
     'js/ai/ai-hard.js',
     'js/ai/ai-medium.js',

@@ -4301,9 +4301,13 @@
      DuelSession.start() in modo sincrono appena il file finisce di
      essere letto, e in modalità sandbox quella chiamata si aspetta
      window.initSandboxGame già definita — vedi js/engine/duel-sandbox.js. -->
+<!-- gruppo-script:partita -->
 <script src="js/engine/duel-sandbox.js"></script>
+<script src="js/engine/stato.js"></script>
+<script src="js/engine/fasi.js"></script>
 <script src="js/engine/game-flow.js"></script>
 <script src="js/engine/actions.js"></script>
+<!-- /gruppo-script:partita -->
 <!-- IA multilivello (facile/media/difficile): i tre moduli di livello
      PRIMA del controller (che li seleziona in base a gameState.botDifficulty),
      entrambi PRIMA di bot.js (l'esecutore, che chiama solo BotAI.*). -->
