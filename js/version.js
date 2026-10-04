@@ -32,6 +32,9 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.41 — Anche in Multiplayer puoi usare un Effetto Veloce nel turno
+ *   dell'avversario quando lui non fa nulla (Standby, inizio Battle Phase,
+ *   fine turno): chi è di turno aspetta la tua decisione.
  * 1.0.40 — Sette carte ti lasciano scegliere davvero: Attacco a Doppia
  *   Punta, Lady Arpia Formazione della Fenice, Mago dell'Esplosione,
  *   Nobile dello Sterminio e Cappelli Magici scelgono i bersagli che vuoi
@@ -606,4 +609,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.40';
+window.GAME_VERSION = '1.0.41';

@@ -88,6 +88,18 @@
             }
             return;
         }
+        // Con `priorityKey` è la decisione dell'avversario in una finestra
+        // di priorità (Effetto Veloce "a vuoto" in Standby, inizio Battle
+        // Phase, fine turno): stessa natura di una risposta in Catena, ma
+        // su una coda propria, per chiave — vedi openPriorityWindow in
+        // js/engine/duel-engine.js. Viaggia come 'chain-response' solo
+        // perché è un tipo che il relay già accetta.
+        if (action.kind === 'chain-response' && action.priorityKey) {
+            if (window.DuelEngine && typeof DuelEngine.applyRemotePriorityDecision === 'function') {
+                DuelEngine.applyRemotePriorityDecision(action);
+            }
+            return;
+        }
         if (action.kind === 'chain-response') {
             if (window.DuelEngine && typeof DuelEngine.applyRemoteChainDecision === 'function') {
                 DuelEngine.applyRemoteChainDecision(action);
@@ -224,7 +236,17 @@
     function applyRemotePhase(name) {
         switch (name) {
             case 'draw': enterDrawPhase(false); break;
-            case 'standby': enterStandbyPhase(false); break;
+            case 'standby':
+                enterStandbyPhase(false);
+                // La Standby Phase dell'avversario: qui si è chi NON è di
+                // turno, quindi qui si decide se usare un Effetto Veloce. Di
+                // là chi è di turno ha aperto la stessa finestra
+                // (enterStandbyPhase con autoAdvance) e aspetta la nostra
+                // decisione, che parte sempre — anche "passo".
+                if (window.DuelEngine && typeof DuelEngine.openPriorityWindow === 'function') {
+                    DuelEngine.openPriorityWindow('player', 'standby');
+                }
+                break;
             case 'main1': enterMainPhase1(); break;
             case 'battle': enterBattlePhase(); break;
             case 'main2': enterMainPhase2(); break;

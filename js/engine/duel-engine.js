@@ -3416,7 +3416,7 @@
     function broadcastChainDecision(choice) {
         if (!window.MP_broadcast) return;
         window.MP_broadcast(choice
-            ? { kind: 'chain-response', card: choice.card, zone: choice.zone, index: choice.index, quickEffect: !!choice.quickEffect }
+            ? { kind: 'chain-response', card: choice.card, zone: choice.zone, index: choice.index, quickEffect: !!choice.quickEffect, handEffect: !!choice.handEffect }
             : { kind: 'chain-response', pass: true });
     }
 
@@ -3536,7 +3536,12 @@
         if (known) return known;
         const def = getDefinition(action.card.id);
         if (!def) return null;
-        return { zone: action.zone, index: action.index, card: action.card, def: def, quickEffect: !!action.quickEffect };
+        // handEffect: una carta della mano con un Effetto Veloce dedicato
+        // (canRespondFromHand/activateFromHand, es. Amuleto di Shabti id
+        // 1059) si risolve con activateFromHand, non con activate. Senza
+        // questo flag nel messaggio, di qua si sarebbe chiamato l'handler
+        // sbagliato.
+        return { zone: action.zone, index: action.index, card: action.card, def: def, quickEffect: !!action.quickEffect, handEffect: !!action.handEffect };
     }
 
     /** Punto d'ingresso per js/multiplayer/multiplayer.js quando arriva un messaggio 'chain-response'. */
@@ -4243,11 +4248,24 @@
      * link di una Catena vera (openActivationWindow): l'altro può
      * rispondere come sempre, e `onDone` parte a Catena risolta.
      *
-     * Spenta in Multiplayer: i due client non si accordano su quando
-     * aprirla (le fasi le avanza chi è di turno), stessa scelta già fatta
-     * per la seconda finestra di risposta alle Evocazioni.
+     * In Multiplayer decide il client di chi risponde, e l'altro ASPETTA
+     * la sua decisione, che viaggia su un messaggio tutto suo
+     * (un 'chain-response' con il campo `priorityKey`, vedi
+     * awaitRemotePriorityDecision più sotto — il tipo di messaggio resta
+     * quello già ammesso dal relay, server/server.js accetta solo un elenco
+     * chiuso di tipi e un tipo nuovo richiederebbe di ridistribuire anche
+     * il server), NON sulla coda delle risposte in Catena: se un lato saltasse una
+     * finestra che l'altro apre, una decisione rimasta in coda finirebbe
+     * accoppiata alla domanda sbagliata della Catena successiva. Ogni
+     * finestra ha una chiave (turno, momento, ordine nel turno) e le due
+     * parti si accoppiano per chiave. Per reggere, chi risponde manda
+     * SEMPRE una decisione, anche "passo" quando non ha nulla — di qua il
+     * suo lato è una copia approssimata (la sua mano sono segnaposto) e
+     * non si può dedurre che non abbia candidati. Chi aspetta prosegue
+     * da sé dopo REMOTE_CHAIN_DECISION_TIMEOUT_MS.
      *
-     * `momento` ('standby' | 'battle' | 'end') serve al testo del prompt.
+     * `momento` ('standby' | 'battle' | 'end') serve al testo del prompt e
+     * alla chiave.
      */
     let priorityWindowOpen = false;
     const PRIORITY_MOMENT_TEXT = {
@@ -4255,9 +4273,45 @@
         battle: 'all\'inizio della Battle Phase',
         end: 'prima della fine del turno'
     };
+    // Quante finestre sono già state aperte in quel turno e in quel
+    // momento: una seconda Battle Phase (Bollettino Meteo, id 1035) apre
+    // una seconda finestra 'battle' nello stesso turno, con chiave diversa.
+    const priorityWindowCount = {};
+    function priorityWindowKey(momento) {
+        const base = `${gameState.turn}:${momento}`;
+        priorityWindowCount[base] = (priorityWindowCount[base] || 0) + 1;
+        return `${base}:${priorityWindowCount[base]}`;
+    }
     function openPriorityWindow(responderOwner, momento, onDone) {
         const finish = typeof onDone === 'function' ? onDone : function () {};
-        if (isMultiplayer() || gameState.gameOver || priorityWindowOpen || isChainActive()) { finish(); return; }
+        const mp = isMultiplayer();
+        const chiave = mp ? priorityWindowKey(momento) : null;
+
+        // Multiplayer, risponde l'avversario: decide lui, sul suo client.
+        if (mp && isRemoteResponder(responderOwner)) {
+            if (gameState.gameOver) { finish(); return; }
+            priorityWindowOpen = true;
+            const chiudi = () => { priorityWindowOpen = false; finish(); };
+            // Di solito la decisione arriva subito ("passo", non ha nulla):
+            // si avvisa solo se l'attesa si allunga, cioè se gli è stato
+            // davvero chiesto qualcosa.
+            const avviso = setTimeout(() => {
+                if (typeof addToLog === 'function') addToLog('⏳ L\'avversario sta decidendo se usare un Effetto Veloce...');
+            }, 800);
+            awaitRemotePriorityDecision(chiave, (action) => {
+                clearTimeout(avviso);
+                const choice = resolveRemoteChoice(action, []);
+                if (!choice) { chiudi(); return; }
+                attivaDallaFinestraDiPriorita(responderOwner, choice, chiudi);
+            });
+            return;
+        }
+
+        const passaSubito = () => {
+            if (mp) broadcastPriorityDecision(chiave, null);
+            finish();
+        };
+        if (gameState.gameOver || priorityWindowOpen || isChainActive()) { passaSubito(); return; }
         const usati = new Set();
         let candidates = [
             ...findMonsterQuickEffectCandidates(responderOwner, usati),
@@ -4283,7 +4337,7 @@
         const rifiutate = (gameState.quickEffectsDeclined && gameState.quickEffectsDeclined.turn === gameState.turn)
             ? gameState.quickEffectsDeclined.uids : new Set();
         candidates = candidates.filter((c) => !rifiutate.has(c.card.uid));
-        if (candidates.length === 0) { finish(); return; }
+        if (candidates.length === 0) { passaSubito(); return; }
         priorityWindowOpen = true;
         const chiudi = () => { priorityWindowOpen = false; finish(); };
         const ricordaRifiuto = () => {
@@ -4293,23 +4347,89 @@
             candidates.forEach((c) => gameState.quickEffectsDeclined.uids.add(c.card.uid));
         };
         const testo = `${responderOwner === 'player' ? 'Il turno dell\'avversario è' : 'Il tuo turno è'} ${PRIORITY_MOMENT_TEXT[momento] || 'a un passaggio di fase'}`;
-        askResponder(responderOwner, candidates, (choice) => {
+        // offerChoice e non askResponder: il caso "risponde l'avversario
+        // remoto" è già stato gestito sopra, e la decisione va comunicata
+        // con la chiave della finestra, non sulla coda della Catena.
+        offerChoice(responderOwner, candidates, (choice) => {
+            if (mp) broadcastPriorityDecision(chiave, choice);
             if (!choice) { ricordaRifiuto(); chiudi(); return; }
-            consumeCandidateCard(responderOwner, choice);
-            segnaUsoEffettoMostro(choice);
-            if (window.FX) FX.playCardActivateCenterScreen(choice.card);
-            addToLog(`⚡ ${responderOwner === 'player' ? 'Attivi' : 'Il bot attiva'} ${choice.card.name} (Effetto Veloce)!`);
-            openActivationWindow({
-                owner: responderOwner,
-                card: choice.card,
-                handlerName: choice.handEffect ? 'activateFromHand' : (choice.quickEffect ? 'activateAsQuickEffect' : 'activate'),
-                def: choice.def,
-                ctx: makeContext(responderOwner, { card: choice.card, zone: choice.zone, index: choice.index }),
-                isManualActivation: true,
-                alreadyAnnounced: true,
-                activatedAt: Date.now()
-            }, chiudi);
+            attivaDallaFinestraDiPriorita(responderOwner, choice, () => {
+                // Le scelte fatte dall'effetto sul PROPRIO lato (quale carta
+                // scartare, per esempio) di là non si possono indovinare:
+                // la fotografia di stato le allinea, come dopo ogni
+                // attivazione (finishActivateCard). Fuori da un setTimeout
+                // potrebbe cadere dentro l'applicazione di una mossa remota,
+                // dove broadcastLocalStatePush tace.
+                if (mp && responderOwner === 'player') setTimeout(() => broadcastLocalStatePush(null), 0);
+                chiudi();
+            });
         }, null, testo);
+    }
+
+    /**
+     * L'Effetto Veloce scelto in una finestra di priorità diventa il primo
+     * link di una Catena vera: l'altro giocatore può rispondere come a
+     * qualunque attivazione, e `onDone` parte a Catena risolta. Stesso
+     * codice per chi risponde in locale e per la decisione arrivata
+     * dall'avversario in Multiplayer, così i due client aprono la stessa
+     * Catena.
+     */
+    function attivaDallaFinestraDiPriorita(responderOwner, choice, onDone) {
+        consumeCandidateCard(responderOwner, choice);
+        segnaUsoEffettoMostro(choice);
+        if (window.FX) FX.playCardActivateCenterScreen(choice.card);
+        const chi = responderOwner === 'player' ? 'Attivi' : (isMultiplayer() ? 'L\'avversario attiva' : 'Il bot attiva');
+        addToLog(`⚡ ${chi} ${choice.card.name} (Effetto Veloce)!`);
+        openActivationWindow({
+            owner: responderOwner,
+            card: choice.card,
+            handlerName: choice.handEffect ? 'activateFromHand' : (choice.quickEffect ? 'activateAsQuickEffect' : 'activate'),
+            def: choice.def,
+            ctx: makeContext(responderOwner, { card: choice.card, zone: choice.zone, index: choice.index }),
+            isManualActivation: true,
+            alreadyAnnounced: true,
+            activatedAt: Date.now()
+        }, onDone);
+    }
+
+    // Decisioni delle finestre di priorità che viaggiano: una coda per
+    // chiave, non in ordine (vedi il commento su openPriorityWindow).
+    const remotePriorityDecisions = { waiting: {}, buffered: {} };
+
+    function broadcastPriorityDecision(chiave, choice) {
+        if (!window.MP_broadcast) return;
+        window.MP_broadcast(choice
+            ? { kind: 'chain-response', priorityKey: chiave, card: choice.card, zone: choice.zone, index: choice.index, quickEffect: !!choice.quickEffect, handEffect: !!choice.handEffect }
+            : { kind: 'chain-response', priorityKey: chiave, pass: true });
+    }
+
+    function awaitRemotePriorityDecision(chiave, callback) {
+        if (remotePriorityDecisions.buffered[chiave]) {
+            const action = remotePriorityDecisions.buffered[chiave];
+            delete remotePriorityDecisions.buffered[chiave];
+            callback(action);
+            return;
+        }
+        const waiter = { callback: callback, timer: null };
+        waiter.timer = setTimeout(() => {
+            if (remotePriorityDecisions.waiting[chiave] !== waiter) return;
+            delete remotePriorityDecisions.waiting[chiave];
+            callback(null);
+        }, REMOTE_CHAIN_DECISION_TIMEOUT_MS);
+        remotePriorityDecisions.waiting[chiave] = waiter;
+    }
+
+    /** Punto d'ingresso per js/multiplayer/multiplayer.js quando arriva un 'chain-response' con `priorityKey`. */
+    function applyRemotePriorityDecision(action) {
+        if (!action || !action.priorityKey) return;
+        const waiter = remotePriorityDecisions.waiting[action.priorityKey];
+        if (waiter) {
+            delete remotePriorityDecisions.waiting[action.priorityKey];
+            clearTimeout(waiter.timer);
+            waiter.callback(action);
+            return;
+        }
+        remotePriorityDecisions.buffered[action.priorityKey] = action;
     }
 
     /**
@@ -6118,6 +6238,7 @@
         getDamageStepBonus: getDamageStepBonus,
         runBeforeDamageCalculation: runBeforeDamageCalculation,
         openPriorityWindow: openPriorityWindow,
+        applyRemotePriorityDecision: applyRemotePriorityDecision,
         isPriorityWindowOpen: isPriorityWindowOpen,
         canSpecialSummonFromHand: canSpecialSummonFromHand,
         trySpecialSummonFromHand: trySpecialSummonFromHand,

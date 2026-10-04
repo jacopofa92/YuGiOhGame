@@ -812,6 +812,11 @@ function nextPhase() {
     // rispondere con una Trappola) — vedi DuelEngine.isChainActive() in
     // js/engine/duel-engine.js.
     if (window.DuelEngine && DuelEngine.isChainActive()) return;
+    // Nemmeno con una finestra di priorità aperta (vedi
+    // DuelEngine.openPriorityWindow): in Multiplayer chi è di turno non ha
+    // nessun modale davanti mentre l'avversario decide, e avanzare di fase
+    // in quel momento lascerebbe i due client su due fasi diverse.
+    if (window.DuelEngine && DuelEngine.isPriorityWindowOpen && DuelEngine.isPriorityWindowOpen()) return;
     clearSelection();
     switch (gameState.phase) {
         case 'main1':
@@ -828,6 +833,7 @@ function endTurn() {
     // Stessa guardia di nextPhase() qui sopra: niente fine turno con una
     // Chain ancora aperta.
     if (window.DuelEngine && DuelEngine.isChainActive()) return;
+    if (window.DuelEngine && DuelEngine.isPriorityWindowOpen && DuelEngine.isPriorityWindowOpen()) return;
     enterEndPhase();
 }
 
@@ -3663,6 +3669,9 @@ function hasUnfulfilledForcedAttack() {
 
 function handlePhaseStepperClick(targetPhase) {
     if (gameState.currentPlayer !== 'player') return;
+    // Stesse guardie di nextPhase(): niente salti di fase a Catena o
+    // finestra di priorità ancora aperta.
+    if (window.DuelEngine && (DuelEngine.isChainActive() || (DuelEngine.isPriorityWindowOpen && DuelEngine.isPriorityWindowOpen()))) return;
     // Seconda Battle Phase (Bollettino Meteo id 1035): l'unico passo
     // "all'indietro" ammesso, da Main Phase 2 a Battaglia.
     if (gameState.phase === 'main2' && targetPhase === 'battle' && canConductSecondBattlePhase('player')) {

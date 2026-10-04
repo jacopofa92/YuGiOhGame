@@ -3786,9 +3786,21 @@ domanda. Senza candidati `onDone` parte SUBITO e in modo sincrono, quindi
 un duello senza queste carte scorre esattamente come prima. Un rifiuto
 non si ripropone nello stesso turno (`gameState.quickEffectsDeclined`).
 Il bot ci usa solo le carte che lo dichiarano utili
-(`def.botInFinestraDiPriorita`, booleano o funzione(ctx)). **Spenta in
-Multiplayer**: i due client non hanno un accordo su quando aprirla —
-lì un Effetto Veloce resta utilizzabile solo in risposta a una Catena.
+(`def.botInFinestraDiPriorita`, booleano o funzione(ctx)). **In
+Multiplayer (1.0.41)** decide il client di chi NON è di turno e l'altro
+aspetta: la decisione viaggia come `chain-response` con un campo
+`priorityKey` (turno:momento:ordine), su una coda per CHIAVE separata da
+quella della Catena, e chi risponde la manda SEMPRE, anche "passo". La
+Standby dell'avversario la apre `applyRemotePhase('standby')`; Battle
+Phase e fine turno passano già dalle stesse funzioni sui due client.
+`nextPhase`/`endTurn`/lo stepper delle fasi rifiutano mentre una
+finestra è aperta (chi è di turno, in Multiplayer, non ha un modale
+davanti). **Il relay (`server/server.js`) accetta solo un elenco chiuso di
+tipi di messaggio** (`GAME_ACTION_KINDS`): un tipo nuovo viene scartato
+in silenzio, e qui significava 30 secondi di attesa ad ogni finestra. Per
+un nuovo messaggio, o si riusa un tipo esistente con un campo in più (come
+qui), o si aggiunge il tipo al server e lo si ridistribuisce.
+Spec: `multiplayer-finestra-di-priorita.spec.js`.
 Due difetti chiusi insieme: un mostro che usa il suo Effetto Veloce in
 risposta ora risulta "già usato nel turno" (`segnaUsoEffettoMostro`), e
 la carta che apre una Catena non viene più riproposta come risposta a

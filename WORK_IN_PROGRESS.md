@@ -75,7 +75,7 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
       `usableByEitherPlayer`.
 - [x] Finestra di priorità per gli Effetti Veloci (396, 459, 1059, 1.0.39):
       `DuelEngine.openPriorityWindow` in Standby, inizio Battle Phase e fine
-      turno dell'avversario; spenta in Multiplayer.
+      turno dell'avversario; in Multiplayer dal 1.0.41.
 - [x] Carte che promettono una scelta e scelgono da sole (1.0.40): audit
       testo↔codice, 7 carte chiuse (548, 289, 220, 881, 742, 792, 363),
       helper `chooseFieldTargetsInSequence`.
