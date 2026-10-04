@@ -29,17 +29,32 @@ righe, actions.js 3.855, game-flow.js 3.797; 205 accessi al DOM e 85
       risolvono da sole con le "decisioni in sospeso" della Priorità 2.
 
 **Priorità 1 — preparare il terreno** (branch `refactor/nucleo-senza-testa`)
-- [ ] Tipi nei commenti + `// @ts-check`, a partire dal contratto delle carte
-      (`ctx`) e da `gameState`. Controllo con `tsc --noEmit` (jsconfig).
-- [ ] Una sola lista degli `<script>` condivisa da tutte le pagine.
+- [x] Tipi in `types/motore.d.ts` (contratto delle carte `ctx` con le 39
+      azioni e i ~60 dati del momento, `CardDefinition`, `gameState`),
+      `npm run typecheck` (tsc, solo i file con `// @ts-check`), spec
+      `guardrail-tipi`. Accendere `@ts-check` sulle carte esistenti dà ~100
+      errori per parte: da fare un file alla volta.
+- [x] Lista unica dei gruppi di `<script>` (`scripts/gruppi-script.js`,
+      `npm run sync-scripts`, pre-commit + `guardrail-gruppi-script`).
 
 **Priorità 2 — nucleo senza testa** (stesso branch)
-- [ ] Dividere duel-engine/actions/game-flow per competenza (Catena,
-      battaglia, Evocazioni, fasi, stato).
-- [ ] Togliere il DOM dalla logica: l'interfaccia ascolta un canale di eventi.
-- [ ] Le scelte diventano "decisioni in sospeso" gestite dal nucleo; la
-      logica non aspetta più le animazioni.
-- [ ] Traguardo: un duello bot contro bot che gira in Node, senza browser.
+- [x] Divisi per competenza, con spostamento parola per parola provato da
+      `tools/impronta-funzioni.js`: `stato.js`, `fasi.js` (da game-flow.js),
+      `battaglia.js`, `evocazioni.js` (da actions.js).
+- [x] Le regole toccano la pagina solo da `js/engine/porta-ui.js`
+      (`guardrail-nucleo-senza-dom`, carte comprese).
+- [x] Traguardo: duelli interi in Node (`tools/duello-senza-testa.js`,
+      orologio virtuale, `--diagnosi`, spec `duello-senza-testa`). Ha
+      trovato 5 difetti veri (Spirito, Rituali, Lady Arpia, doppione
+      Egoista Elegante, Bozzolo).
+- [ ] Canale di eventi al posto delle chiamate per nome all'interfaccia
+      (updateUI, annunci di fase, effetti visivi): oggi in Node le copre
+      l'"interfaccia nulla" dell'esecutore.
+- [ ] Le scelte come "decisioni in sospeso" in un punto unico del nucleo
+      (oggi una decina di helper di scelta, ciascuno con il suo "se è il
+      giocatore apri la lista, altrimenti scegli da solo"); risolverebbe
+      anche le note 235/622.
+- [ ] Unire il branch in `main` dopo la suite completa (su richiesta).
 
 **Priorità 3 — lato tavolo e Multiplayer**
 - [ ] "Posti al tavolo" al posto di player/bot nel nucleo (il contratto delle
