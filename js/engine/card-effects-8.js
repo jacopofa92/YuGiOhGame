@@ -324,7 +324,7 @@
                 ctx.log('⚠️ Il Terreno è pieno: Hamburger Famelico finisce nel Cimitero.');
                 return;
             }
-            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'graveyard');
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'hand');
             ctx.log('🍔 Ricetta dell\'Hamburger evoca Hamburger Famelico!');
         }
     });
@@ -355,7 +355,7 @@
                 ctx.log('⚠️ Il Terreno è pieno: Tartaruga Granchio finisce nel Cimitero.');
                 return;
             }
-            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'graveyard');
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'hand');
             ctx.log('🐢 Giuramento della Tartaruga evoca Tartaruga Granchio!');
         }
     });
@@ -386,7 +386,7 @@
                 ctx.log('⚠️ Il Terreno è pieno: Spettacolo della Spada finisce nel Cimitero.');
                 return;
             }
-            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'graveyard');
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'hand');
             ctx.log('⚔️ Danza d\'Apertura evoca Spettacolo della Spada!');
         }
     });

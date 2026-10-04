@@ -487,6 +487,14 @@
     function isHarpieLadySupport(card) {
         if (!card) return false;
         if (card.id === 172) return true;
+        // Solo MOSTRI: "Lady Arpia Formazione della Fenice" (id 289) è una
+        // Magia, ma il suo nome comincia anch'esso con "Lady Arpia". Senza
+        // questo controllo Egoista Elegante (id 787) la Special Summonava
+        // dalla mano come un mostro — senza ATK, quindi i Life Points di chi
+        // la attaccava diventavano NaN (trovato dal duello senza testa,
+        // confermato nel browser) — e ogni conteggio di "Lady Arpia sul
+        // Terreno" o ricerca nel Deck/Cimitero poteva contarla.
+        if (card.type !== 'monster') return false;
         return !!(card.name && card.name.startsWith('Lady Arpia'));
     }
 

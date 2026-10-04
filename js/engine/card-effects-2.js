@@ -234,7 +234,7 @@
                 ctx.log('⚠️ Il Terreno è pieno: La Bestia Mascherata finisce nel Cimitero.');
                 return;
             }
-            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'graveyard');
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'hand');
             ctx.log('👹 Maledizione della Bestia Mascherata evoca La Bestia Mascherata!');
         }
     });
@@ -1053,53 +1053,6 @@
                 discarded++;
             }
             ctx.log(`💖 Carità Aggraziata pesca 3 carte e scarta ${discarded}!`);
-        }
-    });
-
-    // ================================================================
-    // 224 — Egotista Elegante / Elegant Egotist (Magia Normale)
-    // Se "Lady Arpia" (id 288) o "Arpia Cyber" (id 172, il cui nome è
-    // sempre considerato "Harpie Lady") è scoperta sul Terreno: Special
-    // Summon 1 "Lady Arpia" o "Sorelle Lady Arpia" (id 290) dalla mano o
-    // dal Deck. AGGIORNATO in pagina 12/26 ora che Lady Arpia e Sorelle
-    // Lady Arpia sono finalmente presenti in questo database (prima era
-    // data-only per mancanza dei materiali).
-    // SEMPLIFICAZIONE: la ricerca dal Deck funziona solo se esiste un
-    // Deck reale (gameState.playerDeck/botDeck) — stesso limite di
-    // Sepoltura Sciocca (id 251) qui sopra.
-    // ================================================================
-    CardEffects.register(224, {
-        canActivate(ctx) {
-            const hasHarpieOnField = ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown && isHarpieLadySupport(slot.card));
-            if (!hasHarpieOnField) return false;
-            if (ctx.findEmptyMonsterSlot(ctx.owner) === -1) return false;
-            const deck = ctx.gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
-            const inHand = ctx.hand(ctx.owner).some((c) => isHarpieLadySupport(c) || c.id === 290);
-            const inDeck = Array.isArray(deck) && deck.some((c) => isHarpieLadySupport(c) || c.id === 290);
-            return inHand || inDeck;
-        },
-        activate(ctx) {
-            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-            if (slotIndex === -1) return;
-            const hand = ctx.hand(ctx.owner);
-            const handIdx = hand.findIndex((c) => isHarpieLadySupport(c) || c.id === 290);
-            if (handIdx !== -1) {
-                const [card] = hand.splice(handIdx, 1);
-                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'hand');
-                ctx.log(`🦅 Egotista Elegante Special Summona ${card.name}!`);
-                return;
-            }
-            // Vera scelta tra tutti i candidati nel Deck (Lady Arpia,
-            // Arpia Cyber, Sorelle Lady Arpia) tramite searchDeckWithChoice.
-            searchDeckWithChoice(ctx, (c) => isHarpieLadySupport(c) || c.id === 290, {
-                title: '🦅 Egotista Elegante',
-                text: 'Scegli quale mostro Special Summonare dal Deck.'
-            }, (card) => {
-                const freshSlot = ctx.findEmptyMonsterSlot(ctx.owner);
-                if (freshSlot === -1) return;
-                ctx.specialSummon(ctx.owner, card, freshSlot, 'attack', 'deck');
-                ctx.log(`🦅 Egotista Elegante Special Summona ${card.name}!`);
-            });
         }
     });
 
@@ -1951,7 +1904,7 @@
                 ctx.log('⚠️ Il Terreno è pieno: Signore del Rosso finisce nel Cimitero.');
                 return;
             }
-            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'graveyard');
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'hand');
             ctx.log('🔥 Trasmigrazione Occhi Rossi evoca Signore del Rosso!');
         }
     });
@@ -2908,8 +2861,15 @@
             const hand = ctx.hand(ctx.owner);
             const handIndex = hand.findIndex((c) => c.id === 398);
             if (handIndex === -1) return;
+            // Il sacrificio può togliere carte anche dalla mano: l'indice
+            // calcolato prima non è più affidabile, la carta si ritrova per
+            // riferimento (prima si poteva Evocare la carta sbagliata, o
+            // nessuna — trovato dal duello senza testa).
+            const cartaRituale = hand[handIndex];
             performRitualTribute(ctx, 4, handIndex);
-            const [ritualCard] = hand.splice(handIndex, 1);
+            const indiceFinale = hand.indexOf(cartaRituale);
+            if (indiceFinale === -1) return;
+            const [ritualCard] = hand.splice(indiceFinale, 1);
 
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) {
@@ -2917,7 +2877,7 @@
                 ctx.log('⚠️ Il Terreno è pieno: Paladino del Drago Bianco finisce nel Cimitero.');
                 return;
             }
-            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'graveyard');
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'hand');
             ctx.log('🐲 Rituale del Drago Bianco evoca Paladino del Drago Bianco!');
         }
     });

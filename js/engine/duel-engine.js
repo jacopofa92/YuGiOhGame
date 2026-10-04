@@ -2950,7 +2950,19 @@
             // effetto "quando questa carta viene Evocata".
             if (typeof selfHandler === 'function' && !isMonsterCardEffectsNegated(ctx.owner, ctx.summonedCard.uid)) {
                 if (window.FX) FX.playCardActivateCenterScreen(ctx.summonedCard);
-                safeCallCardHandler(ctx.summonedCard, name === TRIGGER.ON_SPECIAL_SUMMON ? 'onSpecialSummon' : 'onSummon', () => selfHandler(ctx));
+                // `card` è la carta di cui si sta eseguendo l'effetto: qui è
+                // quella appena Evocata. NESSUN chiamante di questo trigger lo
+                // metteva nel contesto (passano solo summonedCard), quindi
+                // ogni onSummon che legge ctx.card andava in errore, in
+                // silenzio (safeCallCardHandler). Trovato dal duello senza
+                // testa (tools/duello-senza-testa.js) e verificato nel
+                // browser: i mostri Spirito (Coniglio Bianco di Inaba e gli
+                // altri, `ctx.card._returnToHandTurn`) Evocati Normalmente
+                // non venivano mai segnati, e non tornavano in mano a fine
+                // turno. Una copia, non il contesto condiviso dell'evento:
+                // chi risponde all'Evocazione deve continuare a vederlo com'è.
+                const selfCtx = ctx.card ? ctx : Object.assign({}, ctx, { card: ctx.summonedCard });
+                safeCallCardHandler(ctx.summonedCard, name === TRIGGER.ON_SPECIAL_SUMMON ? 'onSpecialSummon' : 'onSummon', () => selfHandler(selfCtx));
             }
 
             // 1.5) Reazione delle CARTE SCOPERTE sul Terreno del
@@ -6214,14 +6226,16 @@
     // pageerror) — aggiunge solo un avviso leggibile nel Game Log, se
     // questa pagina ne ha uno (duel-engine.js è caricato anche da pagine
     // senza duello vero, es. cartoteca.html/crea-carta.html).
+    // Solo dove c'è una pagina: nel duello senza testa
+    // (tools/duello-senza-testa.js) gli errori arrivano già a chi lo esegue.
     // ============================================================
-    window.addEventListener('error', (event) => {
+    if (typeof window.addEventListener === 'function') window.addEventListener('error', (event) => {
         console.error('[Errore non gestito]', event.error || event.message);
         if (typeof addToLog === 'function') {
             addToLog('⚠️ Si è verificato un errore imprevisto. Il duello potrebbe non rispondere più correttamente: ricarica la pagina se necessario.');
         }
     });
-    window.addEventListener('unhandledrejection', (event) => {
+    if (typeof window.addEventListener === 'function') window.addEventListener('unhandledrejection', (event) => {
         // "AbortError: Transition was skipped" — rifiuto standard e
         // innocuo della View Transitions API (@view-transition {
         // navigation: auto; } in ogni pagina) quando si naviga via da

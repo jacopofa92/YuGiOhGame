@@ -2228,8 +2228,15 @@
             const hand = ctx.hand(ctx.owner);
             const handIndex = hand.findIndex((c) => c.id === 416);
             if (handIndex === -1) return;
+            // Il sacrificio può togliere carte anche dalla mano: l'indice
+            // calcolato prima non è più affidabile, la carta si ritrova per
+            // riferimento (prima si poteva Evocare la carta sbagliata, o
+            // nessuna — trovato dal duello senza testa).
+            const cartaRituale = hand[handIndex];
             performRitualTribute(ctx, 4, handIndex);
-            const [ritualCard] = hand.splice(handIndex, 1);
+            const indiceFinale = hand.indexOf(cartaRituale);
+            if (indiceFinale === -1) return;
+            const [ritualCard] = hand.splice(indiceFinale, 1);
 
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) {
@@ -2237,7 +2244,7 @@
                 ctx.log('⚠️ Il Terreno è pieno: Abbandonato finisce nel Cimitero.');
                 return;
             }
-            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'graveyard');
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'hand');
             ctx.log('👹 Rito dell\'Illusione Nera evoca Abbandonato!');
         }
     });
@@ -2761,7 +2768,7 @@
                 ctx.log('⚠️ Il Terreno è pieno: Soldato del Fulgore Nero finisce nel Cimitero.');
                 return;
             }
-            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'graveyard');
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'hand');
             ctx.log('⚔️ Rito del Fulgore Nero evoca Soldato del Fulgore Nero!');
         }
     });

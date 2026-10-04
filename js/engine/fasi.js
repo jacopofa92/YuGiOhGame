@@ -148,10 +148,15 @@ function resetGameState() {
     // fine partita scorsa, vedrebbe una crescita e farebbe partire
     // l'animazione "è arrivata una carta" su una pila che invece sta
     // solo nascendo.
-    Object.keys(pileCountsAtLastRender).forEach((k) => delete pileCountsAtLastRender[k]);
+    // Entrambi vivono in game-flow.js (il disegno del campo): senza pagina
+    // (il duello senza testa, tools/duello-senza-testa.js) non esistono, e
+    // non c'è niente da azzerare.
+    if (typeof pileCountsAtLastRender !== 'undefined') {
+        Object.keys(pileCountsAtLastRender).forEach((k) => delete pileCountsAtLastRender[k]);
+    }
     // Stesso motivo per gli agganci Equip: un duello nuovo non deve
     // ereditare le coppie di quello prima.
-    equipLinksAtLastRender.clear();
+    if (typeof equipLinksAtLastRender !== 'undefined') equipLinksAtLastRender.clear();
 
     pendingEffectDrawScheduled = false;
     gameState = {

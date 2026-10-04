@@ -31,8 +31,15 @@
             const hand = ctx.hand(ctx.owner);
             const handIndex = hand.findIndex((c) => c.id === 518);
             if (handIndex === -1) return;
+            // Il sacrificio può togliere carte anche dalla mano: l'indice
+            // calcolato prima non è più affidabile, la carta si ritrova per
+            // riferimento (prima si poteva Evocare la carta sbagliata, o
+            // nessuna — trovato dal duello senza testa).
+            const cartaRituale = hand[handIndex];
             performRitualTribute(ctx, 8, handIndex);
-            const [ritualCard] = hand.splice(handIndex, 1);
+            const indiceFinale = hand.indexOf(cartaRituale);
+            if (indiceFinale === -1) return;
+            const [ritualCard] = hand.splice(indiceFinale, 1);
 
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) {
@@ -40,7 +47,7 @@
                 ctx.log('⚠️ Il Terreno è pieno: Zera il Mant finisce nel Cimitero.');
                 return;
             }
-            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'graveyard');
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'hand');
             ctx.log('👹 Rituale di Zera evoca Zera il Mant!');
         }
     });
@@ -1622,7 +1629,7 @@
                 ctx.log('⚠️ Il Terreno è pieno: Paladino del Drago Oscuro finisce nel Cimitero.');
                 return;
             }
-            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'graveyard');
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'hand');
             ctx.log('🐉 Rito del Drago Oscuro evoca Paladino del Drago Oscuro!');
         },
         canActivateFromGraveyardMainPhase(ctx) {
@@ -1666,15 +1673,22 @@
             const hand = ctx.hand(ctx.owner);
             const handIndex = hand.findIndex((c) => c.id === 854);
             if (handIndex === -1) return;
+            // Il sacrificio può togliere carte anche dalla mano: l'indice
+            // calcolato prima non è più affidabile, la carta si ritrova per
+            // riferimento (prima si poteva Evocare la carta sbagliata, o
+            // nessuna — trovato dal duello senza testa).
+            const cartaRituale = hand[handIndex];
             performRitualTribute(ctx, 8, handIndex);
-            const [ritualCard] = hand.splice(handIndex, 1);
+            const indiceFinale = hand.indexOf(cartaRituale);
+            if (indiceFinale === -1) return;
+            const [ritualCard] = hand.splice(indiceFinale, 1);
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) {
                 ctx.graveyard(ctx.owner).push(ritualCard);
                 ctx.log('⚠️ Il Terreno è pieno: Mago del Caos Nero finisce nel Cimitero.');
                 return;
             }
-            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'graveyard');
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'hand');
             ctx.log('🌑 Rito della Magia Oscura evoca Mago del Caos Nero!');
         }
     });

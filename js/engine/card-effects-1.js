@@ -1137,7 +1137,7 @@
                 const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
                 ctx.field(owner).forEach((slot, index) => {
                     if (!slot) return;
-                    const el = document.querySelector(`#${boardId} .field-slot[data-type="monster"][data-index="${index}"] .card`);
+                    const el = PortaUI.query(`#${boardId} .field-slot[data-type="monster"][data-index="${index}"] .card`);
                     if (el) sucked.push({ card: slot.card, rect: el.getBoundingClientRect() });
                 });
             });
@@ -1455,7 +1455,7 @@
                         return;
                     }
                     const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
-                    const anchorEl = document.querySelector(`#${boardId} .field-slot[data-owner="${owner}"][data-type="monster"][data-index="${slotIndex}"]`);
+                    const anchorEl = PortaUI.query(`#${boardId} .field-slot[data-owner="${owner}"][data-type="monster"][data-index="${slotIndex}"]`);
                     window.DuelEngineUI.openPositionPicker(anchorEl, {
                         title: `${choice.card.name}: Attacco o Difesa?`,
                         onSelect: (position) => reviveWith(choice, position)
@@ -1555,7 +1555,7 @@
                 ctx.log('⚠️ Il Terreno è pieno: Guerriero Nero Supremo finisce nel Cimitero.');
                 return;
             }
-            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'graveyard');
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'hand');
             ctx.log('⚔️ Rito del Guerriero Nero evoca Guerriero Nero Supremo!');
         }
     });
@@ -3027,7 +3027,13 @@
             });
         },
         static(ctx) {
-            const t = equippedTarget(ctx);
+            // Il Bozzolo è anche un mostro normale (Livello 3, 0/2000) che si
+            // può Evocare: lì non è agganciato a nulla, e il motore ne esegue
+            // comunque lo static dalla zona Mostri. Prima andava in errore ad
+            // ogni ricalcolo (trovato dal duello senza testa): senza un
+            // bersaglio agganciato non c'è niente da sostituire.
+            const t = ctx.card.equippedToOwner ? equippedTarget(ctx) : null;
+            if (!t) return;
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
             gameState.atkDefBonus[t.uid] = { atk: e.atk + (ctx.card.attack - t.attack), def: e.def + (ctx.card.defense - t.defense) };
         }

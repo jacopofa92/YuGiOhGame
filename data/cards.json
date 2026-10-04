@@ -2300,15 +2300,6 @@
     "artOnly": true
   },
   {
-    "id": 224,
-    "origin": "yu-gi-oh",
-    "name": "Egotista Elegante",
-    "type": "spell",
-    "subtype": "normal",
-    "effect": "Se \"Lady Arpia\" è sul Terreno: Special Summon 1 \"Lady Arpia\" o \"Sorelle Lady Arpia\" dalla mano o dal Deck.",
-    "artOnly": true
-  },
-  {
     "id": 225,
     "origin": "yu-gi-oh",
     "name": "Luce dell'Elfo",

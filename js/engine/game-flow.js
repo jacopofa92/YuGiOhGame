@@ -524,6 +524,12 @@ function renderBanishedBadge(owner) {
     };
 }
 
+// ATTENZIONE: non è solo disegno. recomputeStaticEffects (in testa) e
+// checkGameOver (in fondo) sono REGOLE, e il motore conta su updateUI per
+// tenerle aggiornate dopo ogni mossa: senza, gli effetti continui (chi è
+// non bersagliabile, i bonus ATK/DEF...) resterebbero quelli vecchi. Il
+// duello senza testa (tools/duello-senza-testa.js) ne tiene appunto solo
+// queste due righe. Toglierle da qui vuol dire spostarle, non perderle.
 function updateUI() {
     if (gameState.gameOver) return;
     // Ricalcola gli effetti continui (es. Jinzo nega le Trappole, Spada

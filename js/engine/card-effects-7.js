@@ -1455,7 +1455,7 @@
             const [ritualCard] = hand.splice(finalHandIndex, 1);
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) { ctx.graveyard(ctx.owner).push(ritualCard); return; }
-            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'graveyard');
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'hand');
             ctx.log('🐋 Giuramento della Balena Fortezza evoca Balena Fortezza!');
         }
     });
