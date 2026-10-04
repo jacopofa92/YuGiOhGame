@@ -457,6 +457,8 @@ const APP_SHELL = [
     'js/engine/duel-sandbox.js',
     'js/engine/stato.js',
     'js/engine/fasi.js',
+    'js/engine/battaglia.js',
+    'js/engine/evocazioni.js',
     'js/engine/game-flow.js',
     'js/engine/actions.js',
     // /gruppo-script:partita

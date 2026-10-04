@@ -37,3 +37,12 @@ const EXODIA_PIECE_IDS = [11, 41, 42, 43, 44];
 const DESTINY_BOARD_CARD_IDS = [866, 867, 868, 869, 870];
 
 const phaseOrder = ['draw', 'standby', 'main1', 'battle', 'main2', 'end'];
+
+// ============================================================
+// Limite di 6 carte in mano a fine turno (regole.html, Capitolo 2/3):
+// enterEndPhase() in js/engine/game-flow.js chiama startHandDiscardSelection()
+// quando la mano del giocatore supera il limite — stesso "seleziona finché
+// il conto torna, poi scatta da sola" di startTributeSelection() qui
+// sopra, ma sulla propria MANO invece che sul proprio Terreno.
+// ============================================================
+const MAX_HAND_SIZE = 6;
