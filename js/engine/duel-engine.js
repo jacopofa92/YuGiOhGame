@@ -3536,6 +3536,19 @@
         if (known) return known;
         const def = getDefinition(action.card.id);
         if (!def) return null;
+        // Una carta che è GIÀ sul Terreno dell'avversario si usa nella sua
+        // copia LOCALE, non in quella arrivata col messaggio: quest'ultima
+        // porta i campi relativi a chi l'ha mandata (equippedToOwner:
+        // 'player' vuol dire "il suo" di là, "il mio" di qua), e l'effetto
+        // li leggerebbe al contrario. Succede quando la lista dei candidati
+        // locale è vuota (le finestre di priorità non la calcolano).
+        if (action.zone === 'st' || action.zone === 'monster') {
+            const zona = action.zone === 'st' ? stFieldOf('bot') : fieldOf('bot');
+            const index = zona.findIndex((s) => s && s.card && s.card.uid === action.card.uid);
+            if (index !== -1) {
+                return { zone: action.zone, index: index, card: zona[index].card, def: def, quickEffect: !!action.quickEffect, handEffect: !!action.handEffect };
+            }
+        }
         // handEffect: una carta della mano con un Effetto Veloce dedicato
         // (canRespondFromHand/activateFromHand, es. Amuleto di Shabti id
         // 1059) si risolve con activateFromHand, non con activate. Senza
@@ -6088,9 +6101,15 @@
      */
     function serializePublicState(owner) {
         return {
+            // originalOwner: di chi è davvero un mostro preso sotto
+            // controllo (Cambio di Cuore...). Senza, di qua un mostro rubato
+            // sembrava di chi lo controlla e tornava nella mano sbagliata.
+            // Chi riceve lo traduce nel proprio punto di vista (vedi
+            // traduciStato in js/multiplayer/multiplayer.js).
             monsterField: fieldOf(owner).map((slot) => slot ? {
                 card: slot.card, position: slot.position, isFaceDown: slot.isFaceDown,
-                hasAttacked: slot.hasAttacked, canChangePosition: slot.canChangePosition
+                hasAttacked: slot.hasAttacked, canChangePosition: slot.canChangePosition,
+                originalOwner: slot.originalOwner
             } : null),
             stField: stFieldOf(owner).map((slot) => slot ? {
                 card: slot.card, isFaceDown: slot.isFaceDown, setOnTurn: slot.setOnTurn

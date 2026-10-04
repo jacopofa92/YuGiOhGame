@@ -161,8 +161,40 @@
      * spontanea non è un guasto da segnalare), `skipTurnInfo` lascia
      * stare turno/fase/di-chi-è-il-turno.
      */
+    /**
+     * 'player' e 'bot' dentro una carta sono relativi a chi la manda: una
+     * Carta Equipaggiamento agganciata a un mostro del mittente porta
+     * `equippedToOwner: 'player'`, che di qua indica il NOSTRO Terreno.
+     * Copiata così com'era, l'Equip puntava al lato sbagliato e
+     * recomputeStaticEffects lo scartava come non valido: misurato, la
+     * Spada Sigillante di Orichalcos finiva nel Cimitero su un client e
+     * restava in campo sull'altro dopo ogni fotografia di stato.
+     * Si scambiano i due valori in OGNI campo il cui nome finisce per
+     * "Owner" (equippedToOwner, targetOwner, originalOwner,
+     * _relinquishedFromOwner, ...): così un campo nuovo della stessa forma
+     * è coperto senza doverlo elencare.
+     */
+    function traduciPuntoDiVista(oggetto) {
+        if (!oggetto || typeof oggetto !== 'object') return;
+        Object.keys(oggetto).forEach((chiave) => {
+            if (!/owner$/i.test(chiave)) return;
+            if (oggetto[chiave] === 'player') oggetto[chiave] = 'bot';
+            else if (oggetto[chiave] === 'bot') oggetto[chiave] = 'player';
+        });
+    }
+    function traduciStato(state) {
+        const caselle = [].concat(state.monsterField || [], state.stField || [], state.fieldSpell ? [state.fieldSpell] : []);
+        caselle.forEach((slot) => {
+            if (!slot) return;
+            traduciPuntoDiVista(slot);
+            traduciPuntoDiVista(slot.card);
+        });
+        (state.graveyard || []).forEach(traduciPuntoDiVista);
+    }
+
     function applyStateResync(state, { silent = false, skipTurnInfo = false } = {}) {
         if (!state) return;
+        traduciStato(state);
         window.MP_applyingRemote = true;
         try {
             gameState.botMonsterField = state.monsterField;

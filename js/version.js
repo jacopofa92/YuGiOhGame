@@ -32,6 +32,9 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.43 — Multiplayer: una Carta Equipaggiamento dell'avversario non
+ *   sparisce più dal tuo schermo dopo un suo Effetto Veloce. Tolto un
+ *   doppione di "M-Guerriero #1" con l'Attributo sbagliato.
  * 1.0.42 — Nei menu di scelta della musica da duello ci sono tutte le
  *   tracce da 30 a 43 più la 57, ciascuna col suo nome.
  * 1.0.41 — Anche in Multiplayer puoi usare un Effetto Veloce nel turno
@@ -611,4 +614,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.42';
+window.GAME_VERSION = '1.0.43';

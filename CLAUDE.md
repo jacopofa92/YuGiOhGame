@@ -3801,6 +3801,20 @@ in silenzio, e qui significava 30 secondi di attesa ad ogni finestra. Per
 un nuovo messaggio, o si riusa un tipo esistente con un campo in più (come
 qui), o si aggiunge il tipo al server e lo si ridistribuisce.
 Spec: `multiplayer-finestra-di-priorita.spec.js`.
+
+*Fotografie di stato e campi relativi a chi guarda* (1.0.43, trovato col
+controllo Multiplayer successivo): dentro una carta i valori 'player'/
+'bot' (`equippedToOwner`, `targetOwner`, `_relinquishedFromOwner`, ...)
+sono relativi a chi la manda. `applyStateResync` (multiplayer.js) ora li
+scambia in ogni campo il cui nome finisce per "Owner" (`traduciStato`):
+prima una Carta Equipaggiamento del mittente, di qua, puntava al Terreno
+sbagliato e `recomputeStaticEffects` la scartava — la Spada di Orichalcos
+finiva nel Cimitero su un client solo. La fotografia trasmette ora anche
+`originalOwner` del mostro (di chi è davvero un mostro rubato), e
+`resolveRemoteChoice` usa la copia LOCALE di una carta già in campo invece
+di quella arrivata col messaggio. **Un campo nuovo che memorizza un
+proprietario va chiamato `...Owner`**, così la traduzione lo copre da sola.
+Spec: `multiplayer-equip-e-fotografia.spec.js`.
 Due difetti chiusi insieme: un mostro che usa il suo Effetto Veloce in
 risposta ora risulta "già usato nel turno" (`segnaUsoEffettoMostro`), e
 la carta che apre una Catena non viene più riproposta come risposta a

@@ -3863,20 +3863,6 @@ const cardDatabase = [
     "artOnly": true
   },
   {
-    "id": 357,
-    "origin": "yu-gi-oh",
-    "name": "M-Guerriero #1",
-    "type": "monster",
-    "level": 3,
-    "race": "Guerriero",
-    "attribute": "OSCURITÀ",
-    "attack": 1000,
-    "defense": 500,
-    "effect": "Specializzato in attacchi combinati, questo guerriero usa il magnetismo per bloccare la fuga di un nemico.",
-    "artOnly": true,
-    "vanilla": true
-  },
-  {
     "id": 358,
     "origin": "yu-gi-oh",
     "name": "Fabbrica di Conversione Meccanica",
