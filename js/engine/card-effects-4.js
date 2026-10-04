@@ -89,8 +89,14 @@
             });
             chooseFieldMonsterTarget(ctx, candidati, {
                 title: '🔀 Recupero dei Mostri',
+                dichiara: true,
                 text: 'Scegli quale tuo mostro rimescolare nel Deck insieme alla tua mano.'
-            }, (scelta) => attivaRecuperoDeiMostri(ctx, scelta.index));
+            }, (scelta) => {
+                // Il bersaglio può essere stato ridiretto: l'effetto vale
+                // solo per un mostro che controlli.
+                if (scelta.owner !== ctx.owner) return;
+                attivaRecuperoDeiMostri(ctx, scelta.index);
+            });
         }
     });
 
@@ -2097,22 +2103,18 @@
             return ['player', 'bot'].some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown));
         },
         activate(ctx) {
-            const candidates = [];
-            ['player', 'bot'].forEach((owner) => {
-                ctx.field(owner).forEach((s) => { if (s && !s.isFaceDown) candidates.push(s.card); });
-            });
-            const boost = (card) => {
-                ctx.grantTemporaryAtkDefBonus(card, 0, 500, false);
-                ctx.log(`🏰 Mura del Castello aumenta la DEF di ${card.name} di 500 punti!`);
-            };
-            if (ctx.owner !== 'player' || !window.DuelEngineUI) {
-                boost(candidates[0]);
-                return;
-            }
-            window.DuelEngineUI.openCardListPicker(candidates, {
+            // Prima i propri mostri: il bot prende il primo candidato, e
+            // rinforzare un mostro avversario sarebbe una mossa senza senso.
+            const candidati = collectFieldTargets(ctx, { zone: 'monster', owner: 'self' })
+                .concat(collectFieldTargets(ctx, { zone: 'monster', owner: 'opponent' }));
+            if (candidati.length === 0) return;
+            chooseFieldCardTarget(ctx, candidati, {
                 title: '🏰 Mura del Castello',
                 text: 'Scegli quale mostro rinforzare.',
-                onSelect: boost
+                dichiara: true
+            }, (scelto) => {
+                ctx.grantTemporaryAtkDefBonus(scelto.card, 0, 500, false);
+                ctx.log(`🏰 Mura del Castello aumenta la DEF di ${scelto.card.name} di 500 punti!`);
             });
         }
     });
@@ -2844,9 +2846,11 @@
             });
             chooseFieldCardTargetWaiting(ctx, candidati, {
                 title: '🔀 Spostamento',
+                dichiara: true,
                 text: 'Scegli quale altro tuo mostro subirà l\'attacco.'
             }, (scelto) => {
-                ctx.redirectAttack(scelto.index);
+                // scelto.owner: vedi Spiritello dei Sogni (id 214).
+                ctx.redirectAttack(scelto.index, scelto.owner);
                 ctx.log(`🔀 Spostamento ridirige l'attacco verso ${scelto.card.name}!`);
             });
         },

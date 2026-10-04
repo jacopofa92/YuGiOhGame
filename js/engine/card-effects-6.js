@@ -283,6 +283,7 @@
         if (candidates.length === 0) return;
         chooseFieldCardTarget(ctx, candidates, {
             title: '🌙 Tsukuyomi',
+            dichiara: true,
             text: 'Scegli il mostro da girare coperto in Posizione di Difesa.'
         }, (choice) => {
             const slot = ctx.field(choice.owner)[choice.index];
@@ -330,6 +331,7 @@
             if (candidates.length === 0) return;
             chooseFieldCardTarget(ctx, candidates, {
                 title: '🔮 Stregone del Caos',
+                dichiara: true,
                 text: 'Scegli quale mostro scoperto bandire.'
             }, (choice) => {
                 // Lo slot si ricontrolla ORA e non alla raccolta dei
@@ -492,9 +494,13 @@
         },
         activate(ctx) {
             const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
-            const targetIndex = findLevel7SpellcasterTarget(ctx);
-            if (targetIndex === -1) return;
-            gameState[lpKey] -= 1000;
+            const scelto = findLevel7SpellcasterTarget(ctx);
+            if (scelto === -1) return;
+            gameState[lpKey] -= 1000; // costo: si paga prima di scegliere il bersaglio
+            // Checkpoint di targeting, come Movimento d'Onda Diffuso (id 199).
+            const decl = ctx.declareTarget(ctx.owner, scelto, { totalTargetCount: 1 });
+            if (!decl.allowed || decl.targetOwner !== ctx.owner) return;
+            const targetIndex = decl.targetIndex;
             const targetSlot = ctx.field(ctx.owner)[targetIndex];
             grantAttackAllEnemiesOncEach(ctx, targetIndex);
             // Seconda clausola, propria di 747 (non di 199): "gli effetti
@@ -620,7 +626,10 @@
             if (candidati.length === 0) return;
             chooseFieldCardTarget(ctx, candidati, {
                 title: '🔮 Pietra del Potere Nero Pece',
-                text: 'Scegli su quale carta scoperta spostare un Segnalino Magia.'
+                text: 'Scegli su quale carta scoperta spostare un Segnalino Magia.',
+                // Un mostro scelto passa dal checkpoint di targeting; una
+                // Magia/Trappola no (il checkpoint copre solo i mostri).
+                dichiara: true
             }, (scelto) => {
                 ctx.card.counters -= 1;
                 scelto.card.counters = (scelto.card.counters || 0) + 1;
@@ -1913,6 +1922,8 @@
                 }
                 chooseFieldCardTarget(ctx, primi, {
                     title: '🦅 Primo bersaglio',
+                    dichiara: true,
+                    totalTargetCount: 2,
                     text: 'Scegli la prima delle due carte da distruggere.'
                 }, (primo) => {
                     const distrutti = distruggi(primo) ? 1 : 0;
@@ -1926,6 +1937,8 @@
                     }
                     chooseFieldCardTarget(ctx, secondi, {
                         title: '🦅 Secondo bersaglio',
+                        dichiara: true,
+                        totalTargetCount: 2,
                         text: 'Scegli la seconda carta da distruggere.'
                     }, (secondo) => {
                         const totale = distrutti + (distruggi(secondo) ? 1 : 0);
@@ -2626,6 +2639,10 @@
     // ================================================================
     CardEffects.register(820, {
         onAttackDeclare(ctx) {
+            // "Scegli come bersaglio il mostro attaccante": checkpoint di
+            // targeting.
+            const decl = ctx.declareTarget(ctx.attackerOwner, ctx.attackerIndex, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
             ctx.cancelAttack();
             ctx.endBattlePhase();
             ctx.log("🛡️ Nega Attacco annulla l'attacco e termina la Battle Phase!");

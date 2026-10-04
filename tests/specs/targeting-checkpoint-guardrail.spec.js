@@ -46,11 +46,28 @@ module.exports = {
         const codeLines = effectsSrc.split('\n').filter((line) => !line.trim().startsWith('//'));
         const declareTargetCalls = codeLines.filter((line) => line.includes('.declareTarget(')).length;
         const combinedHelperCalls = codeLines.filter((line) => line.includes('.destroyTargetedMonster(')).length;
-        const total = declareTargetCalls + combinedHelperCalls;
+        // `dichiara: true` passato a chooseFieldCardTarget (card-effects.js,
+        // dichiaraBersaglioScelto): la terza forma del checkpoint, nata
+        // dall'audit 1.0.37 che ha portato una trentina di carte a
+        // dichiarare il proprio bersaglio. Conta come le altre due.
+        const opzioneDichiara = codeLines.filter((line) => /\bdichiara:\s*true\b/.test(line)).length;
+        const total = declareTargetCalls + combinedHelperCalls + opzioneDichiara;
+        // Soglia rialzata dopo l'audit 1.0.37 (da 60): era 122 al momento
+        // dell'audit. Si alza a mano quando si aggiungono chiamate, mai si
+        // abbassa senza un motivo scritto.
+        const SOGLIA = 115;
 
         t.assert(
-            total >= 60,
-            `Il numero di chiamate reali al checkpoint di targeting condiviso (ctx.declareTarget o ctx.destroyTargetedMonster) non deve scendere sotto 60 — lette ${total} (${declareTargetCalls} declareTarget + ${combinedHelperCalls} destroyTargetedMonster). Se sei qui perché hai rimosso/rifattorizzato una chiamata esistente, verifica di aver sostituito la protezione con l'equivalente corretto, non solo cancellato la riga.`
+            total >= SOGLIA,
+            `Il numero di chiamate reali al checkpoint di targeting condiviso (ctx.declareTarget, ctx.destroyTargetedMonster o l'opzione dichiara: true) non deve scendere sotto ${SOGLIA} — lette ${total} (${declareTargetCalls} declareTarget + ${combinedHelperCalls} destroyTargetedMonster + ${opzioneDichiara} dichiara). Se sei qui perché hai rimosso/rifattorizzato una chiamata esistente, verifica di aver sostituito la protezione con l'equivalente corretto, non solo cancellato la riga.`
         );
+        // La forma più comoda deve continuare a funzionare davvero: se
+        // dichiaraBersaglioScelto smettesse di chiamare declareTarget,
+        // tutte le carte con `dichiara: true` perderebbero la protezione
+        // senza che il conteggio qui sopra se ne accorga.
+        const shared = fs.readFileSync(path.join(DIR_MOTORE, 'card-effects.js'), 'utf8');
+        const corpo = (shared.match(/function dichiaraBersaglioScelto\([^)]*\)\s*\{[\s\S]*?\n    \}/) || [''])[0];
+        t.assert(corpo.includes('ctx.declareTarget('), 'dichiaraBersaglioScelto (card-effects.js) deve chiamare ctx.declareTarget');
+        t.assert(/options\s*&&\s*options\.dichiara/.test(shared), 'chooseFieldCardTarget deve leggere options.dichiara');
     }
 };

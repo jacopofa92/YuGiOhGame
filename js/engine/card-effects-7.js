@@ -136,6 +136,7 @@
             if (candidati.length === 0) return;
             chooseFieldCardTarget(ctx, candidati, {
                 title: '⚙️ Esplosivo Ingranaggio Antico',
+                dichiara: true,
                 text: 'Scegli quale tuo "Ingranaggio Antico" far esplodere: il danno è metà del suo ATK.'
             }, (scelto) => {
                 const card = scelto.card;
@@ -419,24 +420,32 @@
             if (ctx.hasUsedOncePerTurn(`weapon-change:${ctx.card.uid}`)) return;
             const ownLP = ctx.owner === 'player' ? gameState.playerLP : gameState.botLP;
             if (ownLP <= 700) return;
-            const targets = ctx.field(ctx.owner).filter((s) => s && !s.isFaceDown && (s.card.race === 'Guerriero' || s.card.race === 'Macchina')).map((s) => s.card);
+            const targets = collectFieldTargets(ctx, {
+                zone: 'monster', owner: 'self',
+                filter: (card) => card.race === 'Guerriero' || card.race === 'Macchina'
+            });
             if (targets.length === 0) return;
-            if (ctx.owner === 'player' && window.DuelEngineUI) {
-                window.DuelEngineUI.openChoicePopover(null, {
-                    title: "⚙️ Cambio d'Arma",
-                    choiceA: { icon: '✅', label: 'Paga 700 LP, scambia ATK/DEF di un mostro', onSelect: () => {
-                        if (targets.length === 1) { applyWeaponChange(ctx, targets[0]); return; }
-                        window.DuelEngineUI.openCardListPicker(targets, {
-                            title: "⚙️ Cambio d'Arma",
-                            text: 'Scegli il mostro Guerriero/Macchina a cui scambiare ATK/DEF.',
-                            onSelect: (card) => applyWeaponChange(ctx, targets.find((t) => t.uid === card.uid))
-                        });
-                    } },
-                    choiceB: { icon: '❌', label: 'Non fare nulla', onSelect: () => {} }
-                });
-            } else {
-                applyWeaponChange(ctx, targets[0]);
-            }
+            // Il mostro passa dal checkpoint di targeting (testo: "scegli
+            // come bersaglio"); con un solo candidato chooseFieldCardTarget
+            // non apre nulla e sceglie da sé.
+            const scegliEScambia = () => chooseFieldCardTarget(ctx, targets, {
+                title: "⚙️ Cambio d'Arma",
+                text: 'Scegli il mostro Guerriero/Macchina a cui scambiare ATK/DEF.',
+                dichiara: true
+            }, (scelto) => applyWeaponChange(ctx, scelto.card));
+            // chooseOption e non un popover a due icone: in Multiplayer la
+            // decisione viaggia sulla stessa coda della scelta del mostro,
+            // e un "Non fare nulla" non lascia l'altro client ad aspettare.
+            // Il bot paga sempre, come prima.
+            chooseOption(ctx, {
+                title: "⚙️ Cambio d'Arma",
+                text: 'Paghi 700 Life Points per scambiare ATK e DEF di un tuo mostro Guerriero o Macchina?',
+                options: [
+                    { value: 'paga', label: 'Paga 700 LP', icon: '✅' },
+                    { value: 'no', label: 'Non fare nulla', icon: '❌' }
+                ],
+                pickForBot: () => 'paga'
+            }, (scelta) => { if (scelta === 'paga') scegliEScambia(); });
         }
     });
 
@@ -460,6 +469,7 @@
             if (candidati.length === 0) return;
             chooseFieldCardTarget(ctx, candidati, {
                 title: '⚙️ Duplicazione Meccanica',
+                dichiara: true,
                 text: 'Scegli quale Macchina duplicare: dal Deck arrivano fino a 2 copie con lo stesso nome.'
             }, (scelto) => duplicaMacchina(ctx, scelto.slot));
         }
@@ -686,6 +696,7 @@
             }).sort((a, b) => DuelEngine.getEffectiveAtk(b.card) - DuelEngine.getEffectiveAtk(a.card));
             chooseFieldCardTargetWaiting(ctx, candidati, {
                 title: '🔥 Fuoco di Copertura',
+                dichiara: true,
                 text: `Scegli il mostro che presta il suo ATK a ${targetSlot.card.name} per questo calcolo dei danni.`
             }, (scelto) => {
                 const bonus = DuelEngine.getEffectiveAtk(scelto.card);
@@ -1112,6 +1123,12 @@
     // distruggere sono sempre quelle di chi controlla il mostro Evocato.
     // ------------------------------------------------------------------
     function catenaDiDistruzione(ctx, controllore) {
+        // "Scegli come bersaglio quel mostro": passa dal checkpoint di
+        // targeting, anche se l'effetto colpisce poi mano e Deck.
+        if (typeof ctx.summonedSlotIndex === 'number') {
+            const decl = ctx.declareTarget(controllore, ctx.summonedSlotIndex, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+        }
         const name = ctx.summonedCard.name;
         let count = 0;
         const hand = ctx.hand(controllore);
@@ -1322,9 +1339,14 @@
         },
         activate(ctx) {
             const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
-            const targetIndex = findLevel7SpellcasterTarget(ctx);
-            if (targetIndex === -1) return;
-            gameState[lpKey] -= 1000;
+            const scelto = findLevel7SpellcasterTarget(ctx);
+            if (scelto === -1) return;
+            gameState[lpKey] -= 1000; // costo: si paga prima di scegliere il bersaglio
+            // Checkpoint di targeting ("scegli come bersaglio"); l'effetto
+            // vale solo per un mostro che controlli.
+            const decl = ctx.declareTarget(ctx.owner, scelto, { totalTargetCount: 1 });
+            if (!decl.allowed || decl.targetOwner !== ctx.owner) return;
+            const targetIndex = decl.targetIndex;
             grantAttackAllEnemiesOncEach(ctx, targetIndex);
             ctx.log(`🌊 Movimento d'Onda Diffuso: ${ctx.field(ctx.owner)[targetIndex].card.name} deve attaccare tutti i mostri avversari!`);
         }
@@ -1416,13 +1438,25 @@
         activate(ctx) {
             const harpieCount = ctx.field(ctx.owner).filter((s) => s && !s.isFaceDown && (isHarpieLadySupport(s.card) || s.card.name === 'Sorelle Lady Arpia')).length;
             const field = ctx.field(ctx.opponent);
+            // Quanti bersagli: tanti quante le Lady Arpia, e si prendono i
+            // più forti — il danno finale è pari all'ATK più alto fra i
+            // distrutti, quindi è anche la scelta che conviene. Ognuno passa
+            // dal checkpoint di targeting, col numero TOTALE di bersagli
+            // (Specchietto della Fata reagisce solo a un bersaglio singolo).
+            const bersagli = field.map((slot, index) => ({ slot, index }))
+                .filter((x) => x.slot)
+                .sort((a, b) => (b.slot.card.attack || 0) - (a.slot.card.attack || 0))
+                .slice(0, harpieCount);
             let destroyed = 0, maxAtk = 0;
-            for (let i = 0; i < field.length && destroyed < harpieCount; i++) {
-                if (!field[i]) continue;
-                maxAtk = Math.max(maxAtk, field[i].card.attack || 0);
-                ctx.destroyMonster(ctx.opponent, i);
+            bersagli.forEach((b) => {
+                const decl = ctx.declareTarget(ctx.opponent, b.index, { totalTargetCount: bersagli.length });
+                if (!decl.allowed) return;
+                const slot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!slot) return;
+                maxAtk = Math.max(maxAtk, slot.card.attack || 0);
+                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
                 destroyed++;
-            }
+            });
             if (maxAtk > 0) ctx.dealDamage(ctx.opponent, maxAtk);
             ctx.log(`🦅 Lady Arpia Formazione della Fenice distrugge ${destroyed} mostri e infligge ${maxAtk} danni!`);
         }

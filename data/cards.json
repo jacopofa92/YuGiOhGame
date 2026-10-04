@@ -1074,8 +1074,7 @@
     "attack": 100,
     "defense": 2600,
     "effect": "Se questa carta, l'unica coperta sul Terreno, viene presa di mira da una Magia: gira scoperta in Posizione di Difesa e nega quella Magia. Se attaccata, a fine Damage Step passa in Posizione di Attacco.",
-    "artOnly": true,
-    "missingEffectNote": "Entrambe le clausole sono implementate. Passa dal checkpoint di targeting condiviso (ctx.declareTarget, duel-engine.js), che non copre ogni carta del dataset: un effetto che bersaglia senza passare di li' sfugge. La copertura reale si conta all'occorrenza cercando le chiamate in js/engine/, mai fidandosi di un numero scritto qui."
+    "artOnly": true
   },
   {
     "id": 116,
@@ -1947,7 +1946,7 @@
     "subtype": "field",
     "effect": "Se una carta \"Spirit Message\" verrebbe piazzata sul Terreno con \"Destiny Board\": puoi Special Summonarla come Mostro Normale (Demone/OSCURITÀ/Livello 1/ATK 0/DEF 0) invece. Quando un mostro dell'avversario dichiara un attacco: lancia una moneta; se esce Testa, annulla l'attacco e infliggi danno pari a metà dell'ATK di quel mostro.",
     "artOnly": true,
-    "missingEffectNote": "Tutte e tre le clausole sono implementate, compresa la vittoria alternativa con Destiny Board (id 866-870). L'immunita' agli effetti Carta del Mostro generato copre il targeting, non un effetto di massa non mirato: Passa dal checkpoint di targeting condiviso (ctx.declareTarget, duel-engine.js), che non copre ogni carta del dataset: un effetto che bersaglia senza passare di li' sfugge. La copertura reale si conta all'occorrenza cercando le chiamate in js/engine/, mai fidandosi di un numero scritto qui."
+    "missingEffectNote": "Tutte e tre le clausole sono implementate, compresa la vittoria alternativa con Destiny Board (id 866-870). L'immunita' agli effetti Carta del Mostro generato copre gli effetti che lo scelgono come bersaglio, non un effetto di massa che lo colpisce senza sceglierlo: il motore non ha un punto unico da cui passino gli effetti non mirati."
   },
   {
     "id": 193,
@@ -2017,8 +2016,7 @@
     "attack": 1200,
     "defense": 1500,
     "effect": "L'effetto di una Magia o Trappola non può distruggere questa carta a meno che non la scelga specificamente come bersaglio. Questa carta non viene distrutta in battaglia se combatte con un mostro con 1900 o meno ATK.",
-    "artOnly": true,
-    "missingEffectNote": "Implementata per intero. Il 'non mirato' si riconosce dai bersagli dichiarati col checkpoint di targeting condiviso (ctx.declareTarget): una Magia/Trappola che la bersaglia senza passare di lì viene trattata come non mirata e non la distrugge."
+    "artOnly": true
   },
   {
     "id": 199,
@@ -2408,7 +2406,7 @@
     "subtype": "normal",
     "effect": "Quando il tuo avversario attiva una Magia che ha come bersaglio esattamente 1 mostro sul Terreno (e nessun'altra carta): scegli un altro bersaglio valido; quella Magia ora ha come bersaglio la nuova carta.",
     "artOnly": true,
-    "missingEffectNote": "Implementata, ma il nuovo bersaglio lo sceglie da sola (priorita' al campo di chi ha attivato la Magia), mai il giocatore: la reazione passa dal checkpoint di targeting condiviso (ctx.declareTarget, duel-engine.js), che e' SINCRONO — chi ha attivato la Magia legge il bersaglio finale subito dopo — quindi li' non puo' aspettare una scelta. Lo stesso checkpoint non copre ogni carta del dataset: un effetto che bersaglia senza passare di li' sfugge. La copertura reale si conta all'occorrenza cercando le chiamate in js/engine/, mai fidandosi di un numero scritto qui."
+    "missingEffectNote": "Implementata, ma il nuovo bersaglio lo sceglie da sola (priorita' al campo di chi ha attivato la Magia), mai il giocatore: la reazione passa dal checkpoint di targeting condiviso (ctx.declareTarget, duel-engine.js), che e' SINCRONO — chi ha attivato la Magia legge il bersaglio finale subito dopo — quindi li' non puo' aspettare una scelta."
   },
   {
     "id": 237,
@@ -3814,8 +3812,7 @@
     "attack": 1200,
     "defense": 1100,
     "effect": "Nessun giocatore può scegliere come bersaglio mostri Tipo Drago sul Terreno con effetti di carta.",
-    "artOnly": true,
-    "missingEffectNote": "Il floodgate (def.protectsRaceFromTargeting) e' implementato. Passa dal checkpoint di targeting condiviso (ctx.declareTarget, duel-engine.js), che non copre ogni carta del dataset: un effetto che bersaglia senza passare di li' sfugge. La copertura reale si conta all'occorrenza cercando le chiamate in js/engine/, mai fidandosi di un numero scritto qui."
+    "artOnly": true
   },
   {
     "id": 354,
@@ -4610,8 +4607,7 @@
     "type": "spell",
     "subtype": "equip",
     "effect": "Il mostro equipaggiato guadagna 500 DEF. Nega altri effetti Magia che scelgono come bersaglio il mostro equipaggiato, e se lo fai, distruggi quella Magia.",
-    "artOnly": true,
-    "missingEffectNote": "Implementata. La negazione passa dal checkpoint di targeting condiviso (ctx.declareTarget, duel-engine.js), che non copre una Magia che bersaglia senza dichiararlo lì."
+    "artOnly": true
   },
   {
     "id": 424,
@@ -6901,7 +6897,7 @@
     "subtype": "normal",
     "effect": "Quando il tuo avversario designa esattamente 1 mostro che controlli (e nessun'altra carta) come bersaglio per un attacco, o con un effetto Magia/Trappola: scegli un altro mostro che controlli come nuovo bersaglio adatto; quell'attacco/effetto ora ha come bersaglio la nuova carta.",
     "artOnly": true,
-    "missingEffectNote": "Entrambe le meta' (attacco e Magia/Trappola) sono implementate. Nella meta' attacco il nuovo bersaglio lo sceglie il giocatore; nella meta' Magia/Trappola lo sceglie da sola, perche' passa dal checkpoint di targeting condiviso (ctx.declareTarget, duel-engine.js), che e' sincrono e non puo' aspettare una scelta. Quel checkpoint non copre ogni carta del dataset: un effetto che bersaglia senza passare di li' sfugge. La copertura reale si conta all'occorrenza cercando le chiamate in js/engine/, mai fidandosi di un numero scritto qui."
+    "missingEffectNote": "Entrambe le meta' (attacco e Magia/Trappola) sono implementate. Nella meta' attacco il nuovo bersaglio lo sceglie il giocatore; nella meta' Magia/Trappola lo sceglie da sola, perche' passa dal checkpoint di targeting condiviso (ctx.declareTarget, duel-engine.js), che e' sincrono e non puo' aspettare una scelta."
   },
   {
     "id": 623,
@@ -7335,8 +7331,7 @@
     "attack": 300,
     "defense": 200,
     "effect": "Non può essere distrutta in battaglia. Dopo che si è risolto un effetto che ha come bersaglio questa carta scoperta, distruggila. Quando questa carta infligge danno da battaglia al tuo avversario con un attacco diretto: il tuo avversario scarta 1 carta a caso dalla sua mano.",
-    "artOnly": true,
-    "missingEffectNote": "Tutte le clausole sono implementate. La distruzione-dopo-targeting passa dal checkpoint di targeting condiviso (ctx.declareTarget, duel-engine.js), che non copre ogni carta del dataset: un effetto che bersaglia senza passare di li' sfugge. La copertura reale si conta all'occorrenza cercando le chiamate in js/engine/, mai fidandosi di un numero scritto qui."
+    "artOnly": true
   },
   {
     "id": 662,
@@ -8263,8 +8258,7 @@
     "attack": 2400,
     "defense": 1900,
     "effect": "Annulla l'effetto di una Carta Mostro che ha come bersaglio questa carta.",
-    "artOnly": true,
-    "missingEffectNote": "Implementata, limitata agli effetti Mostro. Passa dal checkpoint di targeting condiviso (ctx.declareTarget, duel-engine.js), che non copre ogni carta del dataset: un effetto che bersaglia senza passare di li' sfugge. La copertura reale si conta all'occorrenza cercando le chiamate in js/engine/, mai fidandosi di un numero scritto qui."
+    "artOnly": true
   },
   {
     "id": 739,
@@ -9317,8 +9311,7 @@
     "attack": 1500,
     "defense": 1500,
     "effect": "Annulla gli effetti Trappola che hanno come bersaglio questa carta, e se lo fai, distruggi quella Trappola. Se questa carta attacca, il tuo avversario non può attivare Magie/Trappole fino alla fine del Damage Step. Alla fine del Damage Step, se questa carta ha attaccato: scegli come bersaglio 1 Magia/Trappola dell'avversario; distruggila.",
-    "artOnly": true,
-    "missingEffectNote": "Tutte e tre le clausole sono implementate. La negazione delle Trappole che la bersagliano passa dal checkpoint di targeting condiviso (ctx.declareTarget, duel-engine.js), che non copre ogni carta del dataset: un effetto che bersaglia senza passare di li' sfugge. La copertura reale si conta all'occorrenza cercando le chiamate in js/engine/, mai fidandosi di un numero scritto qui."
+    "artOnly": true
   },
   {
     "id": 827,
@@ -9584,8 +9577,7 @@
     "type": "trap",
     "subtype": "continuous",
     "effect": "Attiva questa carta scegliendo come bersaglio 1 mostro Tipo Macchina sul Terreno; guadagna 500 ATK. Una volta, annulla un effetto Magia che ha come bersaglio quel mostro. Quando quel mostro lascia il Terreno: distruggi questa carta.",
-    "artOnly": true,
-    "missingEffectNote": "L'annullamento una tantum e' implementato. Passa dal checkpoint di targeting condiviso (ctx.declareTarget, duel-engine.js), che non copre ogni carta del dataset: un effetto che bersaglia senza passare di li' sfugge. La copertura reale si conta all'occorrenza cercando le chiamate in js/engine/, mai fidandosi di un numero scritto qui."
+    "artOnly": true
   },
   {
     "id": 852,
@@ -13066,7 +13058,6 @@
     "attack": 1900,
     "defense": 2300,
     "effect": "Quando questo mostro distrugge in battaglia il seguente numero di mostri, si attivano in ordine i seguenti effetti: Uno: finché questa carta resta scoperta in campo, annulla l'attivazione e gli effetti di ogni Magia/Trappola che bersaglia questa carta, poi distruggila. Due: puoi Special Summonare 1 \"Fushioh Richie\" dalla mano o dal Deck tributando questa carta, durante la tua Main Phase.",
-    "missingEffectNote": "La clausola \"Uno\" (annulla e distruggi ogni Magia/Trappola che bersaglia QUESTA carta) non c'e': servirebbe sapere, prima che l'effetto si risolva, se il bersaglio scelto e' esattamente questa istanza, mentre declaredTargeting annuncia solo la categoria (quante carte, di che tipo, di che Tipo). La clausola \"Due\" e' implementata per intero.",
     "artOnly": true
   },
   {
@@ -13080,7 +13071,6 @@
     "attack": 2600,
     "defense": 2900,
     "effect": "Non può essere Evocata Normalmente né Set. Questa carta può essere Special Summonata solo dalla tua mano o dal tuo Deck tributando 1 \"Great Dezard\" che ha soddisfatto la condizione. Puoi girare questa carta a faccia in giù in Posizione di Difesa una volta per turno, durante la tua Main Phase. Finché questo mostro resta scoperto in campo, annulla l'attivazione e gli effetti di ogni Magia/Trappola che bersaglia questa carta, poi distruggila. Quando questa carta viene girata scoperta: puoi Special Summonare 1 mostro Tipo Zombie dal tuo Cimitero.",
-    "missingEffectNote": "Manca solo \"annulla e distruggi ogni Magia/Trappola che bersaglia questa carta\", per lo stesso motivo di Great Dezard (id 1129). Tutto il resto e' implementato.",
     "artOnly": true
   },
   {

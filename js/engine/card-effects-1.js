@@ -1878,6 +1878,7 @@
             // perderla anche se la scelta non arrivasse mai a compiersi.
             chooseFieldCardTarget(ctx, fratelli, {
                 title: '🐿️ Kuribeh',
+                dichiara: true,
                 text: 'Scegli quale "Kuriboh" riceve i 1500 ATK.'
             }, (scelto) => {
                 const slot = ctx.field(scelto.owner)[scelto.index];
@@ -2649,20 +2650,23 @@
             return ctx.field(ctx.owner).some((s, i) => s && i !== ctx.index && !s.isFaceDown && s.card.race === 'Guerriero');
         },
         activate(ctx) {
-            const candidates = [];
-            ctx.field(ctx.owner).forEach((s, i) => { if (s && i !== ctx.index && !s.isFaceDown && s.card.race === 'Guerriero') candidates.push(s.card); });
-            if (candidates.length === 0) return;
-            const applySwap = (target) => {
+            const candidati = collectFieldTargets(ctx, {
+                zone: 'monster', owner: 'self',
+                filter: (card) => card.uid !== ctx.card.uid && card.race === 'Guerriero'
+            });
+            if (candidati.length === 0) return;
+            // `dichiara`: il bersaglio passa dal checkpoint di targeting
+            // condiviso (testo: "scegli come bersaglio").
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '🔥 Spadaccino di Fiamma Blu',
+                text: 'Scegli un altro mostro Guerriero a cui trasferire 600 ATK (questa carta ne perde 600).',
+                dichiara: true
+            }, (scelto) => {
+                const target = scelto.card;
                 ctx.markUsedOncePerTurn(`122:${ctx.card.uid}:${gameState.turn}`);
                 ctx.card.attack = Math.max(0, ctx.card.attack - 600);
                 target.attack += 600;
                 ctx.log(`🔥 Spadaccino di Fiamma Blu trasferisce 600 ATK a ${target.name}!`);
-            };
-            if (ctx.owner !== 'player' || !window.DuelEngineUI) { applySwap(candidates[0]); return; }
-            window.DuelEngineUI.openCardListPicker(candidates, {
-                title: '🔥 Spadaccino di Fiamma Blu',
-                text: 'Scegli un altro mostro Guerriero a cui trasferire 600 ATK (questa carta ne perde 600).',
-                onSelect: applySwap
             });
         },
         onDestroy(ctx) {

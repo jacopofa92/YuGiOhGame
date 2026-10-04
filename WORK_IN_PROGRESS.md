@@ -66,10 +66,16 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
 - [x] Ritorni in mano e spostamenti dal Cimitero (761, 890, 1.0.36):
       Necrovalley ora vede ogni spostamento scritto a mano
       (`graveyardMoveNegated`, sorvegliato da `guardrail-necrovalley`).
-- [ ] Note restanti (17), in ordine di rischio: audit delle carte che
-      bersagliano senza checkpoint di targeting (~11 note); "uno dei due
-      giocatori può pagare" (882); finestra di priorità a ogni cambio fase
-      per gli Effetti Veloci (192, 396, 459, 1059: la più rischiosa).
+- [x] Checkpoint di targeting coperto ovunque (1.0.37): una trentina di
+      carte, tutte le Magie Equipaggiamento e i Union ora dichiarano il
+      bersaglio (`dichiara: true`); sorvegliato da
+      `guardrail-bersagli-dichiarati`. Chiuse anche le protezioni di
+      Great Dezard e Fushioh Richie.
+- [ ] Note restanti (7), in ordine di rischio: "uno dei due giocatori può
+      pagare" (882); finestra di priorità a ogni cambio fase per gli
+      Effetti Veloci (396, 459, 1059: la più rischiosa); 192 (immunità ai
+      soli effetti mirati); 235 e la metà Magia/Trappola di 622 (checkpoint
+      sincrono, scelgono da sole).
 - [ ] 6 PNG in `images/characters/avatarTrasparenza/` (e copie in `pedine/`) senza avatar corrispondente
       (Kaiba in Mantello Viola, soldato Grande Guerra, kaibaV2,
       setoKaiba_duelist Kingdom, setoKaiba_forbiddenMemories, yamiYugiV2):

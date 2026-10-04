@@ -397,7 +397,8 @@
 // v147: lo scarto lo sceglie chi lo subisce (Criosfinge, Duo Delinquente).
 // v148: la battaglia aspetta le scelte del giocatore (selettore di opzioni).
 // v149: Necrovalley vede ogni spostamento dal Cimitero; ritorni in mano al proprietario.
-const CACHE_NAME = 'ygo-duel-arena-v149';
+// v150: checkpoint di targeting coperto ovunque (Equip, Union, ~30 carte).
+const CACHE_NAME = 'ygo-duel-arena-v150';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

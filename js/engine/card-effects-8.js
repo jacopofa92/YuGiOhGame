@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { attendiScelta, chooseOption, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldMonsterTarget, chooseFieldCardTarget, collectFieldTargets, chooseCardFromList, offerHandDiscardChoice, resolveSpecialSummonBanishCost, maxRitualTributeLevel, performRitualTribute, returnSpellTrapToHand, chooseUpToNFromList } = window.CardEffectsShared;
+    const { destroyTargetingSpellIfItStays, attendiScelta, chooseOption, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldMonsterTarget, chooseFieldCardTarget, collectFieldTargets, chooseCardFromList, offerHandDiscardChoice, resolveSpecialSummonBanishCost, maxRitualTributeLevel, performRitualTribute, returnSpellTrapToHand, chooseUpToNFromList } = window.CardEffectsShared;
 
     // ================================================================
     // 1001-1008 — Il ciclo di Mostri Spirito di Legacy of Darkness (LOD),
@@ -1208,22 +1208,27 @@
             return ctx.field(ctx.owner).some((s, i) => s && i !== ctx.index && !s.isFaceDown && s.card.race === 'Demone');
         },
         activate(ctx) {
-            const candidates = [];
-            ctx.field(ctx.owner).forEach((s, i) => { if (s && i !== ctx.index && !s.isFaceDown && s.card.race === 'Demone') candidates.push(s.card); });
-            if (candidates.length === 0) return;
-            const applyBuff = (target) => {
-                const ownIndex = ctx.index;
-                ctx.field(ctx.owner)[ownIndex] = null;
+            const candidati = collectFieldTargets(ctx, {
+                zone: 'monster', owner: 'self',
+                filter: (card) => card.uid !== ctx.card.uid && card.race === 'Demone'
+            });
+            if (candidati.length === 0) return;
+            // Il bersaglio passa dal checkpoint di targeting. Il Tributo di
+            // questa carta (il costo) si paga dentro la callback: se il
+            // bersaglio si sottrae, non si perde la carta per niente.
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '👹 Tirapiedi Alato',
+                text: 'Scegli 1 mostro Demone scoperto a cui dare +700 ATK/DEF (questa carta si tributa).',
+                dichiara: true
+            }, (scelto) => {
+                const selfSlot = ctx.field(ctx.owner)[ctx.index];
+                if (!selfSlot || selfSlot.card.uid !== ctx.card.uid) return;
+                const target = scelto.card;
+                ctx.field(ctx.owner)[ctx.index] = null;
                 ctx.graveyard(ctx.owner).push(ctx.card);
                 target.attack += 700;
                 target.defense += 700;
                 ctx.log(`👹 Tirapiedi Alato si tributa: ${target.name} guadagna 700 ATK/DEF!`);
-            };
-            if (ctx.owner !== 'player' || !window.DuelEngineUI) { applyBuff(candidates[0]); return; }
-            window.DuelEngineUI.openCardListPicker(candidates, {
-                title: '👹 Tirapiedi Alato',
-                text: 'Scegli 1 mostro Demone scoperto a cui dare +700 ATK/DEF (questa carta si tributa).',
-                onSelect: applyBuff
             });
         }
     });
@@ -3188,7 +3193,36 @@
         }
         return null;
     }
+    // Clausola "Uno" di Great Dezard e la protezione di Fushioh Richie:
+    // "annulla l'attivazione e gli effetti di ogni Magia/Trappola che
+    // bersaglia questa carta, poi distruggila". Il mostro bersaglio viene
+    // interpellato per primo dal checkpoint di targeting
+    // (declareCardEffectTarget, duel-engine.js), come Gran Scudo Gardna
+    // (id 115) e Freed (id 888). Prima mancava: non si poteva sapere se il
+    // bersaglio scelto fosse proprio QUESTA carta, perché la maggior parte
+    // degli effetti non dichiarava il bersaglio — l'audit 1.0.37 li ha
+    // portati tutti al checkpoint. canReactToTargetDeclare e non
+    // canActivate: quello serve già alle loro abilità attivabili.
+    function reagisceAMagiaTrappolaCheLaBersaglia(ctx) {
+        if (ctx.zone !== 'monster') return false;
+        const slot = ctx.field(ctx.owner)[ctx.index];
+        if (!slot || slot.isFaceDown || slot.card.uid !== ctx.card.uid) return false;
+        return ctx.sourceType === 'spell' || ctx.sourceType === 'trap';
+    }
+    function annullaEDistruggiChiLaBersaglia(ctx) {
+        ctx.cancel();
+        // Una Normale va comunque al Cimitero a fine risoluzione: si
+        // distrugge davvero solo una carta che resterebbe in campo.
+        const distrutta = destroyTargetingSpellIfItStays(ctx);
+        ctx.log(`🛡️ ${ctx.card.name} annulla ${ctx.sourceCard ? ctx.sourceCard.name : 'la carta'} che la bersaglia${distrutta ? ' e la distrugge' : ''}!`);
+    }
+
     CardEffects.register(1129, {
+        // "Uno": attiva dopo il primo mostro distrutto in battaglia.
+        canReactToTargetDeclare(ctx) {
+            return (ctx.card._battleDestructionCount || 0) >= 1 && reagisceAMagiaTrappolaCheLaBersaglia(ctx);
+        },
+        onCardEffectTargetDeclare(ctx) { annullaEDistruggiChiLaBersaglia(ctx); },
         onDestroysMonsterByBattle(ctx) {
             ctx.card._battleDestructionCount = (ctx.card._battleDestructionCount || 0) + 1;
             if (ctx.card._battleDestructionCount === 2) {
@@ -3221,6 +3255,9 @@
     // schema di Larva Mostruosa/Grande Falena (id 50/52).
     CardEffects.register(1130, {
         cannotNormalSummon: true,
+        // Sempre, finché resta scoperta: vedi reagisceAMagiaTrappolaCheLaBersaglia.
+        canReactToTargetDeclare(ctx) { return reagisceAMagiaTrappolaCheLaBersaglia(ctx); },
+        onCardEffectTargetDeclare(ctx) { annullaEDistruggiChiLaBersaglia(ctx); },
         canActivate(ctx) {
             if (!(gameState.phase === 'main1' || gameState.phase === 'main2') || gameState.currentPlayer !== ctx.owner) return false;
             const slot = ctx.field(ctx.owner)[ctx.index];

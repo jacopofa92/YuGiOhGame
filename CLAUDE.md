@@ -3688,12 +3688,14 @@ priorità o richiedono un refactor ampio):
 ## Carte con limiti noti (da riprendere)
 
 **Fonte di verità: `grep missingEffectNote data/cards.json`, e nient'altro.**
-17 risultati (erano 55 dopo la revisione completa descritta più sopra,
+7 risultati (erano 55 dopo la revisione completa descritta più sopra,
 poi 52 contati di nuovo; chiuse in tre giri 142/511/512/899, poi
 420/523/772/880/901/1040/1043/1113/1114/1121, poi tutte le 17 della
 famiglia A, poi 873 con la scelta di chi subisce, poi le 6 della
 famiglia C con le scelte che la battaglia aspetta, poi 761 e 890 col
-censimento dei ritorni in mano e degli spostamenti dal Cimitero — vedi il bullet
+censimento dei ritorni in mano e degli spostamenti dal Cimitero, poi
+dieci note sulla copertura del checkpoint di targeting con l'audit
+1.0.37 — vedi il bullet
 «Meccanismi generici per i missingEffectNote» qui sopra e l'aggiornamento
 1.0.35 sulla regola di `onAttackDeclare`). Questa
 sezione è solo una mappa per orientarsi: ogni carta porta la propria
@@ -3720,9 +3722,8 @@ sua mano vera) e allinea l'altro con la propria fotografia di stato.
 **Usarlo per ogni futura carta "l'avversario scarta 1 carta a sua
 scelta"** (761, 873; spec `scelta-di-chi-subisce.spec.js`).
 
-**B — implementata, il limite è del motore (17 carte).** La nota è un
-promemoria, non lavoro arretrato: 115, 192, 198, 235, 353, 396, 423,
-459, 622, 661, 738, 826, 851, 882, 1059, 1129, 1130.
+**B — implementata, il limite è del motore (7 carte).** La nota è un
+promemoria, non lavoro arretrato: 192, 235, 396, 459, 622, 882, 1059.
 
 *Spostamenti dal Cimitero e Necrovalley* (chiuso in 1.0.36): ogni
 effetto che toglie una carta dal Cimitero scrivendolo a mano
@@ -3740,18 +3741,26 @@ in Rinascita del Mostro id 35).
 rimasta), che lo rimanda nella mano del PROPRIETARIO (`slot.originalOwner`)
 e non di chi lo controlla.
 
-Due limiti condivisi, entrambi deliberati:
-
 *Checkpoint di targeting* (`ctx.declareTarget`, `duel-engine.js`, nato
-per id 115): un effetto che bersaglia senza passare di lì sfugge ai
-floodgate e alle reazioni al targeting. Per il caso più comune
-("distruggi 1 mostro bersaglio") esiste `ctx.destroyTargetedMonster`,
-che unisce `declareTarget`+`destroyMonster`: **usare sempre quello per
-una carta nuova**, invece delle due chiamate a mano. La copertura reale
-si conta all'occorrenza cercando le chiamate in `js/engine/`; un
-guardrail (`targeting-checkpoint-guardrail.spec.js`) impedisce che il
-numero scenda sotto una soglia nota, cioè che qualcuno rimuova una
-chiamata senza sostituirla.
+per id 115) — **coperto ovunque dall'audit 1.0.37**: ogni effetto il cui
+testo sceglie come bersaglio un mostro sul Terreno ci passa, in una di
+tre forme — `ctx.declareTarget`, `ctx.destroyTargetedMonster`
+("distruggi 1 mostro bersaglio") o l'opzione `dichiara: true` di
+`chooseFieldCardTarget` (la più comoda: dichiara il bersaglio scelto e
+segue un eventuale reindirizzamento; la usano anche
+`equipToChosenTarget` e `attachUnionMonster`, quindi ogni Magia
+Equipaggiamento e ogni Union). Due guardrail: 
+`guardrail-bersagli-dichiarati.spec.js` incrocia il TESTO delle carte
+("bersaglio" + "mostro") col loro codice, con un elenco chiuso di
+eccezioni per categoria (bersagli nel Cimitero, bersaglio di un
+attacco, carte che reagiscono al checkpoint, bersagli Magia/Trappola);
+`targeting-checkpoint-guardrail.spec.js` è un ratchet sul numero di
+chiamate. **Una carta nuova che bersaglia un mostro deve passare di lì,
+o la suite fallisce.** Il limite che resta è di forma, non di
+copertura: il checkpoint è SINCRONO, quindi una reazione che sceglie un
+nuovo bersaglio (235, metà Magia/Trappola di 622) sceglie da sola.
+
+L'altro limite condiviso, deliberato:
 
 *Effetto Veloce solo dentro una Chain già aperta*
 (`findSpellTrapQuickEffectCandidates`/`findMonsterQuickEffectCandidates`):

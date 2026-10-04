@@ -2911,7 +2911,10 @@
                 // Forzata (id 671, chooseFieldMonsterTarget).
                 chooseFieldMonsterTarget(ctx, candidates, {
                     title: '⚔️ Flamberge del Male Infranto',
-                    text: 'Scegli a quale mostro equipaggiarti (tuo o dell\'avversario).'
+                    text: 'Scegli a quale mostro equipaggiarti (tuo o dell\'avversario).',
+                    // Checkpoint di targeting: come ogni Equip, vedi
+                    // equipToChosenTarget in card-effects.js.
+                    dichiara: true
                 }, (choice) => {
                     ctx.card.equippedToOwner = choice.owner;
                     ctx.card.equippedToIndex = choice.index;

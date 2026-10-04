@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { chooseFieldCardTargetWaiting, attendiScelta, blockBanishFromField, findEquipTarget, equipToChosenTarget, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, attachUnionMonster, maxRitualTributeLevel, performRitualTribute, chooseCardFromList, chooseUpToNFromList } = window.CardEffectsShared;
+    const { chooseOption, chooseFieldCardTargetWaiting, attendiScelta, blockBanishFromField, findEquipTarget, equipToChosenTarget, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, attachUnionMonster, maxRitualTributeLevel, performRitualTribute, chooseCardFromList, chooseUpToNFromList } = window.CardEffectsShared;
 
     // ================================================================
     // 517 — Rituale di Zera / Zera Ritual (Magia Rituale)
@@ -322,6 +322,7 @@
             if (candidati.length === 0) return;
             chooseFieldCardTarget(ctx, candidati, {
                 title: '⚡ Potere Raccolto',
+                dichiara: true,
                 text: 'Scegli il mostro su cui far confluire TUTTE le Carte Equipaggiamento del Terreno.'
             }, (scelto) => {
                 const targetOwner = scelto.owner;
@@ -1353,17 +1354,22 @@
     CardEffects.register(227, {
         canActivate(ctx) { return ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown); },
         activate(ctx) {
-            const field = ctx.field(ctx.owner);
-            let targetIndex = -1;
-            let highestAtk = -1;
-            field.forEach((slot, i) => {
-                if (slot && !slot.isFaceDown && slot.card.attack > highestAtk) { highestAtk = slot.card.attack; targetIndex = i; }
+            // Il mostro lo sceglie il giocatore (prima: sempre quello con
+            // l'ATK più alto, che resta in cima per il bot), e passa dal
+            // checkpoint di targeting.
+            const candidati = collectFieldTargets(ctx, { zone: 'monster', owner: 'self' })
+                .sort((a, b) => (b.card.attack || 0) - (a.card.attack || 0));
+            if (candidati.length === 0) return;
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '⚡ Drenaggio di Energia',
+                text: 'Scegli il tuo mostro che guadagna 200 ATK/DEF per ogni carta nella mano avversaria.',
+                dichiara: true
+            }, (scelto) => {
+                const target = scelto.card;
+                const bonus = 200 * ctx.hand(ctx.opponent).length;
+                ctx.grantTemporaryAtkDefBonus(target, bonus, bonus);
+                ctx.log(`⚡ Drenaggio di Energia dà a ${target.name} +${bonus} ATK/DEF fino a fine turno!`);
             });
-            if (targetIndex === -1) return;
-            const target = field[targetIndex].card;
-            const bonus = 200 * ctx.hand(ctx.opponent).length;
-            ctx.grantTemporaryAtkDefBonus(target, bonus, bonus);
-            ctx.log(`⚡ Drenaggio di Energia dà a ${target.name} +${bonus} ATK/DEF fino a fine turno!`);
         }
     });
 
@@ -1550,16 +1556,23 @@
     // ================================================================
     CardEffects.register(186, {
         onSummon(ctx) {
-            const field = ctx.field(ctx.opponent);
-            let targetIndex = -1;
-            let highestAtk = -1;
-            field.forEach((slot, i) => {
-                if (slot && !slot.isFaceDown && DuelEngine.getEffectiveAtk(slot.card) > highestAtk) { highestAtk = DuelEngine.getEffectiveAtk(slot.card); targetIndex = i; }
+            // Testo: "1 mostro scoperto sul Terreno" — il giocatore sceglie,
+            // e il bersaglio passa dal checkpoint di targeting. I mostri
+            // avversari vengono prima, dal più forte: è la scelta che il bot
+            // fa prendendo il primo candidato (e quella di sempre).
+            const perAtk = (a, b) => DuelEngine.getEffectiveAtk(b.card) - DuelEngine.getEffectiveAtk(a.card);
+            const candidati = collectFieldTargets(ctx, { zone: 'monster', owner: 'opponent' }).sort(perAtk)
+                .concat(collectFieldTargets(ctx, { zone: 'monster', owner: 'self' }).sort(perAtk));
+            if (candidati.length === 0) return;
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '👹 Jeroid Oscuro',
+                text: 'Scegli il mostro scoperto che perde 800 ATK.',
+                dichiara: true
+            }, (scelto) => {
+                const target = scelto.card;
+                target.attack = Math.max(0, target.attack - 800);
+                ctx.log(`👹 Jeroid Oscuro riduce l'ATK di ${target.name} di 800 punti!`);
             });
-            if (targetIndex === -1) return;
-            const target = field[targetIndex].card;
-            target.attack = Math.max(0, target.attack - 800);
-            ctx.log(`👹 Jeroid Oscuro riduce l'ATK di ${target.name} di 800 punti!`);
         }
     });
 
@@ -2133,55 +2146,73 @@
         }
     });
 
-    // 226 — Controllore del Nemico: cambia Posizione a 1 mostro scoperto
-    // avversario, OPPURE sacrifica 1 mostro proprio per prenderne il
-    // controllo. SEMPLIFICAZIONE: nessuna scelta a due vie nella UI di
-    // questo motore — se può sacrificare un proprio mostro lo fa (l'opzione
-    // più forte), altrimenti si limita a cambiare Posizione.
+    // 226 — Controllore del Nemico: "attiva 1 di questi effetti" — cambia
+    // Posizione a 1 mostro scoperto avversario, OPPURE sacrifica 1 mostro
+    // proprio per prenderne il controllo fino alla End Phase. Il ramo lo
+    // sceglie il giocatore (chooseOption): prima lo decideva il motore,
+    // perché mancava una scelta fra due effetti. Ordine del testo reale:
+    // prima l'effetto, poi il costo (il Sacrificio), poi il bersaglio.
+    // Il bot sacrifica il suo mostro più debole e prende il controllo
+    // quando può, come faceva prima (ma prima sacrificava il primo
+    // mostro trovato, anche il più forte).
     CardEffects.register(226, {
         declaredTargeting: { count: 1, cardType: 'monster' },
         canActivate(ctx) {
             return ctx.field(ctx.opponent).some((s) => s && !s.isFaceDown);
         },
         activate(ctx) {
-            // Su QUALE mostro avversario agire lo sceglie il giocatore.
-            // Resta la SEMPLIFICAZIONE dichiarata qui sopra sul RAMO (se
-            // può sacrificare, prende il controllo): quella è una scelta
-            // fra due effetti diversi, non fra bersagli, e servirebbe una
-            // UI a due vie che questo motore non ha.
-            const candidati = [];
-            ctx.field(ctx.opponent).forEach((slot, index) => {
-                if (slot && !slot.isFaceDown) candidati.push({ owner: ctx.opponent, index, card: slot.card });
-            });
-            chooseFieldMonsterTarget(ctx, candidati, {
+            const sacrificabili = collectFieldTargets(ctx, { zone: 'monster', owner: 'self', includiCoperte: true })
+                .sort((a, b) => (a.card.attack || 0) - (b.card.attack || 0));
+            chooseOption(ctx, {
                 title: '🎮 Controllore del Nemico',
-                text: 'Scegli su quale mostro avversario agire.'
-            }, (scelta) => attivaControlloreDelNemico(ctx, scelta));
+                text: 'Quale effetto attivi?',
+                options: [
+                    { value: 'posizione', label: 'Cambia la Posizione di un mostro', icon: '🔄' },
+                    sacrificabili.length > 0 ? { value: 'controllo', label: 'Sacrifica 1 mostro e prendine uno', icon: '💫' } : null
+                ],
+                pickForBot: () => (sacrificabili.length > 0 ? 'controllo' : 'posizione')
+            }, (ramo) => {
+                if (ramo !== 'controllo') { scegliBersaglioControllore(ctx, 'posizione'); return; }
+                chooseFieldCardTarget(ctx, sacrificabili, {
+                    title: '🎮 Controllore del Nemico',
+                    text: 'Scegli quale tuo mostro sacrificare.'
+                }, (tributo) => {
+                    // Il Sacrificio è un COSTO: niente checkpoint di
+                    // targeting, e va al Cimitero come ogni Tributo.
+                    const slot = ctx.field(ctx.owner)[tributo.index];
+                    if (!slot || slot.card.uid !== tributo.card.uid) return;
+                    ctx.field(ctx.owner)[tributo.index] = null;
+                    ctx.graveyard(ctx.owner).push(tributo.card);
+                    DuelEngine.notifySacrificedForTribute(ctx.owner, tributo.card);
+                    scegliBersaglioControllore(ctx, 'controllo');
+                });
+            });
         }
     });
 
-    /** Corpo di Controllore del Nemico (id 226), a bersaglio già scelto. */
-    function attivaControlloreDelNemico(ctx, scelta) {
-        {
-            const decl = ctx.declareTarget(scelta.owner, scelta.index, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const ownIndex = ctx.field(ctx.owner).findIndex((s) => s);
-            if (ownIndex !== -1) {
-                const target = ctx.field(decl.targetOwner)[decl.targetIndex];
-                if (!target) return;
-                const name = target.card.name;
-                ctx.destroyMonster(ctx.owner, ownIndex);
-                if (ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex)) {
+    /** Bersaglio di Controllore del Nemico (id 226), a effetto già scelto. */
+    function scegliBersaglioControllore(ctx, ramo) {
+        const candidati = collectFieldTargets(ctx, { zone: 'monster', owner: 'opponent' })
+            .sort((a, b) => DuelEngine.getEffectiveAtk(b.card) - DuelEngine.getEffectiveAtk(a.card));
+        if (candidati.length === 0) return;
+        chooseFieldCardTarget(ctx, candidati, {
+            title: '🎮 Controllore del Nemico',
+            text: ramo === 'controllo'
+                ? 'Scegli quale mostro avversario prendere sotto controllo fino alla End Phase.'
+                : 'Scegli a quale mostro avversario cambiare la Posizione di Battaglia.',
+            dichiara: true
+        }, (scelto) => {
+            if (ramo === 'controllo') {
+                const name = scelto.card.name;
+                if (ctx.takeControl(ctx.owner, scelto.owner, scelto.index)) {
                     ctx.log(`💫 Preso il controllo di ${name}!`);
                 }
-            } else {
-                const target = ctx.field(decl.targetOwner)[decl.targetIndex];
-                if (!target) return;
-                const newPosition = target.position === 'attack' ? 'defense' : 'attack';
-                ctx.changePosition(decl.targetOwner, decl.targetIndex, newPosition);
-                ctx.log(`🔄 ${target.card.name} cambia Posizione!`);
+                return;
             }
-        }
+            const newPosition = scelto.slot.position === 'attack' ? 'defense' : 'attack';
+            ctx.changePosition(scelto.owner, scelto.index, newPosition);
+            ctx.log(`🔄 ${scelto.card.name} cambia Posizione!`);
+        });
     }
 
     // 388 — Scatola Mistica: distruggi 1 mostro avversario, poi dai il
@@ -2215,8 +2246,13 @@
                 });
                 chooseFieldMonsterTarget(ctx, miei, {
                     title: '🎁 Scatola Mistica',
-                    text: 'Scegli quale TUO mostro cedere in cambio all\'avversario.'
+                    text: 'Scegli quale TUO mostro cedere in cambio all\'avversario.',
+                    // Anche il secondo bersaglio passa dal checkpoint, col
+                    // conteggio totale: la carta ne bersaglia due.
+                    dichiara: true,
+                    totalTargetCount: 2
                 }, (mio) => {
+                    if (mio.owner !== ctx.owner) return;
                     const slot = ctx.field(ctx.owner)[mio.index];
                     if (!slot) return;
                     const name = slot.card.name;
@@ -2230,7 +2266,10 @@
                 title: '🎁 Scatola Mistica',
                 text: 'Scegli quale mostro avversario distruggere.'
             }, (suo) => {
-                const decl = ctx.declareTarget(suo.owner, suo.index, { totalTargetCount: 1 });
+                // totalTargetCount 2: la carta bersaglia due mostri, quindi
+                // non scatenano le reazioni a un bersaglio singolo
+                // (Specchietto della Fata, Campo di Riryoku).
+                const decl = ctx.declareTarget(suo.owner, suo.index, { totalTargetCount: 2 });
                 if (decl.allowed) ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
                 cediUnProprioMostro();
             });
@@ -2798,6 +2837,11 @@
         onOpponentSummon(ctx) {
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) return;
+            // "Scegli come bersaglio quel mostro": checkpoint di targeting.
+            if (typeof ctx.summonedSlotIndex === 'number') {
+                const decl = ctx.declareTarget(ctx.opponent, ctx.summonedSlotIndex, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+            }
             const originale = cardDatabase.find((c) => c.id === ctx.summonedCard.id) || ctx.summonedCard;
             const template = {
                 name: ctx.summonedCard.name, race: originale.race, attribute: originale.attribute,
@@ -2874,9 +2918,12 @@
             });
             chooseFieldCardTargetWaiting(ctx, candidati, {
                 title: '🌙 Spiritello dei Sogni',
+                dichiara: true,
                 text: 'Scegli quale altro tuo mostro subirà l\'attacco.'
             }, (scelto) => {
-                ctx.redirectAttack(scelto.index);
+                // scelto.owner, non il default: il bersaglio dichiarato può
+                // essere stato ridiretto sull'altro Terreno.
+                ctx.redirectAttack(scelto.index, scelto.owner);
                 ctx.log(`🌙 Spiritello dei Sogni ridirige l'attacco verso ${scelto.card.name}!`);
             });
         }
@@ -3096,6 +3143,10 @@
         },
         onAttackDeclare(ctx) {
             ctx.card.sangaUsed = true;
+            // "Scegli come bersaglio il mostro attaccante": checkpoint di
+            // targeting.
+            const decl = ctx.declareTarget(ctx.attackerOwner, ctx.attackerIndex, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
             ctx.zeroAttackerAtk();
             ctx.log("⚡ Sanga del Tuono azzera l'ATK del mostro attaccante per questo scontro (effetto usabile una sola volta finché scoperta)!");
         }
@@ -3146,9 +3197,10 @@
             });
             chooseFieldMonsterTarget(ctx, candidati, {
                 title: '🎪 Riavvolgimento Toon',
+                dichiara: true,
                 text: 'Scegli a quale tuo mostro concedere un secondo attacco in questa Battle Phase.'
             }, (scelta) => {
-                const slot = ctx.field(ctx.owner)[scelta.index];
+                const slot = ctx.field(scelta.owner)[scelta.index];
                 if (!slot) return;
                 slot.extraAttackGranted = true;
                 ctx.log(`🎪 Riavvolgimento Toon concede un secondo attacco a ${slot.card.name}!`);

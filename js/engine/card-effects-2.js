@@ -577,7 +577,9 @@
             if (candidati.length === 0) return;
             chooseFieldCardTarget(ctx, candidati, {
                 title: '🕳️ Buco Dimensionale',
-                text: 'Scegli quale tuo mostro bandire fino alla tua prossima Standby Phase.'
+                text: 'Scegli quale tuo mostro bandire fino alla tua prossima Standby Phase.',
+                // Testo reale: "scegli come bersaglio 1 mostro che controlli".
+                dichiara: true
             }, (scelto) => {
                 const field = ctx.field(scelto.owner);
                 const banished = scelto.card;
@@ -1306,6 +1308,7 @@
             if (candidati.length === 0) return;
             chooseFieldCardTarget(ctx, candidati, {
                 title: '🌀 Trasportatore di Materia Interdimensionale',
+                dichiara: true,
                 text: 'Scegli quale tuo mostro bandire fino alla End Phase.'
             }, (scelto) => {
                 const banished = scelto.card;
@@ -1426,6 +1429,11 @@
             gameState.atkDefBonus[t.uid] = { atk: e.atk + 500, def: e.def };
         },
         onAttackDeclare(ctx) {
+            // "Scegli come bersaglio il mostro attaccante": checkpoint di
+            // targeting (un attaccante Drago sotto Signore dei D., per
+            // esempio, non si può scegliere).
+            const decl = ctx.declareTarget(ctx.attackerOwner, ctx.attackerIndex, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
             ctx.changePosition(ctx.attackerOwner, ctx.attackerIndex, 'defense');
             ctx.cancelAttack();
             ctx.log("🗡️ Kunai con Catena costringe il mostro attaccante in Posizione di Difesa, annullando l'attacco!");
@@ -1674,25 +1682,36 @@
             return ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown && (slot.card.id === 13 || slot.card.race === 'Tuono'));
         },
         activate(ctx) {
-            let bestAtk = -1;
-            ctx.field(ctx.owner).forEach((slot) => {
-                if (slot && !slot.isFaceDown && (slot.card.id === 13 || slot.card.race === 'Tuono') && slot.card.attack > bestAtk) {
-                    bestAtk = slot.card.attack;
-                }
-            });
-            if (bestAtk === -1) return;
-            let count = 0;
-            ctx.field(ctx.opponent).forEach((slot, index) => {
-                if (slot && !slot.isFaceDown && slot.card.defense <= bestAtk) {
-                    ctx.destroyMonster(ctx.opponent, index);
-                    count++;
-                }
-            });
-            gameState.skipBattlePhaseFor = gameState.skipBattlePhaseFor || {};
-            gameState.skipBattlePhaseFor[ctx.owner] = true;
-            ctx.log(`🌫️ Makiu distrugge ${count} mostr${count === 1 ? 'o' : 'i'} con DEF <= ${bestAtk}! Non puoi condurre la Battle Phase in questo turno.`);
+            // "Scegli come bersaglio 1 Teschio Evocato o 1 mostro Tuono che
+            // controlli": il giocatore sceglie quale (il suo ATK decide
+            // cosa viene distrutto), e il bersaglio passa dal checkpoint di
+            // targeting. In cima il più forte, che è ciò che prende il bot.
+            const candidati = collectFieldTargets(ctx, {
+                zone: 'monster', owner: 'self',
+                filter: (card) => card.id === 13 || card.race === 'Tuono'
+            }).sort((a, b) => (b.card.attack || 0) - (a.card.attack || 0));
+            if (candidati.length === 0) return;
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '🌫️ Makiu, la Nebbia Magica',
+                text: 'Scegli il mostro il cui ATK decide quali mostri avversari distruggere (DEF pari o inferiore).',
+                dichiara: true
+            }, (scelto) => makiuDistruggi(ctx, scelto.card.attack || 0));
         }
     });
+
+    /** Corpo di Makiu (id 366), a bersaglio già scelto e dichiarato. */
+    function makiuDistruggi(ctx, bestAtk) {
+        let count = 0;
+        ctx.field(ctx.opponent).forEach((slot, index) => {
+            if (slot && !slot.isFaceDown && slot.card.defense <= bestAtk) {
+                ctx.destroyMonster(ctx.opponent, index);
+                count++;
+            }
+        });
+        gameState.skipBattlePhaseFor = gameState.skipBattlePhaseFor || {};
+        gameState.skipBattlePhaseFor[ctx.owner] = true;
+        ctx.log(`🌫️ Makiu distrugge ${count} mostr${count === 1 ? 'o' : 'i'} con DEF <= ${bestAtk}! Non puoi condurre la Battle Phase in questo turno.`);
+    }
 
     // ================================================================
     // 378 — Meteora della Distruzione / Meteor of Destruction (Magia
@@ -2218,9 +2237,24 @@
             return ctx.field(ctx.opponent).some((slot) => slot && !slot.isFaceDown);
         },
         activate(ctx) {
-            const targetSlot = ctx.field(ctx.opponent).find((slot) => slot && !slot.isFaceDown);
-            if (!targetSlot) return;
-            const maxLevel = targetSlot.card.level || 0;
+            // Il mostro avversario bersaglio (il suo Livello fissa il tetto
+            // del Toon evocabile) lo sceglie il giocatore e passa dal
+            // checkpoint di targeting. In cima il Livello più alto: è ciò
+            // che conviene, e ciò che prende il bot.
+            const candidati = collectFieldTargets(ctx, { zone: 'monster', owner: 'opponent' })
+                .sort((a, b) => (b.card.level || 0) - (a.card.level || 0));
+            if (candidati.length === 0) return;
+            chooseFieldCardTarget(ctx, candidati, {
+                title: '🎭 Maschera Toon',
+                text: 'Scegli il mostro avversario: puoi Special Summonare un Toon con Livello pari o inferiore al suo.',
+                dichiara: true
+            }, (scelto) => mascheraToonEvoca(ctx, scelto.card.level || 0));
+        }
+    });
+
+    /** Corpo di Maschera Toon (id 482), a bersaglio già scelto e dichiarato. */
+    function mascheraToonEvoca(ctx, maxLevel) {
+        {
             const isToon = (c) => c.type === 'monster' && c.name.includes('Toon');
             const hand = ctx.hand(ctx.owner);
             const finishSummon = (card, source) => {
@@ -2243,7 +2277,7 @@
             }, (card) => finishSummon(card, 'deck'));
             if (!opened) ctx.log('🎭 Maschera Toon: nessun mostro Toon disponibile con Livello adeguato.');
         }
-    });
+    }
 
     // ================================================================
     // 371 — Maschera della Restrizione / Mask of Restrict (effetto
@@ -2406,7 +2440,15 @@
             return !!slot && slot.isFaceDown;
         },
         onOpponentSummon(ctx) {
-            const slot = ctx.field(ctx.opponent)[ctx.summonedSlotIndex];
+            const prima = ctx.field(ctx.opponent)[ctx.summonedSlotIndex];
+            if (!prima || !prima.isFaceDown) return;
+            // "Scegli come bersaglio 1 di quei mostri Set": checkpoint di
+            // targeting. Il checkpoint non guarda i mostri coperti (i suoi
+            // floodgate leggono la carta scoperta), ma lo stesso passaggio
+            // serve alle reazioni come Gran Scudo Gardna.
+            const decl = ctx.declareTarget(ctx.opponent, ctx.summonedSlotIndex, { totalTargetCount: 1 });
+            if (!decl.allowed) return;
+            const slot = ctx.field(decl.targetOwner)[decl.targetIndex];
             if (!slot || !slot.isFaceDown) return;
             slot.isFaceDown = false;
             slot.position = 'attack';

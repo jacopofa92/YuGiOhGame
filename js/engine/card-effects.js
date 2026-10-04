@@ -548,14 +548,25 @@
         if (candidati.length === 0) return false;
         return chooseFieldCardTarget(ctx, candidati, {
             title: (options && options.title) || `⚔️ ${ctx.card.name}`,
-            text: (options && options.text) || 'Scegli a quale tuo mostro equipaggiare questa carta.'
+            text: (options && options.text) || 'Scegli a quale tuo mostro equipaggiare questa carta.',
+            // Equipaggiare è scegliere quel mostro come bersaglio (regola
+            // vera): passa dal checkpoint di targeting, così Signore dei
+            // D., Gran Scudo Gardna, Bastone del Silenzio, Guardiano
+            // Kay'est e i Dei Egizi valgono anche contro le Magie
+            // Equipaggiamento — prima non le vedevano. Se il bersaglio si
+            // sottrae, la carta resta senza aggancio e la pulizia di
+            // recomputeStaticEffects la manda al Cimitero, come per un
+            // Equip che perde il suo mostro.
+            dichiara: true
         }, (scelto) => {
             // Lo slot si ricontrolla ORA: fra l'apertura del picker e il
             // click il mostro scelto può essere sparito dal Terreno, e
             // attachEquip legge l'indice senza verificare nulla.
             const slot = ctx.field(scelto.owner)[scelto.index];
             if (!slot || slot.card.uid !== scelto.card.uid) return;
-            attachEquip(ctx, scelto.index);
+            // scelto.owner, non ctx.owner: un reindirizzamento (Specchietto
+            // della Fata) può spostare il bersaglio sull'altro Terreno.
+            attachEquip(ctx, scelto.index, scelto.owner);
             if (options && typeof options.onAttached === 'function') options.onAttached(slot.card, scelto.index);
         });
     }
@@ -612,10 +623,15 @@
         return true;
     }
 
-    /** Aggancia ctx.card (la Carta Equipaggiamento appena attivata) al mostro nello slot `index` del proprio Terreno. */
-    function attachEquip(ctx, index) {
-        const target = ctx.field(ctx.owner)[index].card;
-        ctx.card.equippedToOwner = ctx.owner;
+    /**
+     * Aggancia ctx.card (la Carta Equipaggiamento appena attivata) al mostro
+     * nello slot `index` — del proprio Terreno, o di `targetOwner` se
+     * passato (un bersaglio ridiretto sull'altro lato).
+     */
+    function attachEquip(ctx, index, targetOwner) {
+        const ownerDelMostro = targetOwner || ctx.owner;
+        const target = ctx.field(ownerDelMostro)[index].card;
+        ctx.card.equippedToOwner = ownerDelMostro;
         ctx.card.equippedToIndex = index;
         ctx.card.equippedToUid = target.uid;
         ctx.log(`⚔️ ${ctx.card.name} equipaggiata a ${target.name}!`);
@@ -626,7 +642,7 @@
         // generico, riusabile da ogni futuro mostro con lo stesso testo.
         const targetDef = DuelEngine.getDefinition(target.id);
         if (targetDef && typeof targetDef.onEquipped === 'function') {
-            targetDef.onEquipped(DuelEngine.makeContext(ctx.owner, { card: target, slotIndex: index, equipCard: ctx.card }));
+            targetDef.onEquipped(DuelEngine.makeContext(ownerDelMostro, { card: target, slotIndex: index, equipCard: ctx.card }));
         }
     }
 
@@ -748,8 +764,20 @@
      * solo candidato — stesso principio di searchZoneWithChoice qui
      * sopra.
      */
-    function chooseFieldCardTarget(ctx, candidates, options, onChosen) {
+    function chooseFieldCardTarget(ctx, candidates, options, onChosenOriginale) {
         if (!candidates || candidates.length === 0) return false;
+        // `options.dichiara`: il bersaglio scelto passa dal checkpoint di
+        // targeting condiviso (ctx.declareTarget) PRIMA di arrivare alla
+        // carta — vedi dichiaraBersaglioScelto qui sotto. Si avvolge
+        // onChosen una volta sola, così ogni strada (picker, bot, scelta
+        // remota) ci passa allo stesso modo.
+        const onChosen = options && options.dichiara
+            ? (scelto) => {
+                const finale = dichiaraBersaglioScelto(ctx, scelto, options);
+                if (finale) onChosenOriginale(finale);
+                else if (typeof options.onNegato === 'function') options.onNegato();
+            }
+            : onChosenOriginale;
         // In Multiplayer, se a scegliere è l'avversario REMOTO, la scelta
         // non si indovina: si aspetta la sua. Prima di questo, la copia
         // dell'effetto che gira di qua auto-sceglieva il primo candidato,
@@ -841,7 +869,13 @@
     function chooseFieldCardTargetWaiting(ctx, candidati, options, onChosen) {
         if (!candidati || candidati.length === 0) return false;
         const fine = attendiScelta(ctx);
-        const apri = () => chooseFieldCardTarget(ctx, candidati, Object.assign({}, options, { onCancel: apri }), (scelto) => {
+        // onNegato: con `dichiara` il bersaglio può sottrarsi, e allora
+        // onChosen non viene chiamato — l'attesa va chiusa lo stesso.
+        const negatoOriginale = options && options.onNegato;
+        const apri = () => chooseFieldCardTarget(ctx, candidati, Object.assign({}, options, {
+            onCancel: apri,
+            onNegato: () => { try { if (typeof negatoOriginale === 'function') negatoOriginale(); } finally { fine(); } }
+        }), (scelto) => {
             try { onChosen(scelto); } finally { fine(); }
         });
         apri();
@@ -907,6 +941,35 @@
             onCancel: o.optional ? () => { comunica(null); onChosen(null); } : undefined,
             cancelLabel: o.optionalLabel
         });
+    }
+
+    /**
+     * Fa passare un bersaglio appena scelto dal checkpoint di targeting
+     * condiviso (ctx.declareTarget, duel-engine.js) e torna quello FINALE:
+     * `null` se il bersaglio si è sottratto o l'effetto è stato annullato
+     * (Gran Scudo Gardna, Signore dei D., Mago Comando del Caos, un Dio
+     * Egizio...), oppure il candidato ricostruito su owner/index
+     * restituiti, che possono essere stati RIDIRETTI (Specchietto della
+     * Fata) — il chiamante deve usare sempre quelli, mai i propri.
+     *
+     * Prima ogni carta doveva ricordarsi di chiamare declareTarget dentro
+     * la propria callback, e un audit (1.0.37) ne ha trovate una trentina
+     * che non lo facevano: le carte che reagiscono al targeting non le
+     * vedevano affatto. Ora basta chiedere `{ dichiara: true }` a
+     * chooseFieldCardTarget.
+     *
+     * Il checkpoint copre solo i MOSTRI sul Terreno: un candidato della
+     * zona Magia/Trappola passa così com'è. `options.totalTargetCount`
+     * (default 1) serve a Specchietto della Fata/Campo di Riryoku, che
+     * reagiscono solo a un effetto con UN bersaglio.
+     */
+    function dichiaraBersaglioScelto(ctx, scelto, options) {
+        if (!scelto || scelto.zone === 'st') return scelto;
+        const decl = ctx.declareTarget(scelto.owner, scelto.index, { totalTargetCount: (options && options.totalTargetCount) || 1 });
+        if (!decl.allowed) return null;
+        const slot = ctx.field(decl.targetOwner)[decl.targetIndex];
+        if (!slot) return null;
+        return { owner: decl.targetOwner, index: decl.targetIndex, zone: 'monster', card: slot.card, slot: slot };
     }
 
     /**
@@ -1408,19 +1471,35 @@
         // il cui unionTargetFilter è ampio (es. Piattaforma di Supporto
         // Mech Pesante id 831: "qualsiasi mostro Tipo Macchina", e lei
         // stessa lo è) non deve mai potersi agganciare a se stessa.
-        const targetIndex = findEquipTarget(ctx, (c) => c.uid !== ctx.card.uid && (!filterFn || filterFn(c)));
-        if (targetIndex === -1) return false;
+        // A quale mostro agganciarsi lo sceglie il giocatore (prima era il
+        // primo idoneo da sinistra), e il bersaglio passa dal checkpoint di
+        // targeting come per ogni Equip: il testo reale di un Union dice
+        // "scegli come bersaglio 1 mostro che controlli".
+        const candidati = collectEquipTargets(ctx, (c) => c.uid !== ctx.card.uid && (!filterFn || filterFn(c)));
+        if (candidati.length === 0) return false;
         const ownField = ctx.field(ctx.owner);
         if (ctx.index == null || !ownField[ctx.index] || ownField[ctx.index].card.uid !== ctx.card.uid) return false;
-        const freeStSlot = ctx.stField(ctx.owner).findIndex((s) => s === null);
-        if (freeStSlot === -1) {
+        if (ctx.stField(ctx.owner).findIndex((s) => s === null) === -1) {
             ctx.log(`⚠️ Nessuna casella Magia/Trappola libera: ${ctx.card.name} non può agganciarsi.`);
             return false;
         }
-        ownField[ctx.index] = null;
-        attachEquip(ctx, targetIndex);
-        ctx.stField(ctx.owner)[freeStSlot] = { card: ctx.card, isFaceDown: false, setOnTurn: gameState.turn };
-        return true;
+        return chooseFieldCardTarget(ctx, candidati, {
+            title: `🔗 ${ctx.card.name}`,
+            text: 'Scegli a quale tuo mostro agganciare questo mostro Union.',
+            dichiara: true
+        }, (scelto) => {
+            // Tutto si ricontrolla ORA: fra l'apertura del picker e il
+            // click il Terreno può essere cambiato.
+            const selfSlot = ownField[ctx.index];
+            if (!selfSlot || selfSlot.card.uid !== ctx.card.uid) return;
+            const targetSlot = ctx.field(scelto.owner)[scelto.index];
+            if (!targetSlot || targetSlot.card.uid !== scelto.card.uid) return;
+            const freeStSlot = ctx.stField(ctx.owner).findIndex((s) => s === null);
+            if (freeStSlot === -1) return;
+            ownField[ctx.index] = null;
+            attachEquip(ctx, scelto.index, scelto.owner);
+            ctx.stField(ctx.owner)[freeStSlot] = { card: ctx.card, isFaceDown: false, setOnTurn: gameState.turn };
+        });
     }
 
     /**
@@ -1605,5 +1684,5 @@
         return ctx.hand(ctx.owner).filter((c) => !selfUid || c.uid !== selfUid);
     }
 
-    window.CardEffectsShared = { attendiScelta, chooseOption, chooseFieldCardTargetWaiting, otherHandCards, blockBanishFromField, isHarpieLadySupport, findEquipTarget, collectEquipTargets, equipToChosenTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchZoneWithChoice, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, chooseCardFromList, chooseUpToNFromList, destroyTargetingSpellIfItStays, victimChoosesDiscard, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost, resolveSpecialSummonTributeCost, attachUnionMonster, maxRitualTributeLevel, performRitualTribute, findPetitMothReadyForCocoonSummon, releaseRelinquishedTarget, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach, returnSpellTrapToHand };
+    window.CardEffectsShared = { attendiScelta, chooseOption, chooseFieldCardTargetWaiting, dichiaraBersaglioScelto, otherHandCards, blockBanishFromField, isHarpieLadySupport, findEquipTarget, collectEquipTargets, equipToChosenTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchZoneWithChoice, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, chooseCardFromList, chooseUpToNFromList, destroyTargetingSpellIfItStays, victimChoosesDiscard, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost, resolveSpecialSummonTributeCost, attachUnionMonster, maxRitualTributeLevel, performRitualTribute, findPetitMothReadyForCocoonSummon, releaseRelinquishedTarget, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach, returnSpellTrapToHand };
 })();

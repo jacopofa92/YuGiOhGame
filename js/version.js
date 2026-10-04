@@ -32,6 +32,11 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.37 — Le carte che proteggono dal "bersaglio" funzionano contro tutto:
+ *   Signore dei D., Gran Scudo Gardna, Mago Comando del Caos e i Dei
+ *   Egizi fermano anche Equip, Union e una trentina di effetti che prima
+ *   li aggiravano. Great Dezard e Fushioh Richie annullano la Magia o
+ *   Trappola che li bersaglia; più carte ti lasciano scegliere il bersaglio.
  * 1.0.36 — Necrovalley ferma davvero ogni carta che prova a lasciare il
  *   Cimitero. Un mostro rubato rimandato in mano torna al suo proprietario,
  *   e una rinascita col Terreno pieno non fa più sparire la carta.
@@ -589,4 +594,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.36';
+window.GAME_VERSION = '1.0.37';
