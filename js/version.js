@@ -32,6 +32,8 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.42 — Nei menu di scelta della musica da duello ci sono tutte le
+ *   tracce da 30 a 43 più la 57, ciascuna col suo nome.
  * 1.0.41 — Anche in Multiplayer puoi usare un Effetto Veloce nel turno
  *   dell'avversario quando lui non fa nulla (Standby, inizio Battle Phase,
  *   fine turno): chi è di turno aspetta la tua decisione.
@@ -609,4 +611,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.41';
+window.GAME_VERSION = '1.0.42';

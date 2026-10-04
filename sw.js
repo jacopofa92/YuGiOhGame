@@ -399,7 +399,7 @@
 // v149: Necrovalley vede ogni spostamento dal Cimitero; ritorni in mano al proprietario.
 // v150: checkpoint di targeting coperto ovunque (Equip, Union, ~30 carte).
 // v151: carte usabili da entrambi i giocatori (Oppressione Reale).
-const CACHE_NAME = 'ygo-duel-arena-v154';
+const CACHE_NAME = 'ygo-duel-arena-v155';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

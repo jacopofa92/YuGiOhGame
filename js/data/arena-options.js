@@ -73,18 +73,40 @@
         { file: 'industriaKaibaCorp.jpg', nome: 'Industria KaibaCorp' }
     ];
 
-    const TRACKS = [
-        { file: '32. Seto Kaiba (Tournament Final) HD.mp3', nome: 'Seto Kaiba — Finale' },
-        { file: '39. Free Duel.mp3', nome: 'Free Duel' },
-        { file: '40. Free Duel (3D).mp3', nome: 'Free Duel (3D)' },
-        { file: '42. Egyptian Duel (3D).mp3', nome: 'Duello Egizio' },
-        { file: '31. Finals.mp3', nome: 'Finali' },
-        { file: '34. Mages Duel.mp3', nome: 'Duello dei Maghi' },
-        { file: '35. High Mages.mp3', nome: 'Alti Maghi' },
-        { file: '37. Seto.mp3', nome: 'Seto' },
-        { file: '43. Darknite-Nitemare (3D).mp3', nome: 'Darknite & Nitemare' },
-        { file: '56. Battle for the Millennium.mp3', nome: 'Battle for the Millennium' }
+    // Le musiche da duello selezionabili: le tracce di audio/soundtracks/
+    // numerate da 30 a 43, più la 57 (scelta dell'utente). `nome` è ciò che
+    // il giocatore legge nei menu; finché è vuoto si mostra il nome del
+    // file senza estensione (vedi nomeVisibile qui sotto). Per dare un nome
+    // a una traccia basta scriverlo qui: compare in ogni menu che la offre.
+    const TRACKS_CATALOGO = [
+        { file: '30. Preliminaries.mp3', nome: '' },
+        { file: '31. Finals.mp3', nome: '' },
+        { file: '32. Seto Kaiba (Tournament Final) HD.mp3', nome: '' },
+        { file: '32. Seto Kaiba (Tournament Final).mp3', nome: '' },
+        { file: '33. Egyptian Duel.mp3', nome: '' },
+        { file: '34. Mages Duel.mp3', nome: '' },
+        { file: '35. High Mages.mp3', nome: '' },
+        { file: '36. Heishin.mp3', nome: '' },
+        { file: '37. Seto.mp3', nome: '' },
+        { file: '38. Darknite-Nitemare.mp3', nome: '' },
+        { file: '39. Free Duel.mp3', nome: '' },
+        { file: '40. Free Duel (3D).mp3', nome: '' },
+        { file: '41. Seto Kaiba Duel (3D Tournament Final).mp3', nome: '' },
+        { file: '42. Egyptian Duel (3D).mp3', nome: '' },
+        { file: '43. Darknite-Nitemare (3D).mp3', nome: '' },
+        { file: '57. King of Games - Yugi\'s Final Duel.mp3', nome: '' }
     ];
+
+    /** Il nome da mostrare: quello scritto nel catalogo, o il nome del file senza estensione. */
+    function nomeVisibile(voce) {
+        if (voce.nome && voce.nome.trim()) return voce.nome.trim();
+        return voce.file.replace(/\.[^.]+$/, '');
+    }
+
+    // Chi legge l'elenco (duel-setup.js, l'Editor Mappa, la sala del
+    // Multiplayer) usa `t.nome` così com'è: il ripiego si applica qui una
+    // volta sola, e nessuno di loro deve saperne nulla.
+    const TRACKS = TRACKS_CATALOGO.map((t) => ({ file: t.file, nome: nomeVisibile(t) }));
 
     /** Il valore con cui un'opzione dichiara "scegline una a caso al momento del duello". */
     const RANDOM = 'random';
