@@ -7,6 +7,18 @@
 module.exports = {
     name: 'Quattordicesima ondata prima serie: negazione condizionata, mostro agganciato, bonus damage step, autodistruzione reattiva (id 1118-1121)',
     async run(t) {
+        // Prima di toccare lo stato si aspetta che la cascata di fasi
+        // d'apertura (Draw -> Standby -> Main Phase 1) sia finita: sotto il
+        // carico della suite completa poteva chiudersi DOPO che il test
+        // aveva già preparato il campo e lanciato la battaglia, e il primo
+        // caso falliva una volta ogni tanto (mai da solo). Vedi "Un'insidia
+        // reale già presa in questa suite" in tests/README.md.
+        await t.page.waitForFunction(() => gameState.phase === 'main1' && !DuelEngine.isChainActive()
+            && !(DuelEngine.isPriorityWindowOpen && DuelEngine.isPriorityWindowOpen()), null, { timeout: 15000 });
+        await t.evaluate(() => {
+            if (typeof clearPhaseTransitionTimeout === 'function') clearPhaseTransitionTimeout();
+            gameState.currentPlayer = 'player';
+        });
         // Sovrano Oscuro Ha Des (1118): nega gli effetti di un mostro distrutto in battaglia da un Demone del proprio controllore, non da un mostro qualunque.
         // Battaglia REALE via resolveAttack (non un fireTrigger sintetico):
         // il codice nuovo vive dentro fireOnDestroy, una funzione interna

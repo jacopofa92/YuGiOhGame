@@ -17,8 +17,14 @@ righe, actions.js 3.855, game-flow.js 3.797; 205 accessi al DOM e 85
 `gameState.` nelle carte; 788 carte registrate; 190 spec.
 
 **Priorità 0 — chiudere e mettere in sicurezza**
-- [ ] Suite completa sulle versioni 1.0.40-1.0.43.
-- [ ] Stop alle funzioni nuove sul motore attuale: solo correzioni di bug.
+- [x] Suite completa sulle versioni 1.0.40-1.0.43: 189/190. L'unico
+      fallimento (lod-mrd-linked-monster-batch14, Sovrano Oscuro Ha Des) era
+      la cascata di fasi d'apertura sotto carico: corretto lo spec.
+- [ ] Errore raro "Cannot read properties of null (reading 'card')" in
+      realistic-bot-turns: uscito UNA volta (partita casuale), non
+      riprodotto in 7 giri. Il runner ora registra le prime righe dello
+      stack degli errori di pagina: alla prossima occorrenza si vede da dove.
+- [x] Stop alle funzioni nuove sul motore attuale: solo correzioni di bug.
 - [x] Le 3 note restanti (192, 235, 622) si lasciano così: 235 e 622 si
       risolvono da sole con le "decisioni in sospeso" della Priorità 2.
 

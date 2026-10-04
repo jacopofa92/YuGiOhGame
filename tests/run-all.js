@@ -63,7 +63,13 @@ async function runOne(browser, specPath) {
 
     const page = await browser.newPage({ viewport: { width: 1400, height: 900 } });
     const pageErrors = [];
-    page.on('pageerror', (err) => pageErrors.push(err.message));
+    // Oltre al messaggio, le prime righe dello stack: un errore che salta
+    // fuori solo in certe partite casuali (es. "Cannot read properties of
+    // null") senza sapere DA DOVE arriva non si ritrova più.
+    page.on('pageerror', (err) => {
+        const dove = err.stack ? err.stack.split('\n').slice(1, 4).map((r) => r.trim()).join(' <- ') : '';
+        pageErrors.push(dove ? `${err.message} [${dove}]` : err.message);
+    });
 
     const start = Date.now();
     try {
