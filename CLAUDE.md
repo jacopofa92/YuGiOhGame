@@ -3662,11 +3662,11 @@ priorità o richiedono un refactor ampio):
 ## Carte con limiti noti (da riprendere)
 
 **Fonte di verità: `grep missingEffectNote data/cards.json`, e nient'altro.**
-26 risultati (erano 55 dopo la revisione completa descritta più sopra,
+25 risultati (erano 55 dopo la revisione completa descritta più sopra,
 poi 52 contati di nuovo; chiuse in tre giri 142/511/512/899, poi
 420/523/772/880/901/1040/1043/1113/1114/1121, poi tutte le 17 della
-famiglia A — vedi il bullet «Meccanismi generici per i missingEffectNote»
-qui sopra). Questa
+famiglia A, poi 873 con la scelta di chi subisce — vedi il bullet
+«Meccanismi generici per i missingEffectNote» qui sopra). Questa
 sezione è solo una mappa per orientarsi: ogni carta porta la propria
 nota per esteso, con il motivo preciso. **Non ricopiare qui i motivi** —
 è così che le due copie sono andate alla deriva l'ultima volta.
@@ -3683,14 +3683,17 @@ sono state chiuse insieme (spec `note-carte-chiuse-4.spec.js`). Una carta
 nuova che finisse qui va trattata cercando prima un meccanismo esistente:
 vedi l'elenco nel bullet «Meccanismi generici per i missingEffectNote».
 
-Resta un bisogno condiviso ancora senza meccanismo:
-- **"scelta di chi SUBISCE l'effetto"** — 761, 873 (famiglia C). Ogni
-  scelta di questo motore è del giocatore che controlla l'effetto; per
-  l'altro lato non c'è modo di chiedere.
+La "scelta di chi SUBISCE l'effetto" ha ora il suo meccanismo:
+`victimChoosesDiscard(ctx, victimOwner, options, onDiscarded)`
+(card-effects.js) — picker obbligatorio per il giocatore, la carta meno
+utile per il bot, e in Multiplayer sceglie il client della vittima (sulla
+sua mano vera) e allinea l'altro con la propria fotografia di stato.
+**Usarlo per ogni futura carta "l'avversario scarta 1 carta a sua
+scelta"** (761, 873; spec `scelta-di-chi-subisce.spec.js`).
 
-**B — implementata, il limite è del motore (18 carte).** La nota è un
+**B — implementata, il limite è del motore (19 carte).** La nota è un
 promemoria, non lavoro arretrato: 115, 192, 198, 235, 353, 396, 423,
-459, 622, 661, 738, 826, 851, 882, 890, 1059, 1129, 1130.
+459, 622, 661, 738, 761, 826, 851, 882, 890, 1059, 1129, 1130.
 
 Due limiti condivisi, entrambi deliberati:
 
@@ -3713,8 +3716,8 @@ altrui. Servirebbe una vera finestra di priorità ad ogni cambio fase —
 un cambiamento al cuore del game loop, da fare solo su richiesta
 esplicita.
 
-**C — la scelta la fa il motore, non il giocatore (8 carte).** 100, 761,
-873, 883, 885, 889, 895, 1120. **Prima di migrarne una, leggere il
+**C — la scelta la fa il motore, non il giocatore (6 carte).** 100, 883,
+885, 889, 895, 1120. **Prima di migrarne una, leggere il
 limite su `onAttackDeclare`** più sopra in questo file: cinque di queste
 (100, 235, 883, 889, 895) si risolvono dentro la finestra di
 dichiarazione d'attacco, dove un picker asincrono arriva a danno già

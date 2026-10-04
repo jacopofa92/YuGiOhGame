@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { isHarpieLadySupport, findEquipTarget, equipToChosenTarget, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, chooseCardFromList, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost, maxRitualTributeLevel, performRitualTribute, releaseRelinquishedTarget, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach, destroyTargetingSpellIfItStays } = window.CardEffectsShared;
+    const { isHarpieLadySupport, findEquipTarget, equipToChosenTarget, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, chooseCardFromList, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost, maxRitualTributeLevel, performRitualTribute, releaseRelinquishedTarget, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach, destroyTargetingSpellIfItStays, victimChoosesDiscard } = window.CardEffectsShared;
 
     // ================================================================
     // 835 — Ingranaggio Antico / Ancient Gear
@@ -2107,9 +2107,12 @@
 
     // 872 — Wingweaver: mostro Normale (vanilla), nessun effetto da programmare.
 
-    // 873 — Duo Delinquente / Delinquent Duo (Magia Normale): vedi
-    // missingEffectNote in data/cards.json per la semplificazione (entrambi
-    // gli scarti sono a caso, non solo il primo).
+    // 873 — Duo Delinquente / Delinquent Duo (Magia Normale): paga 1000 LP;
+    // l'avversario scarta 1 carta A CASO (ctx.discardRandomFromHand), poi,
+    // se gliene restano, 1 A SUA SCELTA — victimChoosesDiscard: sceglie chi
+    // subisce, non chi ha attivato la carta. In Multiplayer la mano vera di
+    // chi subisce sta solo sul suo client: è la fotografia di stato che quel
+    // client spedisce dopo la scelta a riallineare entrambi gli scarti.
     CardEffects.register(873, {
         canActivate(ctx) {
             return ctx.hand(ctx.opponent).length > 0;
@@ -2117,9 +2120,14 @@
         activate(ctx) {
             ctx.dealDamage(ctx.owner, 1000);
             const first = ctx.discardRandomFromHand(ctx.opponent);
-            const second = ctx.hand(ctx.opponent).length > 0 ? ctx.discardRandomFromHand(ctx.opponent) : null;
-            const count = (first ? 1 : 0) + (second ? 1 : 0);
-            if (count > 0) ctx.log(`🃏 Duo Delinquente: ${ctx.opponent === 'player' ? 'scarti' : 'il bot scarta'} ${count} cart${count > 1 ? 'e' : 'a'}!`);
+            if (first) ctx.log(`🃏 Duo Delinquente: ${ctx.opponent === 'player' ? 'scarti' : 'il bot scarta'} una carta a caso!`);
+            if (ctx.hand(ctx.opponent).length === 0) return;
+            victimChoosesDiscard(ctx, ctx.opponent, {
+                title: '🃏 Duo Delinquente',
+                text: 'Scegli 1 carta della tua mano da scartare.'
+            }, (scelta) => {
+                ctx.log(`🃏 Duo Delinquente: ${ctx.opponent === 'player' ? `scarti ${scelta.name}` : 'il bot scarta una carta a sua scelta'}.`);
+            });
         }
     });
 

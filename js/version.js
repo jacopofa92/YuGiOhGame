@@ -32,6 +32,8 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.34 — Lo scarto lo sceglie chi lo subisce: Criosfinge e Duo
+ *   Delinquente non scartano più a caso al posto della vittima.
  * 1.0.33 — Chiuse tutte le 17 carte che si comportavano ancora diversamente
  *   dal testo: seconda Battle Phase (Bollettino Meteo), attacco a tutti i
  *   mostri (Sacerdote di Asura), risposte dalla mano (Sentinella, Amuleto di
@@ -579,4 +581,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.33';
+window.GAME_VERSION = '1.0.34';

@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { blockBanishFromField, isHarpieLadySupport, findEquipTarget, equipToChosenTarget, attachEquip, equippedTarget, searchZoneWithChoice, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, collectFieldTargets, offerHandDiscardChoice, resolveSpecialSummonBanishCost, attachUnionMonster, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach } = window.CardEffectsShared;
+    const { blockBanishFromField, isHarpieLadySupport, findEquipTarget, equipToChosenTarget, attachEquip, equippedTarget, searchZoneWithChoice, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, collectFieldTargets, offerHandDiscardChoice, resolveSpecialSummonBanishCost, attachUnionMonster, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach, victimChoosesDiscard } = window.CardEffectsShared;
 
     // ================================================================
     // 732 — Esplosione a Catena / Blast with Chain (Trappola Normale,
@@ -910,8 +910,10 @@
     // (ACTIONS.returnMonsterToHand, duel-engine.js) — reagisce da
     // ENTRAMBI i lati del Terreno (non solo il proprio controllore),
     // dato che il testo reale non è legato a CHI controlla Criosfinge.
-    // SEMPLIFICAZIONE dichiarata: il "sceglie" reale diventa uno scarto
-    // casuale (ctx.discardRandomFromHand, come altrove in questo file).
+    // "Quel proprietario SCEGLIE": victimChoosesDiscard (card-effects.js),
+    // la scelta è di chi riprende il mostro in mano, non di chi controlla
+    // Criosfinge — picker obbligatorio per il giocatore, la carta che vale
+    // meno per il bot, e in Multiplayer sceglie il client della vittima.
     // Copre solo i "torna in mano dal Terreno" già migrati a usare
     // ACTIONS.returnMonsterToHand (Tsukuyomi, Maharaghi, Spirito della
     // Polvere Oscura, Cavaliere Missile, Malvagia Bestia Verme, Prova
@@ -922,10 +924,12 @@
     // ================================================================
     CardEffects.register(761, {
         onAnyMonsterReturnedToHand(ctx) {
-            const discarded = ctx.discardRandomFromHand(ctx.returnedOwner);
-            if (discarded) {
+            victimChoosesDiscard(ctx, ctx.returnedOwner, {
+                title: '❄️ Criosfinge',
+                text: 'Un tuo mostro è tornato in mano: scegli 1 carta della tua mano da mandare al Cimitero.'
+            }, (discarded) => {
                 ctx.log(`❄️ Criosfinge: ${ctx.returnedOwner === 'player' ? 'scarti' : 'il bot scarta'} ${discarded.name}!`);
-            }
+            });
         }
     });
 

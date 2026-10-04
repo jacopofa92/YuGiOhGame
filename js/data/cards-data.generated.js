@@ -8560,7 +8560,7 @@ const cardDatabase = [
     "defense": 2400,
     "effect": "Quando un mostro ritorna dal Terreno alla mano del proprietario, quel proprietario sceglie e manda 1 carta dalla sua mano al Cimitero.",
     "artOnly": true,
-    "missingEffectNote": "Il \"sceglie\" del testo diventa uno scarto casuale, per lo stesso motivo di Duo Delinquente (id 873): a scegliere dovrebbe essere chi subisce l'effetto. Inoltre scatta solo per i \"torna in mano dal Terreno\" che passano da ACTIONS.returnMonsterToHand, non per quelli ancora scritti a mano — quali siano si conta cercando le chiamate in js/engine/, non da un elenco scritto qui."
+    "missingEffectNote": "La scelta dello scarto è di chi riprende il mostro in mano, come da testo. Scatta però solo per i 'torna in mano dal Terreno' che passano da ACTIONS.returnMonsterToHand, non per quelli ancora scritti a mano: quali siano si conta cercando le chiamate in js/engine/."
   },
   {
     "id": 762,
@@ -9844,7 +9844,6 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Paga 1000 Life Points; il tuo avversario scarta 1 carta a caso dalla sua mano, poi, se gliene restano, ne scarta 1 a sua scelta.",
-    "missingEffectNote": "Entrambe le carte scartate sono prese a caso, mentre la seconda dovrebbe sceglierla l'avversario di chi attiva la carta. Ogni scelta di questo motore e' del giocatore che controlla l'effetto: non esiste un modo per chiedere qualcosa al lato che lo subisce.",
     "artOnly": true,
     "limit": 1
   },

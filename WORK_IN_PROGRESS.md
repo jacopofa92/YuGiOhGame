@@ -55,10 +55,11 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
       (`specialSummonBlockedFor`), 434 vieta Evocazioni scoperte e Special
       Summon nel turno (`noSummonTurn`, `DuelEngine.isSummonBannedThisTurn`).
 - [x] Tutti gli scostamenti reali dal testo chiusi (1.0.31-1.0.33). Restano
-      26 `missingEffectNote`, nessuno nella famiglia A: 18 promemoria su
-      limiti del motore e 8 carte in cui sceglie il motore (vedi CLAUDE.md,
-      "Carte con limiti noti"). Prossimo candidato: un meccanismo per far
-      scegliere a chi SUBISCE l'effetto (761, 873).
+      25 `missingEffectNote`, nessuno nella famiglia A: 19 promemoria su
+      limiti del motore e 6 carte in cui sceglie il motore (vedi CLAUDE.md,
+      "Carte con limiti noti").
+- [x] Scelta di chi SUBISCE lo scarto (`victimChoosesDiscard`): Criosfinge
+      (761) e Duo Delinquente (873), anche in Multiplayer.
 - [ ] 6 PNG in `images/characters/avatarTrasparenza/` (e copie in `pedine/`) senza avatar corrispondente
       (Kaiba in Mantello Viola, soldato Grande Guerra, kaibaV2,
       setoKaiba_duelist Kingdom, setoKaiba_forbiddenMemories, yamiYugiV2):

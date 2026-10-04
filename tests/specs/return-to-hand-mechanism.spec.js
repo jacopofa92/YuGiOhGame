@@ -57,11 +57,10 @@ module.exports = {
             return {
                 pickerOfferedRealChoice: pickerItems.length === 2,
                 leftTheField: !gameState.botMonsterField.some((s) => s && s.card.uid === 'target-1'),
-                // Criosfinge (761) scarta CASUALMENTE (Math.random, vedi
-                // discardRandomFromHand in duel-engine.js — fedele al testo
-                // reale della carta) 1 carta dalla mano del bot, che ora
-                // contiene sia 'bh-1' (preesistente) sia 'target-1' (appena
-                // tornato in mano da 671): può legittimamente toccare
+                // Criosfinge (761) fa scartare 1 carta al bot, che la SCEGLIE
+                // da sé (victimChoosesDiscard: la carta che vale meno per
+                // lui) fra 'bh-1' (preesistente) e 'target-1' (appena
+                // tornato in mano da 671): può legittimamente essere
                 // proprio 'target-1'. Non si può quindi assumere che
                 // 'target-1' resti in mano — solo che finisca in mano O al
                 // Cimitero (mai perso, mai duplicato), e che una delle due
