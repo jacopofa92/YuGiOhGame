@@ -8,9 +8,11 @@
     "test": "node tests/run-all.js",
     "hooks": "git config core.hooksPath .githooks",
     "precommit": "node scripts/pre-commit.js",
-    "sync-scripts": "node scripts/sync-script-groups.js"
+    "sync-scripts": "node scripts/sync-script-groups.js",
+    "typecheck": "tsc -p jsconfig.json"
   },
   "devDependencies": {
-    "playwright": "^1.62.1"
+    "playwright": "^1.62.1",
+    "typescript": "^5.9.3"
   }
 }
