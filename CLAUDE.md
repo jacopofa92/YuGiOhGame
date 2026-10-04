@@ -136,10 +136,12 @@ priorità o richiedono un refactor ampio):
   vero global su `window`.
 - Nessun linting/formatting configurato, nessun cache-busting sui tag
   `<script>`.
-- 55 carte hanno un `missingEffectNote` in `data/cards.json` — vedi la
-  sezione "Carte con limiti noti" in fondo a questo file per come sono
-  divise. Il numero non è un arretrato da smaltire: 13 di quelle carte
-  sono implementate per intero e la nota è solo un promemoria.
+- Alcune carte hanno un `missingEffectNote` in `data/cards.json` — il
+  numero si conta con `grep missingEffectNote data/cards.json`, non si
+  riporta qui (invecchierebbe). Vedi la sezione "Carte con limiti noti"
+  in fondo a questo file per come sono divise: nessuna descrive più uno
+  scostamento aperto, sono promemoria su limiti del motore o carte in cui
+  la scelta la fa il motore.
 - ✅ `declaredTargeting` (card-effects.js, vedi il commento sul campo in
   cima al file): nuovo campo dichiarativo generico che permette a una
   carta reattiva sulla Chain (es. Campo di Riryoku id 636) di sapere COSA
