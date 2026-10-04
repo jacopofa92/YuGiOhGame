@@ -1235,7 +1235,7 @@
             if (!ctx.wasFaceDown || !ctx.destroyedByOwner || ctx.destroyedByOwner === ctx.owner) return;
             const grave = ctx.graveyard(ctx.owner);
             const graveIndex = grave.findIndex((c) => c.id === 291);
-            if (graveIndex !== -1) {
+            if (graveIndex !== -1 && !ctx.graveyardMoveNegated(ctx.owner)) {
                 const [found] = grave.splice(graveIndex, 1);
                 ctx.hand(ctx.owner).push(found);
                 ctx.log(`🌪️ ${ctx.card.name} distrutta: recuperi ${found.name} dal Cimitero!`);
@@ -1382,7 +1382,7 @@
             ctx.log('🦅 Kaitoptera torna in campo dalla Zona Bandite!');
             const grave = ctx.graveyard(ctx.owner);
             const fusionIndex = grave.findIndex((c) => c.id === 38);
-            if (fusionIndex !== -1) {
+            if (fusionIndex !== -1 && !ctx.graveyardMoveNegated(ctx.owner)) {
                 const [fusionCard] = grave.splice(fusionIndex, 1);
                 ctx.hand(ctx.owner).push(fusionCard);
                 ctx.log('🔍 Kaitoptera recupera Fusione dal Cimitero!');

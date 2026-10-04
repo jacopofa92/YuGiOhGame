@@ -251,7 +251,10 @@
                 }
                 const hand = ctx.hand(owner);
                 const grave = ctx.graveyard(owner);
-                const toShuffle = [...hand.splice(0, hand.length), ...grave.splice(0, grave.length)];
+                // Necrovalley (id 890): le carte nel Cimitero restano lì; mano
+                // e Terreno tornano comunque nel Deck.
+                const cimiteroBloccato = ctx.graveyardMoveNegated(owner);
+                const toShuffle = [...hand.splice(0, hand.length), ...(cimiteroBloccato ? [] : grave.splice(0, grave.length))];
                 ctx.field(owner).forEach((slot, index) => {
                     if (slot) { toShuffle.push(slot.card); ctx.field(owner)[index] = null; }
                 });
@@ -1787,6 +1790,7 @@
             const addToHand = (card) => {
                 const idx = grave.indexOf(card);
                 if (idx === -1) return;
+                if (ctx.graveyardMoveNegated(ctx.owner)) return;
                 grave.splice(idx, 1);
                 ctx.hand(ctx.owner).push(card);
                 ctx.log(`🔮 Maga della Fede aggiunge ${card.name} alla mano!`);
@@ -2798,6 +2802,7 @@
             return grave.some((c) => c.type === 'monster' && c.attack <= 1500 && !DuelEngine.getDefinition(c.id));
         },
         activate(ctx) {
+            if (ctx.graveyardMoveNegated(ctx.owner)) return;
             const grave = ctx.graveyard(ctx.owner);
             const hand = ctx.hand(ctx.owner);
             let recovered = 0;

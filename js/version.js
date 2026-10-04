@@ -32,6 +32,9 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.36 — Necrovalley ferma davvero ogni carta che prova a lasciare il
+ *   Cimitero. Un mostro rubato rimandato in mano torna al suo proprietario,
+ *   e una rinascita col Terreno pieno non fa più sparire la carta.
  * 1.0.35 — Le scelte dentro una battaglia sono tue: la battaglia aspetta
  *   che tu decida. Armatura Guida d'Attacco, Fata Giglio, Assalitore dei
  *   Guardiani della Tomba, Don Zaloog, Quiz Inverso e Il Cacciatore dalle
@@ -586,4 +589,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.35';
+window.GAME_VERSION = '1.0.36';

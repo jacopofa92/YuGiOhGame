@@ -1805,6 +1805,32 @@
          * `false` come "la carta resta dov'era", mai assumere che sia
          * comunque sparita.
          */
+        /**
+         * Vero (e lo scrive nel log) se Necrovalley (id 890) nega un
+         * effetto che sposterebbe una carta FUORI dal Cimitero di
+         * `graveyardOwner` — in mano, nel Deck, in una zona Magia/Trappola.
+         *
+         * Da chiamare PRIMA di togliere la carta dal Cimitero, in ogni
+         * effetto che la sposta scrivendolo a mano (`grave.splice(...)`).
+         * I passaggi condivisi lo controllano già da soli:
+         * ACTIONS.specialSummon (fromZone 'graveyard'),
+         * searchGraveyardWithChoice, banishFromGraveyard e le rinascite
+         * "alla prossima Standby Phase" (processDelayedGraveyardRevivals).
+         * Prima di questo, uno splice scritto a mano sfuggiva sempre a
+         * Necrovalley.
+         *
+         * Vale per gli EFFETTI, non per i costi: un costo che rimette carte
+         * dal Cimitero nel Deck non è "un effetto che sposta", e non va
+         * fermato qui. Rispetta l'eccezione del Capo dei Guardiani della
+         * Tomba (id 899) tramite isNecrovalleyProtectingGraveyard.
+         */
+        graveyardMoveNegated(graveyardOwner) {
+            if (!isNecrovalleyProtectingGraveyard(graveyardOwner)) return false;
+            const chi = this && this.card ? this.card.name : 'L\'effetto';
+            addToLog(`🏺 Necrovalley nega l'effetto di ${chi}: le carte nel Cimitero non possono lasciarlo.`);
+            return true;
+        },
+
         banishFromGraveyard(owner, card, actor) {
             const grave = graveyardOf(owner);
             const idx = grave.indexOf(card);
@@ -2022,11 +2048,12 @@
          * solo così un mostro appena tornato in mano può far scattare una
          * reazione generica (es. Criosfinge, id 761: "quando un mostro
          * ritorna dal Terreno alla mano del proprietario, quel
-         * proprietario scarta 1 carta"). SEMPLIFICAZIONE dichiarata:
-         * copre solo i punti migrati a usare QUESTO helper, non ogni
-         * altro "torna in mano" di questo file (es. i 2 casi "dal
-         * Cimitero alla mano", concettualmente diversi: non "dal
-         * Terreno"). A differenza di onOwnMonsterDestroyed/
+         * proprietario scarta 1 carta"). Ogni ritorno in mano di un
+         * MOSTRO dal Terreno passa ormai da qui (censimento 1.0.35: le
+         * restanti `hand.push` scritte a mano riguardano Magie/Trappole o
+         * carte dal Cimitero, che "dal Terreno alla mano" di un mostro
+         * non sono): una carta nuova che rimanda in mano un mostro deve
+         * chiamare questo, o Criosfinge non la vedrà. A differenza di onOwnMonsterDestroyed/
          * onOwnSpellTrapDestroyed (solo lo stesso lato), qui ENTRAMBI i
          * lati reagiscono in modo indipendente, stesso schema di
          * TRIGGER.ON_CARD_ACTIVATED in fireTrigger: Criosfinge non è
@@ -2037,6 +2064,12 @@
             const slot = field[index];
             if (!slot) return null;
             const card = slot.card;
+            // "Torna in mano al PROPRIETARIO": un mostro preso in prestito
+            // (Cambio di Cuore & co., slot.originalOwner) torna nella mano
+            // di chi lo possiede davvero, non di chi lo controlla adesso —
+            // stessa regola che destroyMonster applica già al Cimitero.
+            // Prima finiva nella mano di chi l'aveva rubato.
+            const proprietario = slot.originalOwner || owner;
             field[index] = null;
             // Cerchio degli Inferi (id 498): "bandiscilo quando lascia il
             // campo" vale per QUALUNQUE modo di lasciarlo, incluso il
@@ -2048,29 +2081,31 @@
             // (non onReturnedToHandSelf/onAnyMonsterReturnedToHand: la
             // carta non è mai arrivata davvero in mano).
             if (card.mustBanishOnLeavingField) {
-                banishedOf(owner).push(card);
+                banishedOf(proprietario).push(card);
                 addToLog(`⭕ ${card.name} viene bandita invece di tornare in mano (Cerchio degli Inferi)!`);
                 const banishDef = getDefinition(card.id);
                 if (banishDef && typeof banishDef.onBanished === 'function') {
-                    safeCallCardHandler(card, 'onBanished', () => banishDef.onBanished(makeContext(owner, { card: card })));
+                    safeCallCardHandler(card, 'onBanished', () => banishDef.onBanished(makeContext(proprietario, { card: card })));
                 }
                 return card;
             }
-            handOf(owner).push(card);
+            handOf(proprietario).push(card);
             // def.onReturnedToHandSelf(ctx): la carta STESSA appena
             // rimandata in mano reagisce, a differenza di
             // onAnyMonsterReturnedToHand qui sotto (altre carte scoperte
             // che OSSERVANO l'evento) — es. Abbandonato (id 416).
             const selfDef = getDefinition(card.id);
             if (selfDef && typeof selfDef.onReturnedToHandSelf === 'function') {
-                safeCallCardHandler(card, 'onReturnedToHandSelf', () => selfDef.onReturnedToHandSelf(makeContext(owner, { card: card, slotIndex: index })));
+                safeCallCardHandler(card, 'onReturnedToHandSelf', () => selfDef.onReturnedToHandSelf(makeContext(proprietario, { card: card, slotIndex: index })));
             }
+            // returnedOwner = chi l'ha ripreso in mano (es. Criosfinge id
+            // 761: "quel proprietario scarta 1 carta").
             ['player', 'bot'].forEach((reactOwner) => {
                 fieldOf(reactOwner).forEach((rslot, rindex) => {
                     if (!rslot || rslot.isFaceDown) return;
                     const rdef = getDefinition(rslot.card.id);
                     if (rdef && typeof rdef.onAnyMonsterReturnedToHand === 'function') {
-                        safeCallCardHandler(rslot.card, 'onAnyMonsterReturnedToHand', () => rdef.onAnyMonsterReturnedToHand(makeContext(reactOwner, { card: rslot.card, slotIndex: rindex, returnedCard: card, returnedOwner: owner })));
+                        safeCallCardHandler(rslot.card, 'onAnyMonsterReturnedToHand', () => rdef.onAnyMonsterReturnedToHand(makeContext(reactOwner, { card: rslot.card, slotIndex: rindex, returnedCard: card, returnedOwner: proprietario })));
                     }
                 });
             });
@@ -2350,8 +2385,21 @@
             if (entry.owner !== currentTurnOwner) { stillWaiting.push(entry); return; }
             entry.standbysRemaining -= 1;
             if (entry.standbysRemaining > 0) { stillWaiting.push(entry); return; }
+            // Necrovalley (id 890) si guarda ADESSO, quando la rinascita
+            // avviene davvero, non quando era stata programmata: è in questo
+            // momento che la carta lascerebbe il Cimitero. Torna lì, dove i
+            // giocatori la vedono.
+            if (isNecrovalleyProtectingGraveyard(entry.owner)) {
+                graveyardOf(entry.owner).push(entry.card);
+                addToLog(`🏺 Necrovalley nega la rinascita: ${entry.card.name} resta nel Cimitero.`);
+                return;
+            }
             const slotIndex = ACTIONS.findEmptyMonsterSlot(entry.owner);
             if (slotIndex === -1) {
+                // La carta era stata tolta dal Cimitero quando la rinascita è
+                // stata programmata: senza rimettercela qui spariva dalla
+                // partita, mentre il log diceva che era rimasta lì.
+                graveyardOf(entry.owner).push(entry.card);
                 addToLog(`⚠️ Il Terreno è pieno: ${entry.card.name} resta nel Cimitero invece di rinascere.`);
                 return;
             }

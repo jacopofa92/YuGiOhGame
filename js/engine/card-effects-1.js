@@ -1428,6 +1428,11 @@
                 const gy = ctx.graveyard(choice.graveyardOwner);
                 const realIndex = gy.findIndex((c) => c.uid === choice.card.uid);
                 if (realIndex === -1) return;
+                // Controllo qui e non solo in specialSummon: quello guarda il
+                // Cimitero di chi EVOCA, e qui la carta può venire da quello
+                // dell'avversario (lì, bloccata, finirebbe nel Cimitero
+                // sbagliato).
+                if (ctx.graveyardMoveNegated(choice.graveyardOwner)) return;
                 gy.splice(realIndex, 1);
                 ctx.specialSummon(owner, choice.card, slotIndex, position, 'graveyard');
                 ctx.log(`🌟 Rinascita del Mostro riporta in campo ${choice.card.name} in Posizione di ${position === 'attack' ? 'Attacco' : 'Difesa'}!`);
@@ -1845,7 +1850,7 @@
                 }
                 if (!kuribandit) {
                     const graveIndex = ctx.graveyard(ctx.owner).findIndex((c) => c.id === 334);
-                    if (graveIndex !== -1) [kuribandit] = ctx.graveyard(ctx.owner).splice(graveIndex, 1);
+                    if (graveIndex !== -1 && !ctx.graveyardMoveNegated(ctx.owner)) [kuribandit] = ctx.graveyard(ctx.owner).splice(graveIndex, 1);
                 }
                 if (kuribandit) {
                     hand.push(kuribandit);
@@ -2102,6 +2107,7 @@
             // sempre dell'avversario (non si può distruggere in battaglia
             // un proprio mostro): finiscono quindi nel Cimitero
             // dell'AVVERSARIO, mai nel proprio — da lì vanno recuperati.
+            if (ctx.graveyardMoveNegated(ctx.opponent)) return;
             const grave = ctx.graveyard(ctx.opponent);
             pending.forEach((victim) => {
                 const idx = grave.indexOf(victim);
@@ -2972,6 +2978,7 @@
             const grave = ctx.graveyard(ctx.owner);
             const index = grave.indexOf(ctx.card);
             if (index === -1) return;
+            if (ctx.graveyardMoveNegated(ctx.owner)) return;
             grave.splice(index, 1);
             deck.push(ctx.card); // drawCardsToHand pesca con .pop(): push = "in cima al Deck"
             ctx.gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;

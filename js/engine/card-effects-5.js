@@ -791,6 +791,7 @@
             return ctx.graveyard(ctx.owner).some((c) => c.name && c.name.includes('LV'));
         },
         activate(ctx) {
+            if (ctx.graveyardMoveNegated(ctx.owner)) return;
             const grave = ctx.graveyard(ctx.owner);
             const found = [];
             for (let i = grave.length - 1; i >= 0 && found.length < 2; i--) {
@@ -1278,6 +1279,7 @@
             const grave = ctx.graveyard(ctx.owner);
             const index = grave.findIndex((c) => c.uid === ctx.card.uid);
             if (index === -1) return;
+            if (ctx.graveyardMoveNegated(ctx.owner)) return;
             const [card] = grave.splice(index, 1);
             ctx.hand(ctx.owner).push(card);
             ctx.log('🧟 Mummia Rigenerante torna in mano dopo essere stata scartata!');
@@ -2772,6 +2774,7 @@
                 }, () => {
                     const cardIndex = ctx.graveyard(ctx.owner).findIndex((c) => c.uid === ctx.card.uid);
                     if (cardIndex === -1) return;
+                    if (ctx.graveyardMoveNegated(ctx.owner)) return;
                     const [card] = ctx.graveyard(ctx.owner).splice(cardIndex, 1);
                     ctx.hand(ctx.owner).push(card);
                     ctx.log('⚔️ Spada Divina - Lama della Fenice bandisce 2 Guerrieri e torna in mano dal Cimitero!');

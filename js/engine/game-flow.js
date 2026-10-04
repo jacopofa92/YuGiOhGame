@@ -1554,6 +1554,9 @@ function enterEndPhase() {
                 candidati.push({ owner: opponent, index: i, zone: 'monster', card: slot.card, slot: slot });
             });
             if (candidati.length === 0) return; // nessun mostro scoperto avversario da bersagliare
+            // Necrovalley (id 890): la carta non può lasciare il Cimitero
+            // per equipaggiarsi. Vedi ACTIONS.graveyardMoveNegated.
+            if (DuelEngine.makeContext(owner, { card: grave.find((c) => c.uid === uid) }).graveyardMoveNegated(owner)) return;
             candidati.sort((a, b) => DuelEngine.getEffectiveAtk(b.card) - DuelEngine.getEffectiveAtk(a.card));
             // game-flow.js non e' una IIFE e non importa nulla: l'helper si
             // legge da window, con una guardia perche' questa e' l'unica

@@ -63,8 +63,10 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
       (`callCardHandlerWaiting`/`attendiScelta`, 1.0.35): chiuse le 6 carte
       in cui sceglieva il motore. Restano 19 note, tutte promemoria su
       limiti del motore.
-- [ ] Note restanti, in ordine di rischio: ritorni in mano e spostamenti
-      dal Cimitero scritti a mano (761, 890); audit delle carte che
+- [x] Ritorni in mano e spostamenti dal Cimitero (761, 890, 1.0.36):
+      Necrovalley ora vede ogni spostamento scritto a mano
+      (`graveyardMoveNegated`, sorvegliato da `guardrail-necrovalley`).
+- [ ] Note restanti (17), in ordine di rischio: audit delle carte che
       bersagliano senza checkpoint di targeting (~11 note); "uno dei due
       giocatori può pagare" (882); finestra di priorità a ogni cambio fase
       per gli Effetti Veloci (192, 396, 459, 1059: la più rischiosa).

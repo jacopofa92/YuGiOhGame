@@ -3688,11 +3688,12 @@ priorità o richiedono un refactor ampio):
 ## Carte con limiti noti (da riprendere)
 
 **Fonte di verità: `grep missingEffectNote data/cards.json`, e nient'altro.**
-19 risultati (erano 55 dopo la revisione completa descritta più sopra,
+17 risultati (erano 55 dopo la revisione completa descritta più sopra,
 poi 52 contati di nuovo; chiuse in tre giri 142/511/512/899, poi
 420/523/772/880/901/1040/1043/1113/1114/1121, poi tutte le 17 della
 famiglia A, poi 873 con la scelta di chi subisce, poi le 6 della
-famiglia C con le scelte che la battaglia aspetta — vedi il bullet
+famiglia C con le scelte che la battaglia aspetta, poi 761 e 890 col
+censimento dei ritorni in mano e degli spostamenti dal Cimitero — vedi il bullet
 «Meccanismi generici per i missingEffectNote» qui sopra e l'aggiornamento
 1.0.35 sulla regola di `onAttackDeclare`). Questa
 sezione è solo una mappa per orientarsi: ogni carta porta la propria
@@ -3719,9 +3720,25 @@ sua mano vera) e allinea l'altro con la propria fotografia di stato.
 **Usarlo per ogni futura carta "l'avversario scarta 1 carta a sua
 scelta"** (761, 873; spec `scelta-di-chi-subisce.spec.js`).
 
-**B — implementata, il limite è del motore (19 carte).** La nota è un
+**B — implementata, il limite è del motore (17 carte).** La nota è un
 promemoria, non lavoro arretrato: 115, 192, 198, 235, 353, 396, 423,
-459, 622, 661, 738, 761, 826, 851, 882, 890, 1059, 1129, 1130.
+459, 622, 661, 738, 826, 851, 882, 1059, 1129, 1130.
+
+*Spostamenti dal Cimitero e Necrovalley* (chiuso in 1.0.36): ogni
+effetto che toglie una carta dal Cimitero scrivendolo a mano
+(`grave.splice/pop/shift`) deve chiamare prima
+`ctx.graveyardMoveNegated(<di chi è il Cimitero>)` — i passaggi
+condivisi (specialSummon da 'graveyard', searchGraveyardWithChoice,
+banishFromGraveyard, le rinascite a tempo) lo fanno da soli. Lo
+sorveglia `guardrail-necrovalley.spec.js`: una carta nuova che lo
+dimentica fa fallire la suite. Attenzione a una rianimazione dal
+Cimitero dell'AVVERSARIO: specialSummon controlla il Cimitero di chi
+Evoca, quindi lì il controllo va fatto a mano sul Cimitero giusto (come
+in Rinascita del Mostro id 35).
+*Ritorni in mano*: ogni mostro che torna dal Terreno in mano passa da
+`ACTIONS.returnMonsterToHand` (censimento 1.0.36, nessuna eccezione
+rimasta), che lo rimanda nella mano del PROPRIETARIO (`slot.originalOwner`)
+e non di chi lo controlla.
 
 Due limiti condivisi, entrambi deliberati:
 

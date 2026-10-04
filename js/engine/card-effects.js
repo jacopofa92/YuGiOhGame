@@ -584,6 +584,8 @@
         const grave = ctx.graveyard(ctx.owner);
         const i = grave.findIndex((c) => c.uid === ctx.card.uid);
         if (i === -1) return false;
+        // Necrovalley (id 890): la carta resta nel Cimitero.
+        if (ctx.graveyardMoveNegated(ctx.owner)) return false;
         const [carta] = grave.splice(i, 1);
         // Un equip appena tornato indietro non deve ricordarsi a chi era
         // agganciato: se rientrasse in campo con questi campi ancora

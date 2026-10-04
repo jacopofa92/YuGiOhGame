@@ -1430,6 +1430,7 @@
             const returnToDeck = (target) => {
                 const idx = grave.findIndex((g) => g.uid === target.uid);
                 if (idx === -1) return;
+                if (ctx.graveyardMoveNegated(ctx.owner)) return;
                 const [card] = grave.splice(idx, 1);
                 const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
                 gameState[deckKey].unshift(card);
@@ -1537,6 +1538,7 @@
             const returnToDeck = (target) => {
                 const idx = grave.findIndex((g) => g.uid === target.uid);
                 if (idx === -1) return;
+                if (ctx.graveyardMoveNegated(ctx.owner)) return;
                 const [card] = grave.splice(idx, 1);
                 const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
                 gameState[deckKey].unshift(card);
@@ -1860,6 +1862,7 @@
             const returnToDeckTop = (target) => {
                 const idx = grave.findIndex((g) => g.uid === target.uid);
                 if (idx === -1) return;
+                if (ctx.graveyardMoveNegated(ctx.owner)) return;
                 const [card] = grave.splice(idx, 1);
                 const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
                 gameState[deckKey].push(card);
@@ -2592,6 +2595,9 @@
             if (idx === -1) return;
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) return;
+            // Il Cimitero è quello dell'avversario: specialSummon controlla
+            // solo quello di chi Evoca, quindi Necrovalley si guarda qui.
+            if (ctx.graveyardMoveNegated(destroyedOwner)) return;
             grave.splice(idx, 1);
             ctx.specialSummon(ctx.owner, destroyed, slotIndex, 'attack', 'graveyard');
             ctx.log(`🧛 Vampire Baby Special Summona ${destroyed.name}!`);
@@ -2642,6 +2648,7 @@
             const grave = ctx.graveyard(ctx.destroyedCardOwner);
             const idx = grave.findIndex((c) => c.uid === ctx.destroyedCard.uid);
             if (idx === -1) return;
+            if (ctx.graveyardMoveNegated(ctx.destroyedCardOwner)) return;
             const [card] = grave.splice(idx, 1);
             const deckKey = ctx.destroyedCardOwner === 'player' ? 'playerDeck' : 'botDeck';
             gameState[deckKey].push(card);
@@ -2658,6 +2665,7 @@
             const grave = ctx.graveyard(ctx.destroyedCardOwner);
             const idx = grave.findIndex((c) => c.uid === ctx.destroyedCard.uid);
             if (idx === -1) return;
+            if (ctx.graveyardMoveNegated(ctx.destroyedCardOwner)) return;
             const [card] = grave.splice(idx, 1);
             const deckKey = ctx.destroyedCardOwner === 'player' ? 'playerDeck' : 'botDeck';
             gameState[deckKey].push(card);

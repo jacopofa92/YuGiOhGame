@@ -571,7 +571,12 @@
             ctx.card.level = 4;
             ctx.card.attack = 0;
             ctx.card.defense = 2000;
-            ctx.specialSummon(ctx.owner, ctx.card, slotIndex, 'defense', 'graveyard');
+            // fromZone 'field' e non 'graveyard': è una Trappola ATTIVATA
+            // che diventa mostro, non una carta che lascia il Cimitero (che
+            // questo motore la parcheggi lì mentre si risolve è un dettaglio
+            // interno). Con 'graveyard' Necrovalley l'avrebbe fermata — e
+            // DOPO averla già trasformata in mostro qui sopra.
+            ctx.specialSummon(ctx.owner, ctx.card, slotIndex, 'defense', 'field');
             // specialSummon(): "difesa" implica coperta di default (stesso
             // comportamento usato da Mago Apprendista id 737) — questa
             // carta invece va Special Summonata SCOPERTA, va corretto qui.
@@ -720,6 +725,9 @@
                     && ctx.field(ctx.owner).some((s) => s && !s.isFaceDown && d.unionTargetFilter(s.card));
             });
             if (unioni.length === 0) return;
+            // chooseCardFromList non passa da searchGraveyardWithChoice, che
+            // controlla Necrovalley da sé: qui va controllato a mano.
+            if (ctx.graveyardMoveNegated(ctx.owner)) return;
             // chooseCardFromList e non searchGraveyardWithChoice: la carta
             // deve restare nel Cimitero finche' non si sa anche a CHI
             // agganciarla, altrimenti una seconda scelta annullata la
@@ -1578,9 +1586,10 @@
             if (!gameState._returnOfTheDoomedTurn || gameState._returnOfTheDoomedTurn[ctx.owner] !== gameState.turn) return;
             const grave = ctx.graveyard(ctx.owner);
             if (grave.length === 0) return;
+            gameState._returnOfTheDoomedTurn[ctx.owner] = null;
+            if (ctx.graveyardMoveNegated(ctx.owner)) return;
             const card = grave.pop();
             ctx.hand(ctx.owner).push(card);
-            gameState._returnOfTheDoomedTurn[ctx.owner] = null;
             ctx.log(`⚰️ Ritorno dei Dannati riporta ${card.name} in mano!`);
         }
     });

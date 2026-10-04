@@ -1398,6 +1398,7 @@
             const grave = ctx.graveyard(ctx.owner);
             const index = grave.findIndex((c) => c.uid === ctx.card.uid);
             if (index === -1) return;
+            if (ctx.graveyardMoveNegated(ctx.owner)) return;
             const [card] = grave.splice(index, 1);
             if (!ctx.shuffleIntoDeck(ctx.owner, [card])) {
                 grave.push(card);
@@ -2070,6 +2071,7 @@
             const grave = ctx.graveyard(ctx.owner);
             const index = grave.findIndex((c) => c.uid === ctx.card.uid);
             if (index === -1) return;
+            if (ctx.graveyardMoveNegated(ctx.owner)) return;
             grave.splice(index, 1);
             hand.push(ctx.card);
             ctx.log('🦅 Ptera Nero ritorna in mano!');

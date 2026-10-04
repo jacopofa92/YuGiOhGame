@@ -8558,8 +8558,7 @@ const cardDatabase = [
     "attack": 1200,
     "defense": 2400,
     "effect": "Quando un mostro ritorna dal Terreno alla mano del proprietario, quel proprietario sceglie e manda 1 carta dalla sua mano al Cimitero.",
-    "artOnly": true,
-    "missingEffectNote": "La scelta dello scarto è di chi riprende il mostro in mano, come da testo. Scatta però solo per i 'torna in mano dal Terreno' che passano da ACTIONS.returnMonsterToHand, non per quelli ancora scritti a mano: quali siano si conta cercando le chiamate in js/engine/."
+    "artOnly": true
   },
   {
     "id": 762,
@@ -10031,7 +10030,6 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "field",
     "effect": "Tutti i mostri Guardiani della Tomba guadagnano 500 ATK e DEF. Le carte nel Cimitero non possono essere bandite. Nega ogni effetto Carta che sposterebbe una carta nel Cimitero in un posto diverso. Nega ogni effetto Carta che cambia Tipo o Attributo nel Cimitero.",
-    "missingEffectNote": "La negazione degli spostamenti dal Cimitero copre la Special Summon (fromZone 'graveyard', assumendo il Cimitero di chi Evoca) e le scelte fatte con searchGraveyardWithChoice; un effetto che sposta una carta dal Cimitero con uno splice scritto a mano non viene negato. La clausola sul cambio di Tipo/Attributo nel Cimitero non ha casi nel dataset.",
     "artOnly": true
   },
   {
