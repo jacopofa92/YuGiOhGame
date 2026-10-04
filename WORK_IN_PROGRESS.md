@@ -2,6 +2,59 @@
 
 Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
 
+## Piano di attacco (deciso il 2026-10-04)
+
+Obiettivi dell'utente: un motore scalabile e "plug in", e in prospettiva
+Forbidden Memories come secondo set di regole. Angular e il 2 contro 2
+sono rimandati. TypeScript solo come tipi nei commenti (`// @ts-check` +
+JSDoc): niente build, `file://` resta (lo rompono solo i moduli nativi
+`type="module"`, non TypeScript). Ogni fase lascia il gioco giocabile.
+
+Le misure di partenza (per sapere da dove si parte): duel-engine.js 6.316
+righe, actions.js 3.855, game-flow.js 3.797; 205 accessi al DOM e 85
+`setTimeout` nei tre file del nucleo; 396 ternari "player ? bot";
+366 accessi diretti a `gameState.player*`/`bot*`; 528 `ctx.opponent` e 1.119
+`gameState.` nelle carte; 788 carte registrate; 190 spec.
+
+**Priorità 0 — chiudere e mettere in sicurezza**
+- [ ] Suite completa sulle versioni 1.0.40-1.0.43.
+- [ ] Stop alle funzioni nuove sul motore attuale: solo correzioni di bug.
+- [x] Le 3 note restanti (192, 235, 622) si lasciano così: 235 e 622 si
+      risolvono da sole con le "decisioni in sospeso" della Priorità 2.
+
+**Priorità 1 — preparare il terreno** (branch `refactor/nucleo-senza-testa`)
+- [ ] Tipi nei commenti + `// @ts-check`, a partire dal contratto delle carte
+      (`ctx`) e da `gameState`. Controllo con `tsc --noEmit` (jsconfig).
+- [ ] Una sola lista degli `<script>` condivisa da tutte le pagine.
+
+**Priorità 2 — nucleo senza testa** (stesso branch)
+- [ ] Dividere duel-engine/actions/game-flow per competenza (Catena,
+      battaglia, Evocazioni, fasi, stato).
+- [ ] Togliere il DOM dalla logica: l'interfaccia ascolta un canale di eventi.
+- [ ] Le scelte diventano "decisioni in sospeso" gestite dal nucleo; la
+      logica non aspetta più le animazioni.
+- [ ] Traguardo: un duello bot contro bot che gira in Node, senza browser.
+
+**Priorità 3 — lato tavolo e Multiplayer**
+- [ ] "Posti al tavolo" al posto di player/bot nel nucleo (il contratto delle
+      carte resta quasi uguale).
+- [ ] Multiplayer "a passo comune": i due client eseguono le stesse azioni
+      sullo stesso stato (niente più fotografie di stato da tradurre).
+
+**Priorità 4 — per il giocatore** (in parallelo)
+- [ ] Service worker più leggero (vedi «Peso e velocità» qui sotto).
+- [ ] Tutorial o partita guidata (meglio dopo la Priorità 2).
+- [ ] Bilanciamento delle difficoltà con simulazioni bot contro bot.
+
+**Priorità 5 — espansioni**
+- [ ] Forbidden Memories come secondo set di regole sullo stesso nucleo.
+- [ ] Più avanti, se si vorrà: file `.ts` veri compilati in uno script
+      classico (esbuild, formato IIFE: `file://` resta), un framework per
+      l'interfaccia, il 2 contro 2.
+
+Decisioni aperte dell'utente: i 6 PNG di avatar non usati; le regole del
+2 contro 2 quando lo si riprende.
+
 ## Peso e velocità (più urgente)
 
 - [x] PNG ridimensionati (max 320 px, trasparenza mantenuta): gli originali
