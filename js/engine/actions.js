@@ -1139,7 +1139,7 @@ function performHandDiscard() {
  * (vedi openSummonModal/promptPositionChange sotto per un esempio),
  * richiamando closeQuickPopover() dentro ogni handler.
  */
-function openQuickPopover(anchorEl, innerHTML, { onDismiss, dismissible = true, bare = false } = {}) {
+function openQuickPopover(anchorEl, innerHTML, { onDismiss, dismissible = true, bare = false, extraClass = '' } = {}) {
     closeQuickPopover();
 
     const catcher = document.createElement('div');
@@ -1160,6 +1160,9 @@ function openQuickPopover(anchorEl, innerHTML, { onDismiss, dismissible = true, 
     // ritrovarsi il riquadro acceso o spento per effetto collaterale di
     // un cambio di testo.
     pop.className = bare ? 'quick-popover quick-popover--bare' : 'quick-popover';
+    // Prima della misura qui sotto: una classe che cambia la larghezza
+    // (es. quick-popover--options) deve contare nel calcolo della posizione.
+    if (extraClass) pop.classList.add(extraClass);
     pop.id = 'quickPopover';
     pop.innerHTML = innerHTML;
     // Sostituisce ogni <span data-icon="..."> col vero SVG a tema (vedi
@@ -2435,7 +2438,19 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
             }
         }
 
-        setTimeout(() => {
+        // "Durante il calcolo dei danni, puoi..." (es. Iniezione della Fata
+        // Giglio id 889): le scelte di quel momento si fanno QUI, con la
+        // battaglia ormai certa, e il danno si calcola solo dopo — vedi
+        // runBeforeDamageCalculation in duel-engine.js.
+        setTimeout(() => DuelEngine.runBeforeDamageCalculation(attackerOwner, attackerIndex, effectiveDefenderOwner, effectiveTargetIndex, () => {
+            // Una scelta fatta qui sopra non toglie mai l'attaccante dal
+            // campo, ma resolveBattleDamage legge la sua carta senza
+            // controlli: meglio uscire pulito che rompersi a metà.
+            if (attackerField[attackerIndex] !== attackerSlot) {
+                if (attackerOwner === 'player') clearSelection(); else updateUI();
+                done();
+                return;
+            }
             resolveBattleDamage(attackerOwner, effectiveDefenderOwner, attackerIndex, effectiveTargetIndex, attackState.damageNegated, attackState.attackerAtkZeroed);
             attackerSlot.hasAttacked = true;
             // Attacco extra nella stessa Battle Phase: SOLO se l'attaccante
@@ -2560,7 +2575,7 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
                 if (attackerOwner === 'player') clearSelection(); else updateUI();
                 done();
             }, 700);
-        }, 500);
+        }), 500);
     });
 }
 
@@ -3757,5 +3772,57 @@ window.DuelEngineUI = {
         };
         pop.querySelector('#qpChoiceA').onclick = () => { closeQuickPopover(); choiceA.onSelect(); refresh(); };
         pop.querySelector('#qpChoiceB').onclick = () => { closeQuickPopover(); choiceB.onSelect(); refresh(); };
+    },
+
+    /**
+     * Scelta fra N OPZIONI con un'etichetta — non fra carte. Serve agli
+     * effetti che chiedono di dichiarare una CATEGORIA (Quiz Inverso id 885:
+     * Mostro, Magia o Trappola; Il Cacciatore dalle 7 Armi id 1120: un Tipo
+     * di mostro) o di scegliere fra due effetti (Don Zaloog id 883), che
+     * finché esistevano solo openCardListPicker e i popover a due icone
+     * sceglievano da sé.
+     *
+     * Con il riquadro, non a pulsanti nudi: porta una domanda da leggere
+     * (vedi l'opzione `bare` di openQuickPopover). `options`: array di
+     * { value, label, icon? }. Con `onCancel` compare "Annulla" e un click
+     * fuori chiude; senza, la scelta è obbligatoria e un click fuori viene
+     * ignorato.
+     *
+     * Le carte non lo chiamano direttamente: passano da chooseOption
+     * (card-effects.js), che sa anche far scegliere il bot e far viaggiare
+     * la scelta in Multiplayer.
+     */
+    openOptionPicker(anchorEl, { title, text, options, onSelect, onCancel, cancelLabel } = {}) {
+        const voci = (options || []).map((o, i) => `
+            <button type="button" class="quick-popover-btn confirm quick-popover-option" data-option="${i}">
+                ${o.icon ? `<span class="quick-popover-option-icon">${o.icon}</span>` : ''}<span>${escapeHtml(o.label)}</span>
+            </button>`).join('');
+        const annulla = onCancel
+            ? `<button type="button" class="quick-popover-btn cancel quick-popover-option" data-option="annulla">${escapeHtml(cancelLabel || 'Annulla')}</button>`
+            : '';
+        const pop = openQuickPopover(anchorEl, `
+            <div class="quick-popover-title">${escapeHtml(title || 'Scegli')}</div>
+            ${text ? `<div class="quick-popover-text">${escapeHtml(text)}</div>` : ''}
+            <div class="quick-popover-actions quick-popover-actions--options">${voci}${annulla}</div>
+        `, { dismissible: !!onCancel, onDismiss: onCancel, extraClass: 'quick-popover--options' });
+        const refresh = () => {
+            if (typeof renderPlayerHand === 'function') renderPlayerHand();
+            if (typeof renderBotHand === 'function') renderBotHand();
+            if (typeof renderFields === 'function') renderFields();
+            if (typeof renderEquipLinks === 'function') renderEquipLinks();
+        };
+        pop.querySelectorAll('[data-option]').forEach((btn) => {
+            btn.onclick = () => {
+                closeQuickPopover();
+                const chiave = btn.getAttribute('data-option');
+                if (chiave === 'annulla') {
+                    if (onCancel) onCancel();
+                    return;
+                }
+                const scelta = options[Number(chiave)];
+                if (scelta && onSelect) onSelect(scelta.value, scelta);
+                refresh();
+            };
+        });
     }
 };

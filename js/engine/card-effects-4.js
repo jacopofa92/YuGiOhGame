@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { findEquipTarget, equipToChosenTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, resolveSpecialSummonTributeCost, chooseCardFromList, maxRitualTributeLevel, performRitualTribute } = window.CardEffectsShared;
+    const { chooseFieldCardTargetWaiting, attendiScelta, findEquipTarget, equipToChosenTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, resolveSpecialSummonTributeCost, chooseCardFromList, maxRitualTributeLevel, performRitualTribute } = window.CardEffectsShared;
 
     // ================================================================
     // BATCH 7: rientro in campo dopo una distruzione (onOwnMonsterDestroyed,
@@ -2825,13 +2825,25 @@
     // quella carta (ridirige verso il campo di chi ha attivato l'effetto,
     // "fuoco amico"), qui ridirige verso un ALTRO proprio mostro (difesa,
     // come la metà "attacco" qui sopra).
+    // La metà "attacco" fa scegliere il nuovo bersaglio al giocatore (la
+    // battaglia aspetta, chooseFieldCardTargetWaiting). La metà "Magia/
+    // Trappola" sceglie ancora da sola: il checkpoint di targeting
+    // (declareCardEffectTarget) è SINCRONO — chi ha attivato l'effetto
+    // legge il bersaglio finale subito dopo — e lì non c'è niente che
+    // possa aspettare una scelta.
     CardEffects.register(622, {
         onAttackDeclare(ctx) {
-            const field = ctx.field(ctx.owner);
-            const newIndex = field.findIndex((s, i) => s && i !== ctx.targetIndex);
-            if (newIndex === -1) return;
-            ctx.redirectAttack(newIndex);
-            ctx.log(`🔀 Spostamento ridirige l'attacco verso ${field[newIndex].card.name}!`);
+            const candidati = collectFieldTargets(ctx, {
+                zone: 'monster', owner: 'self', includiCoperte: true,
+                filter: (card, owner, slot) => ctx.field(owner)[ctx.targetIndex] !== slot
+            });
+            chooseFieldCardTargetWaiting(ctx, candidati, {
+                title: '🔀 Spostamento',
+                text: 'Scegli quale altro tuo mostro subirà l\'attacco.'
+            }, (scelto) => {
+                ctx.redirectAttack(scelto.index);
+                ctx.log(`🔀 Spostamento ridirige l'attacco verso ${scelto.card.name}!`);
+            });
         },
         canActivate(ctx) {
             if (ctx.zone !== 'st') return false;

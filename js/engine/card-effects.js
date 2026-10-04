@@ -797,9 +797,114 @@
                 const match = candidates.find((c) => c.card.uid === card.uid);
                 comunica(match ? match.card.uid : (card && card.uid));
                 if (match) onChosen(match);
-            }
+            },
+            // Facoltativo: serve a chi ha chiesto di essere aspettato
+            // (attendiScelta), che deve sapere anche quando il giocatore
+            // chiude la lista senza scegliere. Senza, chiudere lascia le
+            // cose come stanno, come sempre.
+            onCancel: options && typeof options.onCancel === 'function' ? options.onCancel : undefined
         });
         return true;
+    }
+
+    /**
+     * "Aspettami": da chiamare all'inizio di un handler che fa scegliere il
+     * giocatore, quando chi lo esegue deve aspettare la scelta prima di
+     * andare avanti — una risposta a un attacco, l'auto-effetto di chi
+     * attacca, una decisione "durante il calcolo dei danni", un link di
+     * una Chain. Torna la funzione da chiamare a scelta conclusa, su OGNI
+     * strada (Annulla compreso), o la battaglia resta ferma.
+     *
+     * Fuori da quei punti torna una funzione che non fa niente, quindi una
+     * carta può chiamarla sempre senza chiedersi da dove è stata
+     * raggiunta. Vedi callCardHandlerWaiting in duel-engine.js.
+     */
+    function attendiScelta(ctx) {
+        return ctx && typeof ctx.waitForChoice === 'function' ? ctx.waitForChoice() : function () {};
+    }
+
+    /**
+     * chooseFieldCardTarget per un effetto OBBLIGATORIO che qualcuno sta
+     * aspettando (una risposta a un attacco, l'auto-effetto di chi
+     * attacca): chiede di essere aspettato (attendiScelta), riapre la lista
+     * se il giocatore la chiude senza scegliere — l'effetto si sta già
+     * risolvendo, non si può più tirarsi indietro — e chiude l'attesa su
+     * ogni strada, anche se `onChosen` lancia un errore.
+     *
+     * È lo schema che serviva a cinque carte (214, 622, 819, 852, 895) che
+     * prima sceglievano da sole proprio perché la battaglia non le
+     * aspettava. Torna false se non c'è nessun candidato (e allora non
+     * chiede nessuna attesa).
+     */
+    function chooseFieldCardTargetWaiting(ctx, candidati, options, onChosen) {
+        if (!candidati || candidati.length === 0) return false;
+        const fine = attendiScelta(ctx);
+        const apri = () => chooseFieldCardTarget(ctx, candidati, Object.assign({}, options, { onCancel: apri }), (scelto) => {
+            try { onChosen(scelto); } finally { fine(); }
+        });
+        apri();
+        return true;
+    }
+
+    /**
+     * Scelta fra OPZIONI con un'etichetta, non fra carte: dichiarare una
+     * categoria (Mostro/Magia/Trappola, un Tipo di mostro) o scegliere fra
+     * due effetti. Gemella di chooseFieldCardTarget per le scelte che non
+     * hanno una carta da cliccare.
+     *
+     * - `options.options`: array di { value, label, icon? };
+     * - `options.chooser` (default ctx.owner): chi sceglie;
+     * - `options.pickForBot()`: torna il `value` che sceglie il bot (default:
+     *   la prima opzione);
+     * - `options.optional`: aggiunge "Annulla" (o `options.optionalLabel`);
+     *   chiudendo, `onChosen(null)`.
+     *
+     * In Multiplayer la scelta viaggia sulla stessa coda delle scelte di
+     * bersaglio (awaitRemoteCardChoice), con un uid finto `opzione:<value>`:
+     * le due code si accoppiano in ordine, quindi una scelta d'opzione e
+     * una di bersaglio non devono vivere su code separate che potrebbero
+     * scambiarsi di posto. E si comunica SEMPRE, anche quando l'opzione è
+     * una sola.
+     */
+    function chooseOption(ctx, options, onChosen) {
+        const o = options || {};
+        const voci = (o.options || []).filter(Boolean);
+        if (voci.length === 0) { onChosen(null); return; }
+        const chooser = o.chooser || ctx.owner;
+        const uidDi = (value) => 'opzione:' + String(value);
+        const UID_ANNULLA = 'opzione:__annulla';
+        const candidati = voci.map((v) => ({ card: { uid: uidDi(v.value) }, value: v.value }));
+        // "Annulla" è un candidato come gli altri, in fondo: così di là si
+        // riconosce per uid, invece di ricadere nel primo candidato come fa
+        // awaitRemoteCardChoice con una scelta che non trova.
+        if (o.optional) candidati.push({ card: { uid: UID_ANNULLA }, value: null });
+
+        if (window.DuelEngine && DuelEngine.isRemoteChooser && DuelEngine.isRemoteChooser(chooser)) {
+            DuelEngine.awaitRemoteCardChoice(candidati, (scelto) => {
+                onChosen(scelto ? scelto.value : voci[0].value);
+            });
+            return;
+        }
+        const comunica = (value) => {
+            if (window.MULTIPLAYER_MODE && chooser === 'player' && window.DuelEngine) {
+                DuelEngine.broadcastCardChoice(value === null ? UID_ANNULLA : uidDi(value));
+            }
+        };
+        if (chooser !== 'player' || !window.DuelEngineUI || typeof window.DuelEngineUI.openOptionPicker !== 'function') {
+            const scelto = typeof o.pickForBot === 'function' ? o.pickForBot() : voci[0].value;
+            const valido = voci.some((v) => v.value === scelto) ? scelto : voci[0].value;
+            comunica(valido);
+            onChosen(valido);
+            return;
+        }
+        window.DuelEngineUI.openOptionPicker(null, {
+            title: o.title,
+            text: o.text,
+            options: voci,
+            onSelect: (value) => { comunica(value); onChosen(value); },
+            onCancel: o.optional ? () => { comunica(null); onChosen(null); } : undefined,
+            cancelLabel: o.optionalLabel
+        });
     }
 
     /**
@@ -1498,5 +1603,5 @@
         return ctx.hand(ctx.owner).filter((c) => !selfUid || c.uid !== selfUid);
     }
 
-    window.CardEffectsShared = { otherHandCards, blockBanishFromField, isHarpieLadySupport, findEquipTarget, collectEquipTargets, equipToChosenTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchZoneWithChoice, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, chooseCardFromList, chooseUpToNFromList, destroyTargetingSpellIfItStays, victimChoosesDiscard, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost, resolveSpecialSummonTributeCost, attachUnionMonster, maxRitualTributeLevel, performRitualTribute, findPetitMothReadyForCocoonSummon, releaseRelinquishedTarget, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach, returnSpellTrapToHand };
+    window.CardEffectsShared = { attendiScelta, chooseOption, chooseFieldCardTargetWaiting, otherHandCards, blockBanishFromField, isHarpieLadySupport, findEquipTarget, collectEquipTargets, equipToChosenTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchZoneWithChoice, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, chooseCardFromList, chooseUpToNFromList, destroyTargetingSpellIfItStays, victimChoosesDiscard, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost, resolveSpecialSummonTributeCost, attachUnionMonster, maxRitualTributeLevel, performRitualTribute, findPetitMothReadyForCocoonSummon, releaseRelinquishedTarget, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach, returnSpellTrapToHand };
 })();

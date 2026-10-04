@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { isHarpieLadySupport, findEquipTarget, equipToChosenTarget, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, chooseCardFromList, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost, maxRitualTributeLevel, performRitualTribute, releaseRelinquishedTarget, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach, destroyTargetingSpellIfItStays, victimChoosesDiscard } = window.CardEffectsShared;
+    const { chooseFieldCardTargetWaiting, attendiScelta, chooseOption, isHarpieLadySupport, findEquipTarget, equipToChosenTarget, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, chooseCardFromList, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost, maxRitualTributeLevel, performRitualTribute, releaseRelinquishedTarget, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach, destroyTargetingSpellIfItStays, victimChoosesDiscard } = window.CardEffectsShared;
 
     // ================================================================
     // 835 — Ingranaggio Antico / Ancient Gear
@@ -669,29 +669,24 @@
             const own = ctx.field(ctx.owner);
             const targetSlot = own[ctx.targetIndex];
             if (!targetSlot) return;
-            // NIENTE PICKER QUI, ed è una decisione verificata, non una
-            // dimenticanza: un handler dentro onAttackDeclare si risolve
-            // come link di una Chain, e resolveChain CHIAMA l'handler e
-            // tira dritto dopo una pausa fissa senza aspettarlo (vedi
-            // runHandler in duel-engine.js). Misurato: aprendo un picker
-            // qui e scegliendo dopo 4 secondi — il tempo che ci mette una
-            // persona a leggere due carte — la battaglia si era già
-            // risolta, il bonus arrivava a danno calcolato e la carta non
-            // faceva NULLA (1400 LP persi invece di 0, difensore morto).
-            // È lo stesso motivo per cui le Trappole Contatore non sono
-            // mai state migrate a una scelta asincrona.
-            // Si sceglie quindi da soli, ma il meglio possibile: il
-            // mostro con l'ATK più alto, che è anche ciò che il giocatore
-            // sceglierebbe quasi sempre.
-            let boosterSlot = null;
-            own.forEach((s, i) => {
-                if (!s || s.isFaceDown || i === ctx.targetIndex) return;
-                if (!boosterSlot || DuelEngine.getEffectiveAtk(s.card) > DuelEngine.getEffectiveAtk(boosterSlot.card)) boosterSlot = s;
+            // Il mostro che presta l'ATK lo sceglie il giocatore. Era la
+            // carta con cui era stato misurato il difetto (scegliendo dopo
+            // 4 secondi la battaglia si era già risolta e il bonus arrivava
+            // a vuoto): ora la battaglia aspetta la scelta
+            // (chooseFieldCardTargetWaiting, vedi callCardHandlerWaiting in
+            // duel-engine.js). Il bot sceglie il mostro con l'ATK più alto.
+            const candidati = collectFieldTargets(ctx, {
+                zone: 'monster', owner: 'self',
+                filter: (card, owner, slot) => slot !== targetSlot
+            }).sort((a, b) => DuelEngine.getEffectiveAtk(b.card) - DuelEngine.getEffectiveAtk(a.card));
+            chooseFieldCardTargetWaiting(ctx, candidati, {
+                title: '🔥 Fuoco di Copertura',
+                text: `Scegli il mostro che presta il suo ATK a ${targetSlot.card.name} per questo calcolo dei danni.`
+            }, (scelto) => {
+                const bonus = DuelEngine.getEffectiveAtk(scelto.card);
+                ctx.grantDamageStepOnlyBonus(targetSlot.card, bonus, 0);
+                ctx.log(`🔥 Fuoco di Copertura aumenta l'ATK di ${targetSlot.card.name} di ${bonus} punti per questo Damage Step!`);
             });
-            if (!boosterSlot) return;
-            const bonus = DuelEngine.getEffectiveAtk(boosterSlot.card);
-            ctx.grantDamageStepOnlyBonus(targetSlot.card, bonus, 0);
-            ctx.log(`🔥 Fuoco di Copertura aumenta l'ATK di ${targetSlot.card.name} di ${bonus} punti per questo Damage Step!`);
         }
     });
 
@@ -2399,23 +2394,61 @@
     });
 
     // 883 — Don Zaloog (Mostro Effetto): su danno da battaglia inflitto,
-    // scelta AUTOMATICA (vedi missingEffectNote) tra scarto casuale e
-    // mill di 2 carte — preferisce lo scarto quando possibile (di solito
-    // il colpo più fastidioso), altrimenti manda al Cimitero dal Deck.
+    // il giocatore sceglie fra scarto casuale e mill di 2 carte, oppure di
+    // non usare l'effetto ("puoi attivare"). Si risolve DOPO il danno,
+    // quando nessuno sta più aspettando il risultato, ma chiede comunque di
+    // essere aspettato (attendiScelta): dove il punto di chiamata lo
+    // permette, il resto della battaglia riparte a scelta fatta. Il bot
+    // preferisce lo scarto quando possibile (di solito il colpo più
+    // fastidioso), altrimenti manda al Cimitero dal Deck.
     CardEffects.register(883, {
         onDealsBattleDamage(ctx) {
-            if (ctx.hand(ctx.opponent).length > 0) {
-                const discarded = ctx.discardRandomFromHand(ctx.opponent);
-                if (discarded) ctx.log(`🗡️ Don Zaloog costringe ${ctx.opponent === 'player' ? 'te' : 'il bot'} a scartare ${discarded.name}!`);
-                return;
-            }
-            const deckKey = ctx.opponent === 'player' ? 'playerDeck' : 'botDeck';
+            const vittima = ctx.opponent;
+            const deckKey = vittima === 'player' ? 'playerDeck' : 'botDeck';
             const deck = gameState[deckKey];
-            if (!Array.isArray(deck) || deck.length === 0) return;
-            const milled = deck.splice(-2, 2);
-            milled.forEach((c) => ctx.graveyard(ctx.opponent).push(c));
-            gameState[deckKey === 'playerDeck' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
-            ctx.log(`🗡️ Don Zaloog manda ${milled.length} cart${milled.length > 1 ? 'e' : 'a'} dal Deck avversario al Cimitero!`);
+            // In Multiplayer il Deck dell'avversario non esiste da questa
+            // parte (si tiene solo il conteggio): il mill si può offrire
+            // solo se c'è un mazzo vero, o se il conteggio dice che ce n'è.
+            const deckCount = Array.isArray(deck) ? deck.length : (gameState[vittima === 'player' ? 'playerDeckCount' : 'botDeckCount'] || 0);
+            const puoScartare = ctx.hand(vittima).length > 0;
+            const puoMandare = deckCount > 0;
+            if (!puoScartare && !puoMandare) return;
+            const fine = attendiScelta(ctx);
+            const scarta = () => {
+                const discarded = ctx.discardRandomFromHand(vittima);
+                if (discarded) ctx.log(`🗡️ Don Zaloog costringe ${vittima === 'player' ? 'te' : 'il bot'} a scartare ${discarded.name}!`);
+            };
+            const manda = () => {
+                if (!Array.isArray(deck) || deck.length === 0) return;
+                const milled = deck.splice(-2, 2);
+                milled.forEach((c) => ctx.graveyard(vittima).push(c));
+                gameState[deckKey === 'playerDeck' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+                ctx.log(`🗡️ Don Zaloog manda ${milled.length} cart${milled.length > 1 ? 'e' : 'a'} dal Deck avversario al Cimitero!`);
+            };
+            // Ridisegnare serve solo se la scelta arriva DOPO (giocatore,
+            // o avversario remoto): una scelta immediata cade in mezzo a
+            // resolveBattleDamage, che ridisegna da sé al momento giusto.
+            let sincrono = true;
+            chooseOption(ctx, {
+                title: '🗡️ Don Zaloog',
+                text: 'Ha inflitto danno da battaglia: puoi usare uno di questi effetti.',
+                options: [
+                    puoScartare ? { value: 'scarta', label: 'Scarto a caso dalla sua mano', icon: '🃏' } : null,
+                    puoMandare ? { value: 'manda', label: '2 carte dal suo Deck al Cimitero', icon: '🪦' } : null
+                ],
+                optional: true,
+                optionalLabel: 'Non usare l\'effetto',
+                pickForBot: () => (puoScartare ? 'scarta' : 'manda')
+            }, (scelta) => {
+                try {
+                    if (scelta === 'scarta') scarta();
+                    else if (scelta === 'manda') manda();
+                    if (!sincrono && typeof updateUI === 'function') updateUI();
+                } finally {
+                    fine();
+                }
+            });
+            sincrono = false;
         }
     });
 
@@ -2454,8 +2487,7 @@
 
     // 885 — Quiz Inverso / Reversal Quiz (Magia Normale): manda mano e
     // campo al Cimitero, dichiara il tipo di carta in cima al proprio
-    // Deck (vedi missingEffectNote per la scelta automatica), scambia i
-    // Life Points se indovina.
+    // Deck, scambia i Life Points se indovina.
     CardEffects.register(885, {
         canActivate(ctx) {
             const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
@@ -2481,27 +2513,70 @@
             }
             const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
             const deck = gameState[deckKey];
+            const remoto = !!(window.DuelEngine && DuelEngine.isRemoteChooser && DuelEngine.isRemoteChooser(ctx.owner));
+            if (remoto && !Array.isArray(deck)) {
+                // Multiplayer, carta dell'avversario: il suo Deck da questa
+                // parte non esiste. La sua dichiarazione va comunque
+                // consumata dalla coda delle scelte, o si accoppierebbe con
+                // la prossima scelta che non c'entra nulla. L'esito (i Life
+                // Points scambiati o no) arriva con la fotografia di stato
+                // che segue ogni attivazione.
+                const fine = attendiScelta(ctx);
+                chooseOption(ctx, { options: [{ value: 'monster', label: 'Mostro' }, { value: 'spell', label: 'Magia' }, { value: 'trap', label: 'Trappola' }] }, (guess) => {
+                    const nomi = { monster: 'Mostro', spell: 'Magia', trap: 'Trappola' };
+                    ctx.log(`🎲 Quiz Inverso: l'avversario dichiara "${nomi[guess] || guess}".`);
+                    fine();
+                });
+                return;
+            }
             if (!Array.isArray(deck) || deck.length === 0) {
                 ctx.log('🎲 Quiz Inverso: il Deck è vuoto, nessuna carta in cima da dichiarare.');
                 return;
             }
+            // La categoria la dichiara il giocatore (chooseOption): la Chain
+            // aspetta la dichiarazione prima di proseguire (attendiScelta).
+            // Il bot dichiara la categoria più frequente fra le carte
+            // rimaste nel suo Deck, la scommessa con più probabilità.
             const counts = {};
             deck.forEach((c) => { counts[c.type] = (counts[c.type] || 0) + 1; });
-            const guess = Object.keys(counts).reduce((best, t) => (counts[t] > (counts[best] || 0) ? t : best), 'monster');
-            const topCard = deck[deck.length - 1];
+            const piuFrequente = Object.keys(counts).reduce((best, t) => (counts[t] > (counts[best] || 0) ? t : best), 'monster');
             const labels = { monster: 'Mostro', spell: 'Magia', trap: 'Trappola' };
-            const correct = topCard.type === guess;
-            ctx.log(`🎲 Quiz Inverso: ${ctx.owner === 'player' ? 'dichiari' : 'il bot dichiara'} "${labels[guess]}" — la carta in cima è ${topCard.name} (${labels[topCard.type]})!`);
-            if (correct) {
-                const lpKeyOwn = ctx.owner === 'player' ? 'playerLP' : 'botLP';
-                const lpKeyOpp = ctx.owner === 'player' ? 'botLP' : 'playerLP';
-                const tmp = gameState[lpKeyOwn];
-                gameState[lpKeyOwn] = gameState[lpKeyOpp];
-                gameState[lpKeyOpp] = tmp;
-                ctx.log('🎲 Quiz Inverso: indovinato! I Life Points si scambiano!');
-            } else {
-                ctx.log('🎲 Quiz Inverso: sbagliato, nessun effetto.');
-            }
+            const fine = attendiScelta(ctx);
+            chooseOption(ctx, {
+                title: '🎲 Quiz Inverso',
+                text: 'Che tipo di carta c\'è in cima al tuo Deck? Se indovini, scambi i tuoi Life Points con quelli dell\'avversario.',
+                options: [
+                    { value: 'monster', label: 'Mostro', icon: '🐉' },
+                    { value: 'spell', label: 'Magia', icon: '✨' },
+                    { value: 'trap', label: 'Trappola', icon: '🪤' }
+                ],
+                pickForBot: () => piuFrequente
+            }, (guess) => {
+                try {
+                    // Rilette ADESSO: fra l'attivazione e la risposta il Deck
+                    // può essere cambiato.
+                    const deckOra = gameState[deckKey];
+                    if (!Array.isArray(deckOra) || deckOra.length === 0) {
+                        ctx.log('🎲 Quiz Inverso: il Deck è vuoto, nessuna carta in cima da dichiarare.');
+                        return;
+                    }
+                    const topCard = deckOra[deckOra.length - 1];
+                    const correct = topCard.type === guess;
+                    ctx.log(`🎲 Quiz Inverso: ${ctx.owner === 'player' ? 'dichiari' : 'il bot dichiara'} "${labels[guess]}" — la carta in cima è ${topCard.name} (${labels[topCard.type]})!`);
+                    if (correct) {
+                        const lpKeyOwn = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+                        const lpKeyOpp = ctx.owner === 'player' ? 'botLP' : 'playerLP';
+                        const tmp = gameState[lpKeyOwn];
+                        gameState[lpKeyOwn] = gameState[lpKeyOpp];
+                        gameState[lpKeyOpp] = tmp;
+                        ctx.log('🎲 Quiz Inverso: indovinato! I Life Points si scambiano!');
+                    } else {
+                        ctx.log('🎲 Quiz Inverso: sbagliato, nessun effetto.');
+                    }
+                } finally {
+                    fine();
+                }
+            });
         }
     });
 
@@ -2671,23 +2746,56 @@
     // l'effetto resterebbe disponibile solo alla prima di quelle battaglie
     // invece che ad ognuna — una sotto-stima accettabile, mai una carta
     // che si attiva più spesso del reale.
+    // La decisione di pagare è del giocatore. Vive in
+    // beforeDamageCalculation (runBeforeDamageCalculation, duel-engine.js)
+    // e non più in damageStepBonus: quello è un calcolo che gira in mezzo a
+    // resolveBattleDamage, dove una scelta non può esistere, mentre qui la
+    // battaglia aspetta la risposta. Il bonus passa per
+    // damageStepOnlyBonusFor, che il calcolo consuma subito dopo.
+    // Il bot paga solo se altrimenti non vincerebbe lo scontro E i 3000 ATK
+    // bastano a ribaltarlo — mai per pura "sicurezza".
     CardEffects.register(889, {
-        damageStepBonus(ctx) {
-            if (!ctx.opponentCard) return null; // "se combatte contro un mostro avversario" — mai per un attacco diretto
-            if (ctx.card.usedInjectionThisBattle) return null;
-            if (!ctx.owner) return null; // difensivo: non dovrebbe mai mancare qui
+        beforeDamageCalculation(ctx) {
+            if (!ctx.opponentCard) return; // "se combatte contro un mostro avversario" — mai per un attacco diretto
+            if (ctx.card.usedInjectionThisBattle) return;
             const ownerLP = ctx.owner === 'player' ? gameState.playerLP : gameState.botLP;
-            if (ownerLP <= 2000) return null; // mai scendere a 0 o sotto pagando questo costo
+            if (ownerLP <= 2000) return; // mai scendere a 0 o sotto pagando questo costo
+            const mioSlot = ctx.field(ctx.owner)[ctx.slotIndex];
+            // In Difesa i 3000 ATK non entrano nel calcolo: non c'è niente
+            // per cui pagare.
+            if (!mioSlot || mioSlot.position !== 'attack') return;
+            const altroOwner = ctx.opponent;
+            const altroSlot = ctx.field(altroOwner).find((s) => s && s.card === ctx.opponentCard);
+            const altroInDifesa = !!(altroSlot && altroSlot.position === 'defense');
             const myAtk = DuelEngine.getEffectiveAtk(ctx.card);
-            const oppAtk = DuelEngine.getEffectiveAtk(ctx.opponentCard);
-            // Paga solo se altrimenti perderebbe/pareggerebbe questo scontro
-            // E il bonus basterebbe a ribaltarlo — mai per pura "sicurezza"
-            // se starebbe già vincendo comunque.
-            if (myAtk > oppAtk || myAtk + 3000 <= oppAtk) return null;
-            ctx.card.usedInjectionThisBattle = true;
-            DuelEngine.actions.dealDamage(ctx.owner, 2000);
-            addToLog(`💉 ${ctx.card.name} paga 2000 LP: +3000 ATK solo per questo calcolo dei danni!`);
-            return { atk: 3000 };
+            const oppValue = altroInDifesa ? DuelEngine.getEffectiveDef(ctx.opponentCard) : DuelEngine.getEffectiveAtk(ctx.opponentCard);
+            const fine = attendiScelta(ctx);
+            chooseOption(ctx, {
+                title: `💉 ${ctx.card.name}`,
+                text: `Paghi 2000 Life Points per +3000 ATK solo in questo calcolo dei danni? (${myAtk} contro ${oppValue} ${altroInDifesa ? 'DEF' : 'ATK'})`,
+                options: [
+                    { value: 'paga', label: 'Paga 2000 LP', icon: '💉' },
+                    { value: 'no', label: 'Non pagare', icon: '✋' }
+                ],
+                pickForBot: () => (myAtk <= oppValue && myAtk + 3000 > oppValue ? 'paga' : 'no')
+            }, (scelta) => {
+                try {
+                    if (scelta !== 'paga') return;
+                    ctx.card.usedInjectionThisBattle = true;
+                    // Non ctx.dealDamage: è un COSTO, non danno da un
+                    // effetto, e chiamato dal ctx farebbe scattare chi
+                    // reagisce al danno da effetto (Camera Oscura degli
+                    // Incubi id 686).
+                    DuelEngine.actions.dealDamage(ctx.owner, 2000);
+                    gameState.damageStepOnlyBonusFor = gameState.damageStepOnlyBonusFor || {};
+                    const prima = gameState.damageStepOnlyBonusFor[ctx.card.uid] || { atk: 0, def: 0 };
+                    gameState.damageStepOnlyBonusFor[ctx.card.uid] = { atk: (prima.atk || 0) + 3000, def: prima.def || 0 };
+                    ctx.log(`💉 ${ctx.card.name} paga 2000 LP: +3000 ATK solo per questo calcolo dei danni!`);
+                    if (typeof renderLifePoints === 'function') renderLifePoints();
+                } finally {
+                    fine();
+                }
+            });
         },
         onBattlePhaseEnd(ctx) {
             ctx.card.usedInjectionThisBattle = false;
@@ -2847,22 +2955,28 @@
     // prima di questa sessione, es. Jirai Gumo id 316 — non serviva
     // alcun hook nuovo, a differenza di quanto ipotizzato per Spirit Ryu
     // id 630 nella tabella del backlog: da riverificare in futuro).
+    // Il bersaglio lo sceglie il giocatore: la dichiarazione d'attacco
+    // aspetta la scelta (attendiScelta, vedi callCardHandlerWaiting in
+    // duel-engine.js) prima di aprire la finestra di risposta e calcolare i
+    // danni. Il bot sceglie il mostro scoperto con l'ATK più alto.
     CardEffects.register(895, {
         onOwnAttackDeclare(ctx) {
             if (!DuelEngine.isNecrovalleyOnField()) return;
-            let bestIndex = -1, bestAtk = -1;
-            ctx.field(ctx.opponent).forEach((slot, index) => {
-                if (!slot || slot.isFaceDown) return;
-                const atk = DuelEngine.getEffectiveAtk(slot.card);
-                if (atk > bestAtk) { bestAtk = atk; bestIndex = index; }
+            const candidati = collectFieldTargets(ctx, { zone: 'monster', owner: 'opponent' });
+            if (ctx.owner !== 'player') {
+                candidati.sort((a, b) => DuelEngine.getEffectiveAtk(b.card) - DuelEngine.getEffectiveAtk(a.card));
+            }
+            chooseFieldCardTargetWaiting(ctx, candidati, {
+                title: '⚔️ Assalitore dei Guardiani della Tomba',
+                text: 'Scegli il mostro scoperto dell\'avversario di cui cambiare la Posizione di Battaglia.'
+            }, (scelto) => {
+                const decl = ctx.declareTarget(scelto.owner, scelto.index, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+                const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!finalSlot) return;
+                finalSlot.position = finalSlot.position === 'attack' ? 'defense' : 'attack';
+                ctx.log(`⚔️ Assalitore dei Guardiani della Tomba cambia la Posizione di Battaglia di ${finalSlot.card.name}!`);
             });
-            if (bestIndex === -1) return;
-            const decl = ctx.declareTarget(ctx.opponent, bestIndex, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
-            if (!finalSlot) return;
-            finalSlot.position = finalSlot.position === 'attack' ? 'defense' : 'attack';
-            ctx.log(`⚔️ Assalitore dei Guardiani della Tomba cambia la Posizione di Battaglia di ${finalSlot.card.name}!`);
         }
     });
 

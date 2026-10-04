@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { blockBanishFromField, isHarpieLadySupport, findEquipTarget, equipToChosenTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchDeckWithChoice, maxRitualTributeLevel, performRitualTribute, findPetitMothReadyForCocoonSummon, grantAttackAllEnemiesOncEach, chooseCardFromList, searchGraveyardWithChoice, collectFieldTargets, chooseFieldCardTarget, destroyTargetingSpellIfItStays } = window.CardEffectsShared;
+    const { attendiScelta, chooseOption, blockBanishFromField, isHarpieLadySupport, findEquipTarget, equipToChosenTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchDeckWithChoice, maxRitualTributeLevel, performRitualTribute, findPetitMothReadyForCocoonSummon, grantAttackAllEnemiesOncEach, chooseCardFromList, searchGraveyardWithChoice, collectFieldTargets, chooseFieldCardTarget, destroyTargetingSpellIfItStays } = window.CardEffectsShared;
 
     // ================================================================
     // 110 — Drago Berserk / Berserk Dragon
@@ -2468,27 +2468,74 @@
     // per card.id (non uid), come richiede il testo reale ("1 Armatura
     // Guida d'Attacco", non "1 copia di QUESTA carta": due copie diverse
     // in campo condividono lo stesso limite).
-    // SEMPLIFICAZIONE residua (vedi missingEffectNote): la scelta tra le
-    // due clausole resta automatica (sceglie sempre "distruggi
-    // l'attaccante") — costruire una vera scelta richiederebbe una UI
-    // dedicata per una risposta REATTIVA automatica del motore (nessun
-    // elemento cliccato dal giocatore a cui ancorare un popover, a
-    // differenza delle scelte "secondarie" già esistenti come Predone
-    // Cyber id 174), sproporzionato per questa singola carta — stesso
-    // principio già accettato per le decine di altre "scelta automatica"
-    // di questo dataset.
+    // Le due clausole sono una scelta vera del giocatore, e anche il nuovo
+    // bersaglio. Si può fare perché la risposta chiede di essere aspettata
+    // (attendiScelta): la battaglia riparte solo a scelta fatta, mentre
+    // prima ripartiva subito e una scelta del giocatore sarebbe arrivata a
+    // danno già calcolato. Il bot sceglie sempre di distruggere
+    // l'attaccante, la mossa più forte quasi in ogni caso.
     // ================================================================
     CardEffects.register(100, {
         canActivate(ctx) {
             return !ctx.hasUsedOncePerTurn(`100:${ctx.card.id}`);
         },
         onAttackDeclare(ctx) {
-            const decl = ctx.declareTarget(ctx.attackerOwner, ctx.attackerIndex, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
+            const fine = attendiScelta(ctx);
             ctx.markUsedOncePerTurn(`100:${ctx.card.id}`);
-            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
-            ctx.cancelAttack();
-            ctx.log('🛡️ Armatura Guida d\'Attacco distrugge il mostro attaccante!');
+            const attackerSlot = ctx.field(ctx.attackerOwner)[ctx.attackerIndex];
+            const attackerUid = attackerSlot && attackerSlot.card.uid;
+            const defenderOwner = ctx.attackerOwner === 'player' ? 'bot' : 'player';
+            const distruggi = () => {
+                const decl = ctx.declareTarget(ctx.attackerOwner, ctx.attackerIndex, { totalTargetCount: 1 });
+                if (!decl.allowed) return;
+                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+                ctx.cancelAttack();
+                ctx.log('🛡️ Armatura Guida d\'Attacco distrugge il mostro attaccante!');
+            };
+            // Qualunque mostro dei due Terreni tranne l'attaccante, e tranne
+            // il bersaglio attuale: spostare l'attacco dov'era già non
+            // cambierebbe nulla.
+            const candidati = attackerUid ? collectFieldTargets(ctx, {
+                zone: 'monster',
+                owner: 'both',
+                includiCoperte: true,
+                filter: (card, owner, slot) => card.uid !== attackerUid
+                    && !(owner === defenderOwner && ctx.field(owner)[ctx.targetIndex] === slot)
+            }) : [];
+            const chiedi = () => {
+                chooseOption(ctx, {
+                    title: '🛡️ Armatura Guida d\'Attacco',
+                    text: 'Distruggi il mostro che attacca, oppure sposta l\'attacco su un altro mostro.',
+                    options: [
+                        { value: 'distruggi', label: 'Distruggi l\'attaccante', icon: '💥' },
+                        candidati.length > 0 ? { value: 'sposta', label: 'Sposta l\'attacco', icon: '🎯' } : null
+                    ],
+                    pickForBot: () => 'distruggi'
+                }, (scelta) => {
+                    if (scelta !== 'sposta') {
+                        try { distruggi(); } finally { fine(); }
+                        return;
+                    }
+                    chooseFieldCardTarget(ctx, candidati, {
+                        title: '🎯 Nuovo bersaglio dell\'attacco',
+                        text: 'Scegli il mostro che subirà l\'attacco al posto del bersaglio attuale.',
+                        // Chiudere la lista riporta alla scelta fra le due
+                        // clausole, invece di lasciare la battaglia ferma.
+                        onCancel: chiedi
+                    }, (scelto) => {
+                        try {
+                            const decl = ctx.declareTarget(scelto.owner, scelto.index, { totalTargetCount: 1 });
+                            if (!decl.allowed) return;
+                            ctx.redirectAttack(decl.targetIndex, decl.targetOwner);
+                            const nuovo = ctx.field(decl.targetOwner)[decl.targetIndex];
+                            ctx.log(`🛡️ Armatura Guida d'Attacco sposta l'attacco su ${nuovo && !nuovo.isFaceDown ? nuovo.card.name : 'un mostro coperto'}!`);
+                        } finally {
+                            fine();
+                        }
+                    });
+                });
+            };
+            chiedi();
         }
     });
 

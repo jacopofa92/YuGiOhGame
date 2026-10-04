@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldMonsterTarget, chooseFieldCardTarget, collectFieldTargets, chooseCardFromList, offerHandDiscardChoice, resolveSpecialSummonBanishCost, maxRitualTributeLevel, performRitualTribute, returnSpellTrapToHand, chooseUpToNFromList } = window.CardEffectsShared;
+    const { attendiScelta, chooseOption, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldMonsterTarget, chooseFieldCardTarget, collectFieldTargets, chooseCardFromList, offerHandDiscardChoice, resolveSpecialSummonBanishCost, maxRitualTributeLevel, performRitualTribute, returnSpellTrapToHand, chooseUpToNFromList } = window.CardEffectsShared;
 
     // ================================================================
     // 1001-1008 — Il ciclo di Mostri Spirito di Legacy of Darkness (LOD),
@@ -2955,22 +2955,43 @@
     });
 
     // 1120 — Il Cacciatore dalle 7 Armi (The Hunter with 7 Weapons):
-    // quando Evocato Normalmente, dichiara 1 Tipo di mostro (SEMPLIFICAZIONE:
-    // il più diffuso tra i mostri scoperti dell'avversario in quel
-    // momento, stesso schema già accettato per Virus Infetta-Tribù) — se
-    // combatte contro quel Tipo, +1000 ATK SOLO durante il calcolo dei
-    // danni via def.damageStepBonus(ctx) (già esistente, generico per
-    // attaccante O difensore — role/opponentCard/owner — a differenza di
-    // onOwnAttackDeclare usato per 8-Claws Scorpion id 1115, che copre
-    // solo il ruolo di attaccante).
+    // quando Evocato Normalmente, dichiara 1 Tipo di mostro — scelto dal
+    // giocatore (chooseOption) — e se combatte contro quel Tipo, +1000 ATK
+    // SOLO durante il calcolo dei danni via def.damageStepBonus(ctx) (già
+    // esistente, generico per attaccante O difensore — role/opponentCard/
+    // owner — a differenza di onOwnAttackDeclare usato per 8-Claws
+    // Scorpion id 1115, che copre solo il ruolo di attaccante).
+    // La dichiarazione si legge solo in battaglia, quindi una scelta che
+    // arriva un attimo dopo l'Evocazione non cambia niente: e intanto un
+    // popover aperto ferma i cambi di fase (isBlockingModalOpen).
+    // Il bot dichiara il Tipo più diffuso fra i mostri scoperti
+    // dell'avversario.
+    const TIPI_DICHIARABILI_1120 = [
+        'Acquatico', 'Bestia', 'Bestia Alata', 'Bestia-Guerriero', 'Demone', 'Dinosauro',
+        'Drago', 'Essere Divino', 'Fata', 'Guerriero', 'Incantatore', 'Insetto', 'Macchina',
+        'Pesce', 'Pianta', 'Piroico', 'Rettile', 'Roccia', 'Serpente Marino', 'Tuono', 'Zombie'
+    ];
     CardEffects.register(1120, {
         onSummon(ctx) {
+            if (ctx.summonedVia && ctx.summonedVia !== 'normal') return;
             const raceCounts = {};
-            ctx.field(ctx.opponent).forEach((s) => { if (s && !s.isFaceDown) raceCounts[s.card.race] = (raceCounts[s.card.race] || 0) + 1; });
-            const declared = Object.keys(raceCounts).sort((a, b) => raceCounts[b] - raceCounts[a])[0];
-            if (!declared) return;
-            ctx.card.declaredRace = declared;
-            ctx.log(`🏹 Il Cacciatore dalle 7 Armi dichiara il Tipo "${declared}"!`);
+            ctx.field(ctx.opponent).forEach((s) => { if (s && !s.isFaceDown && s.card.race) raceCounts[s.card.race] = (raceCounts[s.card.race] || 0) + 1; });
+            const inCampo = Object.keys(raceCounts).sort((a, b) => raceCounts[b] - raceCounts[a]);
+            // Prima i Tipi che l'avversario ha già in campo (sono quasi
+            // sempre la scelta sensata), poi tutti gli altri. Un Tipo in
+            // campo che non è nell'elenco classico (carte di altri set)
+            // resta comunque dichiarabile.
+            const tipi = inCampo.concat(TIPI_DICHIARABILI_1120.filter((t) => !inCampo.includes(t)));
+            chooseOption(ctx, {
+                title: '🏹 Il Cacciatore dalle 7 Armi',
+                text: 'Dichiara un Tipo di mostro: contro un mostro di quel Tipo questa carta guadagna 1000 ATK in battaglia.',
+                options: tipi.map((t) => ({ value: t, label: t, icon: inCampo.includes(t) ? '🎯' : '' })),
+                pickForBot: () => inCampo[0] || 'Guerriero'
+            }, (declared) => {
+                if (!declared) return;
+                ctx.card.declaredRace = declared;
+                ctx.log(`🏹 Il Cacciatore dalle 7 Armi dichiara il Tipo "${declared}"!`);
+            });
         },
         onSpecialSummon() {},
         damageStepBonus(ctx) {

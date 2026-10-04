@@ -880,8 +880,7 @@ const cardDatabase = [
     "type": "trap",
     "subtype": "normal",
     "effect": "Quando un mostro dichiara un attacco, puoi scegliere: distruggi il mostro attaccante, oppure reindirizza l'attacco a un altro mostro in campo. Attivabile una sola volta per turno.",
-    "artOnly": true,
-    "missingEffectNote": "Delle due opzioni esegue sempre la prima (distruggi il mostro attaccante), mai la ridirezione dell'attacco. La scelta e' automatica perche' l'effetto si risolve dentro la finestra di dichiarazione d'attacco: un picker asincrono li' arriverebbe a danno gia' calcolato (misurato, vedi il limite su onAttackDeclare in CLAUDE.md)."
+    "artOnly": true
   },
   {
     "id": 101,
@@ -2420,7 +2419,7 @@ const cardDatabase = [
     "subtype": "normal",
     "effect": "Quando il tuo avversario attiva una Magia che ha come bersaglio esattamente 1 mostro sul Terreno (e nessun'altra carta): scegli un altro bersaglio valido; quella Magia ora ha come bersaglio la nuova carta.",
     "artOnly": true,
-    "missingEffectNote": "Implementata, ma il nuovo bersaglio lo sceglie da sola (priorita' al campo di chi ha attivato la Magia), mai il giocatore. La scelta e' automatica perche' l'effetto si risolve dentro la finestra di dichiarazione d'attacco: un picker asincrono li' arriverebbe a danno gia' calcolato (misurato, vedi il limite su onAttackDeclare in CLAUDE.md). Passa dal checkpoint di targeting condiviso (ctx.declareTarget, duel-engine.js), che non copre ogni carta del dataset: un effetto che bersaglia senza passare di li' sfugge. La copertura reale si conta all'occorrenza cercando le chiamate in js/engine/, mai fidandosi di un numero scritto qui."
+    "missingEffectNote": "Implementata, ma il nuovo bersaglio lo sceglie da sola (priorita' al campo di chi ha attivato la Magia), mai il giocatore: la reazione passa dal checkpoint di targeting condiviso (ctx.declareTarget, duel-engine.js), che e' SINCRONO — chi ha attivato la Magia legge il bersaglio finale subito dopo — quindi li' non puo' aspettare una scelta. Lo stesso checkpoint non copre ogni carta del dataset: un effetto che bersaglia senza passare di li' sfugge. La copertura reale si conta all'occorrenza cercando le chiamate in js/engine/, mai fidandosi di un numero scritto qui."
   },
   {
     "id": 237,
@@ -6913,7 +6912,7 @@ const cardDatabase = [
     "subtype": "normal",
     "effect": "Quando il tuo avversario designa esattamente 1 mostro che controlli (e nessun'altra carta) come bersaglio per un attacco, o con un effetto Magia/Trappola: scegli un altro mostro che controlli come nuovo bersaglio adatto; quell'attacco/effetto ora ha come bersaglio la nuova carta.",
     "artOnly": true,
-    "missingEffectNote": "Entrambe le meta' (attacco e Magia/Trappola) sono implementate. Passa dal checkpoint di targeting condiviso (ctx.declareTarget, duel-engine.js), che non copre ogni carta del dataset: un effetto che bersaglia senza passare di li' sfugge. La copertura reale si conta all'occorrenza cercando le chiamate in js/engine/, mai fidandosi di un numero scritto qui."
+    "missingEffectNote": "Entrambe le meta' (attacco e Magia/Trappola) sono implementate. Nella meta' attacco il nuovo bersaglio lo sceglie il giocatore; nella meta' Magia/Trappola lo sceglie da sola, perche' passa dal checkpoint di targeting condiviso (ctx.declareTarget, duel-engine.js), che e' sincrono e non puo' aspettare una scelta. Quel checkpoint non copre ogni carta del dataset: un effetto che bersaglia senza passare di li' sfugge. La copertura reale si conta all'occorrenza cercando le chiamate in js/engine/, mai fidandosi di un numero scritto qui."
   },
   {
     "id": 623,
@@ -9953,7 +9952,6 @@ const cardDatabase = [
     "attack": 1400,
     "defense": 1500,
     "effect": "Quando questa carta infligge danno da battaglia al tuo avversario: puoi attivare 1 di questi effetti; scarta 1 carta a caso dalla sua mano, oppure manda le prime 2 carte del suo Deck al Cimitero.",
-    "missingEffectNote": "Fra i due effetti sceglie da sola (scarto se l'avversario ha carte in mano, altrimenti due carte dal suo Deck al Cimitero). La scelta e' automatica perche' l'effetto si risolve dentro la finestra di dichiarazione d'attacco: un picker asincrono li' arriverebbe a danno gia' calcolato (misurato, vedi il limite su onAttackDeclare in CLAUDE.md).",
     "artOnly": true
   },
   {
@@ -9977,7 +9975,6 @@ const cardDatabase = [
     "type": "spell",
     "subtype": "normal",
     "effect": "Manda tutte le carte della tua mano e del tuo campo al Cimitero. Dichiara il tipo di carta (Magia, Trappola o Mostro) in cima al tuo Deck: se indovini, scambia i tuoi Life Points attuali con quelli del tuo avversario.",
-    "missingEffectNote": "Il tipo di carta dichiarato lo calcola da sola (il piu' frequente fra quelle rimaste nel Deck): far scegliere una CATEGORIA e non una carta richiederebbe un'interfaccia che questo motore non ha, tutte le sue scelte sono scelte di carte.",
     "artOnly": true
   },
   {
@@ -10025,7 +10022,6 @@ const cardDatabase = [
     "attack": 400,
     "defense": 1500,
     "effect": "Durante il calcolo dei danni, se questa carta combatte contro un mostro dell'avversario (Attacco o Difesa): puoi pagare 2000 Life Points per far guadagnare a questa carta 3000 ATK solo per quel calcolo dei danni. Puoi usare questo effetto una sola volta per battaglia.",
-    "missingEffectNote": "Decide da sola se pagare i 2000 Life Points (lo fa se puo' permetterselo e se i 3000 ATK ribaltano davvero lo scontro). La scelta e' automatica perche' l'effetto si risolve dentro la finestra di dichiarazione d'attacco: un picker asincrono li' arriverebbe a danno gia' calcolato (misurato, vedi il limite su onAttackDeclare in CLAUDE.md).",
     "artOnly": true
   },
   {
@@ -10106,7 +10102,6 @@ const cardDatabase = [
     "attack": 1500,
     "defense": 1500,
     "effect": "Quando questa carta dichiara un attacco, mentre \"Necrovalley\" è sul Terreno: scegli come bersaglio 1 mostro scoperto che l'avversario controlla; cambia la Posizione di Battaglia di quel bersaglio.",
-    "missingEffectNote": "Il bersaglio lo sceglie da sola (il mostro scoperto avversario con l'ATK piu' alto). La scelta e' automatica perche' l'effetto si risolve dentro la finestra di dichiarazione d'attacco: un picker asincrono li' arriverebbe a danno gia' calcolato (misurato, vedi il limite su onAttackDeclare in CLAUDE.md).",
     "artOnly": true
   },
   {
@@ -12964,7 +12959,6 @@ const cardDatabase = [
     "attack": 1000,
     "defense": 600,
     "effect": "Quando questa carta viene Evocata Normalmente, dichiara 1 Tipo di mostro. Quando combatte contro un mostro di quel Tipo, aumenta l'ATK di questa carta di 1000 punti durante il calcolo dei danni.",
-    "missingEffectNote": "Il Tipo dichiarato lo sceglie da sola (il piu' diffuso fra i mostri scoperti dell'avversario). Stesso motivo di Quiz Inverso (id 885): qui si sceglie una categoria, non una carta, e il motore sa offrire solo scelte fra carte.",
     "artOnly": true
   },
   {

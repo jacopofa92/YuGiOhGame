@@ -2860,6 +2860,32 @@ priorità o richiedono un refactor ampio):
   click vero che consegna la carta giusta, e una casella che cambia
   dev'essere davvero sostituita).
 
+- ✅ **AGGIORNAMENTO (1.0.35): ora SI PUÒ, chiedendo di essere
+  aspettati.** `callCardHandlerWaiting` (duel-engine.js) esegue un
+  handler e chiama il seguito solo quando l'handler ha finito: un handler
+  che fa scegliere chiama `attendiScelta(ctx)` (card-effects.js) e riceve
+  la funzione da chiamare a scelta fatta. La usano `resolveChain` (ogni
+  link), l'auto-effetto di chi attacca (`onOwnAttackDeclare`) e il nuovo
+  hook `def.beforeDamageCalculation(ctx)` ("durante il calcolo dei danni,
+  puoi...", `runBeforeDamageCalculation`, subito prima di
+  `resolveBattleDamage`; un bonus deciso lì va in
+  `gameState.damageStepOnlyBonusFor`). È un'ADESIONE ESPLICITA, non
+  automatica per ogni picker: chi chiede l'attesa deve chiamare la
+  funzione su OGNI strada, Annulla compreso, o la battaglia resta ferma.
+  Per il caso comune "scegli 1 carta sul Terreno, effetto obbligatorio"
+  esiste `chooseFieldCardTargetWaiting` (riapre la lista se la si chiude,
+  chiude l'attesa anche su un errore); per una scelta fra OPZIONI con
+  etichetta (una categoria, due effetti) `chooseOption` +
+  `DuelEngineUI.openOptionPicker`, che in Multiplayer viaggia sulla stessa
+  coda delle scelte di bersaglio. Con questo sono tornate a una scelta
+  vera 214, 622 (metà attacco), 819, 852 e si sono chiuse 100, 883, 885,
+  889, 895, 1120 (`scelte-che-la-battaglia-aspetta.spec.js`, verificato
+  al contrario togliendo l'attesa). **Resta vero quanto sotto per un
+  handler che NON chiede l'attesa**, e resta vero per il checkpoint di
+  targeting (`declareCardEffectTarget`), che è sincrono per costruzione:
+  chi ha attivato l'effetto legge il bersaglio finale subito dopo, quindi
+  235 e la metà Magia/Trappola di 622 scelgono ancora da sole.
+  Testo storico della regola, valido prima di questo meccanismo:
 - ⚠️ **UN PICKER ASINCRONO NON SI PUÒ APRIRE DENTRO `onAttackDeclare`
   (né dentro qualunque handler che faccia da link di una Chain e che
   qualcuno stia aspettando) — misurato, non dedotto.** `resolveChain`
@@ -3662,11 +3688,13 @@ priorità o richiedono un refactor ampio):
 ## Carte con limiti noti (da riprendere)
 
 **Fonte di verità: `grep missingEffectNote data/cards.json`, e nient'altro.**
-25 risultati (erano 55 dopo la revisione completa descritta più sopra,
+19 risultati (erano 55 dopo la revisione completa descritta più sopra,
 poi 52 contati di nuovo; chiuse in tre giri 142/511/512/899, poi
 420/523/772/880/901/1040/1043/1113/1114/1121, poi tutte le 17 della
-famiglia A, poi 873 con la scelta di chi subisce — vedi il bullet
-«Meccanismi generici per i missingEffectNote» qui sopra). Questa
+famiglia A, poi 873 con la scelta di chi subisce, poi le 6 della
+famiglia C con le scelte che la battaglia aspetta — vedi il bullet
+«Meccanismi generici per i missingEffectNote» qui sopra e l'aggiornamento
+1.0.35 sulla regola di `onAttackDeclare`). Questa
 sezione è solo una mappa per orientarsi: ogni carta porta la propria
 nota per esteso, con il motivo preciso. **Non ricopiare qui i motivi** —
 è così che le due copie sono andate alla deriva l'ultima volta.
@@ -3716,14 +3744,13 @@ altrui. Servirebbe una vera finestra di priorità ad ogni cambio fase —
 un cambiamento al cuore del game loop, da fare solo su richiesta
 esplicita.
 
-**C — la scelta la fa il motore, non il giocatore (6 carte).** 100, 883,
-885, 889, 895, 1120. **Prima di migrarne una, leggere il
-limite su `onAttackDeclare`** più sopra in questo file: cinque di queste
-(100, 235, 883, 889, 895) si risolvono dentro la finestra di
-dichiarazione d'attacco, dove un picker asincrono arriva a danno già
-calcolato — è stato misurato, non dedotto. Due (885, 1120) chiedono di
-dichiarare una CATEGORIA e non una carta, e ogni scelta di questo motore
-è una scelta fra carte.
+**C — la scelta la fa il motore, non il giocatore: nessuna carta.** Le
+ultime sei (100, 883, 885, 889, 895, 1120) sono state chiuse con
+`callCardHandlerWaiting`/`attendiScelta` e `chooseOption` (vedi
+l'aggiornamento 1.0.35 sulla regola di `onAttackDeclare`). Restano due
+scelte automatiche DENTRO note di famiglia B, perché vivono nel
+checkpoint di targeting, che è sincrono: 235 e la metà Magia/Trappola
+di 622.
 
 ## Test: insidie note
 

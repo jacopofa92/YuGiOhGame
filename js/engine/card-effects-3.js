@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { blockBanishFromField, findEquipTarget, equipToChosenTarget, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, attachUnionMonster, maxRitualTributeLevel, performRitualTribute, chooseCardFromList, chooseUpToNFromList } = window.CardEffectsShared;
+    const { chooseFieldCardTargetWaiting, attendiScelta, blockBanishFromField, findEquipTarget, equipToChosenTarget, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, attachUnionMonster, maxRitualTributeLevel, performRitualTribute, chooseCardFromList, chooseUpToNFromList } = window.CardEffectsShared;
 
     // ================================================================
     // 517 — Rituale di Zera / Zera Ritual (Magia Rituale)
@@ -2862,24 +2862,23 @@
     // altro proprio mostro (declareCtx.redirectAttack, nuovo in
     // actions.js/resolveAttack — stesso identico meccanismo di risposta
     // di Muro d'Illusione/id 54, il mostro bersaglio dell'attacco può
-    // rispondere con un proprio onAttackDeclare). SEMPLIFICAZIONE:
-    // bersaglio alternativo auto-selezionato (il primo altro proprio
-    // mostro scoperto trovato), non una vera scelta del giocatore.
-    // NIENTE PICKER, e non per pigrizia: un handler dentro
-    // onAttackDeclare si risolve come link di una Chain, e resolveChain
-    // lo chiama e tira dritto dopo una pausa fissa senza aspettarlo
-    // (vedi runHandler in duel-engine.js). Misurato su Fuoco di Copertura
-    // (id 852): con una scelta fatta dopo 4 secondi la battaglia si era
-    // già risolta e l'effetto arrivava a danno calcolato, cioè a vuoto.
-    // Stesso motivo per cui le Trappole Contatore non sono mai state
-    // migrate a una scelta asincrona.
+    // rispondere con un proprio onAttackDeclare). Il nuovo bersaglio lo
+    // sceglie il giocatore: la battaglia aspetta la scelta
+    // (chooseFieldCardTargetWaiting, vedi callCardHandlerWaiting in
+    // duel-engine.js). Il bot prende il primo altro proprio mostro.
     CardEffects.register(214, {
         onAttackDeclare(ctx) {
-            const field = ctx.field(ctx.owner);
-            const newIndex = field.findIndex((s, i) => s && i !== ctx.targetIndex);
-            if (newIndex === -1) return;
-            ctx.redirectAttack(newIndex);
-            ctx.log(`🌙 Spiritello dei Sogni ridirige l'attacco verso ${field[newIndex].card.name}!`);
+            const candidati = collectFieldTargets(ctx, {
+                zone: 'monster', owner: 'self', includiCoperte: true,
+                filter: (card, owner, slot) => ctx.field(owner)[ctx.targetIndex] !== slot
+            });
+            chooseFieldCardTargetWaiting(ctx, candidati, {
+                title: '🌙 Spiritello dei Sogni',
+                text: 'Scegli quale altro tuo mostro subirà l\'attacco.'
+            }, (scelto) => {
+                ctx.redirectAttack(scelto.index);
+                ctx.log(`🌙 Spiritello dei Sogni ridirige l'attacco verso ${scelto.card.name}!`);
+            });
         }
     });
 

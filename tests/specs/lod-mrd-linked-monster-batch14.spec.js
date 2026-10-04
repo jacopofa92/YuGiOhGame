@@ -80,14 +80,17 @@ module.exports = {
         t.assert(gradiusOptionResult.atkMatchesGradius && gradiusOptionResult.defMatchesGradius, 'ATK e DEF di Gradius\' Option devono essere identici a quelli di Gradius');
         t.assert(gradiusOptionResult.optionDestroyedAfterGradiusGone, 'Gradius\' Option deve autodistruggersi quando Gradius lascia il Terreno');
 
-        // Il Cacciatore dalle 7 Armi (1120): dichiara il Tipo più diffuso tra i mostri avversari; +1000 ATK SOLO durante il calcolo dei danni contro quel Tipo.
+        // Il Cacciatore dalle 7 Armi (1120): +1000 ATK SOLO durante il calcolo dei danni contro il Tipo dichiarato.
+        // Qui lo controlla il BOT, che dichiara da sé il Tipo più diffuso fra
+        // i mostri avversari; quando lo controlla il giocatore il Tipo lo
+        // sceglie lui (vedi scelte-che-la-battaglia-aspetta.spec.js).
         const hunterResult = await t.evaluate(() => {
             const hunter = { ...cardDatabase.find((c) => c.id === 1120), uid: 'hunter-1', attack: 1000 };
             const oppDragon1 = { ...cardDatabase.find((c) => c.type === 'monster' && c.race === 'Drago' && !c.extraDeck), uid: 'opp-dragon-1' };
             const oppDragon2 = { ...cardDatabase.find((c) => c.type === 'monster' && c.race === 'Drago' && !c.extraDeck), uid: 'opp-dragon-2' };
             const oppWarrior = { ...cardDatabase.find((c) => c.type === 'monster' && c.race === 'Guerriero' && !c.extraDeck), uid: 'opp-warrior-1' };
-            gameState.botMonsterField = [{ card: oppDragon1, position: 'attack', isFaceDown: false }, { card: oppDragon2, position: 'attack', isFaceDown: false }, { card: oppWarrior, position: 'attack', isFaceDown: false }, null, null];
-            const ctx = DuelEngine.makeContext('player', { card: hunter });
+            gameState.playerMonsterField = [{ card: oppDragon1, position: 'attack', isFaceDown: false }, { card: oppDragon2, position: 'attack', isFaceDown: false }, { card: oppWarrior, position: 'attack', isFaceDown: false }, null, null];
+            const ctx = DuelEngine.makeContext('bot', { card: hunter });
             DuelEngine.getDefinition(1120).onSummon(ctx);
             const declaredRace = hunter.declaredRace;
 

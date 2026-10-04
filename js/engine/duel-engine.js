@@ -118,6 +118,77 @@
         }
     }
 
+    /**
+     * Esegue un handler di carta che può chiedere di essere ASPETTATO, e
+     * chiama `then` solo quando ha davvero finito.
+     *
+     * Il problema che risolve: chi esegue un handler (resolveChain, la
+     * dichiarazione d'attacco, il calcolo dei danni) andava avanti appena
+     * la funzione tornava. Un effetto che apre una scelta per il giocatore
+     * torna SUBITO (la scelta è asincrona), quindi la battaglia proseguiva
+     * e il risultato della scelta arrivava a danno già calcolato —
+     * misurato con Fuoco di Copertura (id 852): scegliendo dopo 4 secondi
+     * il bonus arrivava tardi e la carta non faceva nulla. Per questo
+     * diverse carte sceglievano da sole.
+     *
+     * Ora un handler che deve far scegliere chiama `ctx.waitForChoice()`
+     * (nelle carte: `attendiScelta(ctx)`, card-effects.js) e riceve una
+     * funzione da chiamare a scelta conclusa. Finché non la chiama, `then`
+     * non parte. Un handler che non la chiede si comporta esattamente come
+     * prima: `then` parte subito dopo di lui.
+     *
+     * È un'adesione ESPLICITA, carta per carta, e non automatica per ogni
+     * picker: un picker scritto senza un'uscita su Annulla lascerebbe la
+     * battaglia ferma per sempre. Chi chiede di essere aspettato si prende
+     * anche l'obbligo di chiamare la funzione su OGNI strada, Annulla
+     * compreso.
+     *
+     * Se l'handler lancia un errore si prosegue comunque: un effetto rotto
+     * non deve bloccare il duello, stessa regola di safeCallCardHandler.
+     */
+    function callCardHandlerWaiting(card, label, ctx, call, then) {
+        let inAttesa = 0;
+        let sincronoFinito = false;
+        let proseguito = false;
+        const prosegui = () => {
+            if (proseguito) return;
+            proseguito = true;
+            then();
+        };
+        const precedente = ctx ? ctx.waitForChoice : undefined;
+        if (ctx) {
+            ctx.waitForChoice = () => {
+                inAttesa += 1;
+                let usata = false;
+                return () => {
+                    if (usata) return;
+                    usata = true;
+                    inAttesa -= 1;
+                    if (sincronoFinito && inAttesa === 0) prosegui();
+                };
+            };
+        }
+        let fallito = false;
+        safeCallCardHandler(card, label, () => {
+            try {
+                return call();
+            } catch (err) {
+                fallito = true;
+                throw err;
+            }
+        });
+        sincronoFinito = true;
+        // Tolta subito dopo la parte sincrona: lo stesso ctx può finire a
+        // un altro handler (la dichiarazione d'attacco passa il suo alla
+        // finestra di risposta), che non deve trovarsi in mano l'attesa di
+        // questo. Chi ha chiesto di essere aspettato ha già la sua funzione.
+        if (ctx) {
+            if (precedente === undefined) delete ctx.waitForChoice;
+            else ctx.waitForChoice = precedente;
+        }
+        if (fallito || inAttesa === 0) prosegui();
+    }
+
     // ============================================================
     // Contesto: l'oggetto che ogni effetto-carta riceve come parametro.
     // Raccoglie tutto ciò che serve per leggere/modificare la partita
@@ -2963,29 +3034,37 @@
             const attackerDef = attackerSlot && getDefinition(attackerSlot.card.id);
             // Tempesta di Piume delle Arpie (id 292): nega anche l'auto-
             // effetto "quando questa carta dichiara un attacco".
-            if (attackerDef && typeof attackerDef.onOwnAttackDeclare === 'function' && !isMonsterCardEffectsNegated(ctx.owner, attackerSlot.card.uid)) {
-                safeCallCardHandler(attackerSlot.card, 'onOwnAttackDeclare', () => attackerDef.onOwnAttackDeclare(ctx));
-            }
-            // 1.5) Auto-effetto del mostro PRESO DI MIRA dall'attacco (es.
-            //      Scorpione d'Acciaio, id 1122: "un mostro non-Macchina
-            //      che attacca questa carta verrà distrutto..." — un
-            //      trigger FORZATO, mai una scelta del difensore, quindi
-            //      diverso da onAttackDeclare qui sotto (quello passa
-            //      SEMPRE dalla finestra di risposta/Chain, per abilità
-            //      OPZIONALI come Suijin/Kazejin "puoi annullare
-            //      l'attacco"). Nome handler dedicato (onBeingAttacked)
-            //      per non confondersi con onAttackDeclare, stesso
-            //      spirito di onOwnAttackDeclare qui sopra ma per il lato
-            //      difensore invece che l'attaccante.
-            if (typeof ctx.targetIndex === 'number' && ctx.targetIndex !== -1) {
-                const targetSlot = fieldOf(ctx.opponent)[ctx.targetIndex];
-                const targetDef = targetSlot && getDefinition(targetSlot.card.id);
-                if (targetDef && typeof targetDef.onBeingAttacked === 'function' && !isMonsterCardEffectsNegated(ctx.opponent, targetSlot.card.uid)) {
-                    safeCallCardHandler(targetSlot.card, 'onBeingAttacked', () => targetDef.onBeingAttacked(makeContext(ctx.opponent, { card: targetSlot.card, attackerOwner: ctx.owner, attackerIndex: ctx.attackerIndex, targetIndex: ctx.targetIndex })));
+            // Può chiedere di essere aspettato (es. Assalitore dei Guardiani
+            // della Tomba id 895, che fa scegliere il bersaglio): il resto
+            // della dichiarazione parte solo a scelta fatta, vedi
+            // callCardHandlerWaiting.
+            const restoDellaDichiarazione = () => {
+                // 1.5) Auto-effetto del mostro PRESO DI MIRA dall'attacco (es.
+                //      Scorpione d'Acciaio, id 1122: "un mostro non-Macchina
+                //      che attacca questa carta verrà distrutto..." — un
+                //      trigger FORZATO, mai una scelta del difensore, quindi
+                //      diverso da onAttackDeclare qui sotto (quello passa
+                //      SEMPRE dalla finestra di risposta/Chain, per abilità
+                //      OPZIONALI come Suijin/Kazejin "puoi annullare
+                //      l'attacco"). Nome handler dedicato (onBeingAttacked)
+                //      per non confondersi con onAttackDeclare, stesso
+                //      spirito di onOwnAttackDeclare qui sopra ma per il lato
+                //      difensore invece che l'attaccante.
+                if (typeof ctx.targetIndex === 'number' && ctx.targetIndex !== -1) {
+                    const targetSlot = fieldOf(ctx.opponent)[ctx.targetIndex];
+                    const targetDef = targetSlot && getDefinition(targetSlot.card.id);
+                    if (targetDef && typeof targetDef.onBeingAttacked === 'function' && !isMonsterCardEffectsNegated(ctx.opponent, targetSlot.card.uid)) {
+                        safeCallCardHandler(targetSlot.card, 'onBeingAttacked', () => targetDef.onBeingAttacked(makeContext(ctx.opponent, { card: targetSlot.card, attackerOwner: ctx.owner, attackerIndex: ctx.attackerIndex, targetIndex: ctx.targetIndex })));
+                    }
                 }
+                // 2) Finestra di risposta per il difensore.
+                openTriggerWindow('onAttackDeclare', ctx, finish);
+            };
+            if (attackerDef && typeof attackerDef.onOwnAttackDeclare === 'function' && !isMonsterCardEffectsNegated(ctx.owner, attackerSlot.card.uid)) {
+                callCardHandlerWaiting(attackerSlot.card, 'onOwnAttackDeclare', ctx, () => attackerDef.onOwnAttackDeclare(ctx), restoDellaDichiarazione);
+            } else {
+                restoDellaDichiarazione();
             }
-            // 2) Finestra di risposta per il difensore.
-            openTriggerWindow('onAttackDeclare', ctx, finish);
             return;
         }
 
@@ -4302,10 +4381,19 @@
                 return;
             }
 
+            // L'handler del link può chiedere di essere aspettato (una
+            // scelta del giocatore, vedi callCardHandlerWaiting): il link
+            // successivo — e, per una risposta a un attacco, la battaglia
+            // stessa, che aspetta l'onDone di questa Chain — parte solo a
+            // scelta fatta.
             const runHandler = () => {
                 if (typeof link.def[link.handlerName] === 'function') {
-                    safeCallCardHandler(link.card, link.handlerName, () => link.def[link.handlerName](link.ctx));
+                    callCardHandlerWaiting(link.card, link.handlerName, link.ctx, () => link.def[link.handlerName](link.ctx), afterHandler);
+                } else {
+                    afterHandler();
                 }
+            };
+            const afterHandler = () => {
                 if (link.isManualActivation) {
                     fireTrigger(TRIGGER.ON_CARD_ACTIVATED, link.ctx);
                 }
@@ -5060,6 +5148,49 @@
      * punto di vista di `card`; `opponentCard` è l'altro mostro coinvolto
      * (null per un attacco diretto, dove non c'è "l'altro mostro").
      */
+    /**
+     * "Durante il calcolo dei danni, puoi..." — hook `def.beforeDamageCalculation(ctx)`,
+     * chiamato per l'attaccante e (se c'è) per il mostro attaccato, subito
+     * PRIMA di resolveBattleDamage, quando la battaglia è ormai certa:
+     * l'attacco non è stato annullato né spostato, e i due mostri che si
+     * scontrano sono quelli definitivi.
+     *
+     * Esiste per le decisioni che il testo reale colloca in quel momento
+     * e che prima vivevano dentro `damageStepBonus` — un calcolo che gira
+     * in mezzo a resolveBattleDamage, dove una scelta del giocatore non può
+     * esistere (es. Iniezione della Fata Giglio id 889: "puoi pagare 2000
+     * Life Points", e lo decideva il motore). Qui l'handler può chiedere di
+     * essere aspettato (vedi callCardHandlerWaiting): il danno si calcola
+     * solo a scelta fatta. Per un bonus deciso qui, scrivere in
+     * `gameState.damageStepOnlyBonusFor[uid]`, che getDamageStepBonus
+     * consuma nello stesso calcolo.
+     *
+     * ctx: card, opponentCard (null per un attacco diretto), role
+     * ('attacker'|'defender'), slotIndex.
+     */
+    function runBeforeDamageCalculation(attackerOwner, attackerIndex, defenderOwner, targetIndex, then) {
+        const attackerSlot = fieldOf(attackerOwner)[attackerIndex];
+        const targetSlot = targetIndex !== -1 ? fieldOf(defenderOwner)[targetIndex] : null;
+        if (!attackerSlot) { then(); return; }
+        const coinvolti = [{ owner: attackerOwner, index: attackerIndex, slot: attackerSlot, other: targetSlot, role: 'attacker' }];
+        if (targetSlot) coinvolti.push({ owner: defenderOwner, index: targetIndex, slot: targetSlot, other: attackerSlot, role: 'defender' });
+        const prossimo = (i) => {
+            if (i >= coinvolti.length) { then(); return; }
+            const c = coinvolti[i];
+            // Ancora lì? Una scelta precedente può aver cambiato il campo.
+            if (fieldOf(c.owner)[c.index] !== c.slot) { prossimo(i + 1); return; }
+            const def = getDefinition(c.slot.card.id);
+            if (!def || typeof def.beforeDamageCalculation !== 'function' || c.slot.isFaceDown
+                || isMonsterCardEffectsNegated(c.owner, c.slot.card.uid)) {
+                prossimo(i + 1);
+                return;
+            }
+            const ctx = makeContext(c.owner, { card: c.slot.card, opponentCard: c.other ? c.other.card : null, role: c.role, slotIndex: c.index });
+            callCardHandlerWaiting(c.slot.card, 'beforeDamageCalculation', ctx, () => def.beforeDamageCalculation(ctx), () => prossimo(i + 1));
+        };
+        prossimo(0);
+    }
+
     function getDamageStepBonus(card, opponentCard, role) {
         if (!card) return { atk: 0, def: 0 };
         let totalAtk = 0;
@@ -5784,6 +5915,7 @@
         tryRedirectUnionDestroy: tryRedirectUnionDestroy,
         hasUnionProtector: hasUnionProtector,
         getDamageStepBonus: getDamageStepBonus,
+        runBeforeDamageCalculation: runBeforeDamageCalculation,
         canSpecialSummonFromHand: canSpecialSummonFromHand,
         trySpecialSummonFromHand: trySpecialSummonFromHand,
         getBanishFusableExtraDeckMonsters: getBanishFusableExtraDeckMonsters,

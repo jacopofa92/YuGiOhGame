@@ -54,12 +54,20 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
       posto (nota falsa), 1045 ora blocca solo le Special Summon come da testo
       (`specialSummonBlockedFor`), 434 vieta Evocazioni scoperte e Special
       Summon nel turno (`noSummonTurn`, `DuelEngine.isSummonBannedThisTurn`).
-- [x] Tutti gli scostamenti reali dal testo chiusi (1.0.31-1.0.33). Restano
-      25 `missingEffectNote`, nessuno nella famiglia A: 19 promemoria su
-      limiti del motore e 6 carte in cui sceglie il motore (vedi CLAUDE.md,
-      "Carte con limiti noti").
+- [x] Tutti gli scostamenti reali dal testo chiusi (1.0.31-1.0.33). Le
+      `missingEffectNote` rimaste sono tutte promemoria su limiti del motore
+      (vedi CLAUDE.md, "Carte con limiti noti").
 - [x] Scelta di chi SUBISCE lo scarto (`victimChoosesDiscard`): Criosfinge
       (761) e Duo Delinquente (873), anche in Multiplayer.
+- [x] La battaglia e la Chain aspettano le scelte del giocatore
+      (`callCardHandlerWaiting`/`attendiScelta`, 1.0.35): chiuse le 6 carte
+      in cui sceglieva il motore. Restano 19 note, tutte promemoria su
+      limiti del motore.
+- [ ] Note restanti, in ordine di rischio: ritorni in mano e spostamenti
+      dal Cimitero scritti a mano (761, 890); audit delle carte che
+      bersagliano senza checkpoint di targeting (~11 note); "uno dei due
+      giocatori può pagare" (882); finestra di priorità a ogni cambio fase
+      per gli Effetti Veloci (192, 396, 459, 1059: la più rischiosa).
 - [ ] 6 PNG in `images/characters/avatarTrasparenza/` (e copie in `pedine/`) senza avatar corrispondente
       (Kaiba in Mantello Viola, soldato Grande Guerra, kaibaV2,
       setoKaiba_duelist Kingdom, setoKaiba_forbiddenMemories, yamiYugiV2):

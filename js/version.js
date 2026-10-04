@@ -32,6 +32,11 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.35 — Le scelte dentro una battaglia sono tue: la battaglia aspetta
+ *   che tu decida. Armatura Guida d'Attacco, Fata Giglio, Assalitore dei
+ *   Guardiani della Tomba, Don Zaloog, Quiz Inverso e Il Cacciatore dalle
+ *   7 Armi non scelgono più da sole; Fuoco di Copertura, Spiritello dei
+ *   Sogni, Spostamento e Scudo con Braccio Magico tornano a una scelta vera.
  * 1.0.34 — Lo scarto lo sceglie chi lo subisce: Criosfinge e Duo
  *   Delinquente non scartano più a caso al posto della vittima.
  * 1.0.33 — Chiuse tutte le 17 carte che si comportavano ancora diversamente
@@ -581,4 +586,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.34';
+window.GAME_VERSION = '1.0.35';
