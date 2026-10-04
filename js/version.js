@@ -32,6 +32,8 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.0.38 — Oppressione Reale scoperta la può usare anche l'avversario di
+ *   chi la controlla, pagando lui: "uno dei due giocatori", come da testo.
  * 1.0.37 — Le carte che proteggono dal "bersaglio" funzionano contro tutto:
  *   Signore dei D., Gran Scudo Gardna, Mago Comando del Caos e i Dei
  *   Egizi fermano anche Equip, Union e una trentina di effetti che prima
@@ -594,4 +596,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.37';
+window.GAME_VERSION = '1.0.38';

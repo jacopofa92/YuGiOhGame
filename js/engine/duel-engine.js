@@ -3592,7 +3592,11 @@
             opponent: ctx.owner,
             card: choice.card,
             zone: choice.zone,
-            index: choice.index
+            index: choice.index,
+            // Chi controlla la carta: diverso da chi risponde solo per una
+            // carta usabile da entrambi (zona 'stAltrui', vedi
+            // findTriggerCandidates).
+            cardOwner: choice.cardOwner || responderOwner
         });
     }
 
@@ -3698,6 +3702,29 @@
                 candidates.push({ zone: 'fieldSpell', index: -1, card: fs.card, def: def });
             }
         }
+
+        // Carte dell'ALTRO giocatore che "uno dei due giocatori" può usare
+        // (es. Oppressione Reale id 882: "uno dei due giocatori può pagare
+        // 800 Life Points per annullare l'Evocazione Speciale...") —
+        // opt-in esplicito `def.usableByEitherPlayer`, solo se già SCOPERTA
+        // sul Terreno di chi la controlla (coperta è una carta come le
+        // altre, e solo il suo controllore può attivarla). Chi risponde la
+        // usa da dove sta, senza consumarla: zona 'stAltrui', che
+        // consumeCandidateCard e la negazione in resolveChain lasciano
+        // stare apposta. Il ctx del link è quello di chi risponde
+        // (ctx.owner = chi paga), con `cardOwner` = chi controlla la carta.
+        // Prima ogni finestra di risposta guardava solo le carte di chi
+        // rispondeva, quindi questa clausola non poteva esistere.
+        const altro = opponentOf(responderOwner);
+        stFieldOf(altro).forEach((slot, index) => {
+            if (!slot || slot.isFaceDown || usedUids.has(slot.card.uid)) return;
+            if (slot.card.type === 'trap' && areTrapsNegatedFor(altro)) return;
+            if (slot.card.type === 'spell' && areSpellsNegatedFor(altro)) return;
+            const def = getDefinition(slot.card.id);
+            if (def && def.usableByEitherPlayer && typeof def[handlerName] === 'function') {
+                candidates.push({ zone: 'stAltrui', index: index, card: slot.card, def: def, cardOwner: altro });
+            }
+        });
 
         // Carte attivabili DAL CIMITERO come Quick Effect (es. Tartaruga
         // Elettromagnetica, id 223) — opt-in esplicito via

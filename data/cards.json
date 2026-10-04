@@ -9914,9 +9914,8 @@
     "origin": "yu-gi-oh",
     "name": "Oppressione Reale",
     "type": "trap",
-    "subtype": "normal",
+    "subtype": "continuous",
     "effect": "Uno dei due giocatori può pagare 800 Life Points per annullare l'Evocazione Speciale di uno o più mostri (e/o un effetto che li Evoca Specialmente), e distruggerli.",
-    "missingEffectNote": "Resta fuori 'uno dei due giocatori può pagare': la usa solo chi la controlla, perché ogni finestra di risposta di questo motore è di un giocatore solo.",
     "artOnly": true,
     "limit": 1
   },

@@ -3688,14 +3688,14 @@ priorità o richiedono un refactor ampio):
 ## Carte con limiti noti (da riprendere)
 
 **Fonte di verità: `grep missingEffectNote data/cards.json`, e nient'altro.**
-7 risultati (erano 55 dopo la revisione completa descritta più sopra,
+6 risultati (erano 55 dopo la revisione completa descritta più sopra,
 poi 52 contati di nuovo; chiuse in tre giri 142/511/512/899, poi
 420/523/772/880/901/1040/1043/1113/1114/1121, poi tutte le 17 della
 famiglia A, poi 873 con la scelta di chi subisce, poi le 6 della
 famiglia C con le scelte che la battaglia aspetta, poi 761 e 890 col
 censimento dei ritorni in mano e degli spostamenti dal Cimitero, poi
 dieci note sulla copertura del checkpoint di targeting con l'audit
-1.0.37 — vedi il bullet
+1.0.37, poi 882 con le carte usabili da entrambi (1.0.38) — vedi il bullet
 «Meccanismi generici per i missingEffectNote» qui sopra e l'aggiornamento
 1.0.35 sulla regola di `onAttackDeclare`). Questa
 sezione è solo una mappa per orientarsi: ogni carta porta la propria
@@ -3722,8 +3722,16 @@ sua mano vera) e allinea l'altro con la propria fotografia di stato.
 **Usarlo per ogni futura carta "l'avversario scarta 1 carta a sua
 scelta"** (761, 873; spec `scelta-di-chi-subisce.spec.js`).
 
-**B — implementata, il limite è del motore (7 carte).** La nota è un
-promemoria, non lavoro arretrato: 192, 235, 396, 459, 622, 882, 1059.
+**B — implementata, il limite è del motore (6 carte).** La nota è un
+promemoria, non lavoro arretrato: 192, 235, 396, 459, 622, 1059.
+
+*Carte usabili da "uno dei due giocatori"* (chiuso in 1.0.38):
+`def.usableByEitherPlayer` rende una carta SCOPERTA sul Terreno di chi la
+controlla candidata come risposta anche per il suo avversario
+(`findTriggerCandidates`, zona 'stAltrui': non viene consumata, e il ctx
+del link ha `owner` = chi risponde e paga, `cardOwner` = chi la
+controlla). Nata per Oppressione Reale (id 882); in Multiplayer la
+decisione viaggia come ogni altra risposta (riconosciuta per uid).
 
 *Spostamenti dal Cimitero e Necrovalley* (chiuso in 1.0.36): ogni
 effetto che toglie una carta dal Cimitero scrivendolo a mano

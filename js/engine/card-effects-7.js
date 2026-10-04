@@ -2416,11 +2416,15 @@
     // risposta resta scoperta sul Terreno (consumeCandidateCard) invece di
     // finire al Cimitero, e da scoperta findTriggerCandidates la offre di
     // nuovo a ogni Special Summon successiva, pagando ogni volta.
-    // Resta fuori "uno dei due giocatori può pagare": la usa solo chi la
-    // controlla (ogni finestra di risposta di questo motore è di un
-    // giocatore solo).
+    // "Uno dei due giocatori può pagare": una volta scoperta, la può usare
+    // anche l'avversario di chi la controlla, contro una Special Summon di
+    // quest'ultimo (`usableByEitherPlayer`, findTriggerCandidates in
+    // duel-engine.js). In quel caso ctx.owner è chi risponde: paga lui e il
+    // mostro distrutto è di ctx.opponent, cioè di chi ha Evocato — lo
+    // stesso codice vale per entrambi i lati.
     CardEffects.register(882, {
         continuous: true,
+        usableByEitherPlayer: true,
         canActivate(ctx) {
             const lp = ctx.owner === 'player' ? gameState.playerLP : gameState.botLP;
             return ctx.summonedVia === 'special' && typeof ctx.summonedCard !== 'undefined' && lp > 800;

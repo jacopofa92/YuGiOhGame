@@ -71,11 +71,13 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
       bersaglio (`dichiara: true`); sorvegliato da
       `guardrail-bersagli-dichiarati`. Chiuse anche le protezioni di
       Great Dezard e Fushioh Richie.
-- [ ] Note restanti (7), in ordine di rischio: "uno dei due giocatori può
-      pagare" (882); finestra di priorità a ogni cambio fase per gli
-      Effetti Veloci (396, 459, 1059: la più rischiosa); 192 (immunità ai
-      soli effetti mirati); 235 e la metà Magia/Trappola di 622 (checkpoint
-      sincrono, scelgono da sole).
+- [x] "Uno dei due giocatori può pagare" (882, 1.0.38):
+      `usableByEitherPlayer`.
+- [ ] Note restanti (6): finestra di priorità a ogni cambio fase per gli
+      Effetti Veloci (396, 459, 1059: la più rischiosa, tocca il ciclo di
+      gioco, solo su richiesta esplicita); 192 (immunità ai soli effetti
+      mirati); 235 e la metà Magia/Trappola di 622 (checkpoint sincrono,
+      scelgono da sole).
 - [ ] 6 PNG in `images/characters/avatarTrasparenza/` (e copie in `pedine/`) senza avatar corrispondente
       (Kaiba in Mantello Viola, soldato Grande Guerra, kaibaV2,
       setoKaiba_duelist Kingdom, setoKaiba_forbiddenMemories, yamiYugiV2):
