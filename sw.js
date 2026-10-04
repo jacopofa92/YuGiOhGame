@@ -463,6 +463,7 @@ const APP_SHELL = [
     'js/engine/actions.js',
     // /gruppo-script:partita
     // gruppo-script:motore
+    'js/engine/porta-ui.js',
     'js/engine/duel-engine.js',
     'js/engine/effect-templates.js',
     'js/engine/card-effects.js',

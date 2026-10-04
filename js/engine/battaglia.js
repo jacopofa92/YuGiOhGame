@@ -273,7 +273,7 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
         // bug reale osservato: l'animazione d'attacco mostrava la carta
         // coperta in zona Magia/Trappola al posto del vero mostro
         // attaccante/bersaglio.
-        attackerCardEl: document.querySelector(`#${attackerBoardId} .field-slot[data-type="monster"][data-index="${attackerIndex}"] .card`),
+        attackerCardEl: PortaUI.query(`#${attackerBoardId} .field-slot[data-type="monster"][data-index="${attackerIndex}"] .card`),
         // Attacco diretto: la freccia/rincorsa punta ora verso la mano di
         // chi lo subisce (le sue carte, il "bersaglio" concettuale di un
         // attacco senza un mostro a fare da scudo), non più verso il box
@@ -284,8 +284,8 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
         // ridiretto sul suo stesso campo (vedi redirectAttack/Ragno della
         // Roulette qui sopra).
         targetAnchor: effectiveTargetIndex === -1
-            ? document.getElementById((targetOwnerForHand || defenderOwner) === 'player' ? 'playerHand' : 'botHand')
-            : document.querySelector(`#${targetBoardId || defenderBoardId} .field-slot[data-type="monster"][data-index="${effectiveTargetIndex}"] .card`)
+            ? PortaUI.byId((targetOwnerForHand || defenderOwner) === 'player' ? 'playerHand' : 'botHand')
+            : PortaUI.query(`#${targetBoardId || defenderBoardId} .field-slot[data-type="monster"][data-index="${effectiveTargetIndex}"] .card`)
     });
 
     // Ala del Tiranno (id 496): traccia chi ha dichiarato un attacco
@@ -546,7 +546,7 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
 
             setTimeout(() => {
                 if (attackerCardEl) attackerCardEl.classList.remove('is-attacking');
-                document.querySelectorAll('.damage-shake').forEach(el => el.classList.remove('damage-shake'));
+                PortaUI.queryAll('.damage-shake').forEach(el => el.classList.remove('damage-shake'));
                 if (attackerOwner === 'player') clearSelection(); else updateUI();
                 done();
             }, 700);
@@ -620,7 +620,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
             const opp = owner === 'player' ? 'bot' : 'player';
             addToLog(`🔄 ${involvedCard.name} redirige il danno da battaglia al tuo avversario!`);
             DuelEngine.actions.dealDamage(opp, amount);
-            const oppInfoEl = document.getElementById(opp === 'player' ? 'playerInfo' : 'botInfo');
+            const oppInfoEl = PortaUI.byId(opp === 'player' ? 'playerInfo' : 'botInfo');
             if (oppInfoEl) oppInfoEl.classList.add('damage-shake');
             showFloatingDamage(amount, oppInfoEl, opp);
             return;
@@ -630,7 +630,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
             return;
         }
         DuelEngine.actions.dealDamage(owner, amount);
-        const infoEl = document.getElementById(owner === 'player' ? 'playerInfo' : 'botInfo');
+        const infoEl = PortaUI.byId(owner === 'player' ? 'playerInfo' : 'botInfo');
         if (infoEl) infoEl.classList.add('damage-shake');
         showFloatingDamage(amount, infoEl, owner);
         // Vero solo se il danno è DAVVERO arrivato a `owner` (nessuno dei
@@ -1250,7 +1250,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                 // elemento nello stesso istante le farebbe accavallare.
                 if (revealsAsIfSurviving && window.CardRenderer && typeof CardRenderer.playFlipReveal === 'function') {
                     const defenderBoardId = defenderOwner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
-                    const targetSlotEl = document.querySelector(`#${defenderBoardId} .field-slot[data-owner="${defenderOwner}"][data-type="monster"][data-index="${targetIndex}"]`);
+                    const targetSlotEl = PortaUI.query(`#${defenderBoardId} .field-slot[data-owner="${defenderOwner}"][data-type="monster"][data-index="${targetIndex}"]`);
                     if (targetSlotEl) CardRenderer.playFlipReveal(targetSlotEl, target, 'defense');
                 }
                 // Effetto FLIP (es. Insetto Divoratore Mostruoso, id 49): il

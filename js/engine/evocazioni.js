@@ -52,7 +52,7 @@ function performTributeSacrifice() {
             summonedCard: pending.card
         });
     }
-    document.querySelectorAll('#playerFieldBoard .field-slot.tribute-highlight').forEach(el => {
+    PortaUI.queryAll('#playerFieldBoard .field-slot.tribute-highlight').forEach(el => {
         el.classList.remove('tribute-highlight', 'tribute-selected');
     });
     hideTributePrompt();
@@ -60,7 +60,7 @@ function performTributeSacrifice() {
     addToLog('🔻 Sacrificio in corso...');
     if (window.SFX) SFX.tribute();
     indices.forEach(idx => {
-        const cardEl = document.querySelector(`#playerFieldBoard .field-slot[data-owner="player"][data-type="monster"][data-index="${idx}"] .card`);
+        const cardEl = PortaUI.query(`#playerFieldBoard .field-slot[data-owner="player"][data-type="monster"][data-index="${idx}"] .card`);
         if (cardEl && window.FX) FX.playTributeSacrifice(cardEl);
     });
 
@@ -178,8 +178,8 @@ function summonMonster(card, slotIndex, position, handIndex = gameState.selected
         clearSelection();
         return;
     }
-    const handEl = document.querySelectorAll('#playerHand .card')[handIndex] || null;
-    const slotEl = document.querySelector(`.field-slot[data-owner="player"][data-type="monster"][data-index="${slotIndex}"]`);
+    const handEl = PortaUI.queryAll('#playerHand .card')[handIndex] || null;
+    const slotEl = PortaUI.query(`.field-slot[data-owner="player"][data-type="monster"][data-index="${slotIndex}"]`);
     flyCardToSlot(card, fromRect || handEl, slotEl, () => {
         const usedTribute = getTributesRequired(card) > 0;
         gameState.playerHand.splice(handIndex, 1);
@@ -197,7 +197,7 @@ function summonMonster(card, slotIndex, position, handIndex = gameState.selected
             triggerFieldImpact('player', slotIndex, 'monster');
             showPositionEffect('player', slotIndex, position);
             if (window.FX) {
-                const cardEl = document.querySelector(`#playerFieldBoard .field-slot[data-type="monster"][data-index="${slotIndex}"] .card`);
+                const cardEl = PortaUI.query(`#playerFieldBoard .field-slot[data-type="monster"][data-index="${slotIndex}"] .card`);
                 FX.playMonsterSummonEffect(card, cardEl);
             }
             // Effetto audio DEDICATO per questa carta (audio/evocazioni/<id>.mp3
@@ -287,7 +287,7 @@ function changeMonsterPosition(slotIndex) {
     // dal render successivo un istante dopo.
     if (isManualFlipSummon && monsterSlot.position === 'attack'
         && window.CardRenderer && typeof CardRenderer.playFlipReveal === 'function') {
-        const slotEl = document.querySelector(`#playerFieldBoard .field-slot[data-owner="player"][data-type="monster"][data-index="${slotIndex}"]`);
+        const slotEl = PortaUI.query(`#playerFieldBoard .field-slot[data-owner="player"][data-type="monster"][data-index="${slotIndex}"]`);
         if (slotEl) CardRenderer.playFlipReveal(slotEl, monsterSlot.card, monsterSlot.position);
     }
     setTimeout(() => showPositionEffect('player', slotIndex, monsterSlot.position), 60);
@@ -301,8 +301,8 @@ function setSpellTrap(card, slotIndex, handIndex = gameState.selectedCard.index,
         clearSelection();
         return;
     }
-    const handEl = document.querySelectorAll('#playerHand .card')[handIndex] || null;
-    const slotEl = document.querySelector(`.field-slot[data-owner="player"][data-type="st"][data-index="${slotIndex}"]`);
+    const handEl = PortaUI.queryAll('#playerHand .card')[handIndex] || null;
+    const slotEl = PortaUI.query(`.field-slot[data-owner="player"][data-type="st"][data-index="${slotIndex}"]`);
     flyCardToSlot(card, fromRect || handEl, slotEl, () => {
         addToLog(`🪄 ${card.name} è stata piazzata sul Terreno.`);
         if (window.SFX) SFX.place();
@@ -324,7 +324,7 @@ function setSpellTrap(card, slotIndex, handIndex = gameState.selectedCard.index,
         // suo ritentativo per ritrovare la casella appena ricreata.
         triggerFieldImpact('player', slotIndex, 'st');
         if (window.FX && typeof FX.playCardSet === 'function') {
-            const postoEl = document.querySelector(`#playerFieldBoard .field-slot[data-owner="player"][data-type="st"][data-index="${slotIndex}"]`);
+            const postoEl = PortaUI.query(`#playerFieldBoard .field-slot[data-owner="player"][data-type="st"][data-index="${slotIndex}"]`);
             FX.playCardSet(postoEl);
         }
     }, handEl, true);
@@ -338,8 +338,8 @@ function setSpellTrap(card, slotIndex, handIndex = gameState.selectedCard.index,
  * sostituisce sempre quella vecchia, come da regola vera.
  */
 function setFieldSpell(card, handIndex = gameState.selectedCard.index, fromRect = null) {
-    const handEl = document.querySelectorAll('#playerHand .card')[handIndex] || null;
-    const slotEl = document.querySelector('.field-slot[data-owner="player"][data-type="field-spell"]');
+    const handEl = PortaUI.queryAll('#playerHand .card')[handIndex] || null;
+    const slotEl = PortaUI.query('.field-slot[data-owner="player"][data-type="field-spell"]');
     flyCardToSlot(card, fromRect || handEl, slotEl, () => {
         const existing = gameState.playerFieldSpell;
         if (existing) {

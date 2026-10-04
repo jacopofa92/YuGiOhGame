@@ -298,7 +298,7 @@ function botSummonMonster(card, tributeIndices, emptySlotHint, position, faceDow
             setTimeout(() => {
                 showPositionEffect('bot', slotIndex, position);
                 if (window.FX) {
-                    const cardEl = document.querySelector(`#botFieldBoard .field-slot[data-type="monster"][data-index="${slotIndex}"] .card`);
+                    const cardEl = PortaUI.query(`#botFieldBoard .field-slot[data-type="monster"][data-index="${slotIndex}"] .card`);
                     // Stesso trattamento del lato giocatore in summonMonster()
                     // (actions.js): FX.playMonsterSummonEffect controlla anche
                     // un eventuale filmato dedicato (video/evocazioni/<id>.mp4)
@@ -337,7 +337,7 @@ function botSummonMonster(card, tributeIndices, emptySlotHint, position, faceDow
             addToLog(tributeMsg);
             if (window.SFX) SFX.tribute();
             tributeIndices.forEach(idx => {
-                const cardEl = document.querySelector(`#botFieldBoard .field-slot[data-owner="bot"][data-type="monster"][data-index="${idx}"] .card`);
+                const cardEl = PortaUI.query(`#botFieldBoard .field-slot[data-owner="bot"][data-type="monster"][data-index="${idx}"] .card`);
                 if (cardEl && window.FX) FX.playTributeSacrifice(cardEl);
             });
             setTimeout(() => {
@@ -565,7 +565,7 @@ function botSetTrapCard(card, handIndex) {
         // giocatore deve vedere.
         triggerFieldImpact('bot', slotIndex, 'st');
         if (window.FX && typeof FX.playCardSet === 'function') {
-            const postoEl = document.querySelector(`#botFieldBoard .field-slot[data-owner="bot"][data-type="st"][data-index="${slotIndex}"]`);
+            const postoEl = PortaUI.query(`#botFieldBoard .field-slot[data-owner="bot"][data-type="st"][data-index="${slotIndex}"]`);
             FX.playCardSet(postoEl);
         }
         setTimeout(resolve, 400);
@@ -601,7 +601,7 @@ function waitForSummonCinematics() {
             // Trappola/Magia, picker, Tributi...) ferma il bot SENZA
             // tetto: il giocatore ha il tempo che gli serve. Il tetto di
             // 20s vale solo per una cinematica che non finisce mai.
-            if (typeof isBlockingModalOpen === 'function' && document.querySelector('.modal-backdrop.open, #quickPopover')) {
+            if (typeof isBlockingModalOpen === 'function' && PortaUI.query('.modal-backdrop.open, #quickPopover')) {
                 setTimeout(poll, 150);
                 return;
             }
@@ -655,7 +655,7 @@ function waitForBotChainToClear(callback) {
     const poll = () => {
         // Il tetto di 15s non vale se il giocatore ha un modale aperto
         // (sta decidendo se rispondere nella Catena).
-        const modaleAperto = !!document.querySelector('.modal-backdrop.open, #quickPopover');
+        const modaleAperto = !!PortaUI.query('.modal-backdrop.open, #quickPopover');
         if (!window.DuelEngine || !DuelEngine.isChainActive() || (!modaleAperto && Date.now() - start > 15000)) {
             callback();
             return;

@@ -1543,7 +1543,7 @@
                     setTimeout(() => {
                         if (typeof triggerFieldImpact === 'function') triggerFieldImpact(owner, slotIndex, 'monster');
                         if (typeof showPositionEffect === 'function') showPositionEffect(owner, slotIndex, position);
-                        const cardEl = document.querySelector(`#${owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard'} .field-slot[data-type="monster"][data-index="${slotIndex}"] .card`);
+                        const cardEl = PortaUI.query(`#${owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard'} .field-slot[data-type="monster"][data-index="${slotIndex}"] .card`);
                         if (cardEl && window.FX) FX.playMonsterSummonEffect(card, cardEl);
                         if ((card.level || 0) < 7 && !(window.AudioLibrary && AudioLibrary.tryPlayCardSound(card, 'evocazioni')) && window.SFX) SFX.summon(position);
                     }, visualDelay);

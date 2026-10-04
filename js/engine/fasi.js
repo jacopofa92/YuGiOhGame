@@ -826,8 +826,8 @@ function enterDrawPhaseInner(autoAdvance = true, onComplete = null) {
     };
 
     const boardId = gameState.currentPlayer === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
-    const deckSlot = document.querySelector(`#${boardId} .field-slot[data-zone="deck"]`);
-    const handEl = document.getElementById('playerHand');
+    const deckSlot = PortaUI.query(`#${boardId} .field-slot[data-zone="deck"]`);
+    const handEl = PortaUI.byId('playerHand');
     if (deckSlot) {
         deckSlot.classList.add('draw-effect');
     }

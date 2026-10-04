@@ -29,6 +29,8 @@ module.exports = {
     // (helper condivisi) va prima delle sue 8 parti, duel-engine.js prima
     // di tutto il resto. Un file nuovo del nucleo si aggiunge qui.
     motore: [
+        // Prima di tutto: l'unico punto da cui le regole toccano la pagina.
+        'js/engine/porta-ui.js',
         'js/engine/duel-engine.js',
         'js/engine/effect-templates.js',
         'js/engine/card-effects.js',
