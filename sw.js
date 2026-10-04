@@ -450,8 +450,10 @@ const APP_SHELL = [
     'assets/fonts/cinzel/OFL.txt',
     'js/ui/sfide-view.css',
     'js/engine/actions.js',
-    'js/engine/duel-engine.js',
     'js/engine/game-flow.js',
+    // gruppo-script:motore
+    'js/engine/duel-engine.js',
+    'js/engine/effect-templates.js',
     'js/engine/card-effects.js',
     'js/engine/card-effects-1.js',
     'js/engine/card-effects-2.js',
@@ -461,7 +463,7 @@ const APP_SHELL = [
     'js/engine/card-effects-6.js',
     'js/engine/card-effects-7.js',
     'js/engine/card-effects-8.js',
-    'js/engine/effect-templates.js',
+    // /gruppo-script:motore
     // Mancava: duelMonstersCore.html lo carica (è quello che allestisce
     // lo stato iniziale del "Duello Demo"), ma non era mai finito qui,
     // quindi offline la pagina del duello si apriva monca. Trovato dal

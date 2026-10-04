@@ -23,7 +23,9 @@
  *  - BOM UTF-8 in testa a un file di testo (il progetto non ne usa; un BOM
  *    nuovo è quasi sempre il segno di uno script che ha riscritto il file);
  *  - data/cards.json modificato senza rigenerare js/data/cards-data.generated.js,
- *    che è il file che il gioco carica davvero.
+ *    che è il file che il gioco carica davvero;
+ *  - gruppi di <script> delle pagine (e di sw.js) non allineati alla lista
+ *    unica scripts/gruppi-script.js.
  *
  * In caso di problema spiega cosa e dove, ed esce con 1 (commit fermato).
  */
@@ -125,6 +127,23 @@ testuali.forEach((f) => {
 // --- 4. cards.json modificato senza rigenerare il file caricato dal gioco ---
 if (inStage.includes('data/cards.json') && !inStage.includes('js/data/cards-data.generated.js')) {
     problemi.push('data/cards.json è in stage ma js/data/cards-data.generated.js no: lancia `node scripts/build-cards-data.js` e aggiungilo, o il gioco continua a caricare i dati vecchi.');
+}
+
+// --- 5. Gruppi di <script> allineati a scripts/gruppi-script.js ------------
+// Solo se il commit tocca una pagina, sw.js o la lista stessa. Il confronto
+// si fa sul contenuto IN STAGE di quei file (per gli altri, quello su disco).
+const toccaGruppi = inStage.some((f) => f.endsWith('.html') || f === 'sw.js' || f === 'scripts/gruppi-script.js');
+if (toccaGruppi) {
+    const { riscrivi, fileCandidati } = require('./sync-script-groups');
+    fileCandidati().forEach((assoluto) => {
+        const relativo = path.relative(path.join(__dirname, '..'), assoluto).split(path.sep).join('/');
+        const testo = inStage.includes(relativo) ? contenutoInStage(relativo).toString('utf8') : fs.readFileSync(assoluto, 'utf8');
+        const r = riscrivi(testo, relativo);
+        r.errori.forEach((e) => problemi.push(e));
+        if (r.testo !== testo) {
+            problemi.push(`${relativo}: i gruppi di <script> (${r.zone.join(', ')}) non sono allineati a scripts/gruppi-script.js — lancia \`node scripts/sync-script-groups.js\` e aggiungi il file.`);
+        }
+    });
 }
 
 if (problemi.length) {
