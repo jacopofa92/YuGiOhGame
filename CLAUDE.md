@@ -3686,8 +3686,10 @@ priorità o richiedono un refactor ampio):
   (battaglie vere via `resolveAttack`; LP alzati a inizio caso, o una
   battaglia precedente chiude il duello e i casi dopo falliscono per finta).
 
-- ✅ **Nucleo senza testa (Priorità 2 del piano, branch
-  `refactor/nucleo-senza-testa`)**: le regole del duello girano anche in
+- ✅ **Nucleo senza testa (Priorità 1 e 2 del piano, sviluppate sul branch
+  `refactor/nucleo-senza-testa`, poi MERGIATO in `main` su richiesta
+  esplicita dell'utente dopo la suite completa 199/199, e il branch
+  eliminato)**: le regole del duello girano anche in
   Node (`tools/duello-senza-testa.js`, duelli interi con l'IA vera e un
   orologio virtuale; spec `duello-senza-testa`). Tre regole per il codice
   nuovo, tutte sorvegliate da un guardrail:
