@@ -265,17 +265,11 @@ function handleCardClickInner(card, sourceType, sourceIndex, sourceOwner, isFace
         // Magia Terreno dell'AVVERSARIO che "il giocatore di turno" può usare
         // (Cancello di Fusione id 887): def.canActivateAsTurnPlayer/
         // activateAsTurnPlayer, con il contesto del giocatore di turno (noi).
-        // Non è l'attivazione di una carta, quindi niente Chain; in
-        // Multiplayer il risultato viaggia come fotografia di stato.
-        const defTurno = DuelEngine.getDefinition(card.id);
-        const ctxTurno = DuelEngine.makeContext('player', { card: card, zone: 'fieldSpell', borrowedFrom: 'bot' });
-        if (typeof defTurno.canActivateAsTurnPlayer === 'function' && !defTurno.canActivateAsTurnPlayer(ctxTurno)) {
+        // Non è l'attivazione di una carta, quindi niente Chain. È il
+        // comando 'usaTerrenoAltrui', lo stesso dell'IA (js/engine/comandi.js).
+        if (!Comandi.esegui('player', { tipo: 'usaTerrenoAltrui' })) {
             addToLog(`❌ Non puoi usare ${card.name} in questo momento.`);
-            return;
         }
-        defTurno.activateAsTurnPlayer(ctxTurno);
-        if (DuelEngine.broadcastLocalStatePush) DuelEngine.broadcastLocalStatePush(null);
-        updateUI();
     } else if (sourceType === 'field-spell' && sourceOwner === 'player' && isMainPhase) {
         // Click sulla propria Magia Terreno già piazzata: stesso principio
         // di sourceType === 'st' qui sopra, ma sulla sua zona dedicata.

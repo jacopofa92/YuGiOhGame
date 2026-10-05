@@ -211,8 +211,13 @@ function summonMonster(card, slotIndex, position, handIndex = gameState.selected
  * (il rettangolo di un trascinamento), solo per l'animazione.
  */
 function eseguiEvocazioneNormale(posto, c, extra) {
+    // `extra.alTermine`: a Evocazione conclusa — finestra di risposta
+    // dell'avversario compresa — o rifiutata. Chi la aspetta (l'IA, che
+    // non passa alla mossa dopo finché questa non è finita) resterebbe
+    // fermo se una strada se ne dimenticasse: si chiama su TUTTE.
+    const fine = () => { if (extra && typeof extra.alTermine === 'function') extra.alTermine(); };
     const handIndex = Comandi.indiceInMano(posto, c);
-    if (handIndex === -1) return;
+    if (handIndex === -1) { fine(); return; }
     const card = Tavolo.mano(posto)[handIndex];
     const slotIndex = c.casella;
     const position = c.posizione;
@@ -224,6 +229,7 @@ function eseguiEvocazioneNormale(posto, c, extra) {
     const chiudi = () => { if (dellaPersona) clearSelection(); else updateUI(); };
     if (gameState.hasNormalSummoned) {
         addToLog(perChi(posto, '❌ Hai già effettuato un\'Evocazione Normale in questo turno.', '❌ L\'avversario ha già effettuato un\'Evocazione Normale in questo turno.'));
+        fine();
         return;
     }
     // Luce dell'Intervento (id 634, gameState.monsterSetBlocked): ogni Set
@@ -255,6 +261,7 @@ function eseguiEvocazioneNormale(posto, c, extra) {
     if (!isFaceDown && window.DuelEngine && DuelEngine.isSummonBannedThisTurn(posto)) {
         addToLog(`🚫 Capro Espiatorio impedisce di Evocare altri mostri in questo turno: ${card.name} si può solo Settare.`);
         chiudi();
+        fine();
         return;
     }
     // "Puoi controllarne solo 1 scoperto" (id 899): con una copia già
@@ -262,6 +269,7 @@ function eseguiEvocazioneNormale(posto, c, extra) {
     if (!isFaceDown && window.DuelEngine && DuelEngine.isFaceUpDuplicateBlocked(posto, card)) {
         addToLog(`🚫 ${card.name}: ${perChi(posto, 'puoi', 'si può')} controllarne solo 1 scoperto. Si può solo Settare.`);
         chiudi();
+        fine();
         return;
     }
     // La mano dell'avversario non è a schermo: il volo parte dalla sua
@@ -308,7 +316,7 @@ function eseguiEvocazioneNormale(posto, c, extra) {
         // risposta distrugge il mostro appena Evocato, updateUI() nella
         // callback lo riflette subito a schermo.
         const summonCtx = DuelEngine.makeContext(posto, { summonedCard: card, summonedSlotIndex: slotIndex, summonedPosition: position });
-        DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_NORMAL_SUMMON, summonCtx, () => updateUI());
+        DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_NORMAL_SUMMON, summonCtx, () => { updateUI(); fine(); });
     });
 }
 
@@ -407,8 +415,10 @@ function setSpellTrap(card, slotIndex, handIndex = gameState.selectedCard.index,
  * coperta nella casella Magia/Trappola `c.casella`.
  */
 function eseguiSetMagiaTrappola(posto, c, extra) {
+    // `extra.alTermine`: a carta posata (o rifiutata), vedi eseguiEvocazioneNormale.
+    const fine = () => { if (extra && typeof extra.alTermine === 'function') extra.alTermine(); };
     const handIndex = Comandi.indiceInMano(posto, c);
-    if (handIndex === -1) return;
+    if (handIndex === -1) { fine(); return; }
     const card = Tavolo.mano(posto)[handIndex];
     const slotIndex = c.casella;
     const fromRect = extra && extra.partenza ? extra.partenza : null;
@@ -419,6 +429,7 @@ function eseguiSetMagiaTrappola(posto, c, extra) {
     if (window.DuelEngine && DuelEngine.isSTZoneLocked(posto, slotIndex)) {
         addToLog('❌ Quella Zona Magia/Trappola non può essere usata (Onda Sismica).');
         chiudi();
+        fine();
         return;
     }
     const handEl = dellaPersona ? (PortaUI.queryAll('#playerHand .card')[handIndex] || null) : null;
@@ -450,6 +461,7 @@ function eseguiSetMagiaTrappola(posto, c, extra) {
             const postoEl = PortaUI.query(`#${posto}FieldBoard .field-slot[data-owner="${posto}"][data-type="st"][data-index="${slotIndex}"]`);
             FX.playCardSet(postoEl);
         }
+        fine();
     });
 }
 

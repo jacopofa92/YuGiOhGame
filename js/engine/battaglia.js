@@ -1381,19 +1381,22 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
  * `extra.alTermine`: richiamata a battaglia risolta (chi l'aspetta).
  */
 function eseguiAttacco(posto, c, extra) {
-    const attackerSlot = Tavolo.mostri(posto)[c.attaccante];
-    if (!attackerSlot) return;
     const alTermine = extra && typeof extra.alTermine === 'function' ? extra.alTermine : undefined;
+    // Un attacco rifiutato chiama comunque alTermine: chi lo aspetta (l'IA)
+    // resterebbe fermo per sempre.
+    const rifiutato = () => { if (alTermine) alTermine(); };
+    const attackerSlot = Tavolo.mostri(posto)[c.attaccante];
+    if (!attackerSlot) { rifiutato(); return; }
     const def = window.DuelEngine && DuelEngine.getDefinition(attackerSlot.card.id);
     if (def && def.requiresLifePointsToAttack) {
         const cost = def.requiresLifePointsToAttack;
-        if (Tavolo.lp(posto) <= cost) return;
+        if (Tavolo.lp(posto) <= cost) { rifiutato(); return; }
         DuelEngine.actions.dealDamage(posto, cost);
         addToLog(`💸 ${attackerSlot.card.name} paga ${cost} Life Points per attaccare!`);
     }
     if (def && def.requiresTributeToAttack) {
         const sacrificato = typeof c.tributo === 'number' ? Tavolo.mostri(posto)[c.tributo] : null;
-        if (!sacrificato || c.tributo === c.attaccante) return;
+        if (!sacrificato || c.tributo === c.attaccante) { rifiutato(); return; }
         // Un Sacrificio come COSTO, non per un'Evocazione Tributo: nessuna
         // carta per cui si sacrifica (notifySacrificedForTribute in
         // duel-engine.js distingue i due casi proprio da lì) e nessuna

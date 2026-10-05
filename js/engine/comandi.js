@@ -43,8 +43,33 @@ const Comandi = (function () {
         attiva: (posto, c) => eseguiAttivazione(posto, c),
         specialeDaMano: (posto, c) => eseguiSpecialeDaMano(posto, c),
         fusioneBandendo: (posto, c) => DuelEngine.banishFusionSummon(posto, c.extraDeck, c.materiali),
-        fase: (posto, c) => eseguiFase(posto, c)
+        fase: (posto, c) => eseguiFase(posto, c),
+        usaTerrenoAltrui: (posto) => eseguiUsoTerrenoAltrui(posto)
     };
+
+    /**
+     * Comando 'usaTerrenoAltrui': chi è di turno usa la Magia Terreno
+     * dell'AVVERSARIO, quando il suo testo la concede a chiunque sia di
+     * turno (def.canActivateAsTurnPlayer/activateAsTurnPlayer, oggi solo
+     * Cancello di Fusione id 887).
+     */
+    function eseguiUsoTerrenoAltrui(posto) {
+        const fs = Tavolo.magiaTerreno(Tavolo.avversario(posto));
+        if (!fs || fs.isFaceDown) return false;
+        const def = DuelEngine.getDefinition(fs.card.id);
+        if (!def || typeof def.activateAsTurnPlayer !== 'function') return false;
+        const ctx = DuelEngine.makeContext(posto, { card: fs.card, zone: 'fieldSpell', borrowedFrom: Tavolo.avversario(posto) });
+        if (typeof def.canActivateAsTurnPlayer === 'function' && !def.canActivateAsTurnPlayer(ctx)) return false;
+        addToLog(`${perChi(posto, 'Usi', 'L\'avversario usa')} ${fs.card.name} del ${perChi(posto, 'suo', 'tuo')} Terreno.`);
+        def.activateAsTurnPlayer(ctx);
+        // Multiplayer di oggi (fino al passo D): il risultato viaggia come
+        // fotografia di stato, solo per la mossa fatta qui.
+        if (posto === 'player' && !window.MP_applyingRemote && DuelEngine.broadcastLocalStatePush) {
+            DuelEngine.broadcastLocalStatePush(null);
+        }
+        updateUI();
+        return true;
+    }
 
     /**
      * Comando 'attiva': la carta in `c.zona` ('hand', 'st', 'monster',
@@ -55,7 +80,8 @@ const Comandi = (function () {
     function eseguiAttivazione(posto, c) {
         let indice = c.indice;
         if (c.zona === 'hand') {
-            indice = indiceInMano(posto, c);
+            // Senza uid (una carta costruita a mano) vale l'indice.
+            indice = indiceInMano(posto, { carta: c.carta, mano: c.indice });
             if (indice === -1) return false;
         }
         return DuelEngine.activateCard(posto, c.zona, indice);
