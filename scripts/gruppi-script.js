@@ -68,6 +68,9 @@ module.exports = {
         // addToLog/updateUI/clearSelection/isBlockingModalOpen/endDuel:
         // la parte di regola, prima di game-flow.js che le usa al boot.
         'js/engine/canale-partita.js',
+        // Le mosse dei giocatori come comandi (un esecutore per mossa, col
+        // posto come parametro): base del Multiplayer a passo comune.
+        'js/engine/comandi.js',
         'js/engine/fasi.js',
         'js/engine/battaglia.js',
         'js/engine/evocazioni.js',
