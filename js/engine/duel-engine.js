@@ -753,9 +753,7 @@
             graveyardOf(slot.originalOwner || owner).push(destroyedCard);
             redirectToBanishIfFlagged(slot.originalOwner || owner, destroyedCard);
             field[index] = null;
-            if (typeof triggerDestroyEffect === 'function') {
-                triggerDestroyEffect(owner, index, 'monster');
-            }
+            EventiDuello.emetti('distruzione', owner, index, 'monster');
             // ctx.card = la carta appena distrutta (serve a fireTrigger per
             // trovarne la definizione — vedi il ramo TRIGGER.ON_DESTROY qui
             // sotto), non più recuperabile da field[index] dato che è già
@@ -1541,8 +1539,8 @@
                         ? Math.max(0, visualOptions.delayMs)
                         : 30;
                     setTimeout(() => {
-                        if (typeof triggerFieldImpact === 'function') triggerFieldImpact(owner, slotIndex, 'monster');
-                        if (typeof showPositionEffect === 'function') showPositionEffect(owner, slotIndex, position);
+                        EventiDuello.emetti('impatto-campo', owner, slotIndex, 'monster');
+                        EventiDuello.emetti('cambio-posizione', owner, slotIndex, position);
                         const cardEl = PortaUI.query(`#${owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard'} .field-slot[data-type="monster"][data-index="${slotIndex}"] .card`);
                         if (cardEl && window.FX) FX.playMonsterSummonEffect(card, cardEl);
                         if ((card.level || 0) < 7 && !(window.AudioLibrary && AudioLibrary.tryPlayCardSound(card, 'evocazioni')) && window.SFX) SFX.summon(position);
@@ -4507,7 +4505,7 @@
         // stabili per tutta la vita del link, risoluzione compresa.
         initialLink.linkNumber = 1;
         chain.links.push(initialLink);
-        if (typeof renderChainStack === 'function') renderChainStack();
+        EventiDuello.emetti('catena');
 
         const usedUidsBySide = { player: new Set(), bot: new Set() };
         // La carta che ha aperto la Catena è già un suo link: non può
@@ -4576,7 +4574,7 @@
                     isManualActivation: true,
                     linkNumber: chain.links.length + 1
                 });
-                if (typeof renderChainStack === 'function') renderChainStack();
+                EventiDuello.emetti('catena');
                 turnToRespond = responderOwner === 'player' ? 'bot' : 'player';
                 askNextRound();
             }, triggerCard, null, triggerIsOwn);
@@ -4665,7 +4663,7 @@
             if (chain.links.length === 0) {
                 chain.active = false;
                 chainResolutionInFlight = false;
-                if (typeof renderChainStack === 'function') renderChainStack();
+                EventiDuello.emetti('catena');
                 // Svuotata PRIMA di chiamarli: un onDone può aprire a sua
                 // volta una nuova Chain, e quella deve partire pulita.
                 const attesi = pendingChainResolutionCallbacks;
@@ -4719,9 +4717,9 @@
                 // Anche un Link NEGATO si prende il suo momento: e' una
                 // delle cose piu' importanti che possono succedere in una
                 // Chain, e prima passava via senza che si vedesse.
-                if (typeof renderChainStack === 'function') renderChainStack(link);
+                EventiDuello.emetti('catena', link);
                 attendiUiBloccante(() => {
-                    if (typeof renderChainStack === 'function') renderChainStack();
+                    EventiDuello.emetti('catena');
                     resolveNext();
                 }, CHAIN_LINK_PAUSE_MS);
                 return;
@@ -4748,13 +4746,13 @@
                 // durata della pausa (lo si ripassa come "fantasma"), poi
                 // sparisce: cosi' si vede QUALE carta ha appena fatto
                 // effetto, invece di trovarsi il campo gia' cambiato.
-                if (typeof renderChainStack === 'function') renderChainStack(link);
+                EventiDuello.emetti('catena', link);
                 // `attendiUiBloccante` e non un setTimeout diretto: se
                 // l'effetto appena risolto ha fatto partire un filmato di
                 // Evocazione, il link successivo NON deve risolversi
                 // sotto al video. Vedi afterBlockingUi in game-flow.js.
                 attendiUiBloccante(() => {
-                    if (typeof renderChainStack === 'function') renderChainStack();
+                    EventiDuello.emetti('catena');
                     resolveNext();
                 }, CHAIN_LINK_PAUSE_MS);
             };
@@ -4774,7 +4772,7 @@
             // sopra) — passato come SECONDO parametro "fantasma" a
             // renderChainStack (game-flow.js), che lo aggiunge in coda
             // solo per la visualizzazione, senza toccare l'array reale.
-            if (typeof renderChainStack === 'function') renderChainStack(link);
+            EventiDuello.emetti('catena', link);
             const duration = (window.FX && FX.ACTIVATE_CENTER_DURATION_MS) || 2000;
             const elapsed = link.activatedAt ? (Date.now() - link.activatedAt) : duration;
             const waitMs = Math.max(0, duration - elapsed);

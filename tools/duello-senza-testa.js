@@ -12,12 +12,12 @@
  *    sono sostituiti da una coda ordinata per tempo virtuale. L'ordine fra
  *    gli eventi è quello vero (un'animazione da 2 secondi finisce DOPO una
  *    da 500 ms), ma niente aspetta davvero: un duello dura pochi secondi.
- *  - l'INTERFACCIA NULLA: le poche funzioni del disegno del campo che le
- *    regole chiamano ancora per nome (updateUI, addToLog, gli annunci di
- *    fase...) sono definite qui come "non fare niente". L'elenco
- *    INTERFACCIA_NULLA è esattamente la superficie che separa regole e
- *    interfaccia: ogni voce è un punto da far passare, prima o poi, da una
- *    porta vera (vedi js/engine/porta-ui.js).
+ *  - il CANALE DEGLI EVENTI (js/engine/eventi-duello.js): le regole non
+ *    chiamano più per nome il disegno del campo, avvisano l'interfaccia. Qui
+ *    nessuno disegna, quindi nessuno ascolta, e ogni avviso cade nel vuoto —
+ *    tranne il registro e la fine del duello, che ascolta questo file. Le
+ *    regole toccano la pagina solo da js/engine/porta-ui.js, che senza
+ *    `document` risponde "nessun elemento".
  *
  * I due giocatori:
  *  - 'bot': l'IA vera del gioco (js/ai/*), al livello scelto;
@@ -39,17 +39,17 @@ const vm = require('vm');
 const RADICE = path.join(__dirname, '..');
 const GRUPPI = require(path.join(RADICE, 'scripts', 'gruppi-script.js'));
 
-// Dati, motore, regole, IA. NON game-flow.js né actions.js.
+// Dati, motore, regole, IA. NON game-flow.js né actions.js (il disegno
+// del campo e i click), e nemmeno duel-sandbox.js (lo stato iniziale finto
+// del Duello Demo).
+const NON_REGOLE = ['js/engine/game-flow.js', 'js/engine/actions.js', 'js/engine/duel-sandbox.js'];
 const SCRIPT = [
     'js/data/cards-data.generated.js',
     'js/data/cards-db.js',
     'js/data/characters-db.js',
     'js/data/character-decks.js',
     ...GRUPPI.motore,
-    'js/engine/stato.js',
-    'js/engine/fasi.js',
-    'js/engine/battaglia.js',
-    'js/engine/evocazioni.js',
+    ...GRUPPI.partita.filter((f) => !NON_REGOLE.includes(f)),
     'js/ai/ai-shared.js',
     'js/ai/ai-medium.js',
     'js/ai/ai-hard.js',
@@ -58,74 +58,27 @@ const SCRIPT = [
 ];
 
 /**
- * Le funzioni dell'interfaccia che le regole chiamano ancora per nome.
- * Qui "non fanno niente" (addToLog raccoglie il testo). È la lista di
- * lavoro della separazione: ognuna andrà portata dietro una porta.
+ * Ciò che una pagina farebbe ascoltando il canale, ridotto a quanto serve
+ * qui: le righe del registro (per la diagnosi e i messaggi d'errore) e
+ * l'esito del duello. Con --superficie conta anche quali eventi le regole
+ * hanno emesso, avvolgendo i tre metodi del canale (non con ascoltatori,
+ * che cambierebbero le risposte: un evento con un ascoltatore aspetta il
+ * suo "fatto", e lo scarto di fine turno sceglie un'altra strada).
  */
-const INTERFACCIA_NULLA = `
+const ASCOLTO = `
 var __logDuello = [];
-function addToLog(m) { __logDuello.push(String(m)); }
-// updateUI NON è solo disegno: prima ricalcola gli effetti continui
-// (recomputeStaticEffects: chi è non bersagliabile, chi non può attaccare,
-// i bonus ATK/DEF...) e alla fine controlla se il duello è finito. Le
-// regole contano su quelle due cose ad ogni mossa, quindi qui restano.
-function updateUI() {
-    if (gameState.gameOver) return;
-    DuelEngine.recomputeStaticEffects();
-    checkGameOver();
-}
-function renderChainStack() {}
-function renderFields() {}
-function renderPlayerHand() {}
-function renderBotHand() {}
-function renderLifePoints() {}
-function renderBanishedBadge() {}
-function renderEquipLinks() {}
-function updatePhaseIndicator() {}
-function animateLifePoints() {}
-function showPhaseAnnouncement() {}
-function showEpicSlamAnnouncement() {}
-function showBattleEffect() {}
-function showFloatingDamage() {}
-function showHalfScreenImpact() {}
-function showEpicDamageNumber() {}
-function showDirectAttackWarning() {}
-function showPositionEffect() {}
-function triggerFieldImpact() {}
-function triggerDestroyEffect() {}
-function triggerBlockedEffect() {}
-function clearSelection() {}
-function hideTributePrompt() {}
-function hideHandDiscardPrompt() {}
-function isBlockingModalOpen() { return false; }
-function updateCardInfoPanel() {}
-function markHandCardsPending() {}
-function animateEffectDraw(a, b, c, fatto) { if (typeof fatto === 'function') fatto(); }
-function playCameraIntro(fatto) { if (typeof fatto === 'function') fatto(); }
-function escapeHtml(s) { return String(s); }
 var __esitoDuello = null;
-function endDuel(esito) { if (__esitoDuello === null) __esitoDuello = esito; gameState.gameOver = true; }
-function triggerInstantWin(kind, banner, log, playerWon) { addToLog(log); endDuel(playerWon); }
-function triggerExodiaWin(playerWon) { endDuel(playerWon); }
-function triggerDestinyBoardWin(playerWon) { endDuel(playerWon); }
-function triggerFlyingElephantWin(playerWon) { endDuel(playerWon); }
-function startHandDiscardSelection(n, fatto) { if (typeof fatto === 'function') fatto(); }
-function flyCardToSlot(card, da, a, fatto) { if (typeof fatto === 'function') fatto(); }
+var __eventi = {};
+EventiDuello.ascolta('registro', (m) => { __logDuello.push(String(m)); });
+EventiDuello.ascolta('fine-duello', (esito) => { if (__esitoDuello === null) __esitoDuello = esito; });
+['emetti', 'attendi', 'chiedi'].forEach((metodo) => {
+    const originale = EventiDuello[metodo];
+    EventiDuello[metodo] = function (nome, ...dati) {
+        __eventi[nome] = (__eventi[nome] || 0) + 1;
+        return originale.call(this, nome, ...dati);
+    };
+});
 `;
-
-/** I nomi delle funzioni di primo livello di game-flow.js e actions.js (parser di TypeScript). */
-function funzioniDiInterfaccia() {
-    const ts = require('typescript');
-    const nomi = [];
-    ['js/engine/game-flow.js', 'js/engine/actions.js'].forEach((f) => {
-        const testo = fs.readFileSync(path.join(RADICE, f), 'utf8');
-        const sorgente = ts.createSourceFile(f, testo, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
-        sorgente.statements.forEach((s) => {
-            if (s.kind === ts.SyntaxKind.FunctionDeclaration && s.name) nomi.push(s.name.text);
-        });
-    });
-    return nomi;
-}
 
 function argomenti() {
     const a = process.argv.slice(2);
@@ -233,19 +186,13 @@ function creaContesto(opz) {
     // non è un DOM, è solo il nome con cui gli script pubblicano i propri
     // oggetti. `document` NON esiste.
     vm.runInContext('var window = globalThis;', contesto);
-    // Ogni funzione di primo livello dei due file d'interfaccia (che qui
-    // NON si caricano) diventa un "non fare niente" che conta le chiamate:
-    // il conteggio finale è la mappa di dove le regole parlano ancora con
-    // l'interfaccia. Le voci di INTERFACCIA_NULLA, scritte a mano perché
-    // devono completare una richiamata o restituire qualcosa, vengono
-    // dichiarate DOPO e prendono il loro posto.
-    const generiche = funzioniDiInterfaccia().map((n) => `function ${n}() { __chiamateUI[${JSON.stringify(n)}] = (__chiamateUI[${JSON.stringify(n)}] || 0) + 1; }`).join('\n');
-    vm.runInContext('var __chiamateUI = {};\n' + generiche + '\n' + INTERFACCIA_NULLA, contesto, { filename: 'interfaccia-nulla.js' });
     // L'avversario e il livello, come li passerebbe la pagina del duello.
     vm.runInContext(`window.DuelSession = { opponent: { id: ${JSON.stringify(opz.avversario)}, name: ${JSON.stringify(opz.avversario)} }, aiDifficultyKey: ${JSON.stringify(opz.livello)} };`, contesto);
     SCRIPT.forEach((f) => {
         const codice = fs.readFileSync(path.join(RADICE, f), 'utf8');
         vm.runInContext(codice, contesto, { filename: f });
+        // Subito dopo il canale, prima di chiunque emetta.
+        if (f === 'js/engine/eventi-duello.js') vm.runInContext(ASCOLTO, contesto, { filename: 'ascolto.js' });
     });
     return { contesto, orologio, erroriCarte };
 }
@@ -450,7 +397,7 @@ async function giocaPartita(opz, n) {
     const fine = esegui(`({
         esito: __esitoDuello, turno: gameState.turn, lpG: gameState.playerLP, lpB: gameState.botLP,
         fasi: gameState.phase, chi: gameState.currentPlayer, log: __logDuello.slice(-12),
-        chiamateUI: Object.assign({}, __chiamateUI),
+        eventi: Object.assign({}, __eventi),
         politica: { evocata: gameState.__politicaEvocata, battaglia: gameState.__politicaInBattaglia, finito: gameState.__politicaFinito, attacco: gameState.__attaccoInCorso },
         catena: DuelEngine.isChainActive(), finestra: DuelEngine.isPriorityWindowOpen && DuelEngine.isPriorityWindowOpen(),
         campoG: gameState.playerMonsterField.map((s) => s && (s.card.name + (s.hasAttacked ? '*' : ''))),
@@ -494,8 +441,8 @@ async function main() {
             console.log(`  Ultime righe del log:\n    ${r.log.join('\n    ')}`);
         }
         if (opz.superficie) {
-            const voci = Object.entries(r.chiamateUI).sort((a, b) => b[1] - a[1]);
-            console.log(`  Funzioni d'interfaccia chiamate dalle regole (${voci.length}): ${voci.map(([k, v]) => `${k}×${v}`).join(', ')}`);
+            const voci = Object.entries(r.eventi).sort((a, b) => b[1] - a[1]);
+            console.log(`  Eventi emessi dalle regole verso l'interfaccia (${voci.length}): ${voci.map(([k, v]) => `${k}×${v}`).join(', ')}`);
         }
     }
     process.exit(ok ? 0 : 1);

@@ -6,33 +6,15 @@
 // Quando serve un elemento della pagina per un'animazione si chiede a
 // PortaUI (js/engine/porta-ui.js), che in Node risponde "nessun elemento".
 //
-// L'elenco è chiuso e cresce col nucleo: un file nuovo di regola va
-// aggiunto qui. I commenti non contano (si tolgono prima del controllo).
+// I file di regola sono quelli che carica tools/duello-senza-testa.js (una
+// definizione sola: un file nuovo del nucleo entra qui da solo), tranne
+// porta-ui.js, che è proprio il punto in cui la pagina si tocca. I
+// commenti non contano (si tolgono prima del controllo).
 const fs = require('fs');
 const path = require('path');
 
-const FILE_DI_REGOLA = [
-    'js/engine/duel-engine.js',
-    'js/engine/stato.js',
-    'js/engine/fasi.js',
-    'js/engine/battaglia.js',
-    'js/engine/evocazioni.js',
-    'js/engine/effect-templates.js',
-    'js/engine/card-effects.js',
-    'js/engine/card-effects-1.js',
-    'js/engine/card-effects-2.js',
-    'js/engine/card-effects-3.js',
-    'js/engine/card-effects-4.js',
-    'js/engine/card-effects-5.js',
-    'js/engine/card-effects-6.js',
-    'js/engine/card-effects-7.js',
-    'js/engine/card-effects-8.js',
-    'js/ai/bot.js',
-    'js/ai/ai-shared.js',
-    'js/ai/ai-medium.js',
-    'js/ai/ai-hard.js',
-    'js/ai/ai-controller.js'
-];
+const FILE_DI_REGOLA = require(path.join(__dirname, '..', '..', 'tools', 'duello-senza-testa.js')).SCRIPT
+    .filter((f) => /^js\/(engine|ai)\//.test(f) && f !== 'js/engine/porta-ui.js');
 
 function senzaCommenti(testo) {
     return testo.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`\\])\/\/.*$/gm, '$1');

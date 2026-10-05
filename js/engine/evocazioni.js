@@ -55,7 +55,7 @@ function performTributeSacrifice() {
     PortaUI.queryAll('#playerFieldBoard .field-slot.tribute-highlight').forEach(el => {
         el.classList.remove('tribute-highlight', 'tribute-selected');
     });
-    hideTributePrompt();
+    EventiDuello.emetti('prompt-tributo-chiuso');
 
     addToLog('🔻 Sacrificio in corso...');
     if (window.SFX) SFX.tribute();
@@ -92,14 +92,14 @@ function performTributeSacrifice() {
 
         const { card, handIndex, fromRect } = pending;
         gameState.pendingTributeSummon = null;
-        resolveTributeSummonPlacement(card, handIndex, fromRect);
+        EventiDuello.emetti('evocazione-tributo-pronta', card, handIndex, fromRect);
     }, TRIBUTE_SACRIFICE_ANIM_MS);
 }
 
 function performHandDiscard() {
     const pending = gameState.pendingHandDiscard;
     if (!pending) return;
-    hideHandDiscardPrompt();
+    EventiDuello.emetti('prompt-scarto-chiuso');
 
     // Dagli indici più alti ai più bassi: rimuovere prima un indice basso
     // sposterebbe (di uno) gli indici più alti già raccolti in `selected`,
@@ -180,7 +180,7 @@ function summonMonster(card, slotIndex, position, handIndex = gameState.selected
     }
     const handEl = PortaUI.queryAll('#playerHand .card')[handIndex] || null;
     const slotEl = PortaUI.query(`.field-slot[data-owner="player"][data-type="monster"][data-index="${slotIndex}"]`);
-    flyCardToSlot(card, fromRect || handEl, slotEl, () => {
+    EventiDuello.attendi('volo-carta', { carta: card, partenza: fromRect || handEl, casella: slotEl, daNascondere: handEl, coperta: isFaceDown, posizione: position }, () => {
         const usedTribute = getTributesRequired(card) > 0;
         gameState.playerHand.splice(handIndex, 1);
         gameState.playerMonsterField[slotIndex] = { card: card, position: position, isFaceDown: isFaceDown, hasAttacked: false, canChangePosition: false, summonedOnTurn: gameState.turn };
@@ -194,8 +194,8 @@ function summonMonster(card, slotIndex, position, handIndex = gameState.selected
             : `${usedTribute ? '🔺 Evocazione Tributo: ' : ''}Hai Posizionato un mostro.`);
         clearSelection();
         setTimeout(() => {
-            triggerFieldImpact('player', slotIndex, 'monster');
-            showPositionEffect('player', slotIndex, position);
+            EventiDuello.emetti('impatto-campo', 'player', slotIndex, 'monster');
+            EventiDuello.emetti('cambio-posizione', 'player', slotIndex, position);
             if (window.FX) {
                 const cardEl = PortaUI.query(`#playerFieldBoard .field-slot[data-type="monster"][data-index="${slotIndex}"] .card`);
                 FX.playMonsterSummonEffect(card, cardEl);
@@ -217,7 +217,7 @@ function summonMonster(card, slotIndex, position, handIndex = gameState.selected
         // callback lo riflette subito a schermo.
         const summonCtx = DuelEngine.makeContext('player', { summonedCard: card, summonedSlotIndex: slotIndex, summonedPosition: position });
         DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_NORMAL_SUMMON, summonCtx, () => updateUI());
-    }, handEl, isFaceDown, position);
+    });
 }
 
 function changeMonsterPosition(slotIndex) {
@@ -290,7 +290,7 @@ function changeMonsterPosition(slotIndex) {
         const slotEl = PortaUI.query(`#playerFieldBoard .field-slot[data-owner="player"][data-type="monster"][data-index="${slotIndex}"]`);
         if (slotEl) CardRenderer.playFlipReveal(slotEl, monsterSlot.card, monsterSlot.position);
     }
-    setTimeout(() => showPositionEffect('player', slotIndex, monsterSlot.position), 60);
+    setTimeout(() => EventiDuello.emetti('cambio-posizione', 'player', slotIndex, monsterSlot.position), 60);
 }
 
 function setSpellTrap(card, slotIndex, handIndex = gameState.selectedCard.index, fromRect = null) {
@@ -303,7 +303,7 @@ function setSpellTrap(card, slotIndex, handIndex = gameState.selectedCard.index,
     }
     const handEl = PortaUI.queryAll('#playerHand .card')[handIndex] || null;
     const slotEl = PortaUI.query(`.field-slot[data-owner="player"][data-type="st"][data-index="${slotIndex}"]`);
-    flyCardToSlot(card, fromRect || handEl, slotEl, () => {
+    EventiDuello.attendi('volo-carta', { carta: card, partenza: fromRect || handEl, casella: slotEl, daNascondere: handEl, coperta: true }, () => {
         addToLog(`🪄 ${card.name} è stata piazzata sul Terreno.`);
         if (window.SFX) SFX.place();
         gameState.playerHand.splice(handIndex, 1);
@@ -322,12 +322,12 @@ function setSpellTrap(card, slotIndex, handIndex = gameState.selectedCard.index,
         // mostro Evocato (triggerFieldImpact), piu' un velo di polvere.
         // Dopo clearSelection(), che ridisegna: triggerFieldImpact ha un
         // suo ritentativo per ritrovare la casella appena ricreata.
-        triggerFieldImpact('player', slotIndex, 'st');
+        EventiDuello.emetti('impatto-campo', 'player', slotIndex, 'st');
         if (window.FX && typeof FX.playCardSet === 'function') {
             const postoEl = PortaUI.query(`#playerFieldBoard .field-slot[data-owner="player"][data-type="st"][data-index="${slotIndex}"]`);
             FX.playCardSet(postoEl);
         }
-    }, handEl, true);
+    });
 }
 
 /**
@@ -340,7 +340,7 @@ function setSpellTrap(card, slotIndex, handIndex = gameState.selectedCard.index,
 function setFieldSpell(card, handIndex = gameState.selectedCard.index, fromRect = null) {
     const handEl = PortaUI.queryAll('#playerHand .card')[handIndex] || null;
     const slotEl = PortaUI.query('.field-slot[data-owner="player"][data-type="field-spell"]');
-    flyCardToSlot(card, fromRect || handEl, slotEl, () => {
+    EventiDuello.attendi('volo-carta', { carta: card, partenza: fromRect || handEl, casella: slotEl, daNascondere: handEl, coperta: true }, () => {
         const existing = gameState.playerFieldSpell;
         if (existing) {
             gameState.playerGraveyard.push(existing.card);
@@ -354,5 +354,5 @@ function setFieldSpell(card, handIndex = gameState.selectedCard.index, fromRect 
             window.MP_broadcast({ kind: 'fieldspell', card });
         }
         clearSelection();
-    }, handEl, true);
+    });
 }

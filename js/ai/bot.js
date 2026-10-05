@@ -296,7 +296,7 @@ function botSummonMonster(card, tributeIndices, emptySlotHint, position, faceDow
             addToLog(isFaceDown ? '🤖 Il bot ha Set un mostro coperto in Posizione di Difesa.' : `🤖 Il bot ha evocato ${card.name}.`);
             updateUI();
             setTimeout(() => {
-                showPositionEffect('bot', slotIndex, position);
+                EventiDuello.emetti('cambio-posizione', 'bot', slotIndex, position);
                 if (window.FX) {
                     const cardEl = PortaUI.query(`#botFieldBoard .field-slot[data-type="monster"][data-index="${slotIndex}"] .card`);
                     // Stesso trattamento del lato giocatore in summonMonster()
@@ -563,7 +563,7 @@ function botSetTrapCard(card, handIndex) {
         // nemmeno che ne avesse messa una, che in un gioco dove le
         // Trappole coperte decidono i turni e' un'informazione che il
         // giocatore deve vedere.
-        triggerFieldImpact('bot', slotIndex, 'st');
+        EventiDuello.emetti('impatto-campo', 'bot', slotIndex, 'st');
         if (window.FX && typeof FX.playCardSet === 'function') {
             const postoEl = PortaUI.query(`#botFieldBoard .field-slot[data-owner="bot"][data-type="st"][data-index="${slotIndex}"]`);
             FX.playCardSet(postoEl);

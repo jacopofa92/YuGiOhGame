@@ -391,7 +391,7 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
         // rincorsa va dritta verso la metà alta (il Bot subisce) o bassa
         // (il giocatore subisce) dello schermo — vedi showBattleEffect.
         const directDirection = effectiveTargetIndex === -1 ? (effectiveDefenderOwner === 'bot' ? 'up' : 'down') : null;
-        showBattleEffect(attackerCardEl, targetAnchor, directDirection);
+        EventiDuello.emetti('effetto-battaglia', attackerCardEl, targetAnchor, directDirection);
         if (window.SFX) SFX.attackSwing();
         if (effectiveTargetIndex !== -1 && window.FX) {
             FX.playBattleClashEpic(attackerCardEl, targetAnchor);
@@ -516,7 +516,7 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
             // (non il pesante updateUI/renderFields più sotto, che invece
             // aspetta la fine dell'esplosione) tocca solo i box LP, fissi
             // fuori dal field-board, quindi è sicura da chiamare qui.
-            renderLifePoints();
+            EventiDuello.emetti('life-points');
 
             // L'esplosione (FX.playBattleDestroyEffect) va scatenata QUI,
             // finché il campo mostrato a schermo è ancora quello di PRIMA
@@ -531,7 +531,7 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
                 const destroyedSlots = [];
                 if (attackerField[attackerIndex] === null) destroyedSlots.push({ owner: attackerOwner, index: attackerIndex });
                 if (effectiveDefenderField[effectiveTargetIndex] === null) destroyedSlots.push({ owner: effectiveDefenderOwner, index: effectiveTargetIndex });
-                destroyedSlots.forEach(item => triggerDestroyEffect(item.owner, item.index, 'monster'));
+                destroyedSlots.forEach(item => EventiDuello.emetti('distruzione', item.owner, item.index, 'monster'));
 
                 // Caso simmetrico: il bersaglio ha RETTO il colpo (il suo
                 // slot e' ancora occupato dopo il calcolo). Va letto qui e
@@ -540,7 +540,7 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
                 // ancora quello di PRIMA dell'attacco e la carta e' un
                 // elemento vivo nel documento.
                 if (effectiveDefenderField[effectiveTargetIndex] !== null) {
-                    triggerBlockedEffect(effectiveDefenderOwner, effectiveTargetIndex, 'monster', attackerCardEl);
+                    EventiDuello.emetti('attacco-bloccato', effectiveDefenderOwner, effectiveTargetIndex, 'monster', attackerCardEl);
                 }
             }
 
@@ -622,7 +622,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
             DuelEngine.actions.dealDamage(opp, amount);
             const oppInfoEl = PortaUI.byId(opp === 'player' ? 'playerInfo' : 'botInfo');
             if (oppInfoEl) oppInfoEl.classList.add('damage-shake');
-            showFloatingDamage(amount, oppInfoEl, opp);
+            EventiDuello.emetti('danno-fluttuante', amount, oppInfoEl, opp);
             return;
         }
         if (involvedDef && involvedDef.preventOwnBattleDamage) {
@@ -632,7 +632,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
         DuelEngine.actions.dealDamage(owner, amount);
         const infoEl = PortaUI.byId(owner === 'player' ? 'playerInfo' : 'botInfo');
         if (infoEl) infoEl.classList.add('damage-shake');
-        showFloatingDamage(amount, infoEl, owner);
+        EventiDuello.emetti('danno-fluttuante', amount, infoEl, owner);
         // Vero solo se il danno è DAVVERO arrivato a `owner` (nessuno dei
         // return early qui sopra è scattato) — usato da chi chiama per
         // sapere se registrare quel danno altrove (es. Benedizione di
@@ -1044,7 +1044,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
     };
 
     if (targetIndex === -1) {
-        if (typeof showDirectAttackWarning === 'function') showDirectAttackWarning();
+        EventiDuello.emetti('avviso-attacco-diretto');
         if (window.SFX) SFX.directHit();
         // Nessun "altro mostro" in un attacco diretto: i bonus Damage Step
         // condizionati a un avversario specifico (es. Soldati Insetto del

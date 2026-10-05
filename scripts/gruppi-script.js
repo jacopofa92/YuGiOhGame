@@ -31,6 +31,9 @@ module.exports = {
     motore: [
         // Prima di tutto: l'unico punto da cui le regole toccano la pagina.
         'js/engine/porta-ui.js',
+        // Il canale con cui le regole avvisano l'interfaccia: prima di
+        // chiunque emetta o ascolti.
+        'js/engine/eventi-duello.js',
         'js/engine/duel-engine.js',
         'js/engine/effect-templates.js',
         'js/engine/card-effects.js',
@@ -55,6 +58,9 @@ module.exports = {
     partita: [
         'js/engine/duel-sandbox.js',
         'js/engine/stato.js',
+        // addToLog/updateUI/clearSelection/isBlockingModalOpen/endDuel:
+        // la parte di regola, prima di game-flow.js che le usa al boot.
+        'js/engine/canale-partita.js',
         'js/engine/fasi.js',
         'js/engine/battaglia.js',
         'js/engine/evocazioni.js',

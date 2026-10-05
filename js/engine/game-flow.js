@@ -8,28 +8,18 @@ let duelStartTime = null;
 let duelTimerInterval = null;
 
 /**
- * Vero SOLO mentre una scelta bloccante è a schermo e in attesa di un
- * click umano: i 3 modali condivisi (#activateModal/#cardListPickerModal/
- * #surrenderModal, tutti `.modal-backdrop.open`), il popover rapido
- * (#quickPopover, creato/rimosso da openQuickPopover/closeQuickPopover in
- * actions.js — niente classe da controllare, la sua sola presenza nel DOM
- * è già "aperto"), e le due selezioni "clicca sul campo/sulla mano"
- * (gameState.pendingTributeSummon/pendingHandDiscard, che non sono un
- * elemento DOM ma bloccano comunque ogni altro click, vedi
- * handleCardClickInner qui sotto). Bug reale segnalato dall'utente ("se
- * modale selezione aperto di qualche tipo, il gioco deve aspettare la
- * chiusura del modale"): senza un unico punto che sappia rispondere "è
- * aperto qualcosa?", ogni nuovo tipo di scelta rischiava di dimenticare la
- * propria verifica in un punto e non nell'altro — usare SEMPRE questa
- * funzione per un futuro controllo simile, invece di ripetere la lista a
- * mano.
+ * La metà "a schermo" di isBlockingModalOpen (js/engine/canale-partita.js,
+ * che risponde anche per le selezioni sul campo tenute in gameState):
+ * vero mentre un modale condiviso (#activateModal/#cardListPickerModal/
+ * #surrenderModal, tutti `.modal-backdrop.open`) o il popover rapido
+ * (#quickPopover, la cui sola presenza nel DOM è già "aperto") aspettano
+ * un click umano. Risponde alla domanda 'interfaccia-occupata' del canale
+ * delle regole; undefined = "non sono io a bloccare".
  */
-function isBlockingModalOpen() {
+function interfacciaOccupata() {
     if (window.DUEL_CINEMATIC_LOCK) return true;
     if (document.querySelector('.modal-backdrop.open')) return true;
     if (document.getElementById('quickPopover')) return true;
-    if (gameState.pendingTributeSummon) return true;
-    if (gameState.pendingHandDiscard) return true;
     // Non solo i modali: anche una cinematica di Evocazione lunga (il
     // filmato dedicato di una carta, o la convergenza elementale di un
     // Livello 7+) deve fermare il duello finche' non finisce. Senza, la
@@ -37,8 +27,53 @@ function isBlockingModalOpen() {
     // che copriva tutto lo schermo. Il cerchio magico generico non conta:
     // dura un attimo, vedi FX.isCinematicPlaying in js/ui/effects.js.
     if (window.FX && typeof FX.isCinematicPlaying === 'function' && FX.isCinematicPlaying()) return true;
-    return false;
+    return undefined;
 }
+
+// ============================================================
+// Ascoltatori del canale delle regole (js/engine/eventi-duello.js).
+// Le regole del duello non chiamano più per nome le funzioni di questo
+// file: dicono cosa è successo, e qui si decide come disegnarlo. Le
+// funzioni sono dichiarazioni (sollevate in cima al file), quindi possono
+// essere registrate prima di essere scritte. Quelle che vivono in
+// actions.js si registrano in cima a actions.js.
+// ============================================================
+EventiDuello.ascolta('registro', scriviNelRegistro);
+EventiDuello.ascolta('ridisegna', ridisegnaDuello);
+EventiDuello.ascolta('catena', renderChainStack);
+EventiDuello.ascolta('life-points', () => renderLifePoints());
+EventiDuello.ascolta('annuncio-fase', showPhaseAnnouncement);
+EventiDuello.ascolta('annuncio-turno', showEpicSlamAnnouncement);
+EventiDuello.ascolta('orologio', () => updateDuelTimer());
+EventiDuello.ascolta('pescata-da-effetto', animateEffectDraw);
+EventiDuello.ascolta('effetto-battaglia', showBattleEffect);
+EventiDuello.ascolta('danno-fluttuante', showFloatingDamage);
+EventiDuello.ascolta('avviso-attacco-diretto', () => showDirectAttackWarning());
+EventiDuello.ascolta('cambio-posizione', showPositionEffect);
+EventiDuello.ascolta('fine-duello', chiudiDuelloASchermo);
+EventiDuello.ascolta('vittoria-istantanea', suonaCinematicaVittoria);
+EventiDuello.ascolta('interfaccia-occupata', interfacciaOccupata);
+EventiDuello.ascolta('carta-pescata-in-mano', () => {
+    // La carta appena pescata scorre in mano da destra, stesso effetto
+    // (e stessa durata, 0.3s) della mano iniziale — vedi .card.deal-in in
+    // CSS. L'avviso arriva DOPO updateUI(), quando la carta è già nel DOM.
+    const handEl = document.getElementById('playerHand');
+    if (!handEl) return;
+    const cards = handEl.querySelectorAll('.card');
+    const lastCard = cards[cards.length - 1];
+    if (lastCard) dealCardsWithStagger([lastCard]);
+});
+EventiDuello.ascolta('partita-azzerata', () => {
+    // Il ricordo di quante carte aveva ogni pila vive fuori da gameState
+    // (è puro stato di presentazione), quindi sopravviverebbe al duello
+    // precedente: senza questo azzeramento, il primo render di una
+    // partita nuova confronterebbe il Deck da 40 con quello rimasto a
+    // fine partita scorsa, vedrebbe una crescita e farebbe partire
+    // l'animazione "è arrivata una carta" su una pila che invece sta
+    // solo nascendo. Stesso motivo per gli agganci Equip.
+    Object.keys(pileCountsAtLastRender).forEach((k) => delete pileCountsAtLastRender[k]);
+    equipLinksAtLastRender.clear();
+});
 
 /**
  * Chiude e rende inerti le finestre del duello quando l'esito è ormai
@@ -524,19 +559,11 @@ function renderBanishedBadge(owner) {
     };
 }
 
-// ATTENZIONE: non è solo disegno. recomputeStaticEffects (in testa) e
-// checkGameOver (in fondo) sono REGOLE, e il motore conta su updateUI per
-// tenerle aggiornate dopo ogni mossa: senza, gli effetti continui (chi è
-// non bersagliabile, i bonus ATK/DEF...) resterebbero quelli vecchi. Il
-// duello senza testa (tools/duello-senza-testa.js) ne tiene appunto solo
-// queste due righe. Toglierle da qui vuol dire spostarle, non perderle.
-function updateUI() {
-    if (gameState.gameOver) return;
-    // Ricalcola gli effetti continui (es. Jinzo nega le Trappole, Spada
-    // Rivelatrice blocca gli attacchi) PRIMA di disegnare qualunque cosa,
-    // così il render riflette sempre lo stato corrente del campo — vedi
-    // js/engine/duel-engine.js.
-    if (window.DuelEngine) DuelEngine.recomputeStaticEffects();
+// La metà "disegno" di updateUI (js/engine/canale-partita.js): updateUI
+// ricalcola gli effetti continui, emette 'ridisegna' (che arriva qui) e
+// solo dopo controlla se il duello è finito — lo stesso ordine di quando
+// le tre cose stavano in una funzione sola.
+function ridisegnaDuello() {
     renderLifePoints();
     renderPlayerHand();
     renderBotHand();
@@ -549,7 +576,6 @@ function updateUI() {
     // perché vive fuori dal Terreno.
     if (window.MonsterHolograms) MonsterHolograms.sync();
     updatePhaseIndicator();
-    checkGameOver();
 }
 
 /**
@@ -1879,7 +1905,9 @@ function createSlotElement(owner, type, index, options = {}) {
     return slotEl;
 }
 
-function addToLog(message) {
+// Ascoltatore di 'registro': addToLog (js/engine/canale-partita.js) emette,
+// qui si scrive la riga nel pannello del duello.
+function scriviNelRegistro(message) {
     const log = document.getElementById('gameLog');
     if (!log) {
         console.log(`[Game Log] ${message}`);
@@ -1948,97 +1976,41 @@ function findFieldCardElementByUid(uid) {
 }
 
 /**
- * Orchestratore condiviso da OGNI condizione di vittoria istantanea/
- * alternativa (Exodia, Destiny Board, Elefante Volante — vedi
- * checkGameOver più sotto, che le richiama tutte): imposta il
- * guardrail anti-rientranza, gioca la cinematica dedicata
- * (FX.playInstantWinCinematic, effects.js — un filmato se esiste
- * video/vittorie/<kind>.mp4, altrimenti una sequenza CSS), poi SOLO
- * alla fine registra il log passato e dichiara la vittoria vera con
- * endDuel() — stesso principio di FX.playMonsterSummonEffect già usato
- * per un'Evocazione (video dedicato prioritario, poi un fallback
- * "cool" via CSS), qui applicato a un momento di VITTORIA. Un'unica
- * funzione condivisa invece di una copia per condizione: una FUTURA
- * vittoria istantanea deve solo chiamare questa (vedi
- * triggerExodiaWin/triggerDestinyBoardWin/triggerFlyingElephantWin qui
- * sotto per l'esempio), non reinventare guardrail/cinematica/log/
- * endDuel da capo.
+ * La cinematica di una vittoria istantanea (evento 'vittoria-istantanea',
+ * emesso da triggerInstantWin in js/engine/fasi.js, che a cinematica
+ * finita registra il messaggio e chiude il duello). Qui solo il disegno:
+ * il testo del banner e le carte da far brillare, che dipendono dal tipo
+ * — FX.playInstantWinCinematic (effects.js) suona un filmato se esiste
+ * video/vittorie/<tipo>.mp4, altrimenti una sequenza CSS.
  *
- * gameState.instantWinCinematicPlaying blocca chiamate rientranti a
- * checkGameOver() mentre una cinematica gira (updateUI(), che la
- * richiama, viene invocata molto spesso durante il duello) — non va
- * mai resettato esplicitamente: endDuel() (chiamata da `finish` qui
- * sotto) imposta gameState.gameOver, che fa uscire checkGameOver() dal
- * SUO PRIMO controllo, prima ancora di arrivare a leggere questo flag.
+ * Le carte coinvolte: per Exodia i 5 pezzi in mano, cercati SOLO per il
+ * giocatore umano (la mano del bot non è mostrata a schermo, quindi per
+ * lui l'elenco resta vuoto e la cinematica salta dritta al flash finale);
+ * per Destiny Board le 5 carte scoperte in zona Magia/Trappola del
+ * VINCITORE (quella zona è a schermo per entrambi i lati); per Elefante
+ * Volante nessuna (una carta sola, la cui abilità ha già finito di
+ * risolversi).
  */
-function triggerInstantWin(kind, bannerText, logMessage, playerWon, pieceElements) {
-    gameState.instantWinCinematicPlaying = true;
-    // Sfide di tipo 'winInstantly' (js/data/challenges-db.js): `kind` e'
-    // gia' il nome della condizione ('exodia', 'destinyBoard',
-    // 'flyingElephant'), quindi una sfida futura su una NUOVA vittoria
-    // alternativa non richiede di tornare qui — basta che quella
-    // vittoria passi da questa funzione, come devono fare tutte.
-    if (playerWon === true && window.ChallengeTracker) {
-        ChallengeTracker.recordProgress('winInstantly', { kind: kind });
+function suonaCinematicaVittoria(kind, playerWon, fatto) {
+    let bannerText = 'VITTORIA AUTOMATICA';
+    let pieceElements = [];
+    if (kind === 'exodiawin') {
+        bannerText = 'EXODIA IL PROIBITO';
+        if (playerWon) {
+            pieceElements = findCardElementsByUid('playerHand', gameState.playerHand.filter((card) => EXODIA_PIECE_IDS.includes(card.id)).map((card) => card.uid));
+        }
+    } else if (kind === 'destinyboard') {
+        bannerText = 'FINAL';
+        const owner = playerWon ? 'player' : 'bot';
+        const stField = owner === 'player' ? gameState.playerSTField : gameState.botSTField;
+        const uids = DESTINY_BOARD_CARD_IDS
+            .map((id) => stField.find((slot) => slot && !slot.isFaceDown && slot.card.id === id))
+            .filter(Boolean)
+            .map((slot) => slot.card.uid);
+        pieceElements = findCardElementsByUid(owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard', uids);
     }
-    const finish = () => {
-        addToLog(logMessage);
-        endDuel(playerWon);
-    };
-    if (!window.FX || typeof FX.playInstantWinCinematic !== 'function') { finish(); return; }
-    FX.playInstantWinCinematic(kind, bannerText, pieceElements || [], finish);
-}
-
-/**
- * "5 pezzi di Exodia riuniti". I DOM element dei 5 pezzi vengono
- * cercati SOLO per il giocatore umano (playerWon === true): il bot non
- * ha la propria mano mostrata a schermo, quindi per lui l'array resta
- * vuoto e la cinematica salta dritta al flash finale (vedi il commento
- * su playInstantWinCinematic/effects.js per il dettaglio).
- */
-function triggerExodiaWin(playerWon) {
-    const pieceElements = playerWon
-        ? findCardElementsByUid('playerHand', gameState.playerHand.filter((card) => EXODIA_PIECE_IDS.includes(card.id)).map((card) => card.uid))
-        : [];
-    const logMessage = playerWon
-        ? '✨ Hai riunito tutti e 5 i pezzi di Exodia il Proibito! Vittoria automatica!'
-        : '✨ Il bot ha riunito tutti e 5 i pezzi di Exodia il Proibito! Vittoria automatica!';
-    triggerInstantWin('exodiawin', 'EXODIA IL PROIBITO', logMessage, playerWon, pieceElements);
-}
-
-/**
- * "Destiny Board completo" (Santuario Oscuro id 866 + le 4 Spirit
- * Message id 867-870, tutte scoperte insieme in zona Magia/Trappola).
- * A differenza della mano di Exodia (visibile solo per il giocatore
- * umano), la zona Magia/Trappola è mostrata a schermo per ENTRAMBI i
- * lati — playerFieldBoard/botFieldBoard contengono sia la fila Mostri
- * sia quella Magia/Trappola dello stesso proprietario, quindi si cerca
- * sempre nel board del VINCITORE, non solo per il giocatore umano.
- */
-function triggerDestinyBoardWin(playerWon) {
-    const owner = playerWon ? 'player' : 'bot';
-    const stField = owner === 'player' ? gameState.playerSTField : gameState.botSTField;
-    const uids = DESTINY_BOARD_CARD_IDS
-        .map((id) => stField.find((slot) => slot && !slot.isFaceDown && slot.card.id === id))
-        .filter(Boolean)
-        .map((slot) => slot.card.uid);
-    const pieceElements = findCardElementsByUid(owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard', uids);
-    const logMessage = playerWon
-        ? '💀 Destiny Board è completo: "FINAL" è scritto sul tuo Terreno! Vittoria automatica!'
-        : '💀 Il bot ha completato Destiny Board: "FINAL" è scritto sul suo Terreno! Vittoria automatica!';
-    triggerInstantWin('destinyboard', 'FINAL', logMessage, playerWon, pieceElements);
-}
-
-/**
- * Elefante Volante (id 246): a differenza delle due condizioni sopra
- * non c'è un "insieme di pezzi" da far brillare (una singola carta, la
- * cui abilità ha già finito di risolversi quando questa vittoria
- * scatta) — pieceElements resta sempre vuoto, la cinematica salta
- * dritta al flash finale.
- */
-function triggerFlyingElephantWin(playerWon) {
-    const logMessage = '🐘 Elefante Volante infligge danno da attacco diretto dopo essere sopravvissuto nella End Phase avversaria: vittoria automatica!';
-    triggerInstantWin('flyingelephant', 'VITTORIA AUTOMATICA', logMessage, playerWon, []);
+    if (!window.FX || typeof FX.playInstantWinCinematic !== 'function') { fatto(); return; }
+    FX.playInstantWinCinematic(kind, bannerText, pieceElements, fatto);
 }
 
 /**
@@ -2060,8 +2032,13 @@ function triggerFlyingElephantWin(playerWon) {
  * sconfitta normale, perché una sconfitta normale è. Parametro opzionale:
  * ogni altro chiamante di endDuel (sono molti, sparsi fra motore e carte)
  * resta invariato senza doverlo passare.
+ *
+ * Ascoltatore di 'fine-duello': endDuel (js/engine/canale-partita.js)
+ * emette l'avviso PRIMA di segnare il duello come finito, quindi qui
+ * gameState.gameOver vale ancora quello di prima — l'invio dell'esito
+ * all'avversario qui sotto conta proprio su questo.
  */
-function endDuel(playerWon, opzioni) {
+function chiudiDuelloASchermo(playerWon, opzioni) {
     const abbandono = !!(opzioni && opzioni.abbandono);
     // In Multiplayer l'esito va COMUNICATO all'avversario, non solo
     // calcolato in casa propria: prima ogni lato lo deduceva da sé dallo

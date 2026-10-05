@@ -456,6 +456,7 @@ const APP_SHELL = [
     // gruppo-script:partita
     'js/engine/duel-sandbox.js',
     'js/engine/stato.js',
+    'js/engine/canale-partita.js',
     'js/engine/fasi.js',
     'js/engine/battaglia.js',
     'js/engine/evocazioni.js',
@@ -464,6 +465,7 @@ const APP_SHELL = [
     // /gruppo-script:partita
     // gruppo-script:motore
     'js/engine/porta-ui.js',
+    'js/engine/eventi-duello.js',
     'js/engine/duel-engine.js',
     'js/engine/effect-templates.js',
     'js/engine/card-effects.js',

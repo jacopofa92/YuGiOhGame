@@ -136,7 +136,7 @@ function schedulePendingEffectDraw() {
         if (!pending) return;
         updateUI();
         gameState._pendingDrawAnimation = null;
-        animateEffectDraw(pending.owner, pending);
+        EventiDuello.emetti('pescata-da-effetto', pending.owner, pending);
     }, 0);
 }
 
@@ -148,15 +148,11 @@ function resetGameState() {
     // fine partita scorsa, vedrebbe una crescita e farebbe partire
     // l'animazione "è arrivata una carta" su una pila che invece sta
     // solo nascendo.
-    // Entrambi vivono in game-flow.js (il disegno del campo): senza pagina
-    // (il duello senza testa, tools/duello-senza-testa.js) non esistono, e
-    // non c'è niente da azzerare.
-    if (typeof pileCountsAtLastRender !== 'undefined') {
-        Object.keys(pileCountsAtLastRender).forEach((k) => delete pileCountsAtLastRender[k]);
-    }
     // Stesso motivo per gli agganci Equip: un duello nuovo non deve
-    // ereditare le coppie di quello prima.
-    if (typeof equipLinksAtLastRender !== 'undefined') equipLinksAtLastRender.clear();
+    // ereditare le coppie di quello prima. Entrambi i ricordi vivono in
+    // game-flow.js (il disegno del campo), che li azzera ascoltando questo
+    // avviso; senza pagina non c'è niente da azzerare.
+    EventiDuello.emetti('partita-azzerata');
 
     pendingEffectDrawScheduled = false;
     gameState = {
@@ -585,7 +581,7 @@ function changeTurn() {
         changeTurn();
         return;
     }
-    updateDuelTimer();
+    EventiDuello.emetti('orologio');
     if (window.SFX) SFX.turnChange();
     const isPlayerTurn = gameState.currentPlayer === 'player';
     // Il cambio turno è il momento più "importante" del duello: qui, e non
@@ -594,14 +590,14 @@ function changeTurn() {
     // del giocatore ha la sua battuta iconica in stile anime; quello del
     // bot resta "TURNO" + nome, split in due parole che si scontrano.
     if (isPlayerTurn) {
-        showEpicSlamAnnouncement('È il mio turno!', '', `Turno ${gameState.turn}`);
+        EventiDuello.emetti('annuncio-turno', 'È il mio turno!', '', `Turno ${gameState.turn}`);
     } else {
         // Nome vero dell'avversario (es. "Seto Kaiba"), non più il generico
         // "BOT" — window.DuelSession lo risolve già correttamente per ogni
         // modalità (Duello Demo -> "Bot", Duello Libero/Storia -> il
         // personaggio scelto, Multiplayer -> "Avversario").
         const wordRight = (window.DuelSession && window.DuelSession.opponent && window.DuelSession.opponent.name) || 'BOT';
-        showEpicSlamAnnouncement('TURNO', wordRight, `Turno ${gameState.turn}`);
+        EventiDuello.emetti('annuncio-turno', 'TURNO', wordRight, `Turno ${gameState.turn}`);
     }
     gameState.hasNormalSummoned = false;
     gameState.usedIgnitionThisTurn = {};
@@ -808,7 +804,7 @@ function enterDrawPhaseInner(autoAdvance = true, onComplete = null) {
         }
     }
     const opponentLabel = (window.DuelSession && window.DuelSession.opponent && window.DuelSession.opponent.name) || 'Bot';
-    showPhaseAnnouncement('Pesca', gameState.currentPlayer === 'player' ? 'Draw Phase' : `Draw Phase - ${opponentLabel}`);
+    EventiDuello.emetti('annuncio-fase', 'Pesca', gameState.currentPlayer === 'player' ? 'Draw Phase' : `Draw Phase - ${opponentLabel}`);
     addToLog(`--- ${gameState.currentPlayer === 'player' ? 'Tuo Turno' : `Turno ${opponentLabel}`} ${gameState.turn} ---`);
     addToLog('🎴 Draw Phase');
 
@@ -818,11 +814,7 @@ function enterDrawPhaseInner(autoAdvance = true, onComplete = null) {
     // momento in cui la carta compare davvero nel DOM della mano.
     const finishDrawEffect = (animateNewCard) => {
         updateUI();
-        if (animateNewCard && handEl) {
-            const cards = handEl.querySelectorAll('.card');
-            const lastCard = cards[cards.length - 1];
-            if (lastCard) dealCardsWithStagger([lastCard]);
-        }
+        if (animateNewCard) EventiDuello.emetti('carta-pescata-in-mano');
         if (typeof onComplete === 'function') {
             onComplete();
         } else if (autoAdvance) {
@@ -832,7 +824,6 @@ function enterDrawPhaseInner(autoAdvance = true, onComplete = null) {
 
     const boardId = gameState.currentPlayer === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
     const deckSlot = PortaUI.query(`#${boardId} .field-slot[data-zone="deck"]`);
-    const handEl = PortaUI.byId('playerHand');
     if (deckSlot) {
         deckSlot.classList.add('draw-effect');
     }
@@ -901,7 +892,7 @@ function enterStandbyPhase(autoAdvance = true) {
     if (window.MP_broadcast && !window.MP_applyingRemote) {
         window.MP_broadcast({ kind: 'phase', name: 'standby' });
     }
-    showPhaseAnnouncement('Standby', 'Standby Phase');
+    EventiDuello.emetti('annuncio-fase', 'Standby', 'Standby Phase');
     addToLog('⏳ Standby Phase');
     if (window.DuelEngine) {
         DuelEngine.processTemporaryBanishmentReturns('standby', gameState.currentPlayer);
@@ -947,7 +938,7 @@ function enterMainPhase1() {
     if (window.MP_broadcast && !window.MP_applyingRemote) {
         window.MP_broadcast({ kind: 'phase', name: 'main1' });
     }
-    showPhaseAnnouncement('Main Phase 1');
+    EventiDuello.emetti('annuncio-fase', 'Main Phase 1');
     addToLog('⚡ Main Phase 1');
     if (window.DuelEngine) {
         DuelEngine.fireOwnMainPhase1GraveyardActivations(gameState.currentPlayer);
@@ -985,7 +976,7 @@ function enterBattlePhase() {
     if (window.MP_broadcast && !window.MP_applyingRemote) {
         window.MP_broadcast({ kind: 'phase', name: 'battle' });
     }
-    showPhaseAnnouncement('Battaglia', 'Battle Phase', 'battle');
+    EventiDuello.emetti('annuncio-fase', 'Battaglia', 'Battle Phase', 'battle');
     addToLog('⚔️ Battle Phase! Clicca e trascina da un tuo mostro per attaccare.');
     // "All'inizio della Battle Phase" (es. Prigione dei Dadi, id 197) —
     // stesso schema/stesso nome dinamico di 'onBattlePhaseEnd' (già usato
@@ -1050,7 +1041,7 @@ function enterMainPhase2() {
     if (window.MP_broadcast && !window.MP_applyingRemote) {
         window.MP_broadcast({ kind: 'phase', name: 'main2' });
     }
-    showPhaseAnnouncement('Main Phase 2');
+    EventiDuello.emetti('annuncio-fase', 'Main Phase 2');
     addToLog('⚡ Main Phase 2');
     if (canConductSecondBattlePhase('player')) {
         addToLog('🌦️ Puoi condurre una seconda Battle Phase: clicca di nuovo "Battaglia".');
@@ -1069,7 +1060,7 @@ function enterEndPhase() {
     if (window.MP_broadcast && !window.MP_applyingRemote) {
         window.MP_broadcast({ kind: 'phase', name: 'end' });
     }
-    showPhaseAnnouncement('Fine', 'End Phase');
+    EventiDuello.emetti('annuncio-fase', 'Fine', 'End Phase');
     addToLog('🏁 End Phase');
     // Waboku (id 503) protegge solo "in questo turno": la barriera e i
     // due effetti di battaglia devono sparire appena inizia la End Phase,
@@ -1273,8 +1264,11 @@ function enterEndPhase() {
     const hasInfiniteCards = (gameState[stKey] || []).some((s) => s && !s.isFaceDown && s.card.id === 307);
     const excess = hasInfiniteCards ? 0 : gameState[handKey].length - MAX_HAND_SIZE;
     if (excess > 0) {
-        if (gameState.currentPlayer === 'player' && typeof startHandDiscardSelection === 'function') {
-            startHandDiscardSelection(excess, () => {
+        // Lo sceglie la persona davanti allo schermo; senza interfaccia
+        // (nessun ascoltatore) non c'è nessuno a cui chiederlo, e il turno
+        // passa come prima.
+        if (gameState.currentPlayer === 'player' && EventiDuello.ascoltato('scarto-fine-turno')) {
+            EventiDuello.attendi('scarto-fine-turno', excess, () => {
                 passaIlTurnoDopoLaPriorita(700);
             });
             return;
@@ -1356,6 +1350,64 @@ function hasExodiaInGraveyard(owner) {
     return EXODIA_PIECE_IDS.every((pieceId) => graveyard.some((card) => card.id === pieceId));
 }
 
+/**
+ * Punto condiviso da OGNI condizione di vittoria istantanea/alternativa
+ * (Exodia, Destiny Board, Elefante Volante — vedi checkGameOver qui sotto,
+ * che le richiama tutte): imposta il guardrail anti-rientranza, aspetta la
+ * cinematica dedicata (evento 'vittoria-istantanea': game-flow.js la
+ * suona, con un filmato se esiste video/vittorie/<tipo>.mp4, altrimenti una
+ * sequenza CSS — vedi FX.playInstantWinCinematic) e SOLO alla fine
+ * registra il messaggio e dichiara la vittoria vera con endDuel(). Senza
+ * interfaccia l'attesa finisce subito. Una FUTURA vittoria istantanea deve
+ * solo chiamare questa, non reinventare guardrail/log/endDuel da capo.
+ *
+ * gameState.instantWinCinematicPlaying blocca chiamate rientranti a
+ * checkGameOver() mentre la cinematica gira (updateUI(), che la richiama,
+ * viene invocata molto spesso durante il duello) — non va mai resettato
+ * esplicitamente: endDuel() imposta gameState.gameOver, che fa uscire
+ * checkGameOver() dal SUO PRIMO controllo, prima ancora di arrivare a
+ * leggere questo flag.
+ *
+ * Spostata qui da game-flow.js (nucleo senza testa): la cinematica è
+ * disegno, ma il guardrail, la Sfida e la fine del duello sono regole.
+ */
+function triggerInstantWin(kind, logMessage, playerWon) {
+    gameState.instantWinCinematicPlaying = true;
+    // Sfide di tipo 'winInstantly' (js/data/challenges-db.js): `kind` è
+    // già il nome della condizione, quindi una sfida futura su una NUOVA
+    // vittoria alternativa non richiede di tornare qui — basta che quella
+    // vittoria passi da questa funzione, come devono fare tutte.
+    if (playerWon === true && window.ChallengeTracker) {
+        ChallengeTracker.recordProgress('winInstantly', { kind: kind });
+    }
+    EventiDuello.attendi('vittoria-istantanea', kind, playerWon, () => {
+        addToLog(logMessage);
+        endDuel(playerWon);
+    });
+}
+
+/** "5 pezzi di Exodia riuniti". */
+function triggerExodiaWin(playerWon) {
+    triggerInstantWin('exodiawin', playerWon
+        ? '✨ Hai riunito tutti e 5 i pezzi di Exodia il Proibito! Vittoria automatica!'
+        : '✨ Il bot ha riunito tutti e 5 i pezzi di Exodia il Proibito! Vittoria automatica!', playerWon);
+}
+
+/**
+ * "Destiny Board completo" (Santuario Oscuro id 866 + le 4 Spirit
+ * Message id 867-870, tutte scoperte insieme in zona Magia/Trappola).
+ */
+function triggerDestinyBoardWin(playerWon) {
+    triggerInstantWin('destinyboard', playerWon
+        ? '💀 Destiny Board è completo: "FINAL" è scritto sul tuo Terreno! Vittoria automatica!'
+        : '💀 Il bot ha completato Destiny Board: "FINAL" è scritto sul suo Terreno! Vittoria automatica!', playerWon);
+}
+
+/** Elefante Volante (id 246): una carta sola, nessun "insieme di pezzi". */
+function triggerFlyingElephantWin(playerWon) {
+    triggerInstantWin('flyingelephant', '🐘 Elefante Volante infligge danno da attacco diretto dopo essere sopravvissuto nella End Phase avversaria: vittoria automatica!', playerWon);
+}
+
 function checkGameOver() {
     if (gameState.gameOver) return;
     // updateUI() chiama checkGameOver() molto spesso: mentre una
@@ -1417,7 +1469,7 @@ function checkGameOver() {
     gameState.gameOver = true;
     if (playerLost) gameState.playerLP = 0;
     if (botLost) gameState.botLP = 0;
-    renderLifePoints();
+    EventiDuello.emetti('life-points');
 
     // Se cadono entrambi nello stesso momento il duello è perso, come già
     // faceva la versione precedente del controllo.

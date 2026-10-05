@@ -2910,7 +2910,7 @@
                     const prima = gameState.damageStepOnlyBonusFor[ctx.card.uid] || { atk: 0, def: 0 };
                     gameState.damageStepOnlyBonusFor[ctx.card.uid] = { atk: (prima.atk || 0) + 3000, def: prima.def || 0 };
                     ctx.log(`💉 ${ctx.card.name} paga 2000 LP: +3000 ATK solo per questo calcolo dei danni!`);
-                    if (typeof renderLifePoints === 'function') renderLifePoints();
+                    EventiDuello.emetti('life-points');
                 } finally {
                     fine();
                 }

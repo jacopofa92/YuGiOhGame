@@ -1,5 +1,22 @@
 let dragState = null;
 
+// ============================================================
+// Ascoltatori del canale delle regole (js/engine/eventi-duello.js): la
+// parte di quel canale che si disegna con funzioni di questo file. Le
+// altre sono registrate in cima a game-flow.js.
+// ============================================================
+EventiDuello.ascolta('selezione-azzerata', chiudiSelezioneASchermo);
+EventiDuello.ascolta('prompt-tributo-chiuso', () => hideTributePrompt());
+EventiDuello.ascolta('prompt-scarto-chiuso', () => hideHandDiscardPrompt());
+EventiDuello.ascolta('evocazione-tributo-pronta', resolveTributeSummonPlacement);
+EventiDuello.ascolta('impatto-campo', triggerFieldImpact);
+EventiDuello.ascolta('distruzione', triggerDestroyEffect);
+EventiDuello.ascolta('attacco-bloccato', triggerBlockedEffect);
+EventiDuello.ascolta('scarto-fine-turno', startHandDiscardSelection);
+EventiDuello.ascolta('volo-carta', (volo, fatto) => {
+    flyCardToSlot(volo.carta, volo.partenza, volo.casella, fatto, volo.daNascondere, volo.coperta, volo.posizione);
+});
+
 // Alcune WebView Android emettono ancora un `click` di compatibilita'
 // subito DOPO la coppia pointerdown/pointerup touch, anche se il down e'
 // stato preventDefault(). Nel frattempo handleCardClick puo' aver
@@ -1208,15 +1225,14 @@ function maybeAskRaLpChoice(card, slotEl, proceed) {
     };
 }
 
-function clearSelection() {
-    gameState.selectedCard = { type: null, card: null, index: -1 };
-    gameState.pendingTributeSummon = null;
-    gameState.pendingTributePlacement = null;
+// Ascoltatore di 'selezione-azzerata': la metà "a schermo" di
+// clearSelection (js/engine/canale-partita.js, che azzera la selezione in
+// gameState e poi ridisegna).
+function chiudiSelezioneASchermo() {
     setPlacementPrompt(false);
     hideTributePrompt();
     document.querySelectorAll('.action-highlight, .selected, .tribute-highlight, .tribute-selected').forEach(el => el.classList.remove('action-highlight', 'selected', 'tribute-highlight', 'tribute-selected'));
     updateCardInfoPanel(null);
-    updateUI();
 }
 
 /**
