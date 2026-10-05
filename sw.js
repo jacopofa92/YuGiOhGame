@@ -464,6 +464,7 @@ const APP_SHELL = [
     'js/engine/actions.js',
     // /gruppo-script:partita
     // gruppo-script:motore
+    'js/engine/casuale.js',
     'js/engine/porta-ui.js',
     'js/engine/eventi-duello.js',
     'js/engine/tavolo.js',

@@ -77,8 +77,31 @@ righe, actions.js 3.855, game-flow.js 3.797; 205 accessi al DOM e 85
 - [ ] Restano nel nucleo i circa 400 ternari "player ? ... : bot ..." scritti
       a mano: si possono portare sugli accessori di Tavolo un file alla
       volta, ma non bloccano nulla (sono corretti per entrambi i posti).
-- [ ] Multiplayer "a passo comune": i due client eseguono le stesse azioni
-      sullo stesso stato (niente più fotografie di stato da tradurre).
+- [ ] Multiplayer "a passo comune": i due client eseguono l'intera partita e
+      si scambiano solo comandi e decisioni (niente più mosse raccontate né
+      fotografie di stato). Ogni client chiama ancora "player" sé stesso: lo
+      stato è SPECCHIATO. Passi, ciascuno verificabile da solo:
+      - [ ] A. Determinismo, senza cambiare nulla offline (impronta di 60
+            partite IA contro IA uguale prima e dopo):
+            `Casuale` (casualità di gioco con seme condiviso in Multiplayer,
+            Math.random offline), `Tavolo.ordine()` al posto dei circa 170
+            cicli "prima player, poi bot" (in Multiplayer: prima l'host),
+            uid delle carte deterministici in Multiplayer.
+      - [ ] B. Azioni con il posto: evocare, settare, Magia Terreno, cambio
+            Posizione, attaccare, fasi — una funzione sola per persona, IA e
+            avversario remoto (oggi persona e IA hanno due versioni).
+      - [ ] C. Duello gemello in Node: due copie del motore che si parlano
+            come due telefoni, IA su ciascun posto locale, stati confrontati
+            dopo ogni messaggio. È lo strumento che verifica tutto il resto.
+      - [ ] D. Comandi in coda: le azioni della persona viaggiano come
+            comandi, chi riceve li applica col posto remoto solo a duello
+            fermo (niente Catena aperta, niente scelta in sospeso).
+            Tutte le scelte di un posto remoto viaggiano.
+      - [ ] E. Pagina: scambio dei mazzi e del seme all'avvio, via mano a
+            segnaposto, fotografie e messaggi vecchi; il server accetta il
+            tipo di messaggio nuovo (va ridistribuito dove gira).
+      Costo dichiarato: ogni client conosce mazzo e mano dell'avversario
+      (non mostrati, ma in memoria).
 
 **Priorità 4 — per il giocatore** (in parallelo)
 - [ ] Service worker più leggero (vedi «Peso e velocità» qui sotto).

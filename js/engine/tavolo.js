@@ -37,6 +37,8 @@
 
     /** @type {Record<string, string>} */
     let impostati = {};
+    /** Il posto che viene per primo in Tavolo.ordine() (vedi lì). */
+    let primo = 'player';
 
     /** @param {string} posto */
     function controllaPosto(posto) {
@@ -106,8 +108,35 @@
             });
         },
 
-        /** Torna ai controllori di default. */
-        azzera() { impostati = {}; },
+        /** Torna ai controllori di default (e all'ordine di default). */
+        azzera() { impostati = {}; primo = 'player'; },
+
+        /**
+         * I due posti nell'ordine in cui le regole li scorrono quando
+         * agiscono su entrambi ("distruggi tutti i mostri sul Terreno",
+         * "ogni giocatore pesca"). Un array nuovo ad ogni chiamata.
+         *
+         * Perché non scrivere ['player', 'bot']: nel Multiplayer a passo
+         * comune ogni telefono chiama "player" sé stesso, quindi quel ciclo
+         * girerebbe in ordine OPPOSTO sui due client — e se l'ordine conta
+         * (chi pesca per primo, quale distruzione fa scattare per prima il
+         * suo effetto) le due partite si separano. Qui l'ordine è lo stesso
+         * per entrambi: prima l'host (Tavolo.impostaPrimo). Fuori dal
+         * Multiplayer è sempre ['player', 'bot'], come prima.
+         * @returns {string[]}
+         */
+        ordine() { return [primo, Tavolo.avversario(primo)]; },
+
+        /** Tavolo.ordine() al contrario: per i cicli che scorrevano ['bot', 'player']. */
+        ordineInverso() { return [Tavolo.avversario(primo), primo]; },
+
+        /**
+         * Il posto che viene per primo in Tavolo.ordine(). In Multiplayer a
+         * passo comune è il posto dell'host: 'player' sul suo telefono,
+         * 'bot' su quello dell'ospite.
+         * @param {string} posto
+         */
+        impostaPrimo(posto) { controllaPosto(posto); primo = posto; },
 
         // --- stato di un posto -------------------------------------------
         mano: accessore('Hand'),

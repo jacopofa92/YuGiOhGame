@@ -422,7 +422,7 @@ function endTurn() {
  * (prima veniva distrutta all'inizio di quel turno, non alla sua fine).
  */
 function tickContinuousEffectDurations() {
-    ['player', 'bot'].forEach((owner) => {
+    Tavolo.ordine().forEach((owner) => {
         const opponent = owner === 'player' ? 'bot' : 'player';
         if (gameState.currentPlayer !== opponent) return;
         const field = owner === 'player' ? gameState.playerSTField : gameState.botSTField;
@@ -1229,7 +1229,7 @@ function enterEndPhase() {
             // molto prima di questo momento, quindi non può reagire da
             // sola con un proprio onBattlePhaseEnd: lista pendente globale,
             // stesso schema di gameState.pendingUltimateTurnCheck qui sopra.
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 const pending = gameState.pendingMagicalHatsDestroy && gameState.pendingMagicalHatsDestroy[owner];
                 if (!pending || pending.length === 0) return;
                 const field = owner === 'player' ? gameState.playerMonsterField : gameState.botMonsterField;

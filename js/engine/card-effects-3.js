@@ -71,11 +71,11 @@
     // ================================================================
     CardEffects.register(519, {
         canActivate(ctx) {
-            return ['player', 'bot'].some((owner) => ctx.field(owner).some((slot) => slot && !slot.isFaceDown));
+            return Tavolo.ordine().some((owner) => ctx.field(owner).some((slot) => slot && !slot.isFaceDown));
         },
         activate(ctx) {
             let count = 0;
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
                     if (slot && !slot.isFaceDown) {
                         slot.position = slot.position === 'attack' ? 'defense' : 'attack';
@@ -642,7 +642,7 @@
         },
         static(ctx) {
             let dragonCount = 0;
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot) => { if (slot && !slot.isFaceDown && slot.card.race === 'Drago') dragonCount++; });
                 ctx.graveyard(owner).forEach((card) => { if (card.race === 'Drago') dragonCount++; });
             });
@@ -767,7 +767,7 @@
             return true;
         },
         static(ctx) {
-            ['player', 'bot'].forEach((o) => {
+            Tavolo.ordine().forEach((o) => {
                 ctx.field(o).forEach((slot) => {
                     if (!slot || slot.card.uid === ctx.card.uid) return;
                     gameState.cannotAttackUids[slot.card.uid] = true;
@@ -1255,7 +1255,7 @@
     // ================================================================
     CardEffects.register(354, {
         onCardActivated(ctx) {
-            ['player', 'bot'].forEach((side) => {
+            Tavolo.ordine().forEach((side) => {
                 const rival = side === 'player' ? 'bot' : 'player';
 
                 const monsterKey = `${ctx.card.uid}:destroyMonster:${side}`;
@@ -1331,7 +1331,7 @@
         continuous: true,
         activate(ctx) { ctx.log(`🎵 ${ctx.card.name} si scopre sul Terreno.`); },
         static(ctx) {
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
                     if (!slot || slot.position !== 'defense') return;
                     const e = gameState.atkDefBonus[slot.card.uid] || { atk: 0, def: 0 };
@@ -1440,7 +1440,7 @@
     function revertMechanicNightConversions(ctx) {
         const map = ctx.card._mechanicNightConverted;
         if (!map) return;
-        ['player', 'bot'].forEach((owner) => {
+        Tavolo.ordine().forEach((owner) => {
             ctx.field(owner).forEach((slot) => {
                 if (slot && map[slot.card.uid] !== undefined) {
                     slot.card.race = map[slot.card.uid];
@@ -1454,7 +1454,7 @@
         activate(ctx) { ctx.log(`⚙️ ${ctx.card.name} si scopre sul Terreno.`); },
         static(ctx) {
             ctx.card._mechanicNightConverted = ctx.card._mechanicNightConverted || {};
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
                     if (!slot || slot.isFaceDown) return;
                     if (slot.card.race !== 'Macchina' && ctx.card._mechanicNightConverted[slot.card.uid] === undefined) {
@@ -1549,7 +1549,7 @@
             const passi = sorgente && sorgente.__castelloPassi;
             if (typeof passi !== 'number') return;
             const bonus = 200 * passi;
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
                     if (!slot || slot.isFaceDown || slot.card.race !== 'Zombie') return;
                     const e = gameState.atkDefBonus[slot.card.uid] || { atk: 0, def: 0 };
@@ -2364,7 +2364,7 @@
     // ================================================================
     CardEffects.register(406, {
         static(ctx) {
-            const castleOnField = ['player', 'bot'].some((owner) => ctx.field(owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 142));
+            const castleOnField = Tavolo.ordine().some((owner) => ctx.field(owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 142));
             if (!castleOnField) return;
             const stacks = Math.min(ctx.card.pumpkingStacks || 0, 4);
             const bonus = 100 + stacks * 100;
@@ -2372,7 +2372,7 @@
             gameState.atkDefBonus[ctx.card.uid] = { atk: e.atk + bonus, def: e.def + bonus };
         },
         onStandbyPhase(ctx) {
-            const castleOnField = ['player', 'bot'].some((owner) => ctx.field(owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 142));
+            const castleOnField = Tavolo.ordine().some((owner) => ctx.field(owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 142));
             if (!castleOnField) return;
             if ((ctx.card.pumpkingStacks || 0) >= 4) return;
             ctx.card.pumpkingStacks = (ctx.card.pumpkingStacks || 0) + 1;
@@ -2542,7 +2542,7 @@
     CardEffects.register(421, {
         canActivate(ctx) {
             let count = 0;
-            ['player', 'bot'].forEach((o) => { ctx.field(o).forEach((s) => { if (s && !s.isFaceDown) count++; }); });
+            Tavolo.ordine().forEach((o) => { ctx.field(o).forEach((s) => { if (s && !s.isFaceDown) count++; }); });
             return count >= 2;
         },
         activate(ctx) {
@@ -2666,7 +2666,7 @@
     CardEffects.register(133, {
         continuous: true,
         activate(ctx) {
-            ['player', 'bot'].forEach((o) => {
+            Tavolo.ordine().forEach((o) => {
                 const fs = o === 'player' ? gameState.playerFieldSpell : gameState.botFieldSpell;
                 if (fs) {
                     ctx.destroyFieldSpell(o);
@@ -2746,7 +2746,7 @@
     CardEffects.register(209, {
         onFlip(ctx) {
             let destroyedAny = false;
-            ['player', 'bot'].forEach((o) => {
+            Tavolo.ordine().forEach((o) => {
                 ctx.stField(o).forEach((slot, i) => {
                     if (slot && !slot.isFaceDown && slot.card.id === 206) {
                         ctx.graveyard(o).push(slot.card);
@@ -2756,7 +2756,7 @@
                 });
             });
             if (!destroyedAny) return;
-            ['player', 'bot'].forEach((o) => {
+            Tavolo.ordine().forEach((o) => {
                 ctx.field(o).forEach((slot, i) => {
                     if (slot && !slot.isFaceDown && slot.card.race === 'Drago') ctx.changePosition(o, i, 'attack');
                 });
@@ -3216,7 +3216,7 @@
     // non serve mutare le statistiche originali condivise della carta.
     CardEffects.register(440, {
         activate(ctx) {
-            ['player', 'bot'].forEach((o) => {
+            Tavolo.ordine().forEach((o) => {
                 ctx.field(o).forEach((slot) => {
                     if (!slot || slot.isFaceDown) return;
                     const atk = slot.card.attack;

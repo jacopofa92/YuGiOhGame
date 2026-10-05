@@ -1019,7 +1019,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
         // es. Baou equipaggiata a un mostro avversario) — "il tuo
         // avversario" nel testo reale è sempre relativo a QUESTO lato, non
         // al controllore dell'attaccante.
-        ['player', 'bot'].forEach((stOwner) => {
+        Tavolo.ordine().forEach((stOwner) => {
             (stOwner === 'player' ? gameState.playerSTField : gameState.botSTField).forEach((slot) => {
                 if (!slot || slot.isFaceDown) return;
                 const eqDef = DuelEngine.getDefinition(slot.card.id);

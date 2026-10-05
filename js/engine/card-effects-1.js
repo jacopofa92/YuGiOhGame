@@ -205,7 +205,7 @@
     CardEffects.register(174, {
         onSummon(ctx) {
             const candidates = [];
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.stField(owner).forEach((slot, index) => {
                     if (slot && !slot.isFaceDown && slot.card.type === 'spell' && slot.card.subtype === 'equip') {
                         candidates.push({ owner, index, card: slot.card });
@@ -667,7 +667,7 @@
             });
             if (keepIndex === -1) return;
 
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 const field = ctx.field(owner);
                 field.forEach((slot, i) => {
                     if (!slot) return;
@@ -773,7 +773,7 @@
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
             gameState.atkDefBonus[t.uid] = { atk: e.atk + 800, def: e.def };
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
                     // Guardiano Kay'est (id 285): immune anche a questo malus.
                     if (slot && !slot.isFaceDown && slot.card.attribute === 'ACQUA' && !DuelEngine.getDefinition(slot.card.id)?.unaffectedBySpellEffects) {
@@ -1141,7 +1141,7 @@
             // motivo per cui resolveAttack() in js/engine/actions.js cattura i
             // rettangoli PRIMA di mutare lo stato (vedi quel commento).
             const sucked = [];
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
                 ctx.field(owner).forEach((slot, index) => {
                     if (!slot) return;
@@ -1628,7 +1628,7 @@
     // ================================================================
     CardEffects.register(17, {
         static(ctx) {
-            const hasAmplifier = ['player', 'bot'].some((o) =>
+            const hasAmplifier = Tavolo.ordine().some((o) =>
                 ctx.stField(o).some((s) => s && !s.isFaceDown && s.card.id === 92 && s.card.equippedToUid === ctx.card.uid)
             );
             if (hasAmplifier) {
@@ -2306,7 +2306,7 @@
             if (index === -1) return;
             const returned = field[index].card;
             ctx.returnMonsterToHand(ctx.owner, index);
-            ['player', 'bot'].forEach((fieldOwner) => {
+            Tavolo.ordine().forEach((fieldOwner) => {
                 ctx.stField(fieldOwner).forEach((slot, i) => {
                     if (slot) {
                         ctx.graveyard(fieldOwner).push(slot.card);
@@ -2629,7 +2629,7 @@
             ctx.log(`🌊 ${ctx.card.name} si scopre sul Terreno.`);
         },
         static(ctx) {
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
                     // Guardiano Kay'est (id 285): "non è influenzata dagli
                     // effetti delle Magie", quindi niente bonus ATK/DEF da
@@ -2806,11 +2806,11 @@
     // ================================================================
     CardEffects.register(132, {
         canActivate(ctx) {
-            return ['player', 'bot'].some((owner) => ctx.field(owner).some((slot) => slot && !slot.isFaceDown && slot.card.race === 'Roccia'));
+            return Tavolo.ordine().some((owner) => ctx.field(owner).some((slot) => slot && !slot.isFaceDown && slot.card.race === 'Roccia'));
         },
         activate(ctx) {
             let count = 0;
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot, index) => {
                     if (slot && !slot.isFaceDown && slot.card.race === 'Roccia') {
                         ctx.destroyMonster(owner, index);
@@ -2850,7 +2850,7 @@
             ctx.graveyard(ctx.owner).push(tributeCard);
 
             let count = 0;
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot, index) => {
                     if (slot && !slot.isFaceDown && slot.card.defense <= tributeCard.attack) {
                         ctx.destroyMonster(owner, index);
@@ -2933,7 +2933,7 @@
     // ================================================================
     CardEffects.register(138, {
         activate(ctx) {
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 const hand = ctx.hand(owner);
                 const discarded = hand.length;
                 while (hand.length > 0) {

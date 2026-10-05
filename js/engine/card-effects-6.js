@@ -318,7 +318,7 @@
         },
         canActivate(ctx) {
             if (gameState.usedIgnitionThisTurn && gameState.usedIgnitionThisTurn[ctx.card.uid]) return false;
-            return ['player', 'bot'].some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown && s.card.uid !== ctx.card.uid));
+            return Tavolo.ordine().some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown && s.card.uid !== ctx.card.uid));
         },
         activate(ctx) {
             // Il campo avversario resta in cima alla lista: il bot prende
@@ -381,7 +381,7 @@
             const count = ctx.card.spellCounters || 0;
             if (count === 0) return false;
             const maxAtk = count * 700;
-            return ['player', 'bot'].some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown && DuelEngine.getEffectiveAtk(s.card) <= maxAtk));
+            return Tavolo.ordine().some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown && DuelEngine.getEffectiveAtk(s.card) <= maxAtk));
         },
         // Il bersaglio lo sceglie il giocatore fra i mostri scoperti con ATK
         // alla portata dei Segnalini, e si rimuovono solo quelli che servono
@@ -788,7 +788,7 @@
         activate: selfFlipToFaceDownDefense,
         onFlip(ctx) {
             const candidates = [];
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot, index) => { if (slot && !slot.isFaceDown && slot.card.attribute === 'TERRA') candidates.push({ owner, index, card: slot.card }); });
             });
             if (candidates.length === 0) return;
@@ -870,7 +870,7 @@
         },
         onDestroy(ctx) {
             let count = 0;
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.stField(owner).forEach((slot, index) => {
                     if (!slot) return;
                     ctx.graveyard(owner).push(slot.card);
@@ -1284,7 +1284,7 @@
     // ACTIONS.specialSummon.
     // ================================================================
     const danniDiSimorgh = (ctx) => {
-        ['player', 'bot'].forEach((owner) => {
+        Tavolo.ordine().forEach((owner) => {
             const stCount = ctx.stField(owner).filter((s) => s).length;
             const damage = Math.max(0, 1000 - stCount * 500);
             if (damage > 0) ctx.dealDamage(owner, damage);
@@ -1324,7 +1324,7 @@
     // ================================================================
     CardEffects.register(777, {
         static(ctx) {
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
                     if (!slot || slot.isFaceDown) return;
                     const e = gameState.atkDefBonus[slot.card.uid] || { atk: 0, def: 0 };
@@ -1442,7 +1442,7 @@
     // ================================================================
     CardEffects.register(782, {
         static(ctx) {
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
                     if (!slot || slot.isFaceDown || slot.card.attribute !== 'VENTO') return;
                     const e = gameState.atkDefBonus[slot.card.uid] || { atk: 0, def: 0 };
@@ -1483,7 +1483,7 @@
         onSummon(ctx) {
             if (ctx.summonedVia !== 'normal') return;
             let count = 0;
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.stField(owner).forEach((slot, index) => {
                     if (!slot) return;
                     ctx.hand(owner).push(slot.card);
@@ -1523,7 +1523,7 @@
         canActivate(ctx) {
             const harpieCount = ctx.field(ctx.owner).filter((s) => s && !s.isFaceDown && s.card.uid !== ctx.card.uid && s.card.name && s.card.name.includes('Arpia')).length;
             if (harpieCount < 3) return false;
-            return ['player', 'bot'].some((owner) => owner !== ctx.owner && (ctx.field(owner).some((s) => s) || ctx.stField(owner).some((s) => s)));
+            return Tavolo.ordine().some((owner) => owner !== ctx.owner && (ctx.field(owner).some((s) => s) || ctx.stField(owner).some((s) => s)));
         },
         activate(ctx) {
             // "1 carta dell'avversario": mostri e retrocampo in un'unica
@@ -1609,7 +1609,7 @@
             ctx.log('🦅 Terreno di Caccia delle Arpie attivato!');
         },
         static(ctx) {
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
                     if (!slot || slot.isFaceDown || slot.card.race !== 'Bestia Alata') return;
                     const e = gameState.atkDefBonus[slot.card.uid] || { atk: 0, def: 0 };
@@ -1696,7 +1696,7 @@
         const uids = ctx.card.summonedUids;
         if (!uids || uids.length === 0) return;
         let count = 0;
-        ['player', 'bot'].forEach((owner) => {
+        Tavolo.ordine().forEach((owner) => {
             ctx.field(owner).forEach((slot, index) => {
                 if (slot && uids.includes(slot.card.uid)) {
                     ctx.destroyMonster(owner, index);
@@ -1748,12 +1748,12 @@
         },
         static(ctx) {
             const nameCounts = {};
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
                     if (slot && !slot.isFaceDown) nameCounts[slot.card.name] = (nameCounts[slot.card.name] || 0) + 1;
                 });
             });
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
                     if (!slot || slot.isFaceDown) return;
                     if ((nameCounts[slot.card.name] || 0) < 2) return;
@@ -1922,7 +1922,7 @@
         canActivate(ctx) {
             const hasTribute = ctx.field(ctx.owner).some((s) => s && !s.isFaceDown && s.card.race === 'Bestia Alata');
             if (!hasTribute) return false;
-            const totalTargets = ['player', 'bot'].reduce((sum, owner) => sum + ctx.field(owner).filter((s) => s).length + ctx.stField(owner).filter((s) => s).length, 0);
+            const totalTargets = Tavolo.ordine().reduce((sum, owner) => sum + ctx.field(owner).filter((s) => s).length + ctx.stField(owner).filter((s) => s).length, 0);
             return totalTargets >= 1;
         },
         activate(ctx) {
@@ -2414,7 +2414,7 @@
             ctx.log('🦕 Mondo Giurassico attivato!');
         },
         static(ctx) {
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
                     if (!slot || slot.isFaceDown || slot.card.race !== 'Dinosauro') return;
                     const e = gameState.atkDefBonus[slot.card.uid] || { atk: 0, def: 0 };
@@ -2548,7 +2548,7 @@
             const fieldSpell = ctx.owner === 'player' ? gameState.playerFieldSpell : gameState.botFieldSpell;
             if (!fieldSpell || fieldSpell.isFaceDown || fieldSpell.card.id !== 812) return;
             let count = 0;
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot, index) => {
                     if (!slot) return;
                     ctx.graveyard(owner).push(slot.card);

@@ -516,7 +516,7 @@
      * regge già.
      */
     function sorteggioCondiviso(chiave, contesto) {
-        if (!window.MULTIPLAYER_MODE) return Math.random();
+        if (!window.MULTIPLAYER_MODE) return Casuale.random();
         if (turnoDelSorteggio !== gameState.turn) {
             turnoDelSorteggio = gameState.turn;
             usiPerCarta.clear();
@@ -540,7 +540,7 @@
      */
     function uidCondiviso(prefisso, contesto) {
         if (!window.MULTIPLAYER_MODE) {
-            return `${prefisso}_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+            return `${prefisso}_${Date.now()}_${Casuale.random().toString(36).slice(2)}`;
         }
         // Stessa chiave che userebbe ctx.random(): un contesto ha UNA sola
         // sequenza di sorteggi, che i suoi numeri finiscano in un dado o
@@ -1145,7 +1145,7 @@
             if (!store) return;
             Object.keys(store).forEach((uid) => {
                 if (!store[uid].destroyAfter) return;
-                ['player', 'bot'].forEach((owner) => {
+                Tavolo.ordine().forEach((owner) => {
                     fieldOf(owner).forEach((slot, index) => {
                         if (slot && slot.card.uid === uid) ACTIONS.destroyMonster(owner, index);
                     });
@@ -1165,7 +1165,7 @@
          * distruzione di massa, non solo per una singola.
          */
         destroyAllMonsters(owner) {
-            const owners = owner ? [owner] : ['player', 'bot'];
+            const owners = owner ? [owner] : Tavolo.ordine();
             owners.forEach((o) => {
                 fieldOf(o).forEach((slot, index) => {
                     if (slot) this.destroyMonster(o, index);
@@ -1635,7 +1635,7 @@
             cards.forEach((c) => deck.push(c));
             // Fisher-Yates
             for (let i = deck.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
+                const j = Math.floor(Casuale.random() * (i + 1));
                 [deck[i], deck[j]] = [deck[j], deck[i]];
             }
             return true;
@@ -1972,7 +1972,7 @@
         discardRandomFromHand(owner) {
             const hand = handOf(owner);
             if (hand.length === 0) return null;
-            const index = Math.floor(Math.random() * hand.length);
+            const index = Math.floor(Casuale.random() * hand.length);
             const [card] = hand.splice(index, 1);
             const discardedByOwner = (this && this.owner) || null;
             graveyardOf(owner).push(card);
@@ -2098,7 +2098,7 @@
             }
             // returnedOwner = chi l'ha ripreso in mano (es. Criosfinge id
             // 761: "quel proprietario scarta 1 carta").
-            ['player', 'bot'].forEach((reactOwner) => {
+            Tavolo.ordine().forEach((reactOwner) => {
                 fieldOf(reactOwner).forEach((rslot, rindex) => {
                     if (!rslot || rslot.isFaceDown) return;
                     const rdef = getDefinition(rslot.card.id);
@@ -2618,7 +2618,7 @@
     function processTemporaryControlReturns() {
         if (!gameState.temporaryControls || gameState.temporaryControls.length === 0) return;
         gameState.temporaryControls.forEach((entry) => {
-            ['player', 'bot'].forEach((currentOwner) => {
+            Tavolo.ordine().forEach((currentOwner) => {
                 const field = fieldOf(currentOwner);
                 const index = field.findIndex((s) => s && s.card.uid === entry.uid);
                 if (index === -1) return;
@@ -3232,7 +3232,7 @@
             // combaciare undefined === undefined e legherebbero ogni mostro a
             // ogni altro — trovato così, con un Drago Bianco distrutto
             // "insieme" a un mostro avversario qualunque.
-            if (ctx.card.uid) ['player', 'bot'].forEach((lato) => {
+            if (ctx.card.uid) Tavolo.ordine().forEach((lato) => {
                 fieldOf(lato).forEach((slot, index) => {
                     if (slot && slot.card.destroyWhenDestroyedUid && slot.card.destroyWhenDestroyedUid === ctx.card.uid) {
                         addToLog(`🔗 ${slot.card.name} viene distrutto insieme a ${ctx.card.name}.`);
@@ -3276,7 +3276,7 @@
             // Ignition dei mostri) — non dalle Trappole automatiche di
             // risposta qui sotto (es. Buco Trappola), per restare un
             // aggancio semplice invece di un vero stack di Chain.
-            ['player', 'bot'].forEach((fieldOwner) => {
+            Tavolo.ordine().forEach((fieldOwner) => {
                 fieldOf(fieldOwner).forEach((slot, index) => {
                     if (!slot || slot.isFaceDown) return;
                     if (slot.card.uid === ctx.card.uid) return; // "eccetto questa carta"
@@ -3858,7 +3858,7 @@
         // stessa svista basta a rendere intargettabile una futura carta
         // personalizzata (crea-carta.html è testo libero dell'utente).
         if (raceCheckSlot && !raceCheckSlot.isFaceDown && raceCheckSlot.card.race) {
-            const protectedByRace = ['player', 'bot'].some((protectorOwner) =>
+            const protectedByRace = Tavolo.ordine().some((protectorOwner) =>
                 fieldOf(protectorOwner).some((slot) => slot && !slot.isFaceDown
                     && getDefinition(slot.card.id)?.protectsRaceFromTargeting === raceCheckSlot.card.race));
             if (protectedByRace) {
@@ -4889,7 +4889,7 @@
         // (game-flow.js) per mostrare le vere carte del bot invece dei
         // dorsi.
         gameState.bothHandsRevealed = false;
-        ['player', 'bot'].forEach((owner) => {
+        Tavolo.ordine().forEach((owner) => {
             if (fieldOf(owner).some((s) => s && !s.isFaceDown && s.card.id === 282)) {
                 gameState.otherMonsterSummonsBlockedFor[owner] = true;
             }
@@ -5030,12 +5030,12 @@
         // di monsterEffectsNegatedUidsFor appena fatto; li re-inietta qui
         // ad ogni render, esattamente come la clausola base fa da sé più
         // sotto per il bersaglio equipaggiato.
-        ['player', 'bot'].forEach((owner) => {
+        Tavolo.ordine().forEach((owner) => {
             const extended = gameState.orichalcosExtendedNegationUidsFor && gameState.orichalcosExtendedNegationUidsFor[owner];
             if (extended && extended.size) extended.forEach((uid) => gameState.monsterEffectsNegatedUidsFor[owner].add(uid));
         });
 
-        ['player', 'bot'].forEach((owner) => {
+        Tavolo.ordine().forEach((owner) => {
             // Mostri scoperti sul campo (es. Jinzo).
             fieldOf(owner).forEach((slot, index) => {
                 if (!slot || slot.isFaceDown) return;
@@ -5160,7 +5160,7 @@
         // evita anche che una copia attivata in seguito mostri le lame fisse
         // prima della nuova animazione di caduta.
         if (gameState.revealedSwordsLanded) {
-            ['player', 'bot'].forEach((target) => {
+            Tavolo.ordine().forEach((target) => {
                 const controller = opponentOf(target);
                 const ancoraAttiva = stFieldOf(controller).some((slot) => slot && !slot.isFaceDown && slot.card.id === 8);
                 if (!ancoraAttiva) gameState.revealedSwordsLanded[target] = false;
@@ -5188,7 +5188,7 @@
         // differenza di Misterioso Burattinaio id 579, che reagisce a
         // prescindere e non li consulta mai).
         const extra = { summonedCard: summonedCard || null, summonedVia: summonedVia || null };
-        ['player', 'bot'].forEach((owner) => {
+        Tavolo.ordine().forEach((owner) => {
             fieldOf(owner).forEach((slot, index) => {
                 if (!slot || slot.isFaceDown) return;
                 const def = getDefinition(slot.card.id);
@@ -5230,7 +5230,7 @@
      * Cimitero" più sopra in fireTrigger, un caso diverso e più stretto).
      */
     function reactToAnySpecialSummon(summonedCard) {
-        ['player', 'bot'].forEach((owner) => {
+        Tavolo.ordine().forEach((owner) => {
             fieldOf(owner).forEach((slot, index) => {
                 if (!slot || slot.isFaceDown) return;
                 const def = getDefinition(slot.card.id);
@@ -5552,7 +5552,7 @@
         // funzioni di calcolo, vedi Soldati Insetto del Cielo/Soldato
         // Cinetico/Metalmorfosi), ma è un arricchimento generico dello
         // stesso ctx condiviso, non un parametro ad hoc per una sola carta.
-        const owner = ['player', 'bot'].find((o) => fieldOf(o).some((s) => s && s.card.uid === card.uid)) || null;
+        const owner = Tavolo.ordine().find((o) => fieldOf(o).some((s) => s && s.card.uid === card.uid)) || null;
         // Bonus "usa e getta", concesso da un'altra carta (non da un Equip
         // né dalla propria definizione) SOLO per questo Damage Step, es.
         // Fuoco di Copertura (id 852): guadagni una tantum, decisi al
@@ -5576,7 +5576,7 @@
         // sappiamo a priori il proprietario di `card`, quindi la cerchiamo
         // su entrambi gli stField (al massimo 5 caselle a testa, costo
         // trascurabile).
-        ['player', 'bot'].forEach((owner) => {
+        Tavolo.ordine().forEach((owner) => {
             stFieldOf(owner).forEach((slot) => {
                 if (!slot || slot.isFaceDown) return;
                 const eqDef = getDefinition(slot.card.id);

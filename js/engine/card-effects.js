@@ -1042,7 +1042,7 @@
         const filtro = o.filter || (() => true);
         const includiCoperte = !!o.includiCoperte;
 
-        const proprietari = diChi === 'both' ? ['player', 'bot']
+        const proprietari = diChi === 'both' ? Tavolo.ordine()
             : diChi === 'self' ? [ctx.owner]
                 : diChi === 'opponent' ? [ctx.opponent]
                     : [diChi];
