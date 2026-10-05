@@ -1103,11 +1103,18 @@
             ctx.log(`🔨 Maglio Magico rimescola ${count} cart${count === 1 ? 'a' : 'e'} nel Deck e ne pesca altrettante!`);
         };
         if (remaining.length === 0) { finish(); return; }
-        window.DuelEngineUI.openCardListPicker(remaining, {
-            title: '🔨 Maglio Magico',
-            text: `Scegli 1 carta da rimescolare nel Deck, o chiudi per fermarti qui (${selected.length} scelt${selected.length === 1 ? 'a' : 'e'} finora).`,
-            onSelect: (card) => { selected.push(card); pickMagicalMalletCards(ctx, hand, selected); },
-            onCancel: finish
+        Decisioni.chiedi({
+            chi: 'player',
+            candidati: remaining,
+            titolo: '🔨 Maglio Magico',
+            testo: `Scegli 1 carta da rimescolare nel Deck, o chiudi per fermarti qui (${selected.length} scelt${selected.length === 1 ? 'a' : 'e'} finora).`,
+            annullabile: true
+        }, (card) => {
+            if (card === null) {
+                finish();
+                return;
+            }
+            selected.push(card); pickMagicalMalletCards(ctx, hand, selected);
         });
     }
     CardEffects.register(768, {
@@ -1116,7 +1123,7 @@
         },
         activate(ctx) {
             const hand = ctx.hand(ctx.owner);
-            if (ctx.owner === 'player' && window.DuelEngineUI) {
+            if (Decisioni.rispondeUnaPersona(ctx.owner)) {
                 pickMagicalMalletCards(ctx, hand, []);
                 return;
             }
@@ -1548,12 +1555,19 @@
     // 787 — Egoista Elegante / Elegant Egotist (Magia Normale)
     // Se "Lady Arpia" è sul Terreno: Special Summon 1 mostro il cui
     // nome contiene "Lady Arpia" dalla mano o dal Deck.
+    // Era registrata due volte: anche come id 224 "Egotista Elegante", stesso
+    // testo, nei mazzi di Mai. Il doppione è stato cancellato e i mazzi
+    // portati qui; da lui viene il canActivate che controlla che esista
+    // davvero un mostro da Evocare (prima bastava una casella libera).
     // ================================================================
     CardEffects.register(787, {
         canActivate(ctx) {
             const hasHarpieLady = ctx.field(ctx.owner).some((s) => s && !s.isFaceDown && isHarpieLadySupport(s.card));
             if (!hasHarpieLady) return false;
-            return ctx.findEmptyMonsterSlot(ctx.owner) !== -1;
+            if (ctx.findEmptyMonsterSlot(ctx.owner) === -1) return false;
+            const evocabile = (c) => isHarpieLadySupport(c) || c.name === 'Sorelle Lady Arpia';
+            const deck = ctx.gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
+            return ctx.hand(ctx.owner).some(evocabile) || (Array.isArray(deck) && deck.some(evocabile));
         },
         activate(ctx) {
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);

@@ -31,8 +31,15 @@
             const hand = ctx.hand(ctx.owner);
             const handIndex = hand.findIndex((c) => c.id === 518);
             if (handIndex === -1) return;
+            // Il sacrificio può togliere carte anche dalla mano: l'indice
+            // calcolato prima non è più affidabile, la carta si ritrova per
+            // riferimento (prima si poteva Evocare la carta sbagliata, o
+            // nessuna — trovato dal duello senza testa).
+            const cartaRituale = hand[handIndex];
             performRitualTribute(ctx, 8, handIndex);
-            const [ritualCard] = hand.splice(handIndex, 1);
+            const indiceFinale = hand.indexOf(cartaRituale);
+            if (indiceFinale === -1) return;
+            const [ritualCard] = hand.splice(indiceFinale, 1);
 
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) {
@@ -40,7 +47,7 @@
                 ctx.log('⚠️ Il Terreno è pieno: Zera il Mant finisce nel Cimitero.');
                 return;
             }
-            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'graveyard');
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'hand');
             ctx.log('👹 Rituale di Zera evoca Zera il Mant!');
         }
     });
@@ -199,11 +206,17 @@
                         }
                         ctx.log('🧙 Saggio Oscuro sacrifica Mago Nero ed è Special Summonato dal Deck!');
                     };
-                    if (ctx.owner === 'player' && window.DuelEngineUI) {
-                        window.DuelEngineUI.openChoicePopover(null, {
-                            title: '🧙 Hai indovinato! Special Summonare Saggio Oscuro dal Deck?',
-                            choiceA: { icon: '✅', label: 'Sì, sacrifica Mago Nero', onSelect: summonFromDeck },
-                            choiceB: { icon: '❌', label: 'No', onSelect: () => {} }
+                    if (Decisioni.rispondeUnaPersona(ctx.owner)) {
+                        Decisioni.chiedi({
+                            chi: 'player',
+                            tipo: 'coppia',
+                            titolo: '🧙 Hai indovinato! Special Summonare Saggio Oscuro dal Deck?',
+                            candidati: [
+                                { icon: '✅', label: 'Sì, sacrifica Mago Nero', onSelect: summonFromDeck },
+                                { icon: '❌', label: 'No', onSelect: () => {} }
+                            ]
+                        }, (scelta) => {
+                            if (scelta) scelta.onSelect();
                         });
                     } else {
                         summonFromDeck();
@@ -405,17 +418,22 @@
             const summon = (option) => {
                 ctx.fusionSummon(owner, option.extraDeckIndex, option.materialLocations);
             };
-            if (options.length === 1 || !window.DuelEngineUI) {
+            // Sceglie chi ATTIVA la Fusione: prima il controllo guardava solo
+            // se c'era l'interfaccia, e una Fusione del bot con più mostri
+            // possibili chiedeva al giocatore quale Evocare.
+            if (options.length === 1 || !Decisioni.rispondeUnaPersona(owner)) {
                 summon(options[0]);
                 return;
             }
-            window.DuelEngineUI.openCardListPicker(options.map((o) => o.card), {
-                title: '🔗 Scegli il Mostro Fusione',
-                text: 'Hai i materiali per più di un Mostro Fusione: scegline uno da Evocare.',
-                onSelect: (card) => {
-                    const match = options.find((o) => o.card.uid === card.uid);
-                    if (match) summon(match);
-                }
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: options.map((o) => o.card),
+                titolo: '🔗 Scegli il Mostro Fusione',
+                testo: 'Hai i materiali per più di un Mostro Fusione: scegline uno da Evocare.'
+            }, (card) => {
+                if (card === null) return;
+                const match = options.find((o) => o.card.uid === card.uid);
+                if (match) summon(match);
             });
         }
     });
@@ -1622,7 +1640,7 @@
                 ctx.log('⚠️ Il Terreno è pieno: Paladino del Drago Oscuro finisce nel Cimitero.');
                 return;
             }
-            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'graveyard');
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'hand');
             ctx.log('🐉 Rito del Drago Oscuro evoca Paladino del Drago Oscuro!');
         },
         canActivateFromGraveyardMainPhase(ctx) {
@@ -1666,15 +1684,22 @@
             const hand = ctx.hand(ctx.owner);
             const handIndex = hand.findIndex((c) => c.id === 854);
             if (handIndex === -1) return;
+            // Il sacrificio può togliere carte anche dalla mano: l'indice
+            // calcolato prima non è più affidabile, la carta si ritrova per
+            // riferimento (prima si poteva Evocare la carta sbagliata, o
+            // nessuna — trovato dal duello senza testa).
+            const cartaRituale = hand[handIndex];
             performRitualTribute(ctx, 8, handIndex);
-            const [ritualCard] = hand.splice(handIndex, 1);
+            const indiceFinale = hand.indexOf(cartaRituale);
+            if (indiceFinale === -1) return;
+            const [ritualCard] = hand.splice(indiceFinale, 1);
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) {
                 ctx.graveyard(ctx.owner).push(ritualCard);
                 ctx.log('⚠️ Il Terreno è pieno: Mago del Caos Nero finisce nel Cimitero.');
                 return;
             }
-            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'graveyard');
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'hand');
             ctx.log('🌑 Rito della Magia Oscura evoca Mago del Caos Nero!');
         }
     });
@@ -3054,14 +3079,18 @@
                 ctx.summonedCard.defense = finalSlot.card.defense;
                 ctx.log(`🎭 Copione copia ATK/DEF di ${finalSlot.card.name}: diventa ${finalSlot.card.attack}/${finalSlot.card.defense}!`);
             };
-            if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+            if (!Decisioni.rispondeUnaPersona(ctx.owner)) {
                 applyCopy(candidates[0]);
                 return;
             }
-            window.DuelEngineUI.openCardListPicker(candidates, {
-                title: '🎭 Copione',
-                text: 'Scegli il mostro scoperto dell\'avversario da copiare (ATK/DEF originali).',
-                onSelect: (card) => applyCopy(card)
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: candidates,
+                titolo: '🎭 Copione',
+                testo: 'Scegli il mostro scoperto dell\'avversario da copiare (ATK/DEF originali).'
+            }, (card) => {
+                if (card === null) return;
+                applyCopy(card);
             });
         }
     });

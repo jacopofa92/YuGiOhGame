@@ -1,0 +1,15 @@
+{
+  "//": "Solo per il controllo dei tipi (npm run typecheck) e per l'editor: il gioco non si compila. checkJs e' spento: si controllano solo i file con // @ts-check in cima. Vedi types/motore.d.ts.",
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": false,
+    "noEmit": true,
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "strict": false,
+    "skipLibCheck": true,
+    "types": []
+  },
+  "include": ["types/**/*.d.ts", "js/**/*.js"],
+  "exclude": ["node_modules", "js/vendor", "js/data/cards-data.generated.js", "js/data/card-origins.generated.js"]
+}

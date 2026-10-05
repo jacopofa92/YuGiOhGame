@@ -753,9 +753,7 @@
             graveyardOf(slot.originalOwner || owner).push(destroyedCard);
             redirectToBanishIfFlagged(slot.originalOwner || owner, destroyedCard);
             field[index] = null;
-            if (typeof triggerDestroyEffect === 'function') {
-                triggerDestroyEffect(owner, index, 'monster');
-            }
+            EventiDuello.emetti('distruzione', owner, index, 'monster');
             // ctx.card = la carta appena distrutta (serve a fireTrigger per
             // trovarne la definizione — vedi il ramo TRIGGER.ON_DESTROY qui
             // sotto), non più recuperabile da field[index] dato che è già
@@ -1541,9 +1539,9 @@
                         ? Math.max(0, visualOptions.delayMs)
                         : 30;
                     setTimeout(() => {
-                        if (typeof triggerFieldImpact === 'function') triggerFieldImpact(owner, slotIndex, 'monster');
-                        if (typeof showPositionEffect === 'function') showPositionEffect(owner, slotIndex, position);
-                        const cardEl = document.querySelector(`#${owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard'} .field-slot[data-type="monster"][data-index="${slotIndex}"] .card`);
+                        EventiDuello.emetti('impatto-campo', owner, slotIndex, 'monster');
+                        EventiDuello.emetti('cambio-posizione', owner, slotIndex, position);
+                        const cardEl = PortaUI.query(`#${owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard'} .field-slot[data-type="monster"][data-index="${slotIndex}"] .card`);
                         if (cardEl && window.FX) FX.playMonsterSummonEffect(card, cardEl);
                         if ((card.level || 0) < 7 && !(window.AudioLibrary && AudioLibrary.tryPlayCardSound(card, 'evocazioni')) && window.SFX) SFX.summon(position);
                     }, visualDelay);
@@ -2950,7 +2948,19 @@
             // effetto "quando questa carta viene Evocata".
             if (typeof selfHandler === 'function' && !isMonsterCardEffectsNegated(ctx.owner, ctx.summonedCard.uid)) {
                 if (window.FX) FX.playCardActivateCenterScreen(ctx.summonedCard);
-                safeCallCardHandler(ctx.summonedCard, name === TRIGGER.ON_SPECIAL_SUMMON ? 'onSpecialSummon' : 'onSummon', () => selfHandler(ctx));
+                // `card` è la carta di cui si sta eseguendo l'effetto: qui è
+                // quella appena Evocata. NESSUN chiamante di questo trigger lo
+                // metteva nel contesto (passano solo summonedCard), quindi
+                // ogni onSummon che legge ctx.card andava in errore, in
+                // silenzio (safeCallCardHandler). Trovato dal duello senza
+                // testa (tools/duello-senza-testa.js) e verificato nel
+                // browser: i mostri Spirito (Coniglio Bianco di Inaba e gli
+                // altri, `ctx.card._returnToHandTurn`) Evocati Normalmente
+                // non venivano mai segnati, e non tornavano in mano a fine
+                // turno. Una copia, non il contesto condiviso dell'evento:
+                // chi risponde all'Evocazione deve continuare a vederlo com'è.
+                const selfCtx = ctx.card ? ctx : Object.assign({}, ctx, { card: ctx.summonedCard });
+                safeCallCardHandler(ctx.summonedCard, name === TRIGGER.ON_SPECIAL_SUMMON ? 'onSpecialSummon' : 'onSummon', () => selfHandler(selfCtx));
             }
 
             // 1.5) Reazione delle CARTE SCOPERTE sul Terreno del
@@ -3579,22 +3589,27 @@
      * una persona vera.
      */
     function offerChoice(responderOwner, candidates, callback, triggerCard, testoMomento, triggerIsOwn) {
-        if (responderOwner === 'bot') {
-            // Decisione delegata a BotAI (js/ai/ai-controller.js — livello
-            // di difficoltà attivo in gameState.botDifficulty), con ripiego
-            // sulla vecchia euristica fissa ("prendi sempre la prima") se
-            // per qualche motivo BotAI non è caricato (es. pagine come
+        Decisioni.chiedi({
+            chi: responderOwner,
+            tipo: 'risposta',
+            candidati: candidates,
+            cartaInnesco: triggerCard,
+            momento: testoMomento,
+            innescoProprio: triggerIsOwn,
+            // Il bot decide con BotAI (js/ai/ai-controller.js — livello di
+            // difficoltà attivo in gameState.botDifficulty), con ripiego
+            // sulla vecchia euristica fissa ("prendi sempre la prima") se per
+            // qualche motivo BotAI non è caricato (es. pagine come
             // cartoteca.html/creazione-deck.html, che caricano duel-engine.js
             // ma non bot.js/ai-controller.js e non aprono mai davvero una
-            // Chain in pratica).
-            callback(window.BotAI ? BotAI.chooseChainResponse(candidates) : candidates[0]);
-        } else if (window.DuelEngineUI && typeof window.DuelEngineUI.promptDefenderResponse === 'function') {
-            window.DuelEngineUI.promptDefenderResponse(candidates, callback, triggerCard, testoMomento, triggerIsOwn);
-        } else {
-            // Nessuna UI disponibile: per sicurezza non attiva nulla,
+            // Chain in pratica). Il giocatore senza un'interfaccia che glielo
+            // chieda non risponde: per sicurezza non si attiva nulla,
             // invece di bloccare il duello.
-            callback(null);
-        }
+            automatica: (elenco) => {
+                if (responderOwner !== 'bot') return null;
+                return window.BotAI ? BotAI.chooseChainResponse(elenco) : elenco[0];
+            }
+        }, callback);
     }
 
     /**
@@ -4495,7 +4510,7 @@
         // stabili per tutta la vita del link, risoluzione compresa.
         initialLink.linkNumber = 1;
         chain.links.push(initialLink);
-        if (typeof renderChainStack === 'function') renderChainStack();
+        EventiDuello.emetti('catena');
 
         const usedUidsBySide = { player: new Set(), bot: new Set() };
         // La carta che ha aperto la Catena è già un suo link: non può
@@ -4564,7 +4579,7 @@
                     isManualActivation: true,
                     linkNumber: chain.links.length + 1
                 });
-                if (typeof renderChainStack === 'function') renderChainStack();
+                EventiDuello.emetti('catena');
                 turnToRespond = responderOwner === 'player' ? 'bot' : 'player';
                 askNextRound();
             }, triggerCard, null, triggerIsOwn);
@@ -4653,7 +4668,7 @@
             if (chain.links.length === 0) {
                 chain.active = false;
                 chainResolutionInFlight = false;
-                if (typeof renderChainStack === 'function') renderChainStack();
+                EventiDuello.emetti('catena');
                 // Svuotata PRIMA di chiamarli: un onDone può aprire a sua
                 // volta una nuova Chain, e quella deve partire pulita.
                 const attesi = pendingChainResolutionCallbacks;
@@ -4707,9 +4722,9 @@
                 // Anche un Link NEGATO si prende il suo momento: e' una
                 // delle cose piu' importanti che possono succedere in una
                 // Chain, e prima passava via senza che si vedesse.
-                if (typeof renderChainStack === 'function') renderChainStack(link);
+                EventiDuello.emetti('catena', link);
                 attendiUiBloccante(() => {
-                    if (typeof renderChainStack === 'function') renderChainStack();
+                    EventiDuello.emetti('catena');
                     resolveNext();
                 }, CHAIN_LINK_PAUSE_MS);
                 return;
@@ -4736,13 +4751,13 @@
                 // durata della pausa (lo si ripassa come "fantasma"), poi
                 // sparisce: cosi' si vede QUALE carta ha appena fatto
                 // effetto, invece di trovarsi il campo gia' cambiato.
-                if (typeof renderChainStack === 'function') renderChainStack(link);
+                EventiDuello.emetti('catena', link);
                 // `attendiUiBloccante` e non un setTimeout diretto: se
                 // l'effetto appena risolto ha fatto partire un filmato di
                 // Evocazione, il link successivo NON deve risolversi
                 // sotto al video. Vedi afterBlockingUi in game-flow.js.
                 attendiUiBloccante(() => {
-                    if (typeof renderChainStack === 'function') renderChainStack();
+                    EventiDuello.emetti('catena');
                     resolveNext();
                 }, CHAIN_LINK_PAUSE_MS);
             };
@@ -4762,7 +4777,7 @@
             // sopra) — passato come SECONDO parametro "fantasma" a
             // renderChainStack (game-flow.js), che lo aggiunge in coda
             // solo per la visualizzazione, senza toccare l'array reale.
-            if (typeof renderChainStack === 'function') renderChainStack(link);
+            EventiDuello.emetti('catena', link);
             const duration = (window.FX && FX.ACTIVATE_CENTER_DURATION_MS) || 2000;
             const elapsed = link.activatedAt ? (Date.now() - link.activatedAt) : duration;
             const waitMs = Math.max(0, duration - elapsed);
@@ -6214,14 +6229,16 @@
     // pageerror) — aggiunge solo un avviso leggibile nel Game Log, se
     // questa pagina ne ha uno (duel-engine.js è caricato anche da pagine
     // senza duello vero, es. cartoteca.html/crea-carta.html).
+    // Solo dove c'è una pagina: nel duello senza testa
+    // (tools/duello-senza-testa.js) gli errori arrivano già a chi lo esegue.
     // ============================================================
-    window.addEventListener('error', (event) => {
+    if (typeof window.addEventListener === 'function') window.addEventListener('error', (event) => {
         console.error('[Errore non gestito]', event.error || event.message);
         if (typeof addToLog === 'function') {
             addToLog('⚠️ Si è verificato un errore imprevisto. Il duello potrebbe non rispondere più correttamente: ricarica la pagina se necessario.');
         }
     });
-    window.addEventListener('unhandledrejection', (event) => {
+    if (typeof window.addEventListener === 'function') window.addEventListener('unhandledrejection', (event) => {
         // "AbortError: Transition was skipped" — rifiuto standard e
         // innocuo della View Transitions API (@view-transition {
         // navigation: auto; } in ogni pagina) quando si naviga via da

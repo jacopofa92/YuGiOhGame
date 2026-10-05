@@ -3686,6 +3686,44 @@ priorità o richiedono un refactor ampio):
   (battaglie vere via `resolveAttack`; LP alzati a inizio caso, o una
   battaglia precedente chiude il duello e i casi dopo falliscono per finta).
 
+- ✅ **Nucleo senza testa (Priorità 2 del piano, branch
+  `refactor/nucleo-senza-testa`)**: le regole del duello girano anche in
+  Node (`tools/duello-senza-testa.js`, duelli interi con l'IA vera e un
+  orologio virtuale; spec `duello-senza-testa`). Tre regole per il codice
+  nuovo, tutte sorvegliate da un guardrail:
+  - **Un file di regola non tocca la pagina**: niente `document.`, si usa
+    `PortaUI` (`js/engine/porta-ui.js`).
+  - **Un file di regola non chiama per nome il disegno**: avvisa
+    l'interfaccia dal canale `EventiDuello` (`js/engine/eventi-duello.js`):
+    `emetti` per un avviso, `attendi` per un'animazione con un "fatto"
+    (senza ascoltatori parte subito), `chiedi` per una domanda. I nomi
+    sono un elenco chiuso (`EVENTI`): un evento nuovo si aggiunge lì e si
+    ascolta in cima a `game-flow.js` o `actions.js`. `addToLog`,
+    `updateUI`, `clearSelection`, `isBlockingModalOpen` ed `endDuel`
+    tengono il nome ma vivono in `js/engine/canale-partita.js` con la
+    sola parte di regola (il disegno è passato agli ascoltatori).
+  - **Ogni scelta passa da `Decisioni.chiedi`** (`js/engine/decisioni.js`),
+    mai da `DuelEngineUI`: la carta descrive la scelta (chi, tipo,
+    candidati, `automatica` per il bot, `annullabile`, `viaggia` per le
+    scelte che in Multiplayer devono viaggiare) e il modulo decide chi
+    risponde: l'avversario remoto, la persona davanti allo schermo, o la
+    scelta automatica. Per una scelta in più passi dove il bot decide
+    l'insieme intero, `Decisioni.rispondeUnaPersona(chi)`. Una decisione
+    che aspetta una persona si legge con `Decisioni.inSospeso()` e le si
+    risponde con `Decisioni.rispondi(...)`: utile per i test, che prima
+    dovevano cliccare il modale. **Gli spec che vogliono "nessuna
+    interfaccia" possono ancora mettere `window.DuelEngineUI = null`**:
+    `actions.js` risponde alla domanda `decisioni-a-schermo` guardando
+    proprio quell'oggetto.
+  Due difetti veri chiusi nel passaggio: la Fusione (id 38) attivata dal
+  BOT con più mostri possibili chiedeva al giocatore quale Evocare; e una
+  scelta di bersaglio annullabile, annullata in Multiplayer, non arrivava
+  all'altro client (che dopo 30 secondi prendeva il primo candidato): ora
+  l'annullo viaggia come uid dedicato (`Decisioni.UID_ANNULLA`).
+  **Le note 235 e 622 NON si chiudono con questo**: il loro limite è il
+  checkpoint di targeting, che restituisce il bersaglio subito a circa
+  cento chiamanti.
+
 ## Carte con limiti noti (da riprendere)
 
 **Fonte di verità: `grep missingEffectNote data/cards.json`, e nient'altro.**

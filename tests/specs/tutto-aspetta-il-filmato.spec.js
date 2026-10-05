@@ -83,7 +83,7 @@ module.exports = {
         const sorgente = fs.readFileSync(path.join(__dirname, '..', '..', 'js', 'engine', 'duel-engine.js'), 'utf8');
         t.assert(/attendiUiBloccante\(/.test(sorgente),
             'La risoluzione della Catena deve passare dall\'attesa condivisa, non da un setTimeout diretto');
-        const avanzamentiDiretti = (sorgente.match(/setTimeout\(\(\) => \{\s*if \(typeof renderChainStack/g) || []).length;
+        const avanzamentiDiretti = (sorgente.match(/setTimeout\(\(\) => \{\s*(if \(typeof renderChainStack|EventiDuello\.emetti\('catena')/g) || []).length;
         t.assert(avanzamentiDiretti === 0,
             `La Catena non deve avere avanzamenti a tempo fisso rimasti indietro (${avanzamentiDiretti})`);
     }

@@ -324,7 +324,7 @@
                 ctx.log('⚠️ Il Terreno è pieno: Hamburger Famelico finisce nel Cimitero.');
                 return;
             }
-            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'graveyard');
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'hand');
             ctx.log('🍔 Ricetta dell\'Hamburger evoca Hamburger Famelico!');
         }
     });
@@ -355,7 +355,7 @@
                 ctx.log('⚠️ Il Terreno è pieno: Tartaruga Granchio finisce nel Cimitero.');
                 return;
             }
-            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'graveyard');
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'hand');
             ctx.log('🐢 Giuramento della Tartaruga evoca Tartaruga Granchio!');
         }
     });
@@ -386,7 +386,7 @@
                 ctx.log('⚠️ Il Terreno è pieno: Spettacolo della Spada finisce nel Cimitero.');
                 return;
             }
-            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'graveyard');
+            ctx.specialSummon(ctx.owner, ritualCard, slotIndex, 'attack', 'hand');
             ctx.log('⚔️ Danza d\'Apertura evoca Spettacolo della Spada!');
         }
     });
@@ -787,10 +787,14 @@
                         ctx.specialSummon(owner, card, slotIndex, position, 'graveyard');
                         ctx.log(`💀 Lanciere Sciocco fa Special Summonare ${card.name} (${owner === 'player' ? 'tuo' : 'del bot'}) dal Cimitero!`);
                     };
-                    if (owner !== 'player' || !window.DuelEngineUI) { completa('attack'); return; }
-                    window.DuelEngineUI.openPositionPicker(null, {
-                        title: `${card.name}: in che Posizione?`,
-                        onSelect: completa
+                    if (!Decisioni.rispondeUnaPersona(owner)) { completa('attack'); return; }
+                    Decisioni.chiedi({
+                        chi: 'player',
+                        tipo: 'posizione',
+                        titolo: `${card.name}: in che Posizione?`
+                    }, (scelta) => {
+                        if (scelta === null) return;
+                        completa(scelta);
                     });
                 });
             });
@@ -1409,19 +1413,21 @@
                 if (remaining <= 0) return;
                 const candidates = gatherCandidates();
                 if (candidates.length === 0) return;
-                if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+                if (!Decisioni.rispondeUnaPersona(ctx.owner)) {
                     destroyOne(candidates[0]);
                     pickAndDestroy(remaining - 1);
                     return;
                 }
-                window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
-                    title: '💣 Sparajongler Esplosivo',
-                    text: `Scegli ${remaining} mostr${remaining === 1 ? 'o' : 'i'} scoperto con ATK 1000 o meno da distruggere.`,
-                    onSelect: (chosenCard) => {
-                        const entry = candidates.find((c) => c.card.uid === chosenCard.uid);
-                        if (entry) destroyOne(entry);
-                        pickAndDestroy(remaining - 1);
-                    }
+                Decisioni.chiedi({
+                    chi: 'player',
+                    candidati: candidates.map((c) => c.card),
+                    titolo: '💣 Sparajongler Esplosivo',
+                    testo: `Scegli ${remaining} mostr${remaining === 1 ? 'o' : 'i'} scoperto con ATK 1000 o meno da distruggere.`
+                }, (chosenCard) => {
+                    if (chosenCard === null) return;
+                    const entry = candidates.find((c) => c.card.uid === chosenCard.uid);
+                    if (entry) destroyOne(entry);
+                    pickAndDestroy(remaining - 1);
                 });
             };
             pickAndDestroy(2);
@@ -1460,11 +1466,15 @@
                 gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = gameState[deckKey].length;
                 ctx.log(`🔥 Sentinella Cremisi rimanda ${card.name} in fondo al Deck!`);
             };
-            if (ctx.owner !== 'player' || !window.DuelEngineUI) { returnToDeck(stillInGrave[0]); return; }
-            window.DuelEngineUI.openCardListPicker(stillInGrave, {
-                title: '🔥 Sentinella Cremisi',
-                text: 'Scegli 1 tuo mostro distrutto in battaglia questo turno da rimandare in fondo al Deck (questa carta si tributa).',
-                onSelect: returnToDeck
+            if (!Decisioni.rispondeUnaPersona(ctx.owner)) { returnToDeck(stillInGrave[0]); return; }
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: stillInGrave,
+                titolo: '🔥 Sentinella Cremisi',
+                testo: 'Scegli 1 tuo mostro distrutto in battaglia questo turno da rimandare in fondo al Deck (questa carta si tributa).'
+            }, (scelta) => {
+                if (scelta === null) return;
+                returnToDeck(scelta);
             });
         }
     });
@@ -1568,11 +1578,15 @@
                 gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = gameState[deckKey].length;
                 ctx.log(`🧚 Guardiana delle Fate rimanda ${card.name} in fondo al Deck!`);
             };
-            if (ctx.owner !== 'player' || !window.DuelEngineUI) { returnToDeck(stillInGrave[0]); return; }
-            window.DuelEngineUI.openCardListPicker(stillInGrave, {
-                title: '🧚 Guardiana delle Fate',
-                text: 'Scegli 1 tua Magia mandata al Cimitero da un effetto avversario questo turno da rimandare in fondo al Deck (questa carta si tributa).',
-                onSelect: returnToDeck
+            if (!Decisioni.rispondeUnaPersona(ctx.owner)) { returnToDeck(stillInGrave[0]); return; }
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: stillInGrave,
+                titolo: '🧚 Guardiana delle Fate',
+                testo: 'Scegli 1 tua Magia mandata al Cimitero da un effetto avversario questo turno da rimandare in fondo al Deck (questa carta si tributa).'
+            }, (scelta) => {
+                if (scelta === null) return;
+                returnToDeck(scelta);
             });
         }
     });
@@ -1750,14 +1764,18 @@
                 ctx.card.lockedAttackBanTargetUid = target.uid;
                 ctx.log(`😴 Invito al Sonno Oscuro impedisce a ${target.name} di attaccare finché resta scoperta!`);
             };
-            if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+            if (!Decisioni.rispondeUnaPersona(ctx.owner)) {
                 lockTarget(candidates.reduce((a, b) => (b.attack > a.attack ? b : a)));
                 return;
             }
-            window.DuelEngineUI.openCardListPicker(candidates, {
-                title: '😴 Invito al Sonno Oscuro',
-                text: 'Scegli 1 mostro avversario scoperto che non potrà più attaccare finché questa carta resta scoperta.',
-                onSelect: lockTarget
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: candidates,
+                titolo: '😴 Invito al Sonno Oscuro',
+                testo: 'Scegli 1 mostro avversario scoperto che non potrà più attaccare finché questa carta resta scoperta.'
+            }, (scelta) => {
+                if (scelta === null) return;
+                lockTarget(scelta);
             });
         },
         onSpecialSummon() {},
@@ -1826,11 +1844,15 @@
                 const result = ctx.destroyTargetedMonster(ctx.opponent, index);
                 if (result.allowed && result.card) ctx.log(`🪙 Kryuel indovina la moneta: distrugge ${result.card.name}!`);
             };
-            if (ctx.owner !== 'player' || !window.DuelEngineUI) { destroyChosen(candidates[0]); return; }
-            window.DuelEngineUI.openCardListPicker(candidates, {
-                title: '🪙 Kryuel',
-                text: 'Hai indovinato la moneta! Scegli 1 mostro avversario scoperto da distruggere.',
-                onSelect: destroyChosen
+            if (!Decisioni.rispondeUnaPersona(ctx.owner)) { destroyChosen(candidates[0]); return; }
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: candidates,
+                titolo: '🪙 Kryuel',
+                testo: 'Hai indovinato la moneta! Scegli 1 mostro avversario scoperto da distruggere.'
+            }, (scelta) => {
+                if (scelta === null) return;
+                destroyChosen(scelta);
             });
         }
     });
@@ -1892,11 +1914,15 @@
                 gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = gameState[deckKey].length;
                 ctx.log(`🐆 Pantera Signora rimanda ${card.name} in cima al Deck!`);
             };
-            if (ctx.owner !== 'player' || !window.DuelEngineUI) { returnToDeckTop(stillInGrave[0]); return; }
-            window.DuelEngineUI.openCardListPicker(stillInGrave, {
-                title: '🐆 Pantera Signora',
-                text: 'Scegli 1 tuo mostro distrutto in battaglia questo turno da rimandare in cima al Deck (questa carta si tributa).',
-                onSelect: returnToDeckTop
+            if (!Decisioni.rispondeUnaPersona(ctx.owner)) { returnToDeckTop(stillInGrave[0]); return; }
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: stillInGrave,
+                titolo: '🐆 Pantera Signora',
+                testo: 'Scegli 1 tuo mostro distrutto in battaglia questo turno da rimandare in cima al Deck (questa carta si tributa).'
+            }, (scelta) => {
+                if (scelta === null) return;
+                returnToDeckTop(scelta);
             });
         }
     });
@@ -1942,19 +1968,21 @@
                 const candidates = [];
                 ctx.field(ctx.owner).forEach((s, i) => { if (s && !gathered.some((g) => g.index === i)) candidates.push({ index: i, card: s.card }); });
                 if (candidates.length === 0) return;
-                if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+                if (!Decisioni.rispondeUnaPersona(ctx.owner)) {
                     gathered.push(candidates[0]);
                     pickAndTribute(remaining - 1, gathered);
                     return;
                 }
-                window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
-                    title: '🧚 Fata Isterica',
-                    text: `Scegli ${remaining} tu${remaining === 1 ? 'o mostro' : 'oi mostri'} da tributare.`,
-                    onSelect: (chosenCard) => {
-                        const entry = candidates.find((c) => c.card.uid === chosenCard.uid);
-                        if (entry) gathered.push(entry);
-                        pickAndTribute(remaining - 1, gathered);
-                    }
+                Decisioni.chiedi({
+                    chi: 'player',
+                    candidati: candidates.map((c) => c.card),
+                    titolo: '🧚 Fata Isterica',
+                    testo: `Scegli ${remaining} tu${remaining === 1 ? 'o mostro' : 'oi mostri'} da tributare.`
+                }, (chosenCard) => {
+                    if (chosenCard === null) return;
+                    const entry = candidates.find((c) => c.card.uid === chosenCard.uid);
+                    if (entry) gathered.push(entry);
+                    pickAndTribute(remaining - 1, gathered);
                 });
             };
             pickAndTribute(2, []);
@@ -2015,11 +2043,15 @@
                 const result = ctx.destroyTargetedMonster(entry.owner, entry.index);
                 if (result.allowed && result.card) ctx.log(`👹 Newdoria distrugge ${result.card.name}!`);
             };
-            if (ctx.owner !== 'player' || !window.DuelEngineUI) { destroyChosen(candidates[0].card); return; }
-            window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
-                title: '👹 Newdoria',
-                text: 'Scegli 1 mostro sul Terreno da distruggere.',
-                onSelect: destroyChosen
+            if (!Decisioni.rispondeUnaPersona(ctx.owner)) { destroyChosen(candidates[0].card); return; }
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: candidates.map((c) => c.card),
+                titolo: '👹 Newdoria',
+                testo: 'Scegli 1 mostro sul Terreno da distruggere.'
+            }, (scelta) => {
+                if (scelta === null) return;
+                destroyChosen(scelta);
             });
         }
     });
@@ -2133,7 +2165,7 @@
             ctx.changePosition(entry.owner, entry.index, newPosition);
             ctx.log(`🤡 Ryu-Kishin Pagliaccio cambia la Posizione di Battaglia di ${entry.card.name}!`);
         };
-        if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+        if (!Decisioni.rispondeUnaPersona(ctx.owner)) {
             // Preferenza euristica per il bot/auto-pick: un mostro
             // avversario è quasi sempre un bersaglio più sensato del
             // proprio (il testo reale non esclude se stessa, ma
@@ -2143,13 +2175,15 @@
             toggle(preferred);
             return;
         }
-        window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
-            title: '🤡 Ryu-Kishin Pagliaccio',
-            text: 'Scegli 1 mostro scoperto di cui cambiare la Posizione di Battaglia.',
-            onSelect: (chosenCard) => {
-                const entry = candidates.find((c) => c.card.uid === chosenCard.uid);
-                if (entry) toggle(entry);
-            }
+        Decisioni.chiedi({
+            chi: 'player',
+            candidati: candidates.map((c) => c.card),
+            titolo: '🤡 Ryu-Kishin Pagliaccio',
+            testo: 'Scegli 1 mostro scoperto di cui cambiare la Posizione di Battaglia.'
+        }, (chosenCard) => {
+            if (chosenCard === null) return;
+            const entry = candidates.find((c) => c.card.uid === chosenCard.uid);
+            if (entry) toggle(entry);
         });
     }
     CardEffects.register(1091, {
@@ -2283,11 +2317,15 @@
                 ctx.destroySpellTrap(ctx.opponent, entry.index);
                 ctx.log(`🦗 Sciame di Locuste distrugge ${target.name}!`);
             };
-            if (ctx.owner !== 'player' || !window.DuelEngineUI) { destroyChosen(candidates[0].card); return; }
-            window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
-                title: '🦗 Sciame di Locuste',
-                text: 'Scegli 1 Magia/Trappola avversaria da distruggere.',
-                onSelect: destroyChosen
+            if (!Decisioni.rispondeUnaPersona(ctx.owner)) { destroyChosen(candidates[0].card); return; }
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: candidates.map((c) => c.card),
+                titolo: '🦗 Sciame di Locuste',
+                testo: 'Scegli 1 Magia/Trappola avversaria da distruggere.'
+            }, (scelta) => {
+                if (scelta === null) return;
+                destroyChosen(scelta);
             });
         }
     });
@@ -2322,11 +2360,15 @@
                 const result = ctx.destroyTargetedMonster(ctx.opponent, entry.index);
                 if (result.allowed && result.card) ctx.log(`🪲 Sciame di Scarabei distrugge ${result.card.name}!`);
             };
-            if (ctx.owner !== 'player' || !window.DuelEngineUI) { destroyChosen(candidates[0].card); return; }
-            window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
-                title: '🪲 Sciame di Scarabei',
-                text: 'Scegli 1 mostro avversario da distruggere.',
-                onSelect: destroyChosen
+            if (!Decisioni.rispondeUnaPersona(ctx.owner)) { destroyChosen(candidates[0].card); return; }
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: candidates.map((c) => c.card),
+                titolo: '🪲 Sciame di Scarabei',
+                testo: 'Scegli 1 mostro avversario da distruggere.'
+            }, (scelta) => {
+                if (scelta === null) return;
+                destroyChosen(scelta);
             });
         }
     });
@@ -2379,11 +2421,15 @@
                 ctx.grantTemporaryAtkDefBonus(ctx.card, 700, 0);
                 ctx.log(`⚔️ Il Piccolo Spadaccino di Aile tributa ${entry.card.name}: guadagna 700 ATK fino a fine turno!`);
             };
-            if (ctx.owner !== 'player' || !window.DuelEngineUI) { tributeChosen(candidates[0].card); return; }
-            window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
-                title: '⚔️ Il Piccolo Spadaccino di Aile',
-                text: 'Scegli 1 altro tuo mostro da tributare per guadagnare 700 ATK fino a fine turno.',
-                onSelect: tributeChosen
+            if (!Decisioni.rispondeUnaPersona(ctx.owner)) { tributeChosen(candidates[0].card); return; }
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: candidates.map((c) => c.card),
+                titolo: '⚔️ Il Piccolo Spadaccino di Aile',
+                testo: 'Scegli 1 altro tuo mostro da tributare per guadagnare 700 ATK fino a fine turno.'
+            }, (scelta) => {
+                if (scelta === null) return;
+                tributeChosen(scelta);
             });
         }
     });
@@ -2443,11 +2489,15 @@
                     const result = ctx.destroyTargetedMonster(entry.owner, entry.index);
                     if (result.allowed && result.card) ctx.log(`🪨 Unità Scagliapietre distrugge ${result.card.name}!`);
                 };
-                if (ctx.owner !== 'player' || !window.DuelEngineUI) { destroyChosen(destroyCandidates[0].card); return; }
-                window.DuelEngineUI.openCardListPicker(destroyCandidates.map((c) => c.card), {
-                    title: '🪨 Unità Scagliapietre',
-                    text: 'Scegli 1 mostro scoperto con DEF pari o inferiore all\'ATK di questa carta da distruggere.',
-                    onSelect: destroyChosen
+                if (!Decisioni.rispondeUnaPersona(ctx.owner)) { destroyChosen(destroyCandidates[0].card); return; }
+                Decisioni.chiedi({
+                    chi: 'player',
+                    candidati: destroyCandidates.map((c) => c.card),
+                    titolo: '🪨 Unità Scagliapietre',
+                    testo: 'Scegli 1 mostro scoperto con DEF pari o inferiore all\'ATK di questa carta da distruggere.'
+                }, (scelta) => {
+                    if (scelta === null) return;
+                    destroyChosen(scelta);
                 });
             };
             const tributeChosen = (target) => {
@@ -2458,11 +2508,15 @@
                 ctx.log(`🪨 Unità Scagliapietre tributa ${entry.card.name}!`);
                 destroyTarget();
             };
-            if (ctx.owner !== 'player' || !window.DuelEngineUI) { tributeChosen(warriorCandidates[0].card); return; }
-            window.DuelEngineUI.openCardListPicker(warriorCandidates.map((c) => c.card), {
-                title: '🪨 Unità Scagliapietre',
-                text: 'Scegli 1 mostro Tipo Guerriero da tributare.',
-                onSelect: tributeChosen
+            if (!Decisioni.rispondeUnaPersona(ctx.owner)) { tributeChosen(warriorCandidates[0].card); return; }
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: warriorCandidates.map((c) => c.card),
+                titolo: '🪨 Unità Scagliapietre',
+                testo: 'Scegli 1 mostro Tipo Guerriero da tributare.'
+            }, (scelta) => {
+                if (scelta === null) return;
+                tributeChosen(scelta);
             });
         }
     });
@@ -2500,14 +2554,16 @@
                 gameState.cannotChangePositionUidsThisTurn.add(entry.card.uid);
                 ctx.log(`🌊 Spirito dell'Acqua cambia la Posizione di Battaglia di ${entry.card.name} per il resto del turno!`);
             };
-            if (ctx.owner !== 'player' || !window.DuelEngineUI) { changeChosen(candidates[0]); return; }
-            window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
-                title: '🌊 Spirito dell\'Acqua',
-                text: 'Scegli 1 mostro avversario scoperto di cui cambiare la Posizione di Battaglia (resterà così per il resto del turno).',
-                onSelect: (chosenCard) => {
-                    const entry = candidates.find((c) => c.card.uid === chosenCard.uid);
-                    if (entry) changeChosen(entry);
-                }
+            if (!Decisioni.rispondeUnaPersona(ctx.owner)) { changeChosen(candidates[0]); return; }
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: candidates.map((c) => c.card),
+                titolo: '🌊 Spirito dell\'Acqua',
+                testo: 'Scegli 1 mostro avversario scoperto di cui cambiare la Posizione di Battaglia (resterà così per il resto del turno).'
+            }, (chosenCard) => {
+                if (chosenCard === null) return;
+                const entry = candidates.find((c) => c.card.uid === chosenCard.uid);
+                if (entry) changeChosen(entry);
             });
         }
     });
@@ -2538,14 +2594,16 @@
                 ctx.changePosition(ctx.opponent, entry.index, newPosition);
                 ctx.log(`🦅 Garuda lo Spirito del Vento cambia la Posizione di Battaglia di ${entry.card.name}!`);
             };
-            if (ctx.owner !== 'player' || !window.DuelEngineUI) { changeChosen(candidates[0]); return; }
-            window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
-                title: '🦅 Garuda lo Spirito del Vento',
-                text: 'Scegli 1 mostro avversario scoperto di cui cambiare la Posizione di Battaglia.',
-                onSelect: (chosenCard) => {
-                    const entry = candidates.find((c) => c.card.uid === chosenCard.uid);
-                    if (entry) changeChosen(entry);
-                }
+            if (!Decisioni.rispondeUnaPersona(ctx.owner)) { changeChosen(candidates[0]); return; }
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: candidates.map((c) => c.card),
+                titolo: '🦅 Garuda lo Spirito del Vento',
+                testo: 'Scegli 1 mostro avversario scoperto di cui cambiare la Posizione di Battaglia.'
+            }, (chosenCard) => {
+                if (chosenCard === null) return;
+                const entry = candidates.find((c) => c.card.uid === chosenCard.uid);
+                if (entry) changeChosen(entry);
             });
         }
     });
@@ -2787,11 +2845,15 @@
                 ctx.dealDamage(ctx.opponent, 500);
                 ctx.log(`🌿 Spirito Silvano manda ${entry.card.name} al Cimitero e infligge 500 danni!`);
             };
-            if (ctx.owner !== 'player' || !window.DuelEngineUI) { sendChosen(candidates[0].card); return; }
-            window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
-                title: '🌿 Spirito Silvano',
-                text: 'Scegli 1 Carta Equipaggiamento agganciata a questa carta da mandare al Cimitero.',
-                onSelect: sendChosen
+            if (!Decisioni.rispondeUnaPersona(ctx.owner)) { sendChosen(candidates[0].card); return; }
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: candidates.map((c) => c.card),
+                titolo: '🌿 Spirito Silvano',
+                testo: 'Scegli 1 Carta Equipaggiamento agganciata a questa carta da mandare al Cimitero.'
+            }, (scelta) => {
+                if (scelta === null) return;
+                sendChosen(scelta);
             });
         }
     });

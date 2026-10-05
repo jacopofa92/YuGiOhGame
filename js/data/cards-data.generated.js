@@ -1084,7 +1084,7 @@ const cardDatabase = [
     "attribute": "TERRA",
     "attack": 100,
     "defense": 2600,
-    "effect": "Se questa carta, l'unica coperta sul Terreno, viene presa di mira da una Magia: gira scoperta in Posizione di Difesa e nega quella Magia. Se attaccata, a fine Damage Step passa in Posizione di Attacco.",
+    "effect": "Quando viene attivata una Magia che prende di mira questa carta coperta (e nessun'altra carta): gira questa carta scoperta in Posizione di Difesa e nega l'attivazione. Se questa carta viene attaccata, alla fine del Damage Step passa in Posizione di Attacco.",
     "artOnly": true
   },
   {
@@ -2308,15 +2308,6 @@ const cardDatabase = [
     "attack": 0,
     "defense": 1800,
     "effect": "Durante la Battle Phase dell'avversario: puoi bandire questa carta dal Cimitero; termina la Battle Phase. Puoi usare questo effetto solo una volta per Duello.",
-    "artOnly": true
-  },
-  {
-    "id": 224,
-    "origin": "yu-gi-oh",
-    "name": "Egotista Elegante",
-    "type": "spell",
-    "subtype": "normal",
-    "effect": "Se \"Lady Arpia\" è sul Terreno: Special Summon 1 \"Lady Arpia\" o \"Sorelle Lady Arpia\" dalla mano o dal Deck.",
     "artOnly": true
   },
   {

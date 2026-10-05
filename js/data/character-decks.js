@@ -551,7 +551,7 @@ const characterDeckDatabase = {
                 { id: 916, qty: 2 }, // Kurama
                 { id: 90, qty: 1 }, // Amazzone Spadaccina
                 { id: 778, qty: 1 }, // Faccia di Uccello
-                { id: 224, qty: 2 }, // Egotista Elegante
+                { id: 787, qty: 2 }, // Egoista Elegante
                 { id: 175, qty: 1 }, // Scudo Cyber
                 { id: 788, qty: 1 }, // Terreno di Caccia delle Arpie
                 { id: 8, qty: 1 }, // Spada Rivelatrice
@@ -586,7 +586,7 @@ const characterDeckDatabase = {
                 { id: 87, qty: 2 }, // Amazzone Combattente
                 { id: 775, qty: 2 }, // Ragazza Arpia
                 { id: 778, qty: 1 }, // Faccia di Uccello
-                { id: 224, qty: 2 }, // Egotista Elegante
+                { id: 787, qty: 2 }, // Egoista Elegante
                 { id: 175, qty: 1 }, // Scudo Cyber
                 { id: 788, qty: 1 }, // Terreno di Caccia delle Arpie
                 { id: 289, qty: 1 }, // Lady Arpia Formazione della Fenice
@@ -623,7 +623,7 @@ const characterDeckDatabase = {
                 { id: 87, qty: 1 }, // Amazzone Combattente
                 { id: 775, qty: 1 }, // Ragazza Arpia
                 { id: 778, qty: 1 }, // Faccia di Uccello
-                { id: 224, qty: 3 }, // Egotista Elegante
+                { id: 787, qty: 3 }, // Egoista Elegante
                 { id: 175, qty: 1 }, // Scudo Cyber
                 { id: 788, qty: 1 }, // Terreno di Caccia delle Arpie
                 { id: 289, qty: 1 }, // Lady Arpia Formazione della Fenice
