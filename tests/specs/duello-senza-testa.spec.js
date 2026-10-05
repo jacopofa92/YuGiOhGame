@@ -60,5 +60,14 @@ module.exports = {
             if (r.esito === true) vittoriePlayer++;
         }
         assert(vittoriePlayer >= 1, `L'IA dal posto 'player' (Yami Yugi) non vince nessuna delle 4 partite contro Kaiba: gioca davvero da quel lato?`);
+
+        // Il bersaglio di un attacco che lascia il campo prima del calcolo
+        // dei danni (battaglia.js, resolveAttack): prima resolveBattleDamage
+        // leggeva la sua casella vuota ed esplodeva ("Cannot read properties
+        // of null (reading 'card')", l'errore raro del test del bot). Questa
+        // partita passa da lì: deve arrivare in fondo e averlo attraversato.
+        const bersaglioSparito = await giocaPartita({ avversario: 'kaiba', giocatore: 'yamiYugi', livello: 'hard', seme: 4009, turni: 60, cerca: 'non è più sul Terreno' }, 0);
+        assert(bersaglioSparito.trovate >= 1 && bersaglioSparito.esito !== null && !bersaglioSparito.erroriCarte.length,
+            `La partita col bersaglio sparito prima del calcolo dei danni deve attraversare il caso e finire: ${JSON.stringify({ trovate: bersaglioSparito.trovate, esito: bersaglioSparito.esito })}`);
     }
 };

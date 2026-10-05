@@ -342,7 +342,11 @@ async function giocaPartita(opz, n) {
     // distingue dallo stallo vero (coda vuota senza vincitore).
     const alLimite = (fine.esito === null || fine.esito === undefined) && fine.turno > LIMITE_TURNI;
     const invarianti = esegui("__logDuello.filter((r) => r.startsWith('###'))");
-    return { seme, passi, oraVirtualeMs: orologio.ora, alLimite, invarianti, erroriCarte: erroriCarte.slice(), ...fine };
+    // opz.cerca: quante righe del registro INTERO contengono quel testo
+    // (il risultato porta solo le ultime righe). Serve a trovare la partita
+    // che passa da un caso preciso, per farne uno spec.
+    const trovate = opz.cerca ? esegui(`__logDuello.filter((r) => r.includes(${JSON.stringify(opz.cerca)})).length`) : 0;
+    return { seme, passi, oraVirtualeMs: orologio.ora, alLimite, invarianti, trovate, erroriCarte: erroriCarte.slice(), ...fine };
 }
 
 async function main() {

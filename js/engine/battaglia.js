@@ -426,6 +426,23 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
                 done();
                 return;
             }
+            // Lo stesso per il BERSAGLIO: una risposta in Catena o una
+            // scelta "durante il calcolo dei danni" può toglierlo dal campo
+            // (distrutto, bandito, tornato in mano), e resolveBattleDamage
+            // leggeva la sua casella senza controlli — "Cannot read
+            // properties of null (reading 'card')", e il turno restava
+            // fermo lì. Era l'errore raro uscito una volta nel test del bot
+            // e mai riprodotto: l'IA contro IA del duello senza testa lo
+            // ha reso ripetibile. SEMPLIFICAZIONE: nel gioco vero scatta la
+            // "ripetizione dell'attacco" (l'attaccante può sceglierne un
+            // altro o rinunciare); qui l'attacco si ferma e conta come fatto.
+            if (effectiveTargetIndex !== -1 && !effectiveDefenderField[effectiveTargetIndex]) {
+                addToLog('🌫️ Il bersaglio non è più sul Terreno: l\'attacco si ferma.');
+                attackerSlot.hasAttacked = true;
+                if (attackerOwner === 'player') clearSelection(); else updateUI();
+                done();
+                return;
+            }
             resolveBattleDamage(attackerOwner, effectiveDefenderOwner, attackerIndex, effectiveTargetIndex, attackState.damageNegated, attackState.attackerAtkZeroed);
             attackerSlot.hasAttacked = true;
             // Attacco extra nella stessa Battle Phase: SOLO se l'attaccante
