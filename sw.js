@@ -467,6 +467,7 @@ const APP_SHELL = [
     'js/engine/porta-ui.js',
     'js/engine/eventi-duello.js',
     'js/engine/duel-engine.js',
+    'js/engine/decisioni.js',
     'js/engine/effect-templates.js',
     'js/engine/card-effects.js',
     'js/engine/card-effects-1.js',

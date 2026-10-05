@@ -25,8 +25,12 @@ righe, actions.js 3.855, game-flow.js 3.797; 205 accessi al DOM e 85
       riprodotto in 7 giri. Il runner ora registra le prime righe dello
       stack degli errori di pagina: alla prossima occorrenza si vede da dove.
 - [x] Stop alle funzioni nuove sul motore attuale: solo correzioni di bug.
-- [x] Le 3 note restanti (192, 235, 622) si lasciano così: 235 e 622 si
-      risolvono da sole con le "decisioni in sospeso" della Priorità 2.
+- [x] Le 3 note restanti (192, 235, 622) si lasciano così. CORREZIONE: avevo
+      scritto che 235 e 622 si sarebbero chiuse con le "decisioni in
+      sospeso"; non è vero. Il loro limite è il checkpoint di targeting
+      (`ctx.declareTarget`), che restituisce il bersaglio finale subito a
+      circa cento chiamanti: per farlo aspettare una scelta servirebbe che
+      tutti lo ricevessero con una richiamata.
 
 **Priorità 1 — preparare il terreno** (branch `refactor/nucleo-senza-testa`)
 - [x] Tipi in `types/motore.d.ts` (contratto delle carte `ctx` con le 39
@@ -47,13 +51,18 @@ righe, actions.js 3.855, game-flow.js 3.797; 205 accessi al DOM e 85
       orologio virtuale, `--diagnosi`, spec `duello-senza-testa`). Ha
       trovato 5 difetti veri (Spirito, Rituali, Lady Arpia, doppione
       Egoista Elegante, Bozzolo).
-- [ ] Canale di eventi al posto delle chiamate per nome all'interfaccia
-      (updateUI, annunci di fase, effetti visivi): oggi in Node le copre
-      l'"interfaccia nulla" dell'esecutore.
-- [ ] Le scelte come "decisioni in sospeso" in un punto unico del nucleo
-      (oggi una decina di helper di scelta, ciascuno con il suo "se è il
-      giocatore apri la lista, altrimenti scegli da solo"); risolverebbe
-      anche le note 235/622.
+- [x] Canale di eventi (`js/engine/eventi-duello.js`): le regole avvisano
+      l'interfaccia, non la chiamano per nome. `addToLog`, `updateUI`,
+      `clearSelection`, `isBlockingModalOpen`, `endDuel` tengono il nome ma
+      stanno in `js/engine/canale-partita.js` con la sola parte di regola.
+      Il duello senza testa non ha più nessuna funzione finta. Guardrail
+      `guardrail-regole-senza-interfaccia`.
+- [x] Decisioni in sospeso (`js/engine/decisioni.js`): ogni scelta (helper
+      condivisi, circa 60 carte, la risposta in Catena) è una richiesta a
+      `Decisioni.chiedi`, che decide chi risponde (avversario remoto,
+      persona, scelta automatica); `Decisioni.inSospeso`/`rispondi` per
+      rispondere senza interfaccia. Le regole non nominano più
+      `DuelEngineUI`. Spec `decisioni-in-sospeso`.
 - [ ] Unire il branch in `main` dopo la suite completa (su richiesta).
 
 **Priorità 3 — lato tavolo e Multiplayer**

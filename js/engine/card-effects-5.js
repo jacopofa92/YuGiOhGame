@@ -102,23 +102,26 @@
             // alla chiusura del primo): openCardListPicker chiude sempre
             // il popover precedente all'apertura, mostrarli insieme
             // farebbe sparire il primo prima che il giocatore lo veda.
-            if (ctx.owner === 'player' && window.DuelEngineUI && Array.isArray(gameState.playerDeck)) {
+            if (Decisioni.rispondeUnaPersona(ctx.owner) && Array.isArray(gameState.playerDeck)) {
                 const showBotDeck = () => {
                     if (!Array.isArray(gameState.botDeck)) return;
-                    window.DuelEngineUI.openCardListPicker(revealSnapshots.bot, {
-                        title: '⚔️ Nobile del Depistaggio',
-                        text: "Il Deck dell'avversario (rivelato per cercare altre copie).",
-                        selectable: false,
-                        emptyText: "Il Deck dell'avversario è vuoto."
-                    });
+                    Decisioni.chiedi({
+                        chi: 'player',
+                        tipo: 'presa-visione',
+                        candidati: revealSnapshots.bot,
+                        titolo: '⚔️ Nobile del Depistaggio',
+                        testo: "Il Deck dell'avversario (rivelato per cercare altre copie).",
+                        vuota: "Il Deck dell'avversario è vuoto."
+                    }, () => {});
                 };
-                window.DuelEngineUI.openCardListPicker(revealSnapshots.player, {
-                    title: '⚔️ Nobile del Depistaggio',
-                    text: 'Il tuo Deck (rivelato per cercare altre copie).',
-                    selectable: false,
-                    emptyText: 'Il tuo Deck è vuoto.',
-                    onCancel: showBotDeck
-                });
+                Decisioni.chiedi({
+                    chi: 'player',
+                    tipo: 'presa-visione',
+                    candidati: revealSnapshots.player,
+                    titolo: '⚔️ Nobile del Depistaggio',
+                    testo: 'Il tuo Deck (rivelato per cercare altre copie).',
+                    vuota: 'Il tuo Deck è vuoto.'
+                }, showBotDeck);
             }
         }
     });
@@ -1030,16 +1033,20 @@
                 });
             };
 
-            if (validHandCandidates.length === 1 || ctx.owner !== 'player' || !window.DuelEngineUI) {
+            if (validHandCandidates.length === 1 || !Decisioni.rispondeUnaPersona(ctx.owner)) {
                 let best = validHandCandidates[0];
                 validHandCandidates.forEach((c) => { if ((c.level || 0) > (best.level || 0)) best = c; });
                 discardChosen(best);
                 return;
             }
-            window.DuelEngineUI.openCardListPicker(validHandCandidates, {
-                title: '🧛 Genesi del Vampiro',
-                text: 'Scegli quale mostro Zombie scartare dalla mano.',
-                onSelect: discardChosen
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: validHandCandidates,
+                titolo: '🧛 Genesi del Vampiro',
+                testo: 'Scegli quale mostro Zombie scartare dalla mano.'
+            }, (scelta) => {
+                if (scelta === null) return;
+                discardChosen(scelta);
             });
         }
     });
@@ -1812,11 +1819,17 @@
             // senza scelta, ma il componente per farla scegliere esisteva
             // gia'. Il bot (nessuna vera IA dedicata) sceglie sempre di
             // pescare, l'opzione piu' sicura.
-            if (ctx.owner === 'player' && window.DuelEngineUI) {
-                window.DuelEngineUI.openChoicePopover(null, {
-                    title: '📿 Collana del Comando',
-                    choiceA: { icon: '🃏', label: 'Pesca 1 carta', onSelect: drawOption },
-                    choiceB: { icon: '🗑️', label: "L'avversario scarta 1 carta a caso", onSelect: discardOption }
+            if (Decisioni.rispondeUnaPersona(ctx.owner)) {
+                Decisioni.chiedi({
+                    chi: 'player',
+                    tipo: 'coppia',
+                    titolo: '📿 Collana del Comando',
+                    candidati: [
+                        { icon: '🃏', label: 'Pesca 1 carta', onSelect: drawOption },
+                        { icon: '🗑️', label: "L'avversario scarta 1 carta a caso", onSelect: discardOption }
+                    ]
+                }, (scelta) => {
+                    if (scelta) scelta.onSelect();
                 });
             } else {
                 drawOption();

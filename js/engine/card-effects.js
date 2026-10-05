@@ -700,15 +700,13 @@
             zoneArray.splice(idx, 1);
             onChosen(card);
         };
-        if (ctx.owner !== 'player' || !window.DuelEngineUI || candidates.length === 1) {
-            takeCard(candidates[0]);
-            return true;
-        }
-        window.DuelEngineUI.openCardListPicker(candidates, {
-            title: (options && options.title) || '🔍 Scegli una carta',
-            text: (options && options.text) || 'Scegli quale carta.',
-            onSelect: (card) => takeCard(card)
-        });
+        Decisioni.chiedi({
+            chi: ctx.owner,
+            candidati: candidates,
+            titolo: (options && options.title) || '🔍 Scegli una carta',
+            testo: (options && options.text) || 'Scegli quale carta.',
+            automaticaSeUnica: true
+        }, (card) => { if (card) takeCard(card); });
         return true;
     }
 
@@ -786,32 +784,15 @@
                 else if (typeof options.onNegato === 'function') options.onNegato();
             }
             : onChosenOriginale;
-        // In Multiplayer, se a scegliere è l'avversario REMOTO, la scelta
-        // non si indovina: si aspetta la sua. Prima di questo, la copia
+        // In Multiplayer la scelta VIAGGIA (`viaggia`, vedi
+        // js/engine/decisioni.js): se a scegliere è l'avversario REMOTO si
+        // aspetta la sua invece di indovinarla. Prima di questo, la copia
         // dell'effetto che gira di qua auto-sceglieva il primo candidato,
         // e se il giocatore vero ne aveva scelto un altro i due schermi
         // finivano per mostrare due partite diverse — con il Terreno di
         // chi SUBISCE l'effetto sbagliato proprio dalla sua parte, dove
         // nessuna fotografia di stato dell'avversario può correggerlo.
-        // Vedi awaitRemoteCardChoice in js/engine/duel-engine.js.
-        if (window.DuelEngine && DuelEngine.isRemoteChooser && DuelEngine.isRemoteChooser(ctx.owner)) {
-            DuelEngine.awaitRemoteCardChoice(candidates, (scelto) => onChosen(scelto || candidates[0]));
-            return true;
-        }
-        // Le due code (chi aspetta / cosa è arrivato) si accoppiano in
-        // ordine, quindi la scelta si comunica SEMPRE — anche quando è
-        // obbligata e nessun picker si apre, altrimenti di là resterebbe
-        // qualcuno ad aspettare un messaggio che non arriva mai.
-        const comunica = (uid) => {
-            if (window.MULTIPLAYER_MODE && ctx.owner === 'player' && window.DuelEngine) {
-                DuelEngine.broadcastCardChoice(uid);
-            }
-        };
-        if (ctx.owner !== 'player' || !window.DuelEngineUI || candidates.length === 1) {
-            comunica(candidates[0].card && candidates[0].card.uid);
-            onChosen(candidates[0]);
-            return true;
-        }
+        //
         // Le carte COPERTE dell'AVVERSARIO entrano nell'elenco disegnate
         // col retro, non scoperte. Senza questo, un picker che dice
         // "scegli 1 carta sul suo Terreno" gli rivelava nome, ATK/DEF ed
@@ -824,23 +805,26 @@
         // ritrova il candidato dopo il click): la carta vera sul Terreno
         // non viene toccata. Le PROPRIE carte coperte restano scoperte
         // nell'elenco — sono già tue, non c'è niente da nascondere.
-        const perPicker = candidates.map((c) => {
-            const copertaAvversaria = !!(c.slot && c.slot.isFaceDown) && c.owner !== ctx.owner;
-            return copertaAvversaria ? Object.assign({}, c.card, { __mostraCoperta: true }) : c.card;
-        });
-        window.DuelEngineUI.openCardListPicker(perPicker, {
-            title: (options && options.title) || '🎯 Scegli un bersaglio',
-            text: (options && options.text) || 'Scegli quale carta bersagliare (tua o dell\'avversario).',
-            onSelect: (card) => {
-                const match = candidates.find((c) => c.card.uid === card.uid);
-                comunica(match ? match.card.uid : (card && card.uid));
-                if (match) onChosen(match);
+        const onCancel = options && typeof options.onCancel === 'function' ? options.onCancel : null;
+        Decisioni.chiedi({
+            chi: ctx.owner,
+            candidati: candidates,
+            mostra: (c) => {
+                const copertaAvversaria = !!(c.slot && c.slot.isFaceDown) && c.owner !== ctx.owner;
+                return copertaAvversaria ? Object.assign({}, c.card, { __mostraCoperta: true }) : c.card;
             },
+            titolo: (options && options.title) || '🎯 Scegli un bersaglio',
+            testo: (options && options.text) || 'Scegli quale carta bersagliare (tua o dell\'avversario).',
+            automaticaSeUnica: true,
             // Facoltativo: serve a chi ha chiesto di essere aspettato
             // (attendiScelta), che deve sapere anche quando il giocatore
             // chiude la lista senza scegliere. Senza, chiudere lascia le
             // cose come stanno, come sempre.
-            onCancel: options && typeof options.onCancel === 'function' ? options.onCancel : undefined
+            annullabile: !!onCancel,
+            viaggia: (c) => c.card && c.card.uid
+        }, (scelto) => {
+            if (scelto) onChosen(scelto);
+            else if (onCancel) onCancel();
         });
         return true;
     }
@@ -967,41 +951,24 @@
         const o = options || {};
         const voci = (o.options || []).filter(Boolean);
         if (voci.length === 0) { onChosen(null); return; }
-        const chooser = o.chooser || ctx.owner;
-        const uidDi = (value) => 'opzione:' + String(value);
-        const UID_ANNULLA = 'opzione:__annulla';
-        const candidati = voci.map((v) => ({ card: { uid: uidDi(v.value) }, value: v.value }));
-        // "Annulla" è un candidato come gli altri, in fondo: così di là si
-        // riconosce per uid, invece di ricadere nel primo candidato come fa
-        // awaitRemoteCardChoice con una scelta che non trova.
-        if (o.optional) candidati.push({ card: { uid: UID_ANNULLA }, value: null });
-
-        if (window.DuelEngine && DuelEngine.isRemoteChooser && DuelEngine.isRemoteChooser(chooser)) {
-            DuelEngine.awaitRemoteCardChoice(candidati, (scelto) => {
-                onChosen(scelto ? scelto.value : voci[0].value);
-            });
-            return;
-        }
-        const comunica = (value) => {
-            if (window.MULTIPLAYER_MODE && chooser === 'player' && window.DuelEngine) {
-                DuelEngine.broadcastCardChoice(value === null ? UID_ANNULLA : uidDi(value));
-            }
-        };
-        if (chooser !== 'player' || !window.DuelEngineUI || typeof window.DuelEngineUI.openOptionPicker !== 'function') {
-            const scelto = typeof o.pickForBot === 'function' ? o.pickForBot() : voci[0].value;
-            const valido = voci.some((v) => v.value === scelto) ? scelto : voci[0].value;
-            comunica(valido);
-            onChosen(valido);
-            return;
-        }
-        window.DuelEngineUI.openOptionPicker(null, {
-            title: o.title,
-            text: o.text,
-            options: voci,
-            onSelect: (value) => { comunica(value); onChosen(value); },
-            onCancel: o.optional ? () => { comunica(null); onChosen(null); } : undefined,
-            cancelLabel: o.optionalLabel
-        });
+        // "Annulla", quando c'è, viaggia anch'esso (Decisioni.UID_ANNULLA):
+        // di là si riconosce per uid, invece di ricadere nel primo
+        // candidato come fa awaitRemoteCardChoice con una scelta che non
+        // trova.
+        Decisioni.chiedi({
+            chi: o.chooser || ctx.owner,
+            tipo: 'opzioni',
+            candidati: voci,
+            titolo: o.title,
+            testo: o.text,
+            automatica: (elenco) => {
+                const scelto = typeof o.pickForBot === 'function' ? o.pickForBot() : elenco[0].value;
+                return elenco.find((v) => v.value === scelto) || elenco[0];
+            },
+            annullabile: !!o.optional,
+            etichettaAnnulla: o.optionalLabel,
+            viaggia: (v) => 'opzione:' + String(v.value)
+        }, (voce) => onChosen(voce ? voce.value : null));
     }
 
     /**
@@ -1156,19 +1123,21 @@
             const discarded = ctx.discardChosenFromHand(handOwner, idx);
             onDiscarded(discarded);
         };
-        if (ctx.owner !== 'player' || !window.DuelEngineUI || candidates.length === 1) {
-            const autoPick = (options && typeof options.pickForBot === 'function') ? options.pickForBot(candidates) : candidates[0];
-            doDiscard(autoPick || candidates[0]);
-            return true;
-        }
-        window.DuelEngineUI.openCardListPicker(candidates, {
-            title: (options && options.title) || '🗑️ Scarta una carta',
-            text: (options && options.text) || 'Scegli quale carta scartare dalla mano.',
-            onSelect: (card) => doDiscard(card),
+        const onCancel = options && typeof options.onCancel === 'function' ? options.onCancel : null;
+        Decisioni.chiedi({
+            chi: ctx.owner,
+            candidati: candidates,
+            titolo: (options && options.title) || '🗑️ Scarta una carta',
+            testo: (options && options.text) || 'Scegli quale carta scartare dalla mano.',
+            automatica: (elenco) => ((options && typeof options.pickForBot === 'function') ? options.pickForBot(elenco) : elenco[0]) || elenco[0],
+            automaticaSeUnica: true,
             // Facoltativo: serve a chi ha chiesto di essere aspettato
             // (attendiScelta), che deve sapere anche quando il giocatore
             // chiude senza scartare.
-            onCancel: options && typeof options.onCancel === 'function' ? options.onCancel : undefined
+            annullabile: !!onCancel
+        }, (card) => {
+            if (card) doDiscard(card);
+            else if (onCancel) onCancel();
         });
         return true;
     }
@@ -1207,16 +1176,14 @@
             if (idx === -1) return; // sparita dalla mano nel frattempo
             onChosen(card, idx);
         };
-        if (ctx.owner !== 'player' || !window.DuelEngineUI || candidates.length === 1) {
-            const autoPick = (options && typeof options.pickForBot === 'function') ? options.pickForBot(candidates) : candidates[0];
-            usa(autoPick || candidates[0]);
-            return true;
-        }
-        window.DuelEngineUI.openCardListPicker(candidates, {
-            title: (options && options.title) || '🖐️ Scegli una carta',
-            text: (options && options.text) || 'Scegli quale carta usare dalla tua mano.',
-            onSelect: (card) => usa(card)
-        });
+        Decisioni.chiedi({
+            chi: ctx.owner,
+            candidati: candidates,
+            titolo: (options && options.title) || '🖐️ Scegli una carta',
+            testo: (options && options.text) || 'Scegli quale carta usare dalla tua mano.',
+            automatica: (elenco) => ((options && typeof options.pickForBot === 'function') ? options.pickForBot(elenco) : elenco[0]) || elenco[0],
+            automaticaSeUnica: true
+        }, (card) => { if (card) usa(card); });
         return true;
     }
 
@@ -1243,19 +1210,14 @@
      */
     function chooseCardFromList(ctx, cards, options, onChosen) {
         if (!Array.isArray(cards) || cards.length === 0) return false;
-        if (ctx.owner !== 'player' || !window.DuelEngineUI || cards.length === 1) {
-            const auto = (options && typeof options.pickForBot === 'function') ? options.pickForBot(cards) : cards[0];
-            onChosen(auto || cards[0]);
-            return true;
-        }
-        window.DuelEngineUI.openCardListPicker(cards, {
-            title: (options && options.title) || '🔍 Scegli una carta',
-            text: (options && options.text) || 'Scegli quale carta usare.',
-            // Il picker restituisce la carta che ha renderizzato: la si
-            // ritrova per uid nella lista originale, come fanno gli altri
-            // helper, invece di fidarsi dell'identità dell'oggetto.
-            onSelect: (card) => onChosen(cards.find((c) => c.uid === card.uid) || card)
-        });
+        Decisioni.chiedi({
+            chi: ctx.owner,
+            candidati: cards,
+            titolo: (options && options.title) || '🔍 Scegli una carta',
+            testo: (options && options.text) || 'Scegli quale carta usare.',
+            automatica: (elenco) => ((options && typeof options.pickForBot === 'function') ? options.pickForBot(elenco) : elenco[0]) || elenco[0],
+            automaticaSeUnica: true
+        }, (card) => { if (card) onChosen(card); });
         return true;
     }
 
@@ -1295,23 +1257,24 @@
             }
             if (typeof onDiscarded === 'function') onDiscarded(scartata);
         };
-        if (victimOwner !== 'player' || !window.DuelEngineUI || mano.length === 1) {
-            let scelta = mano[0];
-            if (victimOwner !== 'player' && window.AI_SHARED && typeof AI_SHARED.scoreCardImpact === 'function') {
-                scelta = mano.slice().sort((a, b) => AI_SHARED.scoreCardImpact(a) - AI_SHARED.scoreCardImpact(b))[0];
-            }
-            scarta(scelta);
-            return true;
-        }
         const apri = () => {
             const attuale = ctx.hand(victimOwner).slice();
             if (attuale.length === 0) return;
-            window.DuelEngineUI.openCardListPicker(attuale, {
-                title: o.title || '🗑️ Devi scartare una carta',
-                text: o.text || 'Scegli tu quale carta della tua mano mandare al Cimitero.',
-                onSelect: (card) => scarta(attuale.find((c) => c.uid === card.uid) || card),
-                // Lo scarto è obbligatorio: chiudere non lo annulla.
-                onCancel: () => setTimeout(apri, 0)
+            Decisioni.chiedi({
+                chi: victimOwner,
+                candidati: attuale,
+                titolo: o.title || '🗑️ Devi scartare una carta',
+                testo: o.text || 'Scegli tu quale carta della tua mano mandare al Cimitero.',
+                // Il bot scarta ciò che vale meno per lui, non la prima a caso.
+                automatica: (elenco) => (victimOwner !== 'player' && window.AI_SHARED && typeof AI_SHARED.scoreCardImpact === 'function')
+                    ? elenco.slice().sort((a, b) => AI_SHARED.scoreCardImpact(a) - AI_SHARED.scoreCardImpact(b))[0]
+                    : elenco[0],
+                automaticaSeUnica: true,
+                // Lo scarto è obbligatorio: chiudere non lo annulla, riapre.
+                annullabile: true
+            }, (card) => {
+                if (card) scarta(card);
+                else setTimeout(apri, 0);
             });
         };
         apri();
@@ -1361,7 +1324,10 @@
         const minimo = o.min || 0;
         const tetto = Math.min(max, (cards || []).length);
         if (!Array.isArray(cards) || cards.length === 0 || tetto <= 0) { onDone([]); return false; }
-        if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+        // Il bot (o un duello senza interfaccia) sceglie l'insieme intero in
+        // un colpo solo, con la sua euristica: chiedergli una carta alla
+        // volta lo costringerebbe a decidere senza sapere quante ne vuole.
+        if (!Decisioni.rispondeUnaPersona(ctx.owner)) {
             const auto = typeof o.pickForBot === 'function' ? o.pickForBot(cards.slice(), tetto) : cards.slice(0, tetto);
             onDone((auto || []).slice(0, tetto));
             return true;
@@ -1371,17 +1337,16 @@
             const restanti = cards.filter((c) => !scelte.some((s) => s.uid === c.uid));
             if (scelte.length >= tetto || restanti.length === 0) { onDone(scelte); return; }
             const giaPrese = scelte.length ? ` Scelte finora: ${scelte.map((c) => c.name).join(', ')}.` : '';
-            window.DuelEngineUI.openCardListPicker(restanti, {
-                title: o.title || '🔍 Scegli le carte',
-                text: `${o.text || 'Scegli una carta alla volta.'} (${scelte.length}/${tetto}) ${scelte.length >= minimo ? 'Chiudi per finire.' : ''}${giaPrese}`,
-                onSelect: (card) => {
-                    scelte.push(restanti.find((c) => c.uid === card.uid) || card);
-                    prossima();
-                },
-                onCancel: () => {
-                    if (scelte.length >= minimo) onDone(scelte);
-                    else prossima();
-                }
+            Decisioni.chiedi({
+                chi: ctx.owner,
+                candidati: restanti,
+                titolo: o.title || '🔍 Scegli le carte',
+                testo: `${o.text || 'Scegli una carta alla volta.'} (${scelte.length}/${tetto}) ${scelte.length >= minimo ? 'Chiudi per finire.' : ''}${giaPrese}`,
+                annullabile: true
+            }, (card) => {
+                if (card) { scelte.push(card); prossima(); return; }
+                if (scelte.length >= minimo) onDone(scelte);
+                else prossima();
             });
         };
         prossima();
@@ -1414,15 +1379,13 @@
         const proceed = (card) => {
             if (ctx.banishFromGraveyard(graveyardOwner, card)) onBanished(card);
         };
-        if (ctx.owner !== 'player' || !window.DuelEngineUI || candidates.length === 1) {
-            proceed(candidates[0]);
-            return true;
-        }
-        window.DuelEngineUI.openCardListPicker(candidates, {
-            title: (options && options.title) || '🔍 Scegli una carta',
-            text: (options && options.text) || 'Scegli quale carta bandire.',
-            onSelect: proceed
-        });
+        Decisioni.chiedi({
+            chi: ctx.owner,
+            candidati: candidates,
+            titolo: (options && options.title) || '🔍 Scegli una carta',
+            testo: (options && options.text) || 'Scegli quale carta bandire.',
+            automaticaSeUnica: true
+        }, (card) => { if (card) proceed(card); });
         return true;
     }
 

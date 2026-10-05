@@ -35,6 +35,9 @@ module.exports = {
         // chiunque emetta o ascolti.
         'js/engine/eventi-duello.js',
         'js/engine/duel-engine.js',
+        // Ogni scelta del duello (chi risponde: avversario remoto, persona
+        // davanti allo schermo o scelta automatica). Prima delle carte.
+        'js/engine/decisioni.js',
         'js/engine/effect-templates.js',
         'js/engine/card-effects.js',
         'js/engine/card-effects-1.js',

@@ -9,7 +9,8 @@
 // Le regole avvisano l'interfaccia dal canale degli eventi
 // (js/engine/eventi-duello.js), e questo spec controlla tre cose:
 //  1. nessun file di regola nomina una funzione o variabile di primo
-//     livello di game-flow.js/actions.js (chiamata, typeof, window.X);
+//     livello di game-flow.js/actions.js (chiamata, typeof, window.X), né
+//     DuelEngineUI: una scelta passa da Decisioni (js/engine/decisioni.js);
 //  2. ogni nome di evento usato in js/ (emetti/attendi/chiedi/ascolta/
 //     ascoltato) è nell'elenco chiuso EVENTI: un nome sbagliato sarebbe un
 //     avviso che nessuno sente;
@@ -56,6 +57,10 @@ module.exports = {
             .filter((n) => !daRegole.has(n)));
 
         // --- 1. nessun nome dell'interfaccia nelle regole ---------------
+        // DuelEngineUI (i picker, definito in actions.js come proprietà di
+        // window, quindi non fra le dichiarazioni qui sopra) conta come un
+        // nome dell'interfaccia: ogni scelta passa da js/engine/decisioni.js.
+        interfaccia.add('DuelEngineUI');
         const problemi = [];
         regole.forEach((f) => {
             const s = ts.createSourceFile(f, fs.readFileSync(path.join(RADICE, f), 'utf8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);

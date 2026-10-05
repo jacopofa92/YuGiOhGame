@@ -666,23 +666,29 @@ function enterDrawPhase(autoAdvance = true, onComplete = null) {
         gameState.pendingMaharaghiPeekFor[owner] = false;
         const topCard = deck[deck.length - 1];
         const proceed = () => enterDrawPhaseInner(autoAdvance, onComplete);
-        if (owner === 'player' && window.DuelEngineUI) {
+        if (Decisioni.rispondeUnaPersona(owner)) {
             addToLog(`🔮 Maharaghi: guardi la prima carta del tuo Deck (${topCard.name})!`);
-            window.DuelEngineUI.openChoicePopover(null, {
-                title: `🔮 Maharaghi: ${topCard.name} — lasciarla in cima o mandarla in fondo?`,
-                choiceA: {
-                    icon: '⬆️', label: 'Lasciala in cima',
-                    onSelect: () => { addToLog('🔮 Maharaghi: la carta resta in cima al Deck.'); proceed(); }
-                },
-                choiceB: {
-                    icon: '⬇️', label: 'Mandala in fondo',
-                    onSelect: () => {
-                        deck.splice(deck.length - 1, 1);
-                        deck.unshift(topCard);
-                        addToLog('🔮 Maharaghi: la carta va in fondo al Deck.');
-                        proceed();
+            Decisioni.chiedi({
+                chi: 'player',
+                tipo: 'coppia',
+                titolo: `🔮 Maharaghi: ${topCard.name} — lasciarla in cima o mandarla in fondo?`,
+                candidati: [
+                    {
+                        icon: '⬆️', label: 'Lasciala in cima',
+                        onSelect: () => { addToLog('🔮 Maharaghi: la carta resta in cima al Deck.'); proceed(); }
+                    },
+                    {
+                        icon: '⬇️', label: 'Mandala in fondo',
+                        onSelect: () => {
+                            deck.splice(deck.length - 1, 1);
+                            deck.unshift(topCard);
+                            addToLog('🔮 Maharaghi: la carta va in fondo al Deck.');
+                            proceed();
+                        }
                     }
-                }
+                ]
+            }, (scelta) => {
+                if (scelta) scelta.onSelect();
             });
             return;
         }
@@ -756,32 +762,44 @@ function enterDrawPhaseInner(autoAdvance = true, onComplete = null) {
                 updateUI();
                 prosegui();
             };
-            const ui = window.DuelEngineUI;
-            if (freedOwner !== 'player' || !ui || window.MULTIPLAYER_MODE) {
+            if (!Decisioni.rispondeUnaPersona(freedOwner) || window.MULTIPLAYER_MODE) {
                 cerca(candidati[0]);
                 return;
             }
-            ui.openChoicePopover(null, {
-                title: '⚔️ Freed il Generale: pescare o cercare?',
-                choiceA: {
-                    icon: '🔍', label: 'Cerca 1 Guerriero di Livello 4 o inferiore',
-                    onSelect: () => {
-                        if (candidati.length === 1) { cerca(candidati[0]); return; }
-                        ui.openCardListPicker(candidati, {
-                            title: '⚔️ Freed il Generale',
-                            text: 'Scegli quale Guerriero aggiungere alla mano al posto della pescata.',
-                            onSelect: (card) => cerca(candidati.find((c) => c.uid === card.uid) || candidati[0]),
-                            onCancel: () => cerca(candidati[0])
-                        });
+            Decisioni.chiedi({
+                chi: 'player',
+                tipo: 'coppia',
+                titolo: '⚔️ Freed il Generale: pescare o cercare?',
+                candidati: [
+                    {
+                        icon: '🔍', label: 'Cerca 1 Guerriero di Livello 4 o inferiore',
+                        onSelect: () => {
+                            if (candidati.length === 1) { cerca(candidati[0]); return; }
+                            Decisioni.chiedi({
+                                chi: 'player',
+                                candidati: candidati,
+                                titolo: '⚔️ Freed il Generale',
+                                testo: 'Scegli quale Guerriero aggiungere alla mano al posto della pescata.',
+                                annullabile: true
+                            }, (card) => {
+                                if (card === null) {
+                                    cerca(candidati[0]);
+                                    return;
+                                }
+                                cerca(candidati.find((c) => c.uid === card.uid) || candidati[0]);
+                            });
+                        }
+                    },
+                    {
+                        icon: '🎴', label: 'Pesca normalmente',
+                        onSelect: () => {
+                            gameState.freedChoiceTurn = gameState.turn;
+                            enterDrawPhaseInner(autoAdvance, onComplete);
+                        }
                     }
-                },
-                choiceB: {
-                    icon: '🎴', label: 'Pesca normalmente',
-                    onSelect: () => {
-                        gameState.freedChoiceTurn = gameState.turn;
-                        enterDrawPhaseInner(autoAdvance, onComplete);
-                    }
-                }
+                ]
+            }, (scelta) => {
+                if (scelta) scelta.onSelect();
             });
             return;
         }

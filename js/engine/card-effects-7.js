@@ -231,16 +231,20 @@
                 banishNext();
             };
 
-            if (candidates.length === 1 || ctx.owner !== 'player' || !window.DuelEngineUI) {
+            if (candidates.length === 1 || !Decisioni.rispondeUnaPersona(ctx.owner)) {
                 let best = candidates[0];
                 candidates.forEach((c) => { if (c.level > best.level) best = c; });
                 revealChosen(best);
                 return;
             }
-            window.DuelEngineUI.openCardListPicker(candidates, {
-                title: '⚙️ Fabbrica dell\'Ingranaggio Antico',
-                text: 'Scegli quale mostro "Ingranaggio Antico" rivelare dalla mano.',
-                onSelect: revealChosen
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: candidates,
+                titolo: '⚙️ Fabbrica dell\'Ingranaggio Antico',
+                testo: 'Scegli quale mostro "Ingranaggio Antico" rivelare dalla mano.'
+            }, (scelta) => {
+                if (scelta === null) return;
+                revealChosen(scelta);
             });
         }
     });
@@ -2127,12 +2131,18 @@
 
             if (!hasSanctuary) {
                 placeNormally();
-            } else if (owner === 'player' && window.DuelEngineUI) {
+            } else if (Decisioni.rispondeUnaPersona(owner)) {
                 const previewName = handIdx !== -1 ? hand[handIdx].name : deck[deckIdx].name;
-                window.DuelEngineUI.openChoicePopover(null, {
-                    title: '💀 Destiny Board',
-                    choiceA: { icon: '💀', label: `Piazza ${previewName} normalmente`, onSelect: placeNormally },
-                    choiceB: { icon: '⚱️', label: 'Special Summonala con Santuario Oscuro', onSelect: summonAsMonster }
+                Decisioni.chiedi({
+                    chi: 'player',
+                    tipo: 'coppia',
+                    titolo: '💀 Destiny Board',
+                    candidati: [
+                        { icon: '💀', label: `Piazza ${previewName} normalmente`, onSelect: placeNormally },
+                        { icon: '⚱️', label: 'Special Summonala con Santuario Oscuro', onSelect: summonAsMonster }
+                    ]
+                }, (scelta) => {
+                    if (scelta) scelta.onSelect();
                 });
             } else {
                 // Bot: nessuna vera IA per questa scelta, come altre "puoi"
@@ -2412,11 +2422,17 @@
             const lp = ctx.owner === 'player' ? gameState.playerLP : gameState.botLP;
             if (window.MULTIPLAYER_MODE) { messaggeroPaga(ctx); return; }
             if (lp <= 100) { messaggeroLasciaAndare(ctx); return; }
-            if (ctx.owner === 'player' && window.DuelEngineUI) {
-                window.DuelEngineUI.openChoicePopover(null, {
-                    title: '🕊️ Messaggero della Pace',
-                    choiceA: { icon: '💰', label: 'Paga 100 Life Points e mantienila', onSelect: () => messaggeroPaga(ctx) },
-                    choiceB: { icon: '🗑️', label: 'Non pagare: viene distrutta', onSelect: () => messaggeroLasciaAndare(ctx) }
+            if (Decisioni.rispondeUnaPersona(ctx.owner)) {
+                Decisioni.chiedi({
+                    chi: 'player',
+                    tipo: 'coppia',
+                    titolo: '🕊️ Messaggero della Pace',
+                    candidati: [
+                        { icon: '💰', label: 'Paga 100 Life Points e mantienila', onSelect: () => messaggeroPaga(ctx) },
+                        { icon: '🗑️', label: 'Non pagare: viene distrutta', onSelect: () => messaggeroLasciaAndare(ctx) }
+                    ]
+                }, (scelta) => {
+                    if (scelta) scelta.onSelect();
                 });
                 return;
             }
@@ -2742,27 +2758,35 @@
             };
             const tributeChosen = (tributedCard) => {
                 const fusionCandidates = extraDeck.filter((c) => c.level === tributedCard.level);
-                if (fusionCandidates.length === 1 || ctx.owner !== 'player' || !window.DuelEngineUI) {
+                if (fusionCandidates.length === 1 || !Decisioni.rispondeUnaPersona(ctx.owner)) {
                     summonFusion(tributedCard, fusionCandidates[0]);
                     return;
                 }
-                window.DuelEngineUI.openCardListPicker(fusionCandidates, {
-                    title: '🌀 Metamorfosi',
-                    text: "Scegli quale Mostro Fusione Special Summonare dall'Extra Deck.",
-                    onSelect: (fusionCard) => summonFusion(tributedCard, fusionCard)
+                Decisioni.chiedi({
+                    chi: 'player',
+                    candidati: fusionCandidates,
+                    titolo: '🌀 Metamorfosi',
+                    testo: "Scegli quale Mostro Fusione Special Summonare dall'Extra Deck."
+                }, (fusionCard) => {
+                    if (fusionCard === null) return;
+                    summonFusion(tributedCard, fusionCard);
                 });
             };
 
-            if (tributeCandidates.length === 1 || ctx.owner !== 'player' || !window.DuelEngineUI) {
+            if (tributeCandidates.length === 1 || !Decisioni.rispondeUnaPersona(ctx.owner)) {
                 let weakest = tributeCandidates[0];
                 tributeCandidates.forEach((c) => { if (c.attack < weakest.attack) weakest = c; });
                 tributeChosen(weakest);
                 return;
             }
-            window.DuelEngineUI.openCardListPicker(tributeCandidates, {
-                title: '🌀 Metamorfosi',
-                text: 'Scegli quale mostro tributare.',
-                onSelect: tributeChosen
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: tributeCandidates,
+                titolo: '🌀 Metamorfosi',
+                testo: 'Scegli quale mostro tributare.'
+            }, (scelta) => {
+                if (scelta === null) return;
+                tributeChosen(scelta);
             });
         }
     });
@@ -2784,17 +2808,19 @@
         if (options.length === 0) return;
         const owner = ctx.owner;
         const summon = (option) => { ctx.fusionSummon(owner, option.extraDeckIndex, option.materialLocations, { banishMaterials: true }); };
-        if (options.length === 1 || owner !== 'player' || !window.DuelEngineUI) {
+        if (options.length === 1 || !Decisioni.rispondeUnaPersona(owner)) {
             summon(options[0]);
             return;
         }
-        window.DuelEngineUI.openCardListPicker(options.map((o) => o.card), {
-            title: '🔗 Cancello di Fusione: scegli il Mostro Fusione',
-            text: 'Hai i materiali per più di un Mostro Fusione: scegline uno da Evocare (i materiali vengono banditi).',
-            onSelect: (card) => {
-                const match = options.find((o) => o.card.uid === card.uid);
-                if (match) summon(match);
-            }
+        Decisioni.chiedi({
+            chi: 'player',
+            candidati: options.map((o) => o.card),
+            titolo: '🔗 Cancello di Fusione: scegli il Mostro Fusione',
+            testo: 'Hai i materiali per più di un Mostro Fusione: scegline uno da Evocare (i materiali vengono banditi).'
+        }, (card) => {
+            if (card === null) return;
+            const match = options.find((o) => o.card.uid === card.uid);
+            if (match) summon(match);
         });
     }
     CardEffects.register(887, {

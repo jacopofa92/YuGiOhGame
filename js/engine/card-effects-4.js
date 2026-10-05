@@ -681,7 +681,7 @@
                 ctx.graveyard(owner).push(...rest);
                 ctx.log(`💭 ${opponent === 'player' ? 'Scegli' : 'Il bot sceglie'} ${chosen.name} per ${owner === 'player' ? 'la tua mano' : 'il bot'}: le altre ${rest.length} vanno al Cimitero.`);
             };
-            if (opponent !== 'player' || !window.DuelEngineUI) {
+            if (!Decisioni.rispondeUnaPersona(opponent)) {
                 // Il bot sceglie da solo: tra i mostri rivelati, quello con
                 // l'ATK più basso (danneggia meno l'avversario che riceve);
                 // se non ce ne sono, la prima carta rivelata. Il confronto
@@ -694,10 +694,14 @@
                 finish(pick);
                 return;
             }
-            window.DuelEngineUI.openCardListPicker(revealed, {
-                title: '💭 Scelta Dolorosa',
-                text: `${owner === 'player' ? 'Il bot ha' : 'Hai'} rivelato 5 carte dal Deck: scegli quale finisce nella ${owner === 'player' ? 'sua' : 'tua'} mano (le altre vanno al Cimitero).`,
-                onSelect: (card) => finish(card)
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: revealed,
+                titolo: '💭 Scelta Dolorosa',
+                testo: `${owner === 'player' ? 'Il bot ha' : 'Hai'} rivelato 5 carte dal Deck: scegli quale finisce nella ${owner === 'player' ? 'sua' : 'tua'} mano (le altre vanno al Cimitero).`
+            }, (card) => {
+                if (card === null) return;
+                finish(card);
             });
         }
     });
@@ -760,14 +764,18 @@
                 const remove = (card) => {
                     ctx.banishFromGraveyard(graveyardOwner, card);
                 };
-                if (pickerOwner !== 'player' || !window.DuelEngineUI) {
+                if (!Decisioni.rispondeUnaPersona(pickerOwner)) {
                     remove(monsters[0]);
                     return;
                 }
-                window.DuelEngineUI.openCardListPicker(monsters, {
-                    title: "💀 Demolizione dell'Anima",
-                    text: `Scegli 1 mostro dal Cimitero ${graveyardOwner === 'player' ? 'tuo' : 'del bot'} da bandire.`,
-                    onSelect: (card) => remove(card)
+                Decisioni.chiedi({
+                    chi: 'player',
+                    candidati: monsters,
+                    titolo: "💀 Demolizione dell'Anima",
+                    testo: `Scegli 1 mostro dal Cimitero ${graveyardOwner === 'player' ? 'tuo' : 'del bot'} da bandire.`
+                }, (card) => {
+                    if (card === null) return;
+                    remove(card);
                 });
             };
             pickFrom(ctx.owner, ctx.opponent);
@@ -1137,14 +1145,18 @@
                 ctx.card.watchedSpellUid = chosenCard.uid;
                 ctx.log(`🎭 Maschera di Dissoluzione lega il suo effetto a ${chosenCard.name}!`);
             };
-            if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+            if (!Decisioni.rispondeUnaPersona(ctx.owner)) {
                 finish(targets[0]);
                 return;
             }
-            window.DuelEngineUI.openCardListPicker(targets, {
-                title: '🎭 Maschera di Dissoluzione',
-                text: 'Scegli 1 Magia scoperta sul Terreno da colpire.',
-                onSelect: (card) => finish(card)
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: targets,
+                titolo: '🎭 Maschera di Dissoluzione',
+                testo: 'Scegli 1 Magia scoperta sul Terreno da colpire.'
+            }, (card) => {
+                if (card === null) return;
+                finish(card);
             });
         },
         static(ctx) {
@@ -1223,34 +1235,48 @@
                         }
                     };
                     if (destroyables.length === 0) return;
-                    if (owner !== 'player' || !window.DuelEngineUI) {
+                    if (!Decisioni.rispondeUnaPersona(owner)) {
                         return; // il bot si ferma qui: il "puoi" opzionale resta non sfruttato, semplificazione sicura
                     }
-                    window.DuelEngineUI.openCardListPicker(destroyables.map((d) => d.card), {
-                        title: '🔮 Dimensione Magica',
-                        text: 'Puoi distruggere 1 mostro sul Terreno (opzionale).',
-                        onSelect: (card) => chooseDestroy(destroyables.find((d) => d.card.uid === card.uid)),
-                        onCancel: () => {}
+                    Decisioni.chiedi({
+                        chi: 'player',
+                        candidati: destroyables.map((d) => d.card),
+                        titolo: '🔮 Dimensione Magica',
+                        testo: 'Puoi distruggere 1 mostro sul Terreno (opzionale).',
+                        annullabile: true
+                    }, (card) => {
+                        if (card === null) {
+                            return;
+                        }
+                        chooseDestroy(destroyables.find((d) => d.card.uid === card.uid));
                     });
                 };
-                if (owner !== 'player' || !window.DuelEngineUI || spellcasters.length === 1) {
+                if (!Decisioni.rispondeUnaPersona(owner) || spellcasters.length === 1) {
                     chooseSummon(spellcasters[0]);
                     return;
                 }
-                window.DuelEngineUI.openCardListPicker(spellcasters, {
-                    title: '🔮 Dimensione Magica',
-                    text: 'Scegli quale mostro Incantatore Special Summonare dalla mano.',
-                    onSelect: (card) => chooseSummon(card)
+                Decisioni.chiedi({
+                    chi: 'player',
+                    candidati: spellcasters,
+                    titolo: '🔮 Dimensione Magica',
+                    testo: 'Scegli quale mostro Incantatore Special Summonare dalla mano.'
+                }, (card) => {
+                    if (card === null) return;
+                    chooseSummon(card);
                 });
             };
-            if (owner !== 'player' || !window.DuelEngineUI || tributeCandidates.length === 1) {
+            if (!Decisioni.rispondeUnaPersona(owner) || tributeCandidates.length === 1) {
                 chooseTribute(tributeCandidates[0]);
                 return;
             }
-            window.DuelEngineUI.openCardListPicker(tributeCandidates, {
-                title: '🔮 Dimensione Magica',
-                text: 'Scegli quale mostro sacrificare.',
-                onSelect: (card) => chooseTribute(card)
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: tributeCandidates,
+                titolo: '🔮 Dimensione Magica',
+                testo: 'Scegli quale mostro sacrificare.'
+            }, (card) => {
+                if (card === null) return;
+                chooseTribute(card);
             });
         }
     });
@@ -1371,14 +1397,18 @@
                 ctx.grantTemporaryAtkDefBonus(finalSlot.card, 500, 0, false);
                 ctx.log(`💪 Rinforzi aumenta l'ATK di ${finalSlot.card.name} di 500 punti!`);
             };
-            if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+            if (!Decisioni.rispondeUnaPersona(ctx.owner)) {
                 boost(candidates[0]);
                 return;
             }
-            window.DuelEngineUI.openCardListPicker(candidates, {
-                title: '💪 Rinforzi',
-                text: 'Scegli quale mostro rinforzare.',
-                onSelect: boost
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: candidates,
+                titolo: '💪 Rinforzi',
+                testo: 'Scegli quale mostro rinforzare.'
+            }, (scelta) => {
+                if (scelta === null) return;
+                boost(scelta);
             });
         }
     });
@@ -1458,17 +1488,19 @@
                 ctx.graveyard(choice.owner).push(choice.card);
                 ctx.log(`🪤 Maestro delle Trappole distrugge ${choice.card.name}!`);
             };
-            if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+            if (!Decisioni.rispondeUnaPersona(ctx.owner)) {
                 destroy(candidates[0]);
                 return;
             }
-            window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
-                title: '🪤 Maestro delle Trappole',
-                text: 'Scegli quale Trappola distruggere.',
-                onSelect: (card) => {
-                    const choice = candidates.find((c) => c.card.uid === card.uid);
-                    if (choice) destroy(choice);
-                }
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: candidates.map((c) => c.card),
+                titolo: '🪤 Maestro delle Trappole',
+                testo: 'Scegli quale Trappola distruggere.'
+            }, (card) => {
+                if (card === null) return;
+                const choice = candidates.find((c) => c.card.uid === card.uid);
+                if (choice) destroy(choice);
             });
         }
     });
@@ -1664,12 +1696,14 @@
             const hand = ctx.hand(ctx.opponent);
             if (hand.length === 0) return;
             const card = ctx.randomPick(hand);
-            if (ctx.owner === 'player' && window.DuelEngineUI) {
-                window.DuelEngineUI.openCardListPicker([card], {
-                    title: '🕵️ La Spia Inesperta',
-                    text: 'Hai sbirciato questa carta nella mano del tuo avversario:',
-                    selectable: false
-                });
+            if (Decisioni.rispondeUnaPersona(ctx.owner)) {
+                Decisioni.chiedi({
+                    chi: 'player',
+                    tipo: 'presa-visione',
+                    candidati: [card],
+                    titolo: '🕵️ La Spia Inesperta',
+                    testo: 'Hai sbirciato questa carta nella mano del tuo avversario:'
+                }, () => {});
             }
             ctx.log(ctx.owner === 'player' ? '🕵️ Sbirci una carta nella mano del bot.' : '🕵️ Il bot sbircia una carta nella tua mano.');
         }
@@ -1689,12 +1723,14 @@
             const deck = ctx.gameState[ctx.opponent === 'player' ? 'playerDeck' : 'botDeck'];
             if (!Array.isArray(deck) || deck.length === 0) { ctx.log('⚠️ Nessun Deck reale in questa modalità.'); return; }
             const top5 = deck.slice(Math.max(0, deck.length - 5)).slice().reverse();
-            if (ctx.owner === 'player' && window.DuelEngineUI) {
-                window.DuelEngineUI.openCardListPicker(top5, {
-                    title: '🔭 Telescopio Antico',
-                    text: 'Le prime 5 carte del Deck del tuo avversario (rimesse a posto subito dopo averle viste):',
-                    selectable: false
-                });
+            if (Decisioni.rispondeUnaPersona(ctx.owner)) {
+                Decisioni.chiedi({
+                    chi: 'player',
+                    tipo: 'presa-visione',
+                    candidati: top5,
+                    titolo: '🔭 Telescopio Antico',
+                    testo: 'Le prime 5 carte del Deck del tuo avversario (rimesse a posto subito dopo averle viste):'
+                }, () => {});
             }
             ctx.log(ctx.owner === 'player' ? '🔭 Guardi le prime 5 carte del Deck del bot.' : '🔭 Il bot guarda le prime 5 carte del tuo Deck.');
         }
@@ -1804,19 +1840,21 @@
                 ctx.returnMonsterToHand(decl.targetOwner, decl.targetIndex);
                 ctx.log(`🐙 Hane-Hane rimanda ${name} in mano!`);
             };
-            if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+            if (!Decisioni.rispondeUnaPersona(ctx.owner)) {
                 let best = candidates[0];
                 candidates.forEach((c) => { if (DuelEngine.getEffectiveAtk(c.card) > DuelEngine.getEffectiveAtk(best.card)) best = c; });
                 bounce(best);
                 return;
             }
-            window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
-                title: '🐙 Hane-Hane',
-                text: 'Scegli quale mostro rimandare in mano al suo proprietario.',
-                onSelect: (card) => {
-                    const choice = candidates.find((c) => c.card.uid === card.uid);
-                    if (choice) bounce(choice);
-                }
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: candidates.map((c) => c.card),
+                titolo: '🐙 Hane-Hane',
+                testo: 'Scegli quale mostro rimandare in mano al suo proprietario.'
+            }, (card) => {
+                if (card === null) return;
+                const choice = candidates.find((c) => c.card.uid === card.uid);
+                if (choice) bounce(choice);
             });
         }
     });
@@ -1883,14 +1921,18 @@
                 ctx.hand(ctx.owner).push(card);
                 ctx.log(`🔮 Maga della Fede aggiunge ${card.name} alla mano!`);
             };
-            if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+            if (!Decisioni.rispondeUnaPersona(ctx.owner)) {
                 addToHand(candidates[0]);
                 return;
             }
-            window.DuelEngineUI.openCardListPicker(candidates, {
-                title: '🔮 Maga della Fede',
-                text: 'Scegli 1 Magia dal Cimitero da aggiungere alla mano.',
-                onSelect: addToHand
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: candidates,
+                titolo: '🔮 Maga della Fede',
+                testo: 'Scegli 1 Magia dal Cimitero da aggiungere alla mano.'
+            }, (scelta) => {
+                if (scelta === null) return;
+                addToHand(scelta);
             });
         }
     });
@@ -1908,12 +1950,14 @@
             const deck = ctx.gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
             if (!Array.isArray(deck) || deck.length === 0) { ctx.log('⚠️ Nessun Deck reale in questa modalità.'); return; }
             const top5 = deck.slice(Math.max(0, deck.length - 5)).slice().reverse();
-            if (ctx.owner === 'player' && window.DuelEngineUI) {
-                window.DuelEngineUI.openCardListPicker(top5, {
-                    title: '👁️ Grande Occhio',
-                    text: 'Le prime 5 carte del tuo Deck (restano nello stesso ordine):',
-                    selectable: false
-                });
+            if (Decisioni.rispondeUnaPersona(ctx.owner)) {
+                Decisioni.chiedi({
+                    chi: 'player',
+                    tipo: 'presa-visione',
+                    candidati: top5,
+                    titolo: '👁️ Grande Occhio',
+                    testo: 'Le prime 5 carte del tuo Deck (restano nello stesso ordine):'
+                }, () => {});
             }
             ctx.log('👁️ Grande Occhio guarda le prime 5 carte del Deck.');
         }
@@ -1977,19 +2021,21 @@
                 ctx.returnMonsterToHand(decl.targetOwner, decl.targetIndex);
                 ctx.log(`🐧 Soldato Pinguino rimanda ${name} in mano!`);
             };
-            if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+            if (!Decisioni.rispondeUnaPersona(ctx.owner)) {
                 let best = candidates.find((c) => c.owner === ctx.opponent) || candidates[0];
                 candidates.forEach((c) => { if (c.owner === ctx.opponent && DuelEngine.getEffectiveAtk(c.card) > DuelEngine.getEffectiveAtk(best.card)) best = c; });
                 bounce(best);
                 return;
             }
-            window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
-                title: '🐧 Soldato Pinguino',
-                text: 'Scegli quale mostro rimandare in mano al suo proprietario.',
-                onSelect: (card) => {
-                    const choice = candidates.find((c) => c.card.uid === card.uid);
-                    if (choice) bounce(choice);
-                }
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: candidates.map((c) => c.card),
+                titolo: '🐧 Soldato Pinguino',
+                testo: 'Scegli quale mostro rimandare in mano al suo proprietario.'
+            }, (card) => {
+                if (card === null) return;
+                const choice = candidates.find((c) => c.card.uid === card.uid);
+                if (choice) bounce(choice);
             });
         }
     });
@@ -2044,14 +2090,18 @@
                 ctx.grantTemporaryAtkDefBonus(card, 0, 700, false);
                 ctx.log(`🛡️ Il Guardiano Affidabile aumenta la DEF di ${card.name} di 700 punti!`);
             };
-            if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+            if (!Decisioni.rispondeUnaPersona(ctx.owner)) {
                 boost(candidates[0]);
                 return;
             }
-            window.DuelEngineUI.openCardListPicker(candidates, {
-                title: '🛡️ Il Guardiano Affidabile',
-                text: 'Scegli quale mostro rinforzare.',
-                onSelect: boost
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: candidates,
+                titolo: '🛡️ Il Guardiano Affidabile',
+                testo: 'Scegli quale mostro rinforzare.'
+            }, (scelta) => {
+                if (scelta === null) return;
+                boost(scelta);
             });
         }
     });
@@ -2427,18 +2477,20 @@
                 ctx.graveyard(choice.owner).push(choice.card);
                 ctx.log(`🥷 Ninja Armato distrugge ${choice.card.name}!`);
             };
-            if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+            if (!Decisioni.rispondeUnaPersona(ctx.owner)) {
                 const faceUpSpell = candidates.find((c) => c.card.type === 'spell' && !ctx.stField(c.owner)[c.index].isFaceDown);
                 destroy(faceUpSpell || candidates[0]);
                 return;
             }
-            window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
-                title: '🥷 Ninja Armato',
-                text: 'Scegli 1 Magia scoperta, o 1 carta Set, da colpire.',
-                onSelect: (card) => {
-                    const choice = candidates.find((c) => c.card.uid === card.uid);
-                    if (choice) destroy(choice);
-                }
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: candidates.map((c) => c.card),
+                titolo: '🥷 Ninja Armato',
+                testo: 'Scegli 1 Magia scoperta, o 1 carta Set, da colpire.'
+            }, (card) => {
+                if (card === null) return;
+                const choice = candidates.find((c) => c.card.uid === card.uid);
+                if (choice) destroy(choice);
             });
         }
     });
@@ -2502,18 +2554,20 @@
                 ctx.graveyard(choice.owner).push(choice.card);
                 ctx.log(`🌪️ Tifone dello Spazio Mistico distrugge ${choice.card.name}!`);
             };
-            if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+            if (!Decisioni.rispondeUnaPersona(ctx.owner)) {
                 const oppCandidate = candidates.find((c) => c.owner === ctx.opponent);
                 destroy(oppCandidate || candidates[0]);
                 return;
             }
-            window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
-                title: '🌪️ Tifone dello Spazio Mistico',
-                text: 'Scegli 1 Magia/Trappola, scoperta o Set, da distruggere.',
-                onSelect: (card) => {
-                    const choice = candidates.find((c) => c.card.uid === card.uid);
-                    if (choice) destroy(choice);
-                }
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: candidates.map((c) => c.card),
+                titolo: '🌪️ Tifone dello Spazio Mistico',
+                testo: 'Scegli 1 Magia/Trappola, scoperta o Set, da distruggere.'
+            }, (card) => {
+                if (card === null) return;
+                const choice = candidates.find((c) => c.card.uid === card.uid);
+                if (choice) destroy(choice);
             });
         }
     });

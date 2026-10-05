@@ -1103,11 +1103,18 @@
             ctx.log(`🔨 Maglio Magico rimescola ${count} cart${count === 1 ? 'a' : 'e'} nel Deck e ne pesca altrettante!`);
         };
         if (remaining.length === 0) { finish(); return; }
-        window.DuelEngineUI.openCardListPicker(remaining, {
-            title: '🔨 Maglio Magico',
-            text: `Scegli 1 carta da rimescolare nel Deck, o chiudi per fermarti qui (${selected.length} scelt${selected.length === 1 ? 'a' : 'e'} finora).`,
-            onSelect: (card) => { selected.push(card); pickMagicalMalletCards(ctx, hand, selected); },
-            onCancel: finish
+        Decisioni.chiedi({
+            chi: 'player',
+            candidati: remaining,
+            titolo: '🔨 Maglio Magico',
+            testo: `Scegli 1 carta da rimescolare nel Deck, o chiudi per fermarti qui (${selected.length} scelt${selected.length === 1 ? 'a' : 'e'} finora).`,
+            annullabile: true
+        }, (card) => {
+            if (card === null) {
+                finish();
+                return;
+            }
+            selected.push(card); pickMagicalMalletCards(ctx, hand, selected);
         });
     }
     CardEffects.register(768, {
@@ -1116,7 +1123,7 @@
         },
         activate(ctx) {
             const hand = ctx.hand(ctx.owner);
-            if (ctx.owner === 'player' && window.DuelEngineUI) {
+            if (Decisioni.rispondeUnaPersona(ctx.owner)) {
                 pickMagicalMalletCards(ctx, hand, []);
                 return;
             }

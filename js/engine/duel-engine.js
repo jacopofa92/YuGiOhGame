@@ -3589,22 +3589,27 @@
      * una persona vera.
      */
     function offerChoice(responderOwner, candidates, callback, triggerCard, testoMomento, triggerIsOwn) {
-        if (responderOwner === 'bot') {
-            // Decisione delegata a BotAI (js/ai/ai-controller.js — livello
-            // di difficoltà attivo in gameState.botDifficulty), con ripiego
-            // sulla vecchia euristica fissa ("prendi sempre la prima") se
-            // per qualche motivo BotAI non è caricato (es. pagine come
+        Decisioni.chiedi({
+            chi: responderOwner,
+            tipo: 'risposta',
+            candidati: candidates,
+            cartaInnesco: triggerCard,
+            momento: testoMomento,
+            innescoProprio: triggerIsOwn,
+            // Il bot decide con BotAI (js/ai/ai-controller.js — livello di
+            // difficoltà attivo in gameState.botDifficulty), con ripiego
+            // sulla vecchia euristica fissa ("prendi sempre la prima") se per
+            // qualche motivo BotAI non è caricato (es. pagine come
             // cartoteca.html/creazione-deck.html, che caricano duel-engine.js
             // ma non bot.js/ai-controller.js e non aprono mai davvero una
-            // Chain in pratica).
-            callback(window.BotAI ? BotAI.chooseChainResponse(candidates) : candidates[0]);
-        } else if (window.DuelEngineUI && typeof window.DuelEngineUI.promptDefenderResponse === 'function') {
-            window.DuelEngineUI.promptDefenderResponse(candidates, callback, triggerCard, testoMomento, triggerIsOwn);
-        } else {
-            // Nessuna UI disponibile: per sicurezza non attiva nulla,
+            // Chain in pratica). Il giocatore senza un'interfaccia che glielo
+            // chieda non risponde: per sicurezza non si attiva nulla,
             // invece di bloccare il duello.
-            callback(null);
-        }
+            automatica: (elenco) => {
+                if (responderOwner !== 'bot') return null;
+                return window.BotAI ? BotAI.chooseChainResponse(elenco) : elenco[0];
+            }
+        }, callback);
     }
 
     /**

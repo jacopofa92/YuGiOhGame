@@ -139,13 +139,15 @@
                 }
             });
             ctx.log(`☠️ Virus Distruggi-Carte sacrifica ${tributeCard.name}: l'avversario non subisce danni fino alla fine del turno successivo, ${destroyed} mostr${destroyed === 1 ? 'o' : 'i'} con 1500+ ATK distrutt${destroyed === 1 ? 'o' : 'i'}!`);
-            if (ctx.owner === 'player' && window.DuelEngineUI) {
-                DuelEngineUI.openCardListPicker(ctx.hand(ctx.opponent).slice(), {
-                    title: '☠️ Virus Distruggi-Carte',
-                    text: "Guardi la mano dell'avversario.",
-                    selectable: false,
-                    emptyText: "L'avversario non ha carte in mano."
-                });
+            if (Decisioni.rispondeUnaPersona(ctx.owner)) {
+                Decisioni.chiedi({
+                    chi: 'player',
+                    tipo: 'presa-visione',
+                    candidati: ctx.hand(ctx.opponent).slice(),
+                    titolo: '☠️ Virus Distruggi-Carte',
+                    testo: "Guardi la mano dell'avversario.",
+                    vuota: "L'avversario non ha carte in mano."
+                }, () => {});
             }
         }
     });
@@ -438,7 +440,7 @@
                 ctx.graveyard(choice.owner).push(choice.card);
                 ctx.log(`✨ Rimuovi Magia distrugge ${choice.card.name}!`);
             };
-            if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+            if (!Decisioni.rispondeUnaPersona(ctx.owner)) {
                 // Euristica bot: preferisce un bersaglio SICURAMENTE una
                 // Magia (già scoperta) se ce n'è una, invece di rischiare
                 // alla cieca su una carta Set.
@@ -446,13 +448,15 @@
                 destroy(faceUpSpell || candidates[0]);
                 return;
             }
-            window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
-                title: '✨ Rimuovi Magia',
-                text: 'Scegli 1 Magia scoperta, o 1 carta Set, da colpire.',
-                onSelect: (card) => {
-                    const choice = candidates.find((c) => c.card.uid === card.uid);
-                    if (choice) destroy(choice);
-                }
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: candidates.map((c) => c.card),
+                titolo: '✨ Rimuovi Magia',
+                testo: 'Scegli 1 Magia scoperta, o 1 carta Set, da colpire.'
+            }, (card) => {
+                if (card === null) return;
+                const choice = candidates.find((c) => c.card.uid === card.uid);
+                if (choice) destroy(choice);
             });
         }
     });
@@ -1430,14 +1434,18 @@
                     : '🃏 Kuribandit si sacrifica e scava 5 carte, ma nessuna Magia/Trappola tra loro.');
             };
             if (stCandidates.length === 0) { finish(null); return; }
-            if (ctx.owner !== 'player' || !window.DuelEngineUI || stCandidates.length === 1) {
+            if (!Decisioni.rispondeUnaPersona(ctx.owner) || stCandidates.length === 1) {
                 finish(stCandidates[0]);
                 return;
             }
-            window.DuelEngineUI.openCardListPicker(stCandidates, {
-                title: '🃏 Kuribandit',
-                text: 'Scegli quale Magia/Trappola aggiungere alla mano tra quelle scavate.',
-                onSelect: (card) => finish(card)
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: stCandidates,
+                titolo: '🃏 Kuribandit',
+                testo: 'Scegli quale Magia/Trappola aggiungere alla mano tra quelle scavate.'
+            }, (card) => {
+                if (card === null) return;
+                finish(card);
             });
         }
     });

@@ -16,6 +16,86 @@ EventiDuello.ascolta('scarto-fine-turno', startHandDiscardSelection);
 EventiDuello.ascolta('volo-carta', (volo, fatto) => {
     flyCardToSlot(volo.carta, volo.partenza, volo.casella, fatto, volo.daNascondere, volo.coperta, volo.posizione);
 });
+// Una scelta per la persona davanti allo schermo (js/engine/decisioni.js):
+// qui si sceglie COME mostrarla, secondo il tipo. `rispondi` va chiamata
+// col candidato scelto, o con null quando la si chiude senza scegliere.
+// Quale metodo di DuelEngineUI mostra ogni tipo di decisione.
+const MOSTRA_DECISIONE = {
+    'carte': 'openCardListPicker',
+    'presa-visione': 'openCardListPicker',
+    'opzioni': 'openOptionPicker',
+    'posizione': 'openPositionPicker',
+    'coppia': 'openChoicePopover',
+    'risposta': 'promptDefenderResponse'
+};
+// "Questa scelta si può mostrare adesso?" No se DuelEngineUI non c'è, o non
+// sa mostrare quel tipo: allora decide la scelta automatica, come per il
+// bot. È anche il modo in cui gli spec simulano una pagina senza modali
+// (window.DuelEngineUI = null).
+EventiDuello.ascolta('decisioni-a-schermo', (tipo) => {
+    const ui = window.DuelEngineUI;
+    if (!ui) return false;
+    if (tipo && typeof ui[MOSTRA_DECISIONE[tipo]] !== 'function') return false;
+    return undefined;
+});
+EventiDuello.ascolta('decisione', (r, rispondi) => {
+    const ui = window.DuelEngineUI;
+    const annulla = r.annullabile ? () => rispondi(null) : undefined;
+    switch (r.tipo) {
+        case 'carte': {
+            const mostra = typeof r.mostra === 'function' ? r.mostra : (c) => c;
+            const disegnate = r.candidati.map(mostra);
+            // Si risponde per POSIZIONE nell'elenco quando il picker la
+            // dà, altrimenti ritrovando la carta per uid: quella disegnata
+            // può essere una copia (una carta coperta dell'avversario si
+            // mostra col retro, vedi chooseFieldCardTarget in card-effects.js).
+            const candidatoDi = (card, i) => {
+                if (typeof i === 'number' && r.candidati[i] !== undefined) return r.candidati[i];
+                const j = disegnate.findIndex((d) => d === card || (d && card && d.uid !== undefined && d.uid === card.uid));
+                return j === -1 ? null : r.candidati[j];
+            };
+            ui.openCardListPicker(disegnate, {
+                title: r.titolo, text: r.testo, emptyText: r.vuota,
+                onSelect: (card, i) => rispondi(candidatoDi(card, i)),
+                onCancel: annulla
+            });
+            break;
+        }
+        case 'presa-visione':
+            ui.openCardListPicker(r.candidati, {
+                title: r.titolo, text: r.testo, emptyText: r.vuota, selectable: false,
+                onCancel: () => rispondi(null)
+            });
+            break;
+        case 'opzioni':
+            ui.openOptionPicker(r.ancora || null, {
+                title: r.titolo, text: r.testo, options: r.candidati,
+                onSelect: (value, voce) => rispondi(voce),
+                onCancel: annulla, cancelLabel: r.etichettaAnnulla
+            });
+            break;
+        case 'posizione':
+            ui.openPositionPicker(r.ancora || null, { title: r.titolo, onSelect: (posizione) => rispondi(posizione) });
+            break;
+        case 'coppia': {
+            const [a, b] = r.candidati;
+            ui.openChoicePopover(r.ancora || null, {
+                title: r.titolo,
+                choiceA: { label: a.label, icon: a.icon, onSelect: () => rispondi(a) },
+                choiceB: { label: b.label, icon: b.icon, onSelect: () => rispondi(b) }
+            });
+            break;
+        }
+        case 'risposta':
+            // "Vuoi rispondere?" in una Catena: il prompt chiama `rispondi`
+            // con la carta scelta, o con null per passare.
+            ui.promptDefenderResponse(r.candidati, rispondi, r.cartaInnesco, r.momento, r.innescoProprio);
+            break;
+        default:
+            console.error(`Decisione di tipo sconosciuto: ${r.tipo}`);
+            rispondi(null);
+    }
+});
 
 // Alcune WebView Android emettono ancora un `click` di compatibilita'
 // subito DOPO la coppia pointerdown/pointerup touch, anche se il down e'

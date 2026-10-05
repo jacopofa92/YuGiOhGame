@@ -226,7 +226,7 @@
                 ctx.log(`🔧 Predone Cyber ruba ${choice.card.name} e la equipaggia a sé stesso!`);
             };
 
-            if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+            if (!Decisioni.rispondeUnaPersona(ctx.owner)) {
                 // IA: preferisce rubare una Carta Equipaggiamento
                 // dell'avversario (doppio vantaggio: la toglie a lui E la
                 // usa lei), altrimenti distrugge la prima disponibile.
@@ -234,17 +234,25 @@
                 if (enemyOne) steal(enemyOne); else destroy(candidates[0]);
                 return;
             }
-            window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
-                title: '🤖 Predone Cyber',
-                text: 'Scegli 1 Carta Equipaggiamento sul Terreno: poi decidi se distruggerla o rubarla.',
-                onSelect: (card) => {
-                    const choice = candidates.find((c) => c.card.uid === card.uid);
-                    window.DuelEngineUI.openChoicePopover(null, {
-                        title: choice.card.name,
-                        choiceA: { label: 'Distruggi', icon: '💥', onSelect: () => destroy(choice) },
-                        choiceB: { label: 'Rubala', icon: '🔧', onSelect: () => steal(choice) }
-                    });
-                }
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: candidates.map((c) => c.card),
+                titolo: '🤖 Predone Cyber',
+                testo: 'Scegli 1 Carta Equipaggiamento sul Terreno: poi decidi se distruggerla o rubarla.'
+            }, (card) => {
+                if (card === null) return;
+                const choice = candidates.find((c) => c.card.uid === card.uid);
+                Decisioni.chiedi({
+                    chi: 'player',
+                    tipo: 'coppia',
+                    titolo: choice.card.name,
+                    candidati: [
+                        { label: 'Distruggi', icon: '💥', onSelect: () => destroy(choice) },
+                        { label: 'Rubala', icon: '🔧', onSelect: () => steal(choice) }
+                    ]
+                }, (scelta) => {
+                    if (scelta) scelta.onSelect();
+                });
             });
         }
     });
@@ -1437,30 +1445,37 @@
                 ctx.specialSummon(owner, choice.card, slotIndex, position, 'graveyard');
                 ctx.log(`🌟 Rinascita del Mostro riporta in campo ${choice.card.name} in Posizione di ${position === 'attack' ? 'Attacco' : 'Difesa'}!`);
             };
-            if (owner !== 'player' || !window.DuelEngineUI) {
+            if (!Decisioni.rispondeUnaPersona(owner)) {
                 let best = candidates[0];
                 candidates.forEach((c) => { if (c.card.attack > best.card.attack) best = c; });
                 reviveWith(best, 'attack');
                 return;
             }
-            window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
-                title: '🌟 Rinascita del Mostro',
-                text: 'Scegli quale mostro riportare in campo da uno dei due Cimiteri.',
-                onSelect: (card) => {
-                    const choice = candidates.find((c) => c.card.uid === card.uid);
-                    if (!choice) return;
-                    const slotIndex = ctx.findEmptyMonsterSlot(owner);
-                    if (slotIndex === -1) {
-                        ctx.log('⚠️ Il Terreno è pieno: impossibile eseguire la Special Summon.');
-                        return;
-                    }
-                    const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
-                    const anchorEl = PortaUI.query(`#${boardId} .field-slot[data-owner="${owner}"][data-type="monster"][data-index="${slotIndex}"]`);
-                    window.DuelEngineUI.openPositionPicker(anchorEl, {
-                        title: `${choice.card.name}: Attacco o Difesa?`,
-                        onSelect: (position) => reviveWith(choice, position)
-                    });
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: candidates.map((c) => c.card),
+                titolo: '🌟 Rinascita del Mostro',
+                testo: 'Scegli quale mostro riportare in campo da uno dei due Cimiteri.'
+            }, (card) => {
+                if (card === null) return;
+                const choice = candidates.find((c) => c.card.uid === card.uid);
+                if (!choice) return;
+                const slotIndex = ctx.findEmptyMonsterSlot(owner);
+                if (slotIndex === -1) {
+                    ctx.log('⚠️ Il Terreno è pieno: impossibile eseguire la Special Summon.');
+                    return;
                 }
+                const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+                const anchorEl = PortaUI.query(`#${boardId} .field-slot[data-owner="${owner}"][data-type="monster"][data-index="${slotIndex}"]`);
+                Decisioni.chiedi({
+                    chi: 'player',
+                    tipo: 'posizione',
+                    ancora: anchorEl,
+                    titolo: `${choice.card.name}: Attacco o Difesa?`
+                }, (position) => {
+                    if (position === null) return;
+                    reviveWith(choice, position);
+                });
             });
         }
     });
@@ -1916,19 +1931,24 @@
         const grave = ctx.graveyard(ctx.owner);
         const eligible = grave.filter((c) => c.type === 'monster' && !DuelEngine.getDefinition(c.id)?.cannotBeSpecialSummoned);
         if (eligible.length === 0 || ctx.findEmptyMonsterSlot(ctx.owner) === -1) { finishSoulCharge(ctx, summonedUids); return; }
-        window.DuelEngineUI.openCardListPicker(eligible, {
-            title: '👻 Carica dell\'Anima',
-            text: `Scegli 1 mostro dal Cimitero da Special Summonare, o chiudi per fermarti qui (${summonedUids.length} finora).`,
-            onSelect: (card) => {
-                const realIndex = grave.indexOf(card);
-                if (realIndex === -1) { pickSoulChargeTargets(ctx, summonedUids); return; }
-                const [summoned] = grave.splice(realIndex, 1);
-                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-                ctx.specialSummon(ctx.owner, summoned, slotIndex, 'attack', 'graveyard');
-                summonedUids.push(summoned.name);
-                pickSoulChargeTargets(ctx, summonedUids);
-            },
-            onCancel: () => finishSoulCharge(ctx, summonedUids)
+        Decisioni.chiedi({
+            chi: 'player',
+            candidati: eligible,
+            titolo: '👻 Carica dell\'Anima',
+            testo: `Scegli 1 mostro dal Cimitero da Special Summonare, o chiudi per fermarti qui (${summonedUids.length} finora).`,
+            annullabile: true
+        }, (card) => {
+            if (card === null) {
+                finishSoulCharge(ctx, summonedUids);
+                return;
+            }
+            const realIndex = grave.indexOf(card);
+            if (realIndex === -1) { pickSoulChargeTargets(ctx, summonedUids); return; }
+            const [summoned] = grave.splice(realIndex, 1);
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            ctx.specialSummon(ctx.owner, summoned, slotIndex, 'attack', 'graveyard');
+            summonedUids.push(summoned.name);
+            pickSoulChargeTargets(ctx, summonedUids);
         });
     }
     CardEffects.register(59, {
@@ -1936,7 +1956,7 @@
             return ctx.graveyard(ctx.owner).some((c) => c.type === 'monster' && !DuelEngine.getDefinition(c.id)?.cannotBeSpecialSummoned) && ctx.findEmptyMonsterSlot(ctx.owner) !== -1;
         },
         activate(ctx) {
-            if (ctx.owner === 'player' && window.DuelEngineUI) {
+            if (Decisioni.rispondeUnaPersona(ctx.owner)) {
                 pickSoulChargeTargets(ctx, []);
                 return;
             }
@@ -2185,19 +2205,21 @@
                 ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
                 ctx.log(`🐛 Insetto Divoratore, girato scoperto, distrugge ${finalSlot.card.name}!`);
             };
-            if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+            if (!Decisioni.rispondeUnaPersona(ctx.owner)) {
                 let best = candidates[0];
                 candidates.forEach((c) => { if (c.card.attack > best.card.attack) best = c; });
                 destroy(best);
                 return;
             }
-            window.DuelEngineUI.openCardListPicker(candidates.map((c) => c.card), {
-                title: '🐛 Insetto Divoratore',
-                text: 'Scegli quale mostro scoperto sul Terreno distruggere.',
-                onSelect: (card) => {
-                    const choice = candidates.find((c) => c.card.uid === card.uid);
-                    if (choice) destroy(choice);
-                }
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: candidates.map((c) => c.card),
+                titolo: '🐛 Insetto Divoratore',
+                testo: 'Scegli quale mostro scoperto sul Terreno distruggere.'
+            }, (card) => {
+                if (card === null) return;
+                const choice = candidates.find((c) => c.card.uid === card.uid);
+                if (choice) destroy(choice);
             });
         }
     });
@@ -2326,11 +2348,15 @@
                 if (typeof updateUI === 'function') updateUI();
             };
 
-            if (ctx.owner === 'player' && window.DuelEngineUI) {
-                DuelEngineUI.openCardListPicker(opponentMonstersInHand, {
-                    title: '⛓️ Amazzone Maestra delle Catene',
-                    text: "Paga 1500 Life Points e scegli 1 mostro dalla mano dell'avversario da aggiungere alla tua mano.",
-                    onSelect: pick
+            if (Decisioni.rispondeUnaPersona(ctx.owner)) {
+                Decisioni.chiedi({
+                    chi: 'player',
+                    candidati: opponentMonstersInHand,
+                    titolo: '⛓️ Amazzone Maestra delle Catene',
+                    testo: "Paga 1500 Life Points e scegli 1 mostro dalla mano dell'avversario da aggiungere alla tua mano."
+                }, (scelta) => {
+                    if (scelta === null) return;
+                    pick(scelta);
                 });
             } else {
                 pick(opponentMonstersInHand[0]);
@@ -2685,11 +2711,15 @@
                 ctx.specialSummon(ctx.owner, target, ctx.slotIndex, 'attack', 'graveyard');
                 ctx.log(`🔥 Spadaccino di Fiamma Blu si bandisce dal Cimitero: Special Summon ${target.name}!`);
             };
-            if (ctx.owner !== 'player' || !window.DuelEngineUI) { revive(candidates[0]); return; }
-            window.DuelEngineUI.openCardListPicker(candidates, {
-                title: '🔥 Spadaccino di Fiamma Blu',
-                text: 'Scegli 1 mostro Guerriero FUOCO dal Cimitero da Special Summonare (Spadaccino di Fiamma Blu si bandisce).',
-                onSelect: revive
+            if (!Decisioni.rispondeUnaPersona(ctx.owner)) { revive(candidates[0]); return; }
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: candidates,
+                titolo: '🔥 Spadaccino di Fiamma Blu',
+                testo: 'Scegli 1 mostro Guerriero FUOCO dal Cimitero da Special Summonare (Spadaccino di Fiamma Blu si bandisce).'
+            }, (scelta) => {
+                if (scelta === null) return;
+                revive(scelta);
             });
         }
     });

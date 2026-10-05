@@ -72,12 +72,14 @@
         'danno-fluttuante': '(...) gli stessi argomenti di showFloatingDamage',
         'avviso-attacco-diretto': '(...) gli stessi argomenti di showDirectAttackWarning',
         'fine-duello': '(playerWon, opzioni?) il duello è finito: true, false o \'draw\'',
+        'decisione': '(richiesta, rispondi) una scelta per la persona davanti allo schermo (js/engine/decisioni.js); rispondi(candidato | null)',
         // --- attese (attendi) ---
         'vittoria-istantanea': '(tipo, playerWon, fatto) cinematica di una vittoria istantanea (exodiawin, destinyboard, flyingelephant)',
         'volo-carta': '({ carta, partenza, casella, daNascondere?, coperta?, posizione? }, fatto) una carta vola dalla mano alla casella',
         'scarto-fine-turno': '(eccesso, fatto) il giocatore sceglie cosa scartare a fine turno',
         // --- domande (chiedi) ---
-        'interfaccia-occupata': '() → true se a schermo c\'è una scelta o una cinematica che il duello deve aspettare'
+        'interfaccia-occupata': '() → true se a schermo c\'è una scelta o una cinematica che il duello deve aspettare',
+        'decisioni-a-schermo': '(tipo) → false se l\'interfaccia non può mostrare adesso una decisione di quel tipo'
     });
 
     /** @type {Map<string, Function[]>} */

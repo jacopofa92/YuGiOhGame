@@ -206,11 +206,17 @@
                         }
                         ctx.log('🧙 Saggio Oscuro sacrifica Mago Nero ed è Special Summonato dal Deck!');
                     };
-                    if (ctx.owner === 'player' && window.DuelEngineUI) {
-                        window.DuelEngineUI.openChoicePopover(null, {
-                            title: '🧙 Hai indovinato! Special Summonare Saggio Oscuro dal Deck?',
-                            choiceA: { icon: '✅', label: 'Sì, sacrifica Mago Nero', onSelect: summonFromDeck },
-                            choiceB: { icon: '❌', label: 'No', onSelect: () => {} }
+                    if (Decisioni.rispondeUnaPersona(ctx.owner)) {
+                        Decisioni.chiedi({
+                            chi: 'player',
+                            tipo: 'coppia',
+                            titolo: '🧙 Hai indovinato! Special Summonare Saggio Oscuro dal Deck?',
+                            candidati: [
+                                { icon: '✅', label: 'Sì, sacrifica Mago Nero', onSelect: summonFromDeck },
+                                { icon: '❌', label: 'No', onSelect: () => {} }
+                            ]
+                        }, (scelta) => {
+                            if (scelta) scelta.onSelect();
                         });
                     } else {
                         summonFromDeck();
@@ -412,17 +418,22 @@
             const summon = (option) => {
                 ctx.fusionSummon(owner, option.extraDeckIndex, option.materialLocations);
             };
-            if (options.length === 1 || !window.DuelEngineUI) {
+            // Sceglie chi ATTIVA la Fusione: prima il controllo guardava solo
+            // se c'era l'interfaccia, e una Fusione del bot con più mostri
+            // possibili chiedeva al giocatore quale Evocare.
+            if (options.length === 1 || !Decisioni.rispondeUnaPersona(owner)) {
                 summon(options[0]);
                 return;
             }
-            window.DuelEngineUI.openCardListPicker(options.map((o) => o.card), {
-                title: '🔗 Scegli il Mostro Fusione',
-                text: 'Hai i materiali per più di un Mostro Fusione: scegline uno da Evocare.',
-                onSelect: (card) => {
-                    const match = options.find((o) => o.card.uid === card.uid);
-                    if (match) summon(match);
-                }
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: options.map((o) => o.card),
+                titolo: '🔗 Scegli il Mostro Fusione',
+                testo: 'Hai i materiali per più di un Mostro Fusione: scegline uno da Evocare.'
+            }, (card) => {
+                if (card === null) return;
+                const match = options.find((o) => o.card.uid === card.uid);
+                if (match) summon(match);
             });
         }
     });
@@ -3068,14 +3079,18 @@
                 ctx.summonedCard.defense = finalSlot.card.defense;
                 ctx.log(`🎭 Copione copia ATK/DEF di ${finalSlot.card.name}: diventa ${finalSlot.card.attack}/${finalSlot.card.defense}!`);
             };
-            if (ctx.owner !== 'player' || !window.DuelEngineUI) {
+            if (!Decisioni.rispondeUnaPersona(ctx.owner)) {
                 applyCopy(candidates[0]);
                 return;
             }
-            window.DuelEngineUI.openCardListPicker(candidates, {
-                title: '🎭 Copione',
-                text: 'Scegli il mostro scoperto dell\'avversario da copiare (ATK/DEF originali).',
-                onSelect: (card) => applyCopy(card)
+            Decisioni.chiedi({
+                chi: 'player',
+                candidati: candidates,
+                titolo: '🎭 Copione',
+                testo: 'Scegli il mostro scoperto dell\'avversario da copiare (ATK/DEF originali).'
+            }, (card) => {
+                if (card === null) return;
+                applyCopy(card);
             });
         }
     });
