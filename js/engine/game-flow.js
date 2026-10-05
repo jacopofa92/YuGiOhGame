@@ -1799,7 +1799,7 @@ function createSlotElement(owner, type, index, options = {}) {
                     onSelect: (card) => {
                         const match = banishOptions.find((o) => o.card.uid === card.uid);
                         if (match) {
-                            DuelEngine.banishFusionSummon('player', match.extraDeckIndex, match.materialFieldIndices);
+                            Comandi.esegui('player', { tipo: 'fusioneBandendo', extraDeck: match.extraDeckIndex, materiali: match.materialFieldIndices });
                         }
                     }
                 });
@@ -2221,7 +2221,7 @@ function handlePhaseStepperClick(targetPhase) {
     // Seconda Battle Phase (Bollettino Meteo id 1035): l'unico passo
     // "all'indietro" ammesso, da Main Phase 2 a Battaglia.
     if (gameState.phase === 'main2' && targetPhase === 'battle' && canConductSecondBattlePhase('player')) {
-        startSecondBattlePhase('player');
+        Comandi.esegui('player', { tipo: 'fase', verso: 'battle2' });
         return;
     }
     const currentPhaseIndex = phaseOrder.indexOf(gameState.phase);
@@ -2254,11 +2254,11 @@ function handlePhaseStepperClick(targetPhase) {
         return;
     }
     if (gameState.phase === 'main1' && targetPhase === 'battle') {
-        enterBattlePhase();
+        Comandi.esegui('player', { tipo: 'fase', verso: 'battle' });
         return;
     }
     if (gameState.phase === 'battle' && targetPhase === 'main2') {
-        enterMainPhase2();
+        Comandi.esegui('player', { tipo: 'fase', verso: 'main2' });
         return;
     }
     if (['main1', 'battle', 'main2'].includes(gameState.phase) && targetPhase === 'end') {

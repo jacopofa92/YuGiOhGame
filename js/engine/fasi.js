@@ -389,10 +389,10 @@ function nextPhase() {
     clearSelection();
     switch (gameState.phase) {
         case 'main1':
-            enterBattlePhase();
+            Comandi.esegui(gameState.currentPlayer, { tipo: 'fase', verso: 'battle' });
             break;
         case 'battle':
-            enterMainPhase2();
+            Comandi.esegui(gameState.currentPlayer, { tipo: 'fase', verso: 'main2' });
             break;
     }
 }
@@ -405,7 +405,7 @@ function endTurn() {
     // Chain ancora aperta.
     if (window.DuelEngine && DuelEngine.isChainActive()) return;
     if (window.DuelEngine && DuelEngine.isPriorityWindowOpen && DuelEngine.isPriorityWindowOpen()) return;
-    enterEndPhase();
+    Comandi.esegui(gameState.currentPlayer, { tipo: 'fase', verso: 'end' });
 }
 
 /**

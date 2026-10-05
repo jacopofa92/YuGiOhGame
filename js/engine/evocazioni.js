@@ -103,10 +103,17 @@ function eseguiTributo(posto, c, extra) {
         // finisce sul Terreno con l'Evocazione): l'unico punto in cui
         // questo motore sa DAVVERO quali carte sono state sacrificate per
         // un'Evocazione Tributo, non solo quante.
-        if (perCarta && !suMagieTrappole) {
+        // Vale anche per il Castello dell'Ingranaggio Antico sacrificato al
+        // posto dei mostri (zona Magia/Trappola): l'id ricordato è il suo.
+        if (perCarta) {
             perCarta._tributedCardIds = indices
                 .map((idx) => campo[idx] && campo[idx].card.id)
                 .filter((id) => id !== undefined && id !== null);
+        }
+        if (suMagieTrappole && perCarta) {
+            addToLog(perChi(posto,
+                `⚙️ Sacrifichi Castello dell'Ingranaggio Antico (invece dei mostri) per Evocare Tributo ${perCarta.name}!`,
+                '⚙️ L\'avversario sacrifica Castello dell\'Ingranaggio Antico (invece dei mostri) per un\'Evocazione Tributo!'));
         }
         indices.forEach(idx => {
             const slot = campo[idx];
@@ -126,6 +133,7 @@ function eseguiTributo(posto, c, extra) {
             // proprio a mossa applicata (vedi js/multiplayer/multiplayer.js).
             const msg = { kind: 'tribute', indices, delayMs: 0 };
             if (suMagieTrappole) msg.zone = 'st';
+            if (perCarta) msg.summonedCard = perCarta;
             window.MP_broadcast(msg);
         }
         if (typeof extra.dopo === 'function') extra.dopo();
@@ -133,31 +141,45 @@ function eseguiTributo(posto, c, extra) {
     if (attesa > 0) setTimeout(togli, attesa); else togli();
 }
 
+/**
+ * Lo scarto di fine turno scelto dalla persona (le carte selezionate con i
+ * click, gameState.pendingHandDiscard): diventa il comando
+ * 'scartaFineTurno' (eseguiScartoFineTurno qui sotto), con le carte per uid.
+ */
 function performHandDiscard() {
     const pending = gameState.pendingHandDiscard;
     if (!pending) return;
     EventiDuello.emetti('prompt-scarto-chiuso');
+    const carte = pending.selected.map((i) => gameState.playerHand[i]).filter(Boolean).map((c) => c.uid);
+    gameState.pendingHandDiscard = null;
+    Comandi.esegui('player', { tipo: 'scartaFineTurno', carte: carte }, { dopo: pending.onComplete });
+}
 
+/**
+ * Comando 'scartaFineTurno': il posto `posto` scarta le carte `c.carte`
+ * (uid) per tornare al limite di carte in mano a fine turno.
+ * `extra.dopo`: cosa fa chi ha scelto, a scarto concluso (far ripartire il
+ * cambio turno).
+ */
+function eseguiScartoFineTurno(posto, c, extra) {
+    const mano = Tavolo.mano(posto);
     // Dagli indici più alti ai più bassi: rimuovere prima un indice basso
-    // sposterebbe (di uno) gli indici più alti già raccolti in `selected`,
-    // facendo scartare la carta sbagliata.
-    const indices = [...pending.selected].sort((a, b) => b - a);
+    // sposterebbe (di uno) gli indici più alti, facendo scartare la carta
+    // sbagliata. Gli indici si ricavano dagli uid ADESSO, non prima.
+    const indices = (c.carte || []).map((uid) => mano.findIndex((x) => x && x.uid === uid)).filter((i) => i !== -1).sort((a, b) => b - a);
     const discardedNames = [];
     // ctx.discardChosenFromHand (duel-engine.js) invece di uno splice/push
     // manuale: fa scattare def.onSentToGraveyardFromHand (es. Roc dalla
     // Valle della Foschia id 781, che nel testo reale reagisce a QUALUNQUE
     // scarto diretto dalla mano, incluso questo — non solo quello causato
     // dall'avversario) e notifyOwnMonsterSentToGraveyard, come ogni altro
-    // scarto del motore. discardedByOwner = 'player' (auto-inflitto dal
-    // giocatore stesso, non dall'avversario).
+    // scarto del motore. Auto-inflitto da chi scarta, non dall'avversario.
     indices.forEach((idx) => {
-        const card = DuelEngine.actions.discardChosenFromHand.call({ owner: 'player' }, 'player', idx);
+        const card = DuelEngine.actions.discardChosenFromHand.call({ owner: posto }, posto, idx);
         if (card) discardedNames.push(card.name);
     });
-    addToLog(`🗑️ Hai scartato: ${discardedNames.join(', ')}.`);
+    addToLog(`🗑️ ${perChi(posto, 'Hai scartato', 'L\'avversario ha scartato')}: ${discardedNames.join(', ')}.`);
     if (window.SFX) SFX.place();
-
-    gameState.pendingHandDiscard = null;
     updateUI();
 
     // In Multiplayer questo scarto non viaggiava: l'avversario continuava
@@ -165,11 +187,11 @@ function performHandDiscard() {
     // checksum. Si manda la fotografia a scelta fatta — anche il Cimitero
     // cambia, e queste carte sono comunque pubbliche una volta scartate.
     // Vedi broadcastLocalStatePush in js/engine/duel-engine.js.
-    if (window.DuelEngine && typeof DuelEngine.broadcastLocalStatePush === 'function') {
+    if (posto === 'player' && window.DuelEngine && typeof DuelEngine.broadcastLocalStatePush === 'function') {
         DuelEngine.broadcastLocalStatePush(null);
     }
 
-    if (typeof pending.onComplete === 'function') pending.onComplete();
+    if (extra && typeof extra.dopo === 'function') extra.dopo();
 }
 
 /**

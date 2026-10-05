@@ -37,8 +37,85 @@ const Comandi = (function () {
         tributa: (posto, c, extra) => eseguiTributo(posto, c, extra),
         settaMT: (posto, c, extra) => eseguiSetMagiaTrappola(posto, c, extra),
         terreno: (posto, c, extra) => eseguiSetMagiaTerreno(posto, c, extra),
-        posizione: (posto, c) => eseguiCambioPosizione(posto, c)
+        posizione: (posto, c) => eseguiCambioPosizione(posto, c),
+        attacca: (posto, c, extra) => eseguiAttacco(posto, c, extra),
+        scartaFineTurno: (posto, c, extra) => eseguiScartoFineTurno(posto, c, extra),
+        attiva: (posto, c) => eseguiAttivazione(posto, c),
+        specialeDaMano: (posto, c) => eseguiSpecialeDaMano(posto, c),
+        fusioneBandendo: (posto, c) => DuelEngine.banishFusionSummon(posto, c.extraDeck, c.materiali),
+        fase: (posto, c) => eseguiFase(posto, c)
     };
+
+    /**
+     * Comando 'attiva': la carta in `c.zona` ('hand', 'st', 'monster',
+     * 'fieldSpell') all'indice `c.indice` — per la mano ritrovata per uid
+     * (c.carta). Tutto il resto (costi, bersagli, Catena) lo fa il motore,
+     * e le scelte dentro l'effetto passano da Decisioni.
+     */
+    function eseguiAttivazione(posto, c) {
+        let indice = c.indice;
+        if (c.zona === 'hand') {
+            indice = indiceInMano(posto, c);
+            if (indice === -1) return false;
+        }
+        return DuelEngine.activateCard(posto, c.zona, indice);
+    }
+
+    /**
+     * Comando 'specialeDaMano': la carta si Evoca Specialmente da sé dalla
+     * mano (le circa 33 carte con paySpecialSummonCost). Le scelte del
+     * costo (Posizione, carte da bandire, da sacrificare) arrivano nel
+     * comando e si rimettono dove trySpecialSummonFromHand le legge: i
+     * campi gameState.pendingSpecialSummon*, consumati da lui.
+     */
+    function eseguiSpecialeDaMano(posto, c) {
+        const indice = indiceInMano(posto, c);
+        if (indice === -1) return false;
+        if (c.posizione !== undefined) gameState.pendingSpecialSummonPosition = c.posizione;
+        if (c.banditi !== undefined) gameState.pendingSpecialSummonBanishUids = c.banditi;
+        if (c.tributi !== undefined) gameState.pendingSpecialSummonTributeUids = c.tributi;
+        if (c.sacrificio !== undefined) gameState.pendingSpecialSummonSacrificeUid = c.sacrificio;
+        return DuelEngine.trySpecialSummonFromHand(posto, indice);
+    }
+
+    /**
+     * Il comando 'specialeDaMano' per la persona: prende le scelte che
+     * l'interfaccia ha già messo nei campi gameState.pendingSpecialSummon*
+     * e le porta nel comando (dove viaggeranno), poi lo esegue.
+     */
+    function specialeDaManoDellaPersona(handIndex) {
+        const carta = Tavolo.mano('player')[handIndex];
+        if (!carta) return false;
+        const comando = { tipo: 'specialeDaMano', carta: carta.uid, mano: handIndex };
+        const campi = { posizione: 'pendingSpecialSummonPosition', banditi: 'pendingSpecialSummonBanishUids', tributi: 'pendingSpecialSummonTributeUids', sacrificio: 'pendingSpecialSummonSacrificeUid' };
+        Object.keys(campi).forEach((k) => {
+            if (gameState[campi[k]] !== undefined && gameState[campi[k]] !== null) comando[k] = gameState[campi[k]];
+        });
+        return esegui('player', comando);
+    }
+
+    /**
+     * Comando 'fase': chi è di turno passa a un'altra fase a mano —
+     * c.verso: 'battle', 'main2', 'battle2' (la seconda Battle Phase,
+     * Bollettino Meteo id 1035) o 'end'. Le fasi che avanzano da sole
+     * (pescata, Standby, Main Phase 1) NON sono comandi: avvengono uguali
+     * su entrambi i telefoni senza che nessuno le chieda.
+     */
+    function eseguiFase(posto, c) {
+        if (gameState.currentPlayer !== posto || gameState.gameOver) return false;
+        // Niente cambi di fase con una Catena o una finestra di priorità
+        // aperta: stessa guardia di nextPhase()/endTurn() in fasi.js.
+        if (window.DuelEngine && (DuelEngine.isChainActive() || (DuelEngine.isPriorityWindowOpen && DuelEngine.isPriorityWindowOpen()))) return false;
+        switch (c.verso) {
+            case 'battle': enterBattlePhase(); return true;
+            case 'main2': enterMainPhase2(); return true;
+            case 'battle2': return startSecondBattlePhase(posto);
+            case 'end': enterEndPhase(); return true;
+            default:
+                console.error(`Comandi: fase sconosciuta "${c.verso}"`);
+                return false;
+        }
+    }
 
     /**
      * La posizione in mano della carta del comando: per uid se c'è (la
@@ -68,7 +145,7 @@ const Comandi = (function () {
         return esecutore(posto, comando, extra || {});
     }
 
-    return { esegui, indiceInMano, TIPI: Object.keys(ESECUTORI) };
+    return { esegui, indiceInMano, specialeDaManoDellaPersona, TIPI: Object.keys(ESECUTORI) };
 })();
 
 /**

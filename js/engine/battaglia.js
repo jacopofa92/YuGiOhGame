@@ -1367,3 +1367,43 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
         }
     }
 }
+
+/**
+ * Comando 'attacca': il mostro del posto `posto` nella casella
+ * `c.attaccante` attacca il bersaglio `c.bersaglio` (-1 = attacco diretto).
+ * Paga prima il costo della carta, se ne ha uno:
+ *  - "paga N Life Points per dichiarare un attacco" (def.requiresLifePointsToAttack,
+ *    Drago Toon Occhi Blu id 123, Manga Ryu-Ran id 606): lo calcola
+ *    l'esecutore dalla carta, uguale sui due telefoni;
+ *  - "sacrifica 1 mostro" (def.requiresTributeToAttack, Guerriero Pantera
+ *    id 399): QUALE mostro è una scelta, e arriva nel comando (c.tributo).
+ *    Senza, l'attacco non parte.
+ * `extra.alTermine`: richiamata a battaglia risolta (chi l'aspetta).
+ */
+function eseguiAttacco(posto, c, extra) {
+    const attackerSlot = Tavolo.mostri(posto)[c.attaccante];
+    if (!attackerSlot) return;
+    const alTermine = extra && typeof extra.alTermine === 'function' ? extra.alTermine : undefined;
+    const def = window.DuelEngine && DuelEngine.getDefinition(attackerSlot.card.id);
+    if (def && def.requiresLifePointsToAttack) {
+        const cost = def.requiresLifePointsToAttack;
+        if (Tavolo.lp(posto) <= cost) return;
+        DuelEngine.actions.dealDamage(posto, cost);
+        addToLog(`💸 ${attackerSlot.card.name} paga ${cost} Life Points per attaccare!`);
+    }
+    if (def && def.requiresTributeToAttack) {
+        const sacrificato = typeof c.tributo === 'number' ? Tavolo.mostri(posto)[c.tributo] : null;
+        if (!sacrificato || c.tributo === c.attaccante) return;
+        // Un Sacrificio come COSTO, non per un'Evocazione Tributo: nessuna
+        // carta per cui si sacrifica (notifySacrificedForTribute in
+        // duel-engine.js distingue i due casi proprio da lì) e nessuna
+        // animazione da aspettare — attesa 0, la carta sparisce subito.
+        // Prima, in Multiplayer, l'avversario aspettava sempre i 700ms di
+        // un'Evocazione Tributo, e nel frattempo arrivava già l'attacco:
+        // calcolato con il mostro GIÀ nel Cimitero da una parte e ANCORA in
+        // campo dall'altra.
+        eseguiTributo(posto, { indici: [c.tributo], attesaMs: 0 }, {});
+        addToLog(`🔻 ${perChi(posto, 'Sacrifichi', 'L\'avversario sacrifica')} ${sacrificato.card.name} per permettere l'attacco.`);
+    }
+    resolveAttack(posto, c.attaccante, c.bersaglio, alTermine);
+}
