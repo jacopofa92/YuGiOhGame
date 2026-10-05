@@ -1885,10 +1885,16 @@
 
     // ------------------------------------------------------------------
     // 115 — Gran Scudo Gardna (Big Shield Gardna)
-    // Clausola 1: "Se questa carta, l'unica coperta sul Terreno, viene
-    // presa di mira da una Magia: gira scoperta in Posizione di Difesa e
-    // nega quella Magia" — via def.onCardEffectTargetDeclare (nuovo
-    // checkpoint sincrono in declareCardEffectTarget, duel-engine.js).
+    // Clausola 1: "Quando viene attivata una Magia che prende di mira
+    // questa carta coperta (e nessun'altra carta): gira scoperta in
+    // Posizione di Difesa e nega l'attivazione" — via
+    // def.onCardEffectTargetDeclare (checkpoint sincrono in
+    // declareCardEffectTarget, duel-engine.js).
+    // "Nessun'altra carta" riguarda i BERSAGLI della Magia, non le altre
+    // carte coperte sul Terreno: una versione precedente chiedeva che
+    // Gardna fosse l'unica carta coperta del suo controllore, così con una
+    // Trappola coperta accanto non si proteggeva più, mentre una Magia con
+    // due bersagli veniva negata lo stesso. Testo verificato su YGOPRODeck.
     // Clausola 2: "Se attaccata, a fine Damage Step passa in Posizione di
     // Attacco" — via onBattled(ctx), già esistente (si attiva quando
     // QUESTA carta sopravvive a una battaglia); nessun controllo esplicito
@@ -1903,9 +1909,10 @@
             if (ctx.sourceType !== 'spell') return false;
             const slot = ctx.field(ctx.owner)[ctx.index];
             if (!slot || !slot.isFaceDown) return false;
-            const faceDownCount = ctx.field(ctx.owner).filter((s) => s && s.isFaceDown).length
-                + ctx.stField(ctx.owner).filter((s) => s && s.isFaceDown).length;
-            return faceDownCount === 1;
+            // Quante carte prende di mira la Magia: lo dichiara chi la
+            // attiva (opzione totalTargetCount di ctx.declareTarget, la
+            // passano tutte le carte del dataset); se manca, è una.
+            return (ctx.totalTargetCount || 1) === 1;
         },
         onCardEffectTargetDeclare(ctx) {
             const slot = ctx.field(ctx.owner)[ctx.index];
