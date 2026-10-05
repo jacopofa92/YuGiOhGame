@@ -31,15 +31,15 @@
      * meglio per il bot. Usata per confrontare le opzioni di attacco/
      * evocazione tra loro, non per un vero minimax multi-turno.
      */
-    function evaluateBoard(gameState) {
-        let score = (gameState.botLP - gameState.playerLP) / 100;
+    function evaluateBoard(gameState, io = 'bot') {
+        let score = (Tavolo.lp(io, gameState) - Tavolo.lp(Tavolo.avversario(io), gameState)) / 100;
         const powerOf = (field) => field.reduce((sum, slot) => {
             if (!slot) return sum;
             // ATK effettivo (bonus/malus inclusi); mostro coperto: valore stimato prudente.
             return sum + (slot.isFaceDown ? 400 : (window.AI_SHARED ? AI_SHARED.effAtk(slot.card) : slot.card.attack));
         }, 0);
-        score += (powerOf(gameState.botMonsterField) - powerOf(gameState.playerMonsterField)) / 100;
-        score += (gameState.botHand.length - gameState.playerHand.length) * 3;
+        score += (powerOf(Tavolo.mostri(io, gameState)) - powerOf(Tavolo.mostri(Tavolo.avversario(io), gameState))) / 100;
+        score += (Tavolo.mano(io, gameState).length - Tavolo.mano(Tavolo.avversario(io), gameState).length) * 3;
         return score;
     }
 
@@ -56,8 +56,8 @@
      * di rischio di chooseAttackTarget su un bersaglio coperto (soglia
      * più alta = più prudente, attacca meno spesso alla cieca).
      */
-    function currentAttitude(gameState) {
-        const score = evaluateBoard(gameState);
+    function currentAttitude(gameState, io = 'bot') {
+        const score = evaluateBoard(gameState, io);
         if (score >= 8) return { removalThreshold: 2200, faceDownRisk: 2200 };
         if (score <= -8) return { removalThreshold: 800, faceDownRisk: 900 };
         return { removalThreshold: 1500, faceDownRisk: 1500 };
@@ -70,12 +70,12 @@
      * valore dei mostri propri sacrificati per farlo entrare) — così non
      * sacrifica per errore un mostro forte per evocarne uno più debole.
      */
-    function chooseSummon(gameState) {
+    function chooseSummon(gameState, io = 'bot') {
         // shouldHoldForExodia (AI_SHARED): mai Evocare un pezzo di Exodia
         // il Proibito — vale la pena tenerlo in mano per la vittoria
         // istantanea, non farlo combattere con 200-300 ATK/DEF.
-        const candidates = gameState.botHand.filter((card) => card.type === 'monster'
-            && (!window.AI_SHARED || AI_SHARED.canNormalSummonNow(card, gameState, 'bot'))
+        const candidates = Tavolo.mano(io, gameState).filter((card) => card.type === 'monster'
+            && (!window.AI_SHARED || AI_SHARED.canNormalSummonNow(card, gameState, io))
             && !(window.AI_SHARED && AI_SHARED.shouldHoldForExodia(card)));
         let best = null;
         let bestScore = -Infinity;
@@ -86,27 +86,27 @@
             let emptySlotHint = -1;
 
             if (tributesNeeded === 0) {
-                emptySlotHint = gameState.botMonsterField.findIndex((slot) => slot === null);
+                emptySlotHint = Tavolo.mostri(io, gameState).findIndex((slot) => slot === null);
                 if (emptySlotHint === -1) return;
             } else {
                 // Simorgh (id 772): tutti i Sacrifici devono essere mostri
                 // VENTO — stesso vincolo applicato lato giocatore in
                 // actions.js (handleTributeSelectClick).
-                let ownIndices = gameState.botMonsterField
+                let ownIndices = Tavolo.mostri(io, gameState)
                     .map((slot, idx) => (slot ? idx : null))
                     .filter((idx) => idx !== null);
                 if (card.id === 772) {
-                    ownIndices = ownIndices.filter((idx) => gameState.botMonsterField[idx].card.attribute === 'VENTO');
+                    ownIndices = ownIndices.filter((idx) => Tavolo.mostri(io, gameState)[idx].card.attribute === 'VENTO');
                 }
                 if (ownIndices.length < tributesNeeded) return;
                 // Sacrifica i propri mostri più DEBOLI, non i primi che capitano.
                 tributeIndices = [...ownIndices]
-                    .sort((a, b) => AI_SHARED.effAtk(gameState.botMonsterField[a].card) - AI_SHARED.effAtk(gameState.botMonsterField[b].card))
+                    .sort((a, b) => AI_SHARED.effAtk(Tavolo.mostri(io, gameState)[a].card) - AI_SHARED.effAtk(Tavolo.mostri(io, gameState)[b].card))
                     .slice(0, tributesNeeded);
             }
 
             // ATK EFFETTIVO dei mostri sacrificati (bonus/malus inclusi).
-            const sacrificedValue = tributeIndices.reduce((sum, idx) => sum + AI_SHARED.effAtk(gameState.botMonsterField[idx].card), 0);
+            const sacrificedValue = tributeIndices.reduce((sum, idx) => sum + AI_SHARED.effAtk(Tavolo.mostri(io, gameState)[idx].card), 0);
             // AI_SHARED.isTributeSummonWorthwhile: non solo il vecchio
             // veto "mai in perdita netta" (es. sacrificare due mostri da
             // 2500 ATK per evocarne uno da 2500 ATK, ancora il primo
@@ -118,7 +118,7 @@
             // scoring qui sotto.
             if (tributesNeeded > 0) {
                 const tributeOk = window.AI_SHARED
-                    ? AI_SHARED.isTributeSummonWorthwhile(card, sacrificedValue, gameState, 'bot')
+                    ? AI_SHARED.isTributeSummonWorthwhile(card, sacrificedValue, gameState, io)
                     : Math.max(card.attack, card.defense) > sacrificedValue;
                 if (!tributeOk) return;
             }
@@ -149,8 +149,8 @@
         // come riskAversion: solo IA_DIFFICILE valuta se nascondere un
         // mostro "da Attacco" quando l'avversario ha la mano piena e non
         // c'è comunque nulla da guadagnare esponendolo subito.
-        const riskAversion = currentAttitude(gameState).faceDownRisk;
-        const posture = (window.AI_SHARED && AI_SHARED.decideMonsterPosture(best.card, gameState, 'bot', riskAversion)) || { position: 'attack', faceDown: false };
+        const riskAversion = currentAttitude(gameState, io).faceDownRisk;
+        const posture = (window.AI_SHARED && AI_SHARED.decideMonsterPosture(best.card, gameState, io, riskAversion)) || { position: 'attack', faceDown: false };
         best.position = posture.position;
         best.faceDown = posture.faceDown;
         return best;
@@ -175,9 +175,9 @@
      * normalmente: questo scoraggia solo le mosse marginali, non
      * paralizza l'IA.
      */
-    function chooseAttackTarget(attackerSlot, playerMonsters) {
-        const isComfortablyAhead = evaluateBoard(gameState) >= 8;
-        const opponentBackrowCount = (gameState.playerSTField || []).filter((s) => s && s.isFaceDown).length;
+    function chooseAttackTarget(attackerSlot, playerMonsters, io = 'bot') {
+        const isComfortablyAhead = evaluateBoard(gameState, io) >= 8;
+        const opponentBackrowCount = (Tavolo.magieTrappole(Tavolo.avversario(io), gameState) || []).filter((s) => s && s.isFaceDown).length;
         const backrowRisky = isComfortablyAhead && opponentBackrowCount >= 2;
 
         if (playerMonsters.length === 0) {
@@ -200,7 +200,7 @@
         // andando bene la partita (vedi currentAttitude) — in vantaggio
         // netto l'IA gioca sul sicuro e tende a NON attaccare alla cieca,
         // in svantaggio netto rischia di più pur di riprendere l'iniziativa.
-        const faceDownRisk = currentAttitude(gameState).faceDownRisk;
+        const faceDownRisk = currentAttitude(gameState, io).faceDownRisk;
         const backrowPenalty = backrowRisky ? opponentBackrowCount * 250 : 0;
 
         let best = null;
@@ -220,7 +220,7 @@
                 // "conveniente" solo perché la statistica nominale è
                 // favorevole — richiesta esplicita dell'utente: non
                 // insistere a puntare un mostro che non si può distruggere.
-                if (window.AI_SHARED && !AI_SHARED.canBeDestroyedByBattle(m.slot.card, 'player', attackerAtk)) return;
+                if (window.AI_SHARED && !AI_SHARED.canBeDestroyedByBattle(m.slot.card, Tavolo.avversario(io), attackerAtk)) return;
                 score = defStat;
             }
             score -= backrowPenalty;
@@ -256,12 +256,12 @@
      * massa), risponde comunque normalmente: non blocca mai una vera
      * mossa difensiva necessaria.
      */
-    function chooseChainResponse(candidates) {
+    function chooseChainResponse(candidates, io = 'bot') {
         if (candidates.length === 0) return null;
         if (!window.AI_SHARED) return candidates[0];
-        const threshold = currentAttitude(gameState).removalThreshold;
+        const threshold = currentAttitude(gameState, io).removalThreshold;
         const allPureRemoval = candidates.every((c) => AI_SHARED.isSingleTargetRemoval(c.card));
-        if (allPureRemoval && !candidates.some((c) => AI_SHARED.isRemovalWorthwhile(c.card, gameState, 'bot', threshold))) {
+        if (allPureRemoval && !candidates.some((c) => AI_SHARED.isRemovalWorthwhile(c.card, gameState, io, threshold))) {
             return null;
         }
         let best = candidates[0];
@@ -306,16 +306,16 @@
      */
     const MAX_ACTIVATE_PER_TURN = 2;
     const MAX_SET_PER_TURN = 2;
-    function chooseNextSpellTrapAction(gameState, usedThisTurn) {
+    function chooseNextSpellTrapAction(gameState, usedThisTurn, io = 'bot') {
         usedThisTurn = usedThisTurn || {};
         usedThisTurn.activateCount = usedThisTurn.activateCount || 0;
         usedThisTurn.setCount = usedThisTurn.setCount || 0;
-        const hand = gameState.botHand;
-        const emptySlot = gameState.botSTField.some((s) => s === null);
-        const threshold = currentAttitude(gameState).removalThreshold;
+        const hand = Tavolo.mano(io, gameState);
+        const emptySlot = Tavolo.magieTrappole(io, gameState).some((s) => s === null);
+        const threshold = currentAttitude(gameState, io).removalThreshold;
         const worthwhile = (card) => !window.AI_SHARED || (
-            AI_SHARED.isRemovalWorthwhile(card, gameState, 'bot', threshold)
-            && AI_SHARED.isMassDestructionWorthwhile(card, gameState, 'bot')
+            AI_SHARED.isRemovalWorthwhile(card, gameState, io, threshold)
+            && AI_SHARED.isMassDestructionWorthwhile(card, gameState, io)
         );
 
         // Restraint (AI_SHARED.getSpellTrapRestraint): a differenza di
@@ -335,7 +335,7 @@
         if (usedThisTurn.activateCount < MAX_ACTIVATE_PER_TURN) {
             const spells = hand
                 .map((card, handIndex) => ({ card, handIndex }))
-                .filter((e) => e.card.type === 'spell' && window.DuelEngine && DuelEngine.canActivate('bot', 'hand', e.handIndex) && worthwhile(e.card));
+                .filter((e) => e.card.type === 'spell' && window.DuelEngine && DuelEngine.canActivate(io, 'hand', e.handIndex) && worthwhile(e.card));
             const chosen = pickWeighted(spells);
             if (chosen) {
                 usedThisTurn.activateCount += 1;
@@ -381,24 +381,24 @@
      * supporta la zona 'monster' da sempre), semplicemente nessuna
      * funzione IA la interrogava mai proattivamente.
      */
-    function chooseSetCardActivation(gameState) {
+    function chooseSetCardActivation(gameState, io = 'bot') {
         if (!window.DuelEngine) return null;
-        const threshold = currentAttitude(gameState).removalThreshold;
+        const threshold = currentAttitude(gameState, io).removalThreshold;
         const candidates = [];
-        gameState.botSTField.forEach((slot, index) => {
+        Tavolo.magieTrappole(io, gameState).forEach((slot, index) => {
             if (!slot || !slot.isFaceDown) return;
-            if (!DuelEngine.canActivate('bot', 'st', index)) return;
+            if (!DuelEngine.canActivate(io, 'st', index)) return;
             // Stessa restrizione di chooseNextSpellTrapAction: attivare
             // PROATTIVAMENTE (non in risposta a un trigger) una rimozione
             // a bersaglio singolo senza un bersaglio che valga la pena
             // sarebbe lo stesso spreco, solo con la carta già Set invece
             // che in mano.
-            if (window.AI_SHARED && !AI_SHARED.isRemovalWorthwhile(slot.card, gameState, 'bot', threshold)) return;
+            if (window.AI_SHARED && !AI_SHARED.isRemovalWorthwhile(slot.card, gameState, io, threshold)) return;
             candidates.push({ index: index, card: slot.card, zone: 'st' });
         });
-        gameState.botMonsterField.forEach((slot, index) => {
+        Tavolo.mostri(io, gameState).forEach((slot, index) => {
             if (!slot || slot.isFaceDown) return;
-            if (!DuelEngine.canActivate('bot', 'monster', index)) return;
+            if (!DuelEngine.canActivate(io, 'monster', index)) return;
             candidates.push({ index: index, card: slot.card, zone: 'monster' });
         });
         if (candidates.length === 0) return null;

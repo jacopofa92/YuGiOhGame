@@ -398,7 +398,9 @@ function nextPhase() {
 }
 
 function endTurn() {
-    if (gameState.currentPlayer !== 'player') return;
+    // Il pulsante "fine turno" è della persona: un turno dell'IA o del
+    // remoto non si chiude da qui.
+    if (!Tavolo.ePersona(gameState.currentPlayer)) return;
     // Stessa guardia di nextPhase() qui sopra: niente fine turno con una
     // Chain ancora aperta.
     if (window.DuelEngine && DuelEngine.isChainActive()) return;
@@ -628,11 +630,17 @@ function changeTurn() {
     gameState.negatesEffectsOnForcedAttackFor = new Set();
     clearSelection();
     updateUI();
-    // Il turno vero e proprio (pescata del bot o del giocatore) parte solo
-    // a annuncio concluso, così non si sovrappone alla scena cinematografica.
-    if (gameState.currentPlayer === 'bot') {
-        if (!window.MULTIPLAYER_MODE) setTimeout(botTurn, 3000);
-    } else {
+    // Il turno vero e proprio parte solo a annuncio concluso, così non si
+    // sovrappone alla scena cinematografica. Chi lo guida dipende da chi
+    // controlla il posto (js/engine/tavolo.js): l'IA gioca il turno intero
+    // da sola; per la persona le fasi avanzano fino alla Main Phase e poi
+    // aspettano i suoi click; un posto remoto (Multiplayer) lo guida
+    // l'altro client.
+    const diTurno = gameState.currentPlayer;
+    const controllore = Tavolo.controllore(diTurno);
+    if (controllore === 'ia') {
+        setTimeout(() => turnoIA(diTurno), 3000);
+    } else if (controllore === 'persona') {
         setTimeout(() => enterDrawPhase(true), 3000);
     }
 }
@@ -1285,21 +1293,21 @@ function enterEndPhase() {
         // Lo sceglie la persona davanti allo schermo; senza interfaccia
         // (nessun ascoltatore) non c'è nessuno a cui chiederlo, e il turno
         // passa come prima.
-        if (gameState.currentPlayer === 'player' && EventiDuello.ascoltato('scarto-fine-turno')) {
+        if (Tavolo.ePersona(gameState.currentPlayer) && EventiDuello.ascoltato('scarto-fine-turno')) {
             EventiDuello.attendi('scarto-fine-turno', excess, () => {
                 passaIlTurnoDopoLaPriorita(700);
             });
             return;
         }
-        // In Multiplayer "bot" è una persona vera dall'altra parte: quale
-        // carta scartare lo sceglie lei, e ce lo dirà con la propria
-        // fotografia di stato (vedi performHandDiscard in actions.js).
-        // Scartare al posto suo qui sarebbe un'ipotesi che si scontra con
-        // quello che sta per arrivare — e finché i due numeri non
-        // combaciano, ogni mossa successiva sembra arrivare da uno stato
-        // sbagliato.
-        if (gameState.currentPlayer === 'bot' && !window.MULTIPLAYER_MODE) {
-            autoDiscardBotHandExcess(excess);
+        // Scarta da sola solo l'IA. In Multiplayer il posto avversario è una
+        // persona vera dall'altra parte (controllore 'remoto'): quale carta
+        // scartare lo sceglie lei, e ce lo dirà con la propria fotografia
+        // di stato (vedi performHandDiscard in actions.js). Scartare al
+        // posto suo qui sarebbe un'ipotesi che si scontra con quello che
+        // sta per arrivare — e finché i due numeri non combaciano, ogni
+        // mossa successiva sembra arrivare da uno stato sbagliato.
+        if (Tavolo.eIA(gameState.currentPlayer)) {
+            autoDiscardHandExcess(gameState.currentPlayer, excess);
             updateUI();
         }
     }
@@ -1324,13 +1332,14 @@ function passaIlTurnoDopoLaPriorita(delay) {
 }
 
 /**
- * Scarto automatico del bot quando supera il limite di mano a fine turno
- * (vedi enterEndPhase qui sopra) — nessuna vera IA di scelta: il bot
- * scarta le ultime carte in mano (le più recenti pescate, in fondo
+ * Scarto automatico dell'IA (dal posto `owner`) quando supera il limite di
+ * mano a fine turno (vedi enterEndPhase qui sopra) — nessuna vera IA di
+ * scelta: scarta le ultime carte in mano (le più recenti pescate, in fondo
  * all'array), la stessa semplificazione "nessun criterio di valore"
  * documentata altrove in questo motore per le scelte automatiche del bot.
  */
-function autoDiscardBotHandExcess(excess) {
+function autoDiscardHandExcess(owner, excess) {
+    const mano = Tavolo.mano(owner);
     // ctx.discardChosenFromHand (duel-engine.js) invece di uno splice/push
     // manuale, stesso motivo del lato giocatore in performHandDiscard()
     // (actions.js): fa scattare def.onSentToGraveyardFromHand (es. Roc
@@ -1339,11 +1348,11 @@ function autoDiscardBotHandExcess(excess) {
     // di valore, comportamento invariato) — indici dall'ultimo al primo
     // per lo stesso motivo del lato giocatore (uno splice sposta gli indici
     // successivi).
-    const startIndex = gameState.botHand.length - excess;
-    for (let i = gameState.botHand.length - 1; i >= startIndex; i--) {
-        DuelEngine.actions.discardChosenFromHand.call({ owner: 'bot' }, 'bot', i);
+    const startIndex = mano.length - excess;
+    for (let i = mano.length - 1; i >= startIndex; i--) {
+        DuelEngine.actions.discardChosenFromHand.call({ owner: owner }, owner, i);
     }
-    addToLog(`🗑️ Il bot ha più di ${MAX_HAND_SIZE} carte in mano: scarta ${excess} cart${excess > 1 ? 'e' : 'a'}.`);
+    addToLog(`🗑️ ${owner === 'player' ? 'Hai' : 'Il bot ha'} più di ${MAX_HAND_SIZE} carte in mano: ${owner === 'player' ? 'scarti' : 'scarta'} ${excess} cart${excess > 1 ? 'e' : 'a'}.`);
 }
 
 function hasExodiaAssembled(hand) {

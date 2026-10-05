@@ -3726,6 +3726,30 @@ priorità o richiedono un refactor ampio):
   checkpoint di targeting, che restituisce il bersaglio subito a circa
   cento chiamanti.
 
+- ✅ **Posti al tavolo (Priorità 3, branch `refactor/posti-al-tavolo`)**:
+  'player' e 'bot' sono solo i NOMI dei due posti; chi li controlla lo
+  dice `Tavolo.controllore(posto)` (`js/engine/tavolo.js`): 'persona',
+  'ia' o 'remoto'. Default di sempre: 'player' persona, 'bot' IA (remoto in
+  Multiplayer); `Tavolo.imposta({ player: 'ia' })` cambia. **Per decidere
+  "chi sceglie / chi guida il turno" si chiede a Tavolo, mai al nome del
+  posto**: `changeTurn` e `initGame` avviano `turnoIA(posto)` per un posto
+  IA, lo scarto di fine turno e la risposta in Catena dell'IA valgono per
+  qualunque posto IA, `Decisioni` mostra una scelta solo a un posto
+  'persona'. L'IA (`js/ai/*`) riceve sempre il posto da cui gioca (`io`,
+  default 'bot') e legge lo stato con gli accessori di Tavolo
+  (`Tavolo.mano(io)`, `Tavolo.mostri(Tavolo.avversario(io))`...); ogni
+  posto può avere il suo livello (`gameState.livelloIA[posto]`, altrimenti
+  `botDifficulty`). Guardrail `guardrail-ia-da-ogni-posto`, che vieta anche
+  `Tavolo.mano(io) = ...`: un'assegnazione a una chiamata, in uno script
+  non stretto, NON è un errore di sintassi (`node --check` la lascia
+  passare) ed esplode solo quando la riga gira — preso davvero convertendo
+  bot.js. Il duello senza testa è ora IA contro IA (`--giocatore <id>`,
+  `--livello-giocatore`). I messaggi del registro di bot.js dicono ancora
+  "Il bot" anche quando l'IA gioca dal posto 'player': succede solo in
+  Node. Il Multiplayer non è stato toccato (`isRemoteResponder`/
+  `isRemoteChooser` guardano ancora il nome del posto): è il passo
+  successivo, "a passo comune".
+
 ## Carte con limiti noti (da riprendere)
 
 **Fonte di verità: `grep missingEffectNote data/cards.json`, e nient'altro.**

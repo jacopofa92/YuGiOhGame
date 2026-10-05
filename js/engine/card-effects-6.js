@@ -1410,7 +1410,7 @@
     // scatenato da ctx.discardRandomFromHand (scarto casuale),
     // ctx.discardChosenFromHand (scarto SCELTO, duel-engine.js), dallo scarto
     // obbligatorio per il limite di 6 carte in mano a fine turno
-    // (performHandDiscard in actions.js, autoDiscardBotHandExcess in
+    // (performHandDiscard in actions.js, autoDiscardHandExcess in
     // game-flow.js) e da OGNI carta che scarta come costo del proprio
     // effetto (22 siti migrati da uno splice/push manuale a
     // ctx.discardChosenFromHand — inclusi i 3 casi in cui un indice nel

@@ -27,33 +27,33 @@
      * accettabile, anche se è l'unico Tributo disponibile in mano: meglio
      * non evocare nulla questo turno che indebolirsi da soli.
      */
-    function chooseSummon(gameState) {
-        const candidates = [...gameState.botHand]
+    function chooseSummon(gameState, io = 'bot') {
+        const candidates = [...Tavolo.mano(io, gameState)]
             .filter((card) => card.type === 'monster'
-                && (!window.AI_SHARED || AI_SHARED.canNormalSummonNow(card, gameState, 'bot'))
+                && (!window.AI_SHARED || AI_SHARED.canNormalSummonNow(card, gameState, io))
                 && !(window.AI_SHARED && AI_SHARED.shouldHoldForExodia(card)))
             .sort((a, b) => b.attack - a.attack);
 
         for (const card of candidates) {
             const tributesNeeded = getTributesRequired(card);
-            const posture = (window.AI_SHARED && AI_SHARED.decideMonsterPosture(card, gameState, 'bot')) || { position: 'attack', faceDown: false };
+            const posture = (window.AI_SHARED && AI_SHARED.decideMonsterPosture(card, gameState, io)) || { position: 'attack', faceDown: false };
             if (tributesNeeded === 0) {
-                const emptySlot = gameState.botMonsterField.findIndex((slot) => slot === null);
+                const emptySlot = Tavolo.mostri(io, gameState).findIndex((slot) => slot === null);
                 if (emptySlot !== -1) return { card: card, tributeIndices: [], emptySlotHint: emptySlot, position: posture.position, faceDown: posture.faceDown };
             } else {
                 // Simorgh (id 772): tutti i Sacrifici devono essere mostri
                 // VENTO — stesso vincolo applicato lato giocatore in
                 // actions.js (handleTributeSelectClick).
-                let ownIndices = gameState.botMonsterField
+                let ownIndices = Tavolo.mostri(io, gameState)
                     .map((slot, idx) => (slot ? idx : null))
                     .filter((idx) => idx !== null);
                 if (card.id === 772) {
-                    ownIndices = ownIndices.filter((idx) => gameState.botMonsterField[idx].card.attribute === 'VENTO');
+                    ownIndices = ownIndices.filter((idx) => Tavolo.mostri(io, gameState)[idx].card.attribute === 'VENTO');
                 }
                 if (ownIndices.length < tributesNeeded) continue;
                 // ATK EFFETTIVO (bonus/malus inclusi), non quello stampato: il
                 // valore che si butta davvero è quello che il mostro ha ora.
-                const atkEff = (idx) => AI_SHARED.effAtk(gameState.botMonsterField[idx].card);
+                const atkEff = (idx) => AI_SHARED.effAtk(Tavolo.mostri(io, gameState)[idx].card);
                 const tributeIndices = [...ownIndices]
                     .sort((a, b) => atkEff(a) - atkEff(b))
                     .slice(0, tributesNeeded);
@@ -66,7 +66,7 @@
                 // davvero un mostro che lo giustifichi (richiesta
                 // esplicita dell'utente).
                 const tributeOk = window.AI_SHARED
-                    ? AI_SHARED.isTributeSummonWorthwhile(card, sacrificedValue, gameState, 'bot')
+                    ? AI_SHARED.isTributeSummonWorthwhile(card, sacrificedValue, gameState, io)
                     : Math.max(card.attack, card.defense) > sacrificedValue;
                 if (!tributeOk) continue;
                 return { card: card, tributeIndices: tributeIndices, emptySlotHint: -1, position: posture.position, faceDown: posture.faceDown };
@@ -85,7 +85,7 @@
      *   - campo avversario vuoto -> sempre attacco diretto (-1);
      *   - nessun bersaglio conveniente -> null (trattiene il mostro).
      */
-    function chooseAttackTarget(attackerSlot, playerMonsters) {
+    function chooseAttackTarget(attackerSlot, playerMonsters, io = 'bot') {
         if (playerMonsters.length === 0) {
             // "Non può attaccare direttamente" (es. Zombyra l'Oscuro, id
             // 625): niente bersaglio-mostro disponibile E l'attacco
@@ -111,7 +111,7 @@
             // a puntare un mostro che non si può distruggere, valutare
             // altre strategie (altro bersaglio più sotto, attacco
             // diretto, o trattenere l'attaccante).
-            .filter((m) => !window.AI_SHARED || AI_SHARED.canBeDestroyedByBattle(m.slot.card, 'player', attackerAtk));
+            .filter((m) => !window.AI_SHARED || AI_SHARED.canBeDestroyedByBattle(m.slot.card, Tavolo.avversario(io), attackerAtk));
 
         if (favorableFaceUp.length > 0) {
             favorableFaceUp.sort((a, b) => {
@@ -143,11 +143,11 @@
      * senza rispondere — se anche una sola candidata non è pura
      * rimozione, risponde comunque con la prima come sempre.
      */
-    function chooseChainResponse(candidates) {
+    function chooseChainResponse(candidates, io = 'bot') {
         if (candidates.length === 0) return null;
         if (window.AI_SHARED) {
             const allPureRemoval = candidates.every((c) => AI_SHARED.isSingleTargetRemoval(c.card));
-            if (allPureRemoval && !candidates.some((c) => AI_SHARED.isRemovalWorthwhile(c.card, gameState, 'bot', REMOVAL_WORTH_THRESHOLD))) {
+            if (allPureRemoval && !candidates.some((c) => AI_SHARED.isRemovalWorthwhile(c.card, gameState, io, REMOVAL_WORTH_THRESHOLD))) {
                 return null;
             }
         }
@@ -176,12 +176,12 @@
      * sempre) — è proprio questa differenza di "quanto usa il proprio
      * retrocampo" a rendere Difficile percepibilmente più aggressivo.
      */
-    function chooseNextSpellTrapAction(gameState, usedThisTurn) {
-        const hand = gameState.botHand;
-        const emptySlot = gameState.botSTField.some((s) => s === null);
+    function chooseNextSpellTrapAction(gameState, usedThisTurn, io = 'bot') {
+        const hand = Tavolo.mano(io, gameState);
+        const emptySlot = Tavolo.magieTrappole(io, gameState).some((s) => s === null);
         const worthwhile = (card) => !window.AI_SHARED || (
-            AI_SHARED.isRemovalWorthwhile(card, gameState, 'bot', REMOVAL_WORTH_THRESHOLD)
-            && AI_SHARED.isMassDestructionWorthwhile(card, gameState, 'bot')
+            AI_SHARED.isRemovalWorthwhile(card, gameState, io, REMOVAL_WORTH_THRESHOLD)
+            && AI_SHARED.isMassDestructionWorthwhile(card, gameState, io)
         );
 
         // Restraint (vedi AI_SHARED.getSpellTrapRestraint): quanto la
@@ -203,7 +203,7 @@
             // sprecherebbero l'effetto su un bersaglio ancora debole.
             const spells = hand
                 .map((card, handIndex) => ({ card, handIndex }))
-                .filter((e) => e.card.type === 'spell' && window.DuelEngine && DuelEngine.canActivate('bot', 'hand', e.handIndex) && worthwhile(e.card));
+                .filter((e) => e.card.type === 'spell' && window.DuelEngine && DuelEngine.canActivate(io, 'hand', e.handIndex) && worthwhile(e.card));
             const chosen = pickWeighted(spells);
             if (chosen) {
                 usedThisTurn.activateDone = true;

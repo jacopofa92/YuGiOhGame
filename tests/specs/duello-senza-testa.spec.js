@@ -13,11 +13,19 @@
 // che potevano Evocare la carta sbagliata, Egoista Elegante che Evocava una
 // Magia, il Bozzolo dell'Evoluzione in errore ad ogni ricalcolo.
 //
+// Dalla Priorità 3 (posti al tavolo, js/engine/tavolo.js) i due lati sono
+// entrambi l'IA vera: alcune partite danno al posto 'player' il mazzo di un
+// personaggio, e una prova a parte controlla che quel posto vinca almeno
+// una volta — cioè che l'IA giochi davvero anche da lì, non solo che il
+// duello arrivi in fondo.
+//
 // Standalone: non apre pagine. Gira in pochi secondi.
 const path = require('path');
 
 const PARTITE = [
     { avversario: 'kaiba', livello: 'hard', seme: 900 },
+    { avversario: 'kaiba', livello: 'hard', giocatore: 'yamiYugi', livelloGiocatore: 'hard', seme: 100 },
+    { avversario: 'pegasus', livello: 'medium', giocatore: 'joey', livelloGiocatore: 'easy', seme: 7 },
     { avversario: 'yamiYugi', livello: 'hard', seme: 501 },
     { avversario: 'pegasus', livello: 'medium', seme: 300 },
     { avversario: 'mai', livello: 'medium', seme: 305 },
@@ -42,5 +50,15 @@ module.exports = {
             if (r.invarianti.length) problemi.push(`${dove}: ${r.invarianti.join(' | ')}`);
         }
         assert(problemi.length === 0, `Duelli senza testa:\n  - ${problemi.join('\n  - ')}`);
+
+        // L'IA gioca davvero dal posto 'player': fra Yami Yugi e Kaiba (stesso
+        // livello, mazzi di pari peso) su quattro partite a seme fisso ne
+        // vince almeno una. Con l'IA ferma su quel lato perderebbe sempre.
+        let vittoriePlayer = 0;
+        for (let n = 0; n < 4; n++) {
+            const r = await giocaPartita({ avversario: 'kaiba', livello: 'hard', giocatore: 'yamiYugi', livelloGiocatore: 'hard', seme: 100, turni: 60 }, n);
+            if (r.esito === true) vittoriePlayer++;
+        }
+        assert(vittoriePlayer >= 1, `L'IA dal posto 'player' (Yami Yugi) non vince nessuna delle 4 partite contro Kaiba: gioca davvero da quel lato?`);
     }
 };

@@ -3606,8 +3606,8 @@
             // chieda non risponde: per sicurezza non si attiva nulla,
             // invece di bloccare il duello.
             automatica: (elenco) => {
-                if (responderOwner !== 'bot') return null;
-                return window.BotAI ? BotAI.chooseChainResponse(elenco) : elenco[0];
+                if (!Tavolo.eIA(responderOwner)) return null;
+                return window.BotAI ? BotAI.chooseChainResponse(elenco, responderOwner) : elenco[0];
             }
         }, callback);
     }
@@ -4352,10 +4352,10 @@
         // rimozione (Ninja d'Assalto si bandisce) usato senza motivo
         // brucerebbe il costo a vuoto. In risposta a una Catena il bot
         // continua a decidere come sempre.
-        if (responderOwner === 'bot') {
+        if (Tavolo.eIA(responderOwner)) {
             candidates = candidates.filter((c) => {
                 const regola = c.def && c.def.botInFinestraDiPriorita;
-                if (typeof regola === 'function') return !!regola(makeContext('bot', { card: c.card, zone: c.zone, index: c.index }));
+                if (typeof regola === 'function') return !!regola(makeContext(responderOwner, { card: c.card, zone: c.zone, index: c.index }));
                 return !!regola;
             });
         }

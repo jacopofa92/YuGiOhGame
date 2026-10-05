@@ -19,15 +19,19 @@
  *    regole toccano la pagina solo da js/engine/porta-ui.js, che senza
  *    `document` risponde "nessun elemento".
  *
- * I due giocatori:
- *  - 'bot': l'IA vera del gioco (js/ai/*), al livello scelto;
- *  - 'player': una politica semplice scritta qui (Evoca il mostro più
- *    forte senza Tributi, attacca quando conviene, chiude il turno). Un
- *    bot contro bot simmetrico arriva con i "posti al tavolo" (Priorità 3).
+ * I due giocatori sono entrambi l'IA vera del gioco (js/ai/*): i "posti al
+ * tavolo" (js/engine/tavolo.js, Priorità 3) dicono che anche il posto
+ * 'player' è controllato dall'IA, e il turno di ciascuno lo guida turnoIA
+ * (js/ai/bot.js) come in una partita vera.
+ *  - 'bot': il personaggio --avversario, col suo mazzo del --livello;
+ *  - 'player': l'IA al --livello-giocatore (default: lo stesso), col mazzo
+ *    del personaggio --giocatore se indicato, altrimenti col mazzo
+ *    dimostrativo bilanciato del Duello Demo.
  *
  * Uso:
  *   node tools/duello-senza-testa.js [--avversario kaiba] [--livello hard]
- *                                    [--seme 42] [--partite 1] [--log]
+ *        [--giocatore yugiMuto] [--livello-giocatore hard]
+ *        [--seme 42] [--partite 1] [--log] [--diagnosi] [--superficie]
  * Esce con 1 se una partita non arriva alla fine o lancia un errore.
  */
 'use strict';
@@ -86,6 +90,8 @@ function argomenti() {
     return {
         avversario: val('avversario', 'kaiba'),
         livello: val('livello', 'hard'),
+        giocatore: val('giocatore', null),
+        livelloGiocatore: val('livello-giocatore', null),
         seme: Number(val('seme', '42')),
         partite: Number(val('partite', '1')),
         log: a.includes('--log'),
@@ -198,80 +204,6 @@ function creaContesto(opz) {
 }
 
 /**
- * La politica del lato 'player': gira quando è il suo turno, in Main
- * Phase 1, a Catena ferma. Restituisce true se ha fatto qualcosa.
- */
-const POLITICA_GIOCATORE = `
-(function () {
-    if (gameState.gameOver || gameState.currentPlayer !== 'player') return 'no';
-    if (DuelEngine.isChainActive() || (DuelEngine.isPriorityWindowOpen && DuelEngine.isPriorityWindowOpen())) return 'attesa';
-    if (gameState.phase === 'main1' && !gameState.__politicaEvocata) {
-        gameState.__politicaEvocata = true;
-        const mano = gameState.playerHand;
-        let migliore = -1;
-        mano.forEach((c, i) => {
-            if (c.type !== 'monster' || c.extraDeck) return;
-            if (typeof getTributesRequired === 'function' && getTributesRequired(c) > 0) return;
-            if (DuelEngine.normalSummonBlockReason && DuelEngine.normalSummonBlockReason('player', c)) return;
-            if (migliore === -1 || (c.attack || 0) > (mano[migliore].attack || 0)) migliore = i;
-        });
-        const casella = gameState.playerMonsterField.findIndex((s) => !s);
-        if (migliore !== -1 && casella !== -1 && !gameState.hasNormalSummoned) {
-            summonMonster(mano[migliore], casella, 'attack', migliore);
-            return 'evocato';
-        }
-        return 'niente';
-    }
-    if (gameState.phase === 'main1' && gameState.__politicaEvocata && !gameState.__politicaInBattaglia) {
-        gameState.__politicaInBattaglia = true;
-        if (gameState.turn > 1) { enterBattlePhase(); return 'battaglia'; }
-        return 'niente';
-    }
-    if (gameState.phase === 'battle' && !gameState.__politicaFinito) {
-        // Un attacco alla volta: il prossimo al giro successivo, a battaglia risolta.
-        if (gameState.__attaccoInCorso) return 'attesa';
-        const campo = gameState.playerMonsterField;
-        const loro = gameState.botMonsterField;
-        // Un mostro già provato non si riprova: il motore può rifiutare un
-        // attacco (un costo non pagabile, un divieto) senza segnarlo come
-        // fatto, e ritentarlo all'infinito sembrerebbe uno stallo.
-        gameState.__provati = gameState.__provati || {};
-        for (let i = 0; i < campo.length; i++) {
-            const s = campo[i];
-            if (!s || s.isFaceDown || s.position !== 'attack' || s.hasAttacked || gameState.__provati[s.card.uid]) continue;
-            gameState.__provati[s.card.uid] = true;
-            const atk = DuelEngine.getEffectiveAtk(s.card);
-            const bersagli = loro.map((x, j) => ({ x, j })).filter((o) => o.x);
-            let scelto = null;
-            if (bersagli.length === 0) scelto = -1;
-            else {
-                const battibile = bersagli.filter((o) => !o.x.isFaceDown && (o.x.position === 'attack' ? DuelEngine.getEffectiveAtk(o.x.card) < atk : DuelEngine.getEffectiveDef(o.x.card) < atk));
-                if (battibile.length) scelto = battibile[0].j;
-            }
-            if (scelto === null) continue;
-            gameState.__attaccoInCorso = true;
-            resolveAttack('player', i, scelto, () => { gameState.__attaccoInCorso = false; });
-            return 'attacco';
-        }
-        gameState.__politicaFinito = true;
-        return 'niente';
-    }
-    // Un effetto può aver portato la partita in Main Phase 2: lì si chiude.
-    if (gameState.phase === 'main2' && gameState.__politicaFinito !== 'chiuso') gameState.__politicaFinito = true;
-    // La Battle Phase può essere stata saltata (Grande Naso Lungo, Makiu):
-    // chiesta ma ancora in Main Phase 1, si chiude il turno da lì.
-    if (gameState.phase === 'main1' && gameState.__politicaInBattaglia && !gameState.__politicaFinito) gameState.__politicaFinito = true;
-    if ((gameState.phase === 'battle' || gameState.phase === 'main1' || gameState.phase === 'main2') && gameState.__politicaFinito !== 'chiuso'
-        && (gameState.__politicaFinito || (gameState.turn === 1 && gameState.__politicaEvocata))) {
-        gameState.__politicaFinito = 'chiuso';
-        endTurn();
-        return 'fine turno';
-    }
-    return 'no';
-})()
-`;
-
-/**
  * --diagnosi: avvolge ogni hook di ogni carta con un controllo degli
  * invarianti (Life Points numerici, solo mostri nella zona Mostri). Il
  * primo hook che ne rompe uno lascia nel log una riga "### INVARIANTE" con
@@ -337,13 +269,29 @@ async function giocaPartita(opz, n) {
     if (opz.diagnosi) esegui(DIAGNOSI);
     const LIMITE_TURNI = opz.turni || 60;
     esegui('resetGameState();');
-    // Mano iniziale di 5 carte per lato, poi il primo turno del giocatore.
+    const livelloGiocatore = opz.livelloGiocatore || opz.livello;
+    // L'IA su entrambi i posti, ciascuna col suo livello. Il mazzo del
+    // posto 'player': quello di un personaggio, se indicato (deve
+    // esistere in character-decks.js), altrimenti quello dimostrativo che
+    // resetGameState ha già costruito.
+    esegui(`
+        Tavolo.imposta({ player: 'ia', bot: 'ia' });
+        gameState.livelloIA = { player: ${JSON.stringify(livelloGiocatore)}, bot: ${JSON.stringify(opz.livello)} };
+        ${opz.giocatore ? `(function () {
+            const spec = getCharacterDeck(${JSON.stringify(opz.giocatore)}, ${JSON.stringify(livelloGiocatore)});
+            if (!spec) throw new Error('Nessun mazzo per il personaggio ' + ${JSON.stringify(opz.giocatore)});
+            gameState.playerDeck = buildDeckFromSpec(spec);
+            gameState.playerDeckCount = gameState.playerDeck.length;
+            gameState.playerExtraDeck = buildExtraDeckFromSpec(spec);
+        })();` : ''}
+    `);
+    // Mano iniziale di 5 carte per lato, poi il primo turno: lo guida l'IA
+    // del posto 'player', come farebbe initGame in una pagina.
     esegui(`
         for (let i = 0; i < 5; i++) { drawCardsToHand('player', 1, { silent: true }); drawCardsToHand('bot', 1, { silent: true }); }
         gameState.turn = 1; gameState.currentPlayer = 'player';
-        enterDrawPhase(true);
+        turnoIA('player');
     `);
-    let turnoVisto = 0;
     let passi = 0;
     const LIMITE_PASSI = 200000;
     while (passi < LIMITE_PASSI) {
@@ -371,34 +319,21 @@ async function giocaPartita(opz, n) {
             throw new Error(`Carta non-mostro nella zona Mostri al turno ${stato.turno}: ${intrusi.join(', ')}\n  Ultimo passo dell'orologio: ${orologio.ultimo}\n  Ultime righe del log:\n    ${coda.join('\n    ')}`);
         }
         if (stato.fine || stato.turno > LIMITE_TURNI) break;
-        if (stato.turno !== turnoVisto) {
-            turnoVisto = stato.turno;
-            esegui('delete gameState.__politicaEvocata; delete gameState.__politicaInBattaglia; delete gameState.__politicaFinito; delete gameState.__attaccoInCorso; delete gameState.__provati;');
-        }
-        esegui(POLITICA_GIOCATORE);
-        // Le Promise del bot (await) sono microtask: si lasciano girare
+        // Le Promise dell'IA (await) sono microtask: si lasciano girare
         // prima del prossimo timer.
         await new Promise((r) => setImmediate(r));
         if (!orologio.passo()) {
-            // Coda vuota. La politica può aver solo aggiornato i suoi
-            // segnali (es. "ho finito di attaccare") senza mettere nulla in
-            // coda: si riprova qualche volta prima di parlare di stallo.
-            let mosso = false;
-            // Fino a 12 giri: 5 attaccanti rifiutati uno per uno (es. Spada
-            // Rivelatrice) più la chiusura del turno ne chiedono parecchi.
-            for (let k = 0; k < 12 && !mosso; k++) {
-                esegui(POLITICA_GIOCATORE);
-                await new Promise((r) => setImmediate(r));
-                mosso = orologio.inCoda > 0 || esegui('!!gameState.gameOver || __esitoDuello !== null');
-            }
-            if (!mosso) break;
+            // Coda vuota: un ultimo giro di microtask (una Promise appena
+            // risolta può mettere in coda il passo successivo), poi, se
+            // ancora nulla si muove e il duello non è finito, è uno stallo.
+            await new Promise((r) => setImmediate(r));
+            if (orologio.inCoda === 0) break;
         }
     }
     const fine = esegui(`({
         esito: __esitoDuello, turno: gameState.turn, lpG: gameState.playerLP, lpB: gameState.botLP,
         fasi: gameState.phase, chi: gameState.currentPlayer, log: __logDuello.slice(-12),
         eventi: Object.assign({}, __eventi),
-        politica: { evocata: gameState.__politicaEvocata, battaglia: gameState.__politicaInBattaglia, finito: gameState.__politicaFinito, attacco: gameState.__attaccoInCorso },
         catena: DuelEngine.isChainActive(), finestra: DuelEngine.isPriorityWindowOpen && DuelEngine.isPriorityWindowOpen(),
         campoG: gameState.playerMonsterField.map((s) => s && (s.card.name + (s.hasAttacked ? '*' : ''))),
         campoB: gameState.botMonsterField.map((s) => s && s.card.name)
@@ -436,7 +371,7 @@ async function main() {
         }
         if ((r.esito === null || r.esito === undefined) && !r.alLimite) {
             ok = false;
-            console.log(`  fermo in fase ${r.fasi}, di turno ${r.chi}; politica ${JSON.stringify(r.politica)}, catena ${r.catena}, finestra ${r.finestra}`);
+            console.log(`  fermo in fase ${r.fasi}, di turno ${r.chi}; catena ${r.catena}, finestra ${r.finestra}`);
             console.log(`  campo giocatore ${JSON.stringify(r.campoG)} / avversario ${JSON.stringify(r.campoB)}`);
             console.log(`  Ultime righe del log:\n    ${r.log.join('\n    ')}`);
         }

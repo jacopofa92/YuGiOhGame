@@ -1266,7 +1266,7 @@
                 titolo: o.title || '🗑️ Devi scartare una carta',
                 testo: o.text || 'Scegli tu quale carta della tua mano mandare al Cimitero.',
                 // Il bot scarta ciò che vale meno per lui, non la prima a caso.
-                automatica: (elenco) => (victimOwner !== 'player' && window.AI_SHARED && typeof AI_SHARED.scoreCardImpact === 'function')
+                automatica: (elenco) => (Tavolo.eIA(victimOwner) && window.AI_SHARED && typeof AI_SHARED.scoreCardImpact === 'function')
                     ? elenco.slice().sort((a, b) => AI_SHARED.scoreCardImpact(a) - AI_SHARED.scoreCardImpact(b))[0]
                     : elenco[0],
                 automaticaSeUnica: true,

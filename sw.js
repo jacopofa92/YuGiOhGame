@@ -466,6 +466,7 @@ const APP_SHELL = [
     // gruppo-script:motore
     'js/engine/porta-ui.js',
     'js/engine/eventi-duello.js',
+    'js/engine/tavolo.js',
     'js/engine/duel-engine.js',
     'js/engine/decisioni.js',
     'js/engine/effect-templates.js',

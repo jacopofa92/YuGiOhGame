@@ -91,7 +91,10 @@
      *        un'interfaccia per le scelte ci sia
      */
     function rispondeUnaPersona(chi, tipo) {
-        if (chi !== 'player' || !g.EventiDuello || !g.EventiDuello.ascoltato('decisione')) return false;
+        // Chi controlla il posto lo dice js/engine/tavolo.js: di default
+        // 'player' è la persona, ma in un IA contro IA nessuno dei due lo è.
+        if (!g.Tavolo || !g.Tavolo.ePersona(chi)) return false;
+        if (!g.EventiDuello || !g.EventiDuello.ascoltato('decisione')) return false;
         // L'interfaccia può esserci ma non saper mostrare questa scelta
         // adesso (un modale assente): allora decide la scelta automatica.
         // Senza tipo si chiede solo se un'interfaccia per le scelte c'è.

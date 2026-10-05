@@ -351,17 +351,20 @@ function initGame() {
             addToLog(gameState.currentPlayer === 'player'
                 ? '🎮 Duello iniziato! È il tuo turno. Inizia la Draw Phase.'
                 : '🎮 Duello iniziato! Turno dell\'avversario.');
-            if (gameState.currentPlayer === 'player') {
+            // Chi guida il primo turno dipende da chi controlla il posto
+            // (js/engine/tavolo.js), come in changeTurn().
+            const primo = gameState.currentPlayer;
+            const controllore = Tavolo.controllore(primo);
+            if (controllore === 'persona') {
                 setTimeout(enterDrawPhase, 500);
-            } else if (!window.MULTIPLAYER_MODE) {
-                // Il bot che comincia va avviato a mano: il suo turno
-                // normalmente parte da changeTurn() (vedi il setTimeout su
-                // botTurn nell'annuncio di cambio turno), che al PRIMO
-                // turno non è ancora mai stato chiamato. Senza questo, dopo
-                // una morra cinese persa la partita restava ferma per
-                // sempre — in Multiplayer no, perché lì a muovere è
-                // l'avversario remoto, non un bot locale.
-                setTimeout(botTurn, 1200);
+            } else if (controllore === 'ia') {
+                // L'IA che comincia va avviata a mano: il suo turno
+                // normalmente parte da changeTurn() (vedi l'annuncio di
+                // cambio turno), che al PRIMO turno non è ancora mai stato
+                // chiamato. Senza questo, dopo una morra cinese persa la
+                // partita restava ferma per sempre — in Multiplayer no,
+                // perché lì a muovere è l'avversario remoto.
+                setTimeout(() => turnoIA(primo), 1200);
             }
         });
     });

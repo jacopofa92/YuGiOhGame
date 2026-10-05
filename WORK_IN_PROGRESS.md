@@ -65,9 +65,18 @@ righe, actions.js 3.855, game-flow.js 3.797; 205 accessi al DOM e 85
       `DuelEngineUI`. Spec `decisioni-in-sospeso`.
 - [ ] Unire il branch in `main` dopo la suite completa (su richiesta).
 
-**Priorità 3 — lato tavolo e Multiplayer**
-- [ ] "Posti al tavolo" al posto di player/bot nel nucleo (il contratto delle
-      carte resta quasi uguale).
+**Priorità 3 — lato tavolo e Multiplayer** (branch `refactor/posti-al-tavolo`)
+- [x] Chi controlla un posto è un dato (`js/engine/tavolo.js`: 'persona',
+      'ia', 'remoto'), non più dedotto da "player = persona, bot = IA". I
+      nomi 'player'/'bot' restano: sono solo i nomi dei due posti.
+- [x] L'IA gioca da entrambi i posti (`turnoIA(io)` in bot.js, parametro
+      `io` in tutte le funzioni dell'IA, livello per posto in
+      `gameState.livelloIA`). Guardrail `guardrail-ia-da-ogni-posto`.
+- [x] Duello senza testa = IA contro IA (`--giocatore`, `--livello-giocatore`):
+      prima base per il bilanciamento con dati veri (Priorità 4).
+- [ ] Restano nel nucleo i circa 400 ternari "player ? ... : bot ..." scritti
+      a mano: si possono portare sugli accessori di Tavolo un file alla
+      volta, ma non bloccano nulla (sono corretti per entrambi i posti).
 - [ ] Multiplayer "a passo comune": i due client eseguono le stesse azioni
       sullo stesso stato (niente più fotografie di stato da tradurre).
 
