@@ -121,7 +121,7 @@ righe, actions.js 3.855, game-flow.js 3.797; 205 accessi al DOM e 85
             comune; un abbinamento incompatibile si ferma con un errore
             esplicito invece di avviare due protocolli diversi.
       - [x] Suite completa 204/204, branch unito in `main` (0a21581).
-      - [ ] Rimozione del protocollo vecchio, branch
+      - [x] Rimozione del protocollo vecchio, branch
             `refactor/rimuovi-protocollo-multiplayer-vecchio` (2026-10-06):
             - [x] passo comune obbligatorio, handshake versione 2 ed errore
                   esplicito per client o relay incompatibili;
@@ -138,7 +138,8 @@ righe, actions.js 3.855, game-flow.js 3.797; 205 accessi al DOM e 85
                   `GAME_ACTION_KINDS` del relay ristretto a controllo lobby +
                   `mazzo`, `passo`, `passo-riprendi` e `game-over`, con
                   `server-anti-imbroglio` riallineato;
-            - [ ] suite completa e merge in `main`, autorizzati dall'utente.
+            - [x] suite completa 202/202 e merge in `main`, autorizzati
+                  dall'utente e completati il 2026-10-06.
       Costo dichiarato: ogni client conosce mazzo e mano dell'avversario
       (non mostrati, ma in memoria).
 

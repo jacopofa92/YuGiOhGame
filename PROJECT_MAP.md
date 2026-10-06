@@ -90,20 +90,21 @@ ora emette `attesa-decisione-remota` da `PassoComune`; la pagina mostra vicino
 all'avversario «L'avversario sta scegliendo…» finché la risposta non viene
 consumata, senza polling.
 
-Sul branch `refactor/rimuovi-protocollo-multiplayer-vecchio` il client legacy
-è stato rimosso: nessuna replica di mosse, mano a segnaposto, fotografia di
-stato o coda di scelte per uid. `multiplayer.js` gestisce solo connessione,
-abbandono, rientro e `game-over`; un guardrail impedisce il ritorno delle API
-eliminate. Compilata la shell Android di produzione beta.22 (`versionCode 22`)
-e ristretto anche il relay ai soli messaggi del protocollo corrente.
+Il protocollo Multiplayer legacy è stato rimosso e il branch dedicato unito
+in `main` dopo la suite completa 202/202: nessuna replica di mosse, mano a
+segnaposto, fotografia di stato o coda di scelte per uid. `multiplayer.js`
+gestisce solo connessione, abbandono, rientro e `game-over`; un guardrail
+impedisce il ritorno delle API eliminate. Compilata anche la shell Android di
+produzione beta.22 (`versionCode 22`) e ristretto il relay ai soli messaggi
+del protocollo corrente.
 
 **Cosa resta** (dettagli in `WORK_IN_PROGRESS.md`):
 
 1. Bilanciamento delle difficoltà con dati veri: ora si può, il duello senza
    testa gioca IA contro IA in ~0,1 s a partita (`--giocatore`,
    `--livello-giocatore`).
-2. Completare il rollout del Multiplayer nuovo: suite completa, merge del
-   branch dedicato e verifica della ridistribuzione automatica su Render.
+2. Verificare nella scheda *Events* di Render la ridistribuzione automatica
+   del relay dopo il push su `main`.
 3. I circa 400 ternari "player ? … : bot …" del nucleo si possono portare sugli
    accessori di `Tavolo` un file alla volta (non bloccano nulla).
 4. Più grandi: tutorial; Forbidden Memories come secondo set di regole.
@@ -415,11 +416,11 @@ e ascoltano gli eventi del canale.
   stato di chi lo manda, confrontato da chi lo riceve. Stato SPECCHIATO: ogni
   client chiama 'player' sé stesso. Costo dichiarato: ogni client ha in
   memoria mazzo e mano dell'altro.
-- **Protocollo vecchio**: rimosso dal client e dal relay sul branch dedicato. Non esistono
+- **Protocollo vecchio**: rimosso dal client e dal relay. Non esistono
   più mosse raccontate, segnaposto, fotografie di stato, resync o dispatcher
   `applyRemote*`; il guardrail `guardrail-protocollo-multiplayer-unico` lo
   sorveglia. Anche `GAME_ACTION_KINDS` accetta soltanto lobby, mazzo, passo,
-  ripresa ed esito. La beta.22 è pronta; restano suite completa e merge.
+  ripresa ed esito. La beta.22 è pronta e la suite completa è passata 202/202.
 - La morra cinese: il vincitore sceglie chi comincia, e la scelta viaggia
   ('rps' con `iniziaChiManda`).
 - Il server inoltra le azioni ma non è un motore autorevole: la logica resta
