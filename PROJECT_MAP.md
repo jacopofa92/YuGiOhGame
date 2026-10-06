@@ -85,20 +85,23 @@ quando il relay rifiutava un messaggio a duello avviato.
 `eventi-duello.js`; in `CLAUDE.md` i bullet «Nucleo senza testa», «Posti al
 tavolo» e «Multiplayer a passo comune» (con le regole per il codice nuovo).
 
+**Chiuso dopo il passaggio di consegne:** l'attesa di una decisione remota
+ora emette `attesa-decisione-remota` da `PassoComune`; la pagina mostra vicino
+all'avversario «L'avversario sta scegliendo…» finché la risposta non viene
+consumata, senza polling.
+
 **Cosa resta** (dettagli in `WORK_IN_PROGRESS.md`):
 
-1. Avviso "l'avversario sta scegliendo…" mentre si aspetta una decisione
-   remota a passo comune (oggi la partita sembra solo ferma).
-2. Bilanciamento delle difficoltà con dati veri: ora si può, il duello senza
+1. Bilanciamento delle difficoltà con dati veri: ora si può, il duello senza
    testa gioca IA contro IA in ~0,1 s a partita (`--giocatore`,
    `--livello-giocatore`).
-3. Service worker più leggero (immagini pesanti in cache al primo uso).
-4. Togliere il protocollo Multiplayer vecchio quando server e client saranno
+2. Service worker più leggero (immagini pesanti in cache al primo uso).
+3. Togliere il protocollo Multiplayer vecchio quando server e client saranno
    tutti aggiornati (elenco dei pezzi in `WORK_IN_PROGRESS.md`).
-5. I circa 400 ternari "player ? … : bot …" del nucleo si possono portare sugli
+4. I circa 400 ternari "player ? … : bot …" del nucleo si possono portare sugli
    accessori di `Tavolo` un file alla volta (non bloccano nulla).
-6. Più grandi: tutorial; Forbidden Memories come secondo set di regole.
-7. Decisioni aperte dell'utente: i 6 avatar PNG non usati; eliminare il branch
+5. Più grandi: tutorial; Forbidden Memories come secondo set di regole.
+6. Decisioni aperte dell'utente: i 6 avatar PNG non usati; eliminare il branch
    `refactor/posti-al-tavolo` (già unito).
 
 ## Stato rapido
@@ -108,14 +111,14 @@ tavolo» e «Multiplayer a passo comune» (con le regole per il codice nuovo).
 - Applicazione HTML/CSS/JavaScript puro: nessun framework, bundler o build del
   frontend. Gli script globali devono essere caricati nell'ordine giusto.
 - 19 pagine HTML, 104 file JS applicativi sotto `js/` (esclusi i vendor),
-  1.129 carte, 205 spec Playwright (2026-10-06). I numeri invecchiano:
+  1.129 carte, 206 spec Playwright (2026-10-06). I numeri invecchiano:
   contarli quando contano.
 - 3 `missingEffectNote` in `data/cards.json` (192, 235, 622): promemoria su
   limiti del motore, vedi `CLAUDE.md`.
 - PWA tramite `manifest.json`, `sw.js` e `js/pwa-register.js`.
 - App Android/Capacitor: nel repository è presente un vecchio APK beta.21;
   non coincide con la versione sorgente 1.0.43; la cache WebView/PWA corrente
-  è `ygo-duel-arena-v158`.
+  è `ygo-duel-arena-v159`.
 - Cloud tramite Supabase; multiplayer tramite relay WebSocket Node nativo.
 - Le preferenze utente (`save.settings`: dettagli video, ologrammi, aptica,
   volume e mute musica/SFX) fanno parte del salvataggio unificato e quindi di

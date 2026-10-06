@@ -88,6 +88,18 @@ const PassoComune = (function () {
         scartaFineTurno: 'dopo'
     };
 
+    /**
+     * Avvisa la presentazione soltanto quando cambia la coda delle scelte
+     * remote. Il motore non conosce il DOM e l'interfaccia non deve
+     * interrogare `stato()` a intervalli: l'evento mantiene separati i due
+     * lati e rende esatto anche lo spegnimento quando arriva la risposta.
+     */
+    function avvisaAttesaDecisioneRemota(inAttesa, quante) {
+        if (globalThis.EventiDuello) {
+            EventiDuello.emetti('attesa-decisione-remota', inAttesa, quante);
+        }
+    }
+
     function avvia(opzioni) {
         attivo = true;
         invia = opzioni.invia;
@@ -103,12 +115,16 @@ const PassoComune = (function () {
         ultimoRicevuto = 0;
         inAnticipo.clear();
         if (riprova) { clearTimeout(riprova); riprova = null; }
+        avvisaAttesaDecisioneRemota(false, 0);
     }
 
     function ferma() {
         attivo = false;
         invia = null;
         if (riprova) { clearTimeout(riprova); riprova = null; }
+        // Una sessione fermata non deve lasciare a schermo un'attesa ormai
+        // invalida, anche se la coda verrà ricreata dal prossimo avvia().
+        avvisaAttesaDecisioneRemota(false, 0);
     }
 
     /**
@@ -352,6 +368,7 @@ const PassoComune = (function () {
     /** Decisioni.chiedi: a scegliere è l'altro client; `poi(indice)` quando arriva. */
     function attendiDecisione(poi) {
         decisioniAttese.push(poi);
+        avvisaAttesaDecisioneRemota(true, decisioniAttese.length);
         pompa();
     }
 
@@ -398,6 +415,7 @@ const PassoComune = (function () {
                 // duello gemello con Cerchio Ammaliante: di qua finiva al
                 // Cimitero senza bersaglio, di là restava sul Terreno.
                 const poi = decisioniAttese.shift();
+                avvisaAttesaDecisioneRemota(decisioniAttese.length > 0, decisioniAttese.length);
                 const indice = m.indice;
                 differisci(() => poi(indice));
                 continue;

@@ -46,6 +46,7 @@ EventiDuello.ascolta('annuncio-fase', showPhaseAnnouncement);
 EventiDuello.ascolta('annuncio-turno', showEpicSlamAnnouncement);
 EventiDuello.ascolta('orologio', () => updateDuelTimer());
 EventiDuello.ascolta('pescata-da-effetto', animateEffectDraw);
+EventiDuello.ascolta('attesa-decisione-remota', mostraAttesaDecisioneRemota);
 EventiDuello.ascolta('effetto-battaglia', showBattleEffect);
 EventiDuello.ascolta('danno-fluttuante', showFloatingDamage);
 EventiDuello.ascolta('avviso-attacco-diretto', () => showDirectAttackWarning());
@@ -73,7 +74,20 @@ EventiDuello.ascolta('partita-azzerata', () => {
     // solo nascendo. Stesso motivo per gli agganci Equip.
     Object.keys(pileCountsAtLastRender).forEach((k) => delete pileCountsAtLastRender[k]);
     equipLinksAtLastRender.clear();
+    mostraAttesaDecisioneRemota(false);
 });
+
+/**
+ * Mostra vicino all'avversario perché il duello a passo comune è fermo.
+ * L'elemento è già nel markup per non cambiare geometria durante il gioco;
+ * qui si riflette soltanto l'evento del motore, senza polling né timer.
+ */
+function mostraAttesaDecisioneRemota(inAttesa) {
+    const avviso = document.getElementById('remoteChoiceWait');
+    if (!avviso) return;
+    avviso.hidden = !inAttesa;
+    avviso.setAttribute('aria-hidden', inAttesa ? 'false' : 'true');
+}
 
 /**
  * Chiude e rende inerti le finestre del duello quando l'esito è ormai
