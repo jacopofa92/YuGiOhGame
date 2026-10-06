@@ -31,8 +31,8 @@
         isEquip: true,
         static(ctx) {
             const target = equippedTarget(ctx);
-            const ownLP = ctx.owner === 'player' ? gameState.playerLP : gameState.botLP;
-            const oppLP = ctx.owner === 'player' ? gameState.botLP : gameState.playerLP;
+            const ownLP = Tavolo.lp(ctx.owner);
+            const oppLP = Tavolo.lp(ctx.opponent);
             const e = gameState.atkDefBonus[target.uid] || { atk: 0, def: 0 };
             let atkDelta = 0;
             if (ownLP < oppLP) atkDelta = target.attack; // raddoppia: +100%
@@ -87,7 +87,7 @@
             // mostrare il Deck già ripulito delle copie appena bandite.
             const revealSnapshots = { player: (gameState.playerDeck || []).slice(), bot: (gameState.botDeck || []).slice() };
             Tavolo.ordine().forEach((owner) => {
-                const deck = gameState[owner === 'player' ? 'playerDeck' : 'botDeck'];
+                const deck = Tavolo.mazzo(owner);
                 if (!Array.isArray(deck)) return;
                 const matches = deck.filter((c) => c.name === card.name);
                 if (matches.length === 0) return;
@@ -95,7 +95,7 @@
                     const idx = deck.indexOf(c);
                     if (idx !== -1) { deck.splice(idx, 1); ctx.banish(owner, c); }
                 });
-                gameState[owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+                gameState[Tavolo.chiave(owner, 'DeckCount')] = deck.length;
                 ctx.log(`⚔️ Nobile del Depistaggio bandisce ${matches.length} copi${matches.length === 1 ? 'a' : 'e'} di ${card.name} dal Deck ${owner === 'player' ? 'tuo' : 'del bot'}!`);
             });
             // I due box si mostrano IN SEQUENZA (il secondo si apre solo
@@ -144,7 +144,7 @@
     CardEffects.register(633, {
         continuous: true,
         canActivate(ctx) {
-            if (gameState[ctx.owner === 'player' ? 'playerLP' : 'botLP'] <= 800) return false;
+            if (Tavolo.lp(ctx.owner) <= 800) return false;
             return ctx.graveyard(ctx.owner).some((c) => c.type === 'monster') && ctx.findEmptyMonsterSlot(ctx.owner) !== -1;
         },
         activate(ctx) {
@@ -297,7 +297,7 @@
     CardEffects.register(640, {
         onStandbyPhase(ctx) {
             const hand = ctx.hand(ctx.owner);
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
             const deck = gameState[deckKey];
             let evolved = null;
             // La zona si segna dove si pesca davvero: il Cimitero qui
@@ -313,7 +313,7 @@
                 if (deckIdx !== -1) {
                     [evolved] = deck.splice(deckIdx, 1);
                     zonaEvolved = 'deck';
-                    gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+                    gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = deck.length;
                 }
             }
             if (!evolved) return;
@@ -360,14 +360,14 @@
             const handIdx = hand.findIndex((c) => c.id === 864);
             if (handIdx !== -1) { [evolved] = hand.splice(handIdx, 1); zonaEvolved = 'hand'; }
             else {
-                const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+                const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
                 const deck = gameState[deckKey];
                 if (Array.isArray(deck)) {
                     const deckIdx = deck.findIndex((c) => c.id === 864);
                     if (deckIdx !== -1) {
                         [evolved] = deck.splice(deckIdx, 1);
                         zonaEvolved = 'deck';
-                        gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+                        gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = deck.length;
                     }
                 }
             }
@@ -1248,11 +1248,11 @@
         },
         onAnySpecialSummon(ctx) {
             if (!ctx.summonedCard || ctx.summonedCard.race !== 'Zombie') return;
-            const deckKey = ctx.opponent === 'player' ? 'playerDeck' : 'botDeck';
+            const deckKey = Tavolo.chiave(ctx.opponent, 'Deck');
             const deck = gameState[deckKey];
             if (!Array.isArray(deck) || deck.length === 0) return;
             const milled = deck.splice(Math.max(0, deck.length - 2), 2);
-            gameState[ctx.opponent === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+            gameState[Tavolo.chiave(ctx.opponent, 'DeckCount')] = deck.length;
             ctx.graveyard(ctx.opponent).push(...milled);
             ctx.log(`💀 Torre d'Ossa Divora-Anime manda ${milled.length} cart${milled.length === 1 ? 'a' : 'e'} dal Deck dell'avversario al Cimitero!`);
         }
@@ -1946,15 +1946,15 @@
             return true;
         },
         canActivate(ctx) {
-            const fs = ctx.owner === 'player' ? gameState.playerFieldSpell : gameState.botFieldSpell;
+            const fs = Tavolo.magiaTerreno(ctx.owner);
             return !!(fs && !fs.isFaceDown && fs.card.id === 497);
         },
         activate(ctx) {
-            const fs = ctx.owner === 'player' ? gameState.playerFieldSpell : gameState.botFieldSpell;
+            const fs = Tavolo.magiaTerreno(ctx.owner);
             if (!fs || fs.isFaceDown || fs.card.id !== 497) return;
             const umi = fs.card;
             ctx.graveyard(ctx.owner).push(umi);
-            if (ctx.owner === 'player') gameState.playerFieldSpell = null; else gameState.botFieldSpell = null;
+            gameState[Tavolo.chiave(ctx.owner, 'FieldSpell')] = null;
 
             let sent = 0;
             Tavolo.ordine().forEach((owner) => {
@@ -1970,7 +1970,7 @@
                     ctx.stField(owner)[index] = null;
                     sent++;
                 });
-                const fieldSpellKey = owner === 'player' ? 'playerFieldSpell' : 'botFieldSpell';
+                const fieldSpellKey = Tavolo.chiave(owner, 'FieldSpell');
                 if (gameState[fieldSpellKey] && owner !== ctx.owner) {
                     ctx.graveyard(owner).push(gameState[fieldSpellKey].card);
                     gameState[fieldSpellKey] = null;
@@ -2144,15 +2144,15 @@
     // ================================================================
     CardEffects.register(700, {
         canActivate(ctx) {
-            const fs = ctx.owner === 'player' ? gameState.playerFieldSpell : gameState.botFieldSpell;
+            const fs = Tavolo.magiaTerreno(ctx.owner);
             return !!(fs && !fs.isFaceDown && fs.card.id === 497);
         },
         activate(ctx) {
-            const fs = ctx.owner === 'player' ? gameState.playerFieldSpell : gameState.botFieldSpell;
+            const fs = Tavolo.magiaTerreno(ctx.owner);
             if (!fs || fs.isFaceDown || fs.card.id !== 497) return;
             const umi = fs.card;
             ctx.graveyard(ctx.owner).push(umi);
-            if (ctx.owner === 'player') gameState.playerFieldSpell = null; else gameState.botFieldSpell = null;
+            gameState[Tavolo.chiave(ctx.owner, 'FieldSpell')] = null;
 
             let destroyed = 0;
             Tavolo.ordine().forEach((owner) => {
@@ -2173,7 +2173,7 @@
                 // l'EVENTUALE Magia Terreno dell'AVVERSARIO ancora sul
                 // Terreno — "tutte le altre carte sul Terreno" del testo
                 // reale include anche quella zona, non solo Mostri/ST.
-                const oppFieldSpellKey = owner === 'player' ? 'playerFieldSpell' : 'botFieldSpell';
+                const oppFieldSpellKey = Tavolo.chiave(owner, 'FieldSpell');
                 if (gameState[oppFieldSpellKey] && !(owner === ctx.owner)) {
                     ctx.graveyard(owner).push(gameState[oppFieldSpellKey].card);
                     gameState[oppFieldSpellKey] = null;
@@ -2577,14 +2577,14 @@
             const handIdx = hand.findIndex((c) => c.id === 719);
             if (handIdx !== -1) { [evolved] = hand.splice(handIdx, 1); zonaEvolved = 'hand'; }
             else {
-                const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+                const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
                 const deck = gameState[deckKey];
                 if (Array.isArray(deck)) {
                     const deckIdx = deck.findIndex((c) => c.id === 719);
                     if (deckIdx !== -1) {
                         [evolved] = deck.splice(deckIdx, 1);
                         zonaEvolved = 'deck';
-                        gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+                        gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = deck.length;
                     }
                 }
             }
@@ -2643,14 +2643,14 @@
             const handIdx = hand.findIndex((c) => c.id === 865);
             if (handIdx !== -1) { [evolved] = hand.splice(handIdx, 1); zonaEvolved = 'hand'; }
             else {
-                const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+                const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
                 const deck = gameState[deckKey];
                 if (Array.isArray(deck)) {
                     const deckIdx = deck.findIndex((c) => c.id === 865);
                     if (deckIdx !== -1) {
                         [evolved] = deck.splice(deckIdx, 1);
                         zonaEvolved = 'deck';
-                        gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+                        gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = deck.length;
                     }
                 }
             }
@@ -2829,7 +2829,7 @@
     // ================================================================
     CardEffects.register(724, {
         canActivate(ctx) {
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
             const deck = gameState[deckKey];
             return Array.isArray(deck) && deck.some((c) => c.type === 'monster' && c.race === 'Guerriero' && (c.level || 0) <= 4);
         },

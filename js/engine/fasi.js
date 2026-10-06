@@ -80,9 +80,9 @@ function afterBlockingUi(fn, delay) {
  * un semplice contatore e una carta casuale dall'intero pool.
  */
 function drawCardsToHand(owner, amount, queueEffectAnimation) {
-    const handKey = owner === 'player' ? 'playerHand' : 'botHand';
-    const deckKey = owner === 'player' ? 'playerDeck' : 'botDeck';
-    const countKey = owner === 'player' ? 'playerDeckCount' : 'botDeckCount';
+    const handKey = Tavolo.chiave(owner, 'Hand');
+    const deckKey = Tavolo.chiave(owner, 'Deck');
+    const countKey = Tavolo.chiave(owner, 'DeckCount');
     const realDeck = gameState[deckKey];
     let drawn = 0;
     const drawnUids = [];
@@ -423,10 +423,10 @@ function endTurn() {
  */
 function tickContinuousEffectDurations() {
     Tavolo.ordine().forEach((owner) => {
-        const opponent = owner === 'player' ? 'bot' : 'player';
+        const opponent = Tavolo.avversario(owner);
         if (gameState.currentPlayer !== opponent) return;
-        const field = owner === 'player' ? gameState.playerSTField : gameState.botSTField;
-        const graveyard = owner === 'player' ? gameState.playerGraveyard : gameState.botGraveyard;
+        const field = Tavolo.magieTrappole(owner);
+        const graveyard = Tavolo.cimitero(owner);
         field.forEach((slot, index) => {
             if (!slot || slot.isFaceDown || typeof slot.turnsLeft !== 'number') return;
             slot.turnsLeft -= 1;
@@ -451,7 +451,7 @@ function changeTurn() {
     clearPhaseTransitionTimeout();
     addToLog(`🔄 Turno ${gameState.turn} terminato.`);
     gameState.turn++;
-    gameState.currentPlayer = gameState.currentPlayer === 'player' ? 'bot' : 'player';
+    gameState.currentPlayer = Tavolo.avversario(gameState.currentPlayer);
     // Blocco Trappole/Magie "per il resto del turno" (es. Manta
     // Perforante Strisciante id 693, famiglia Ingranaggio Antico) — vedi
     // gameState.noTrapActivationFor/noSpellActivationFor, controllati in
@@ -608,7 +608,7 @@ function changeTurn() {
     gameState.noBattleDamageFor = {};
     gameState.noBattleDestructionFor = {};
     gameState.noDamageFor = {};
-    const field = gameState.currentPlayer === 'player' ? gameState.playerMonsterField : gameState.botMonsterField;
+    const field = Tavolo.mostri(gameState.currentPlayer);
     field.forEach(slot => {
         if (slot) {
             slot.hasAttacked = false;
@@ -673,7 +673,7 @@ function clearPhaseTransitionTimeout() {
  */
 function enterDrawPhase(autoAdvance = true, onComplete = null) {
     const owner = gameState.currentPlayer;
-    const deck = gameState[owner === 'player' ? 'playerDeck' : 'botDeck'];
+    const deck = Tavolo.mazzo(owner);
     if (gameState.pendingMaharaghiPeekFor && gameState.pendingMaharaghiPeekFor[owner] && Array.isArray(deck) && deck.length > 0) {
         gameState.pendingMaharaghiPeekFor[owner] = false;
         const topCard = deck[deck.length - 1];
@@ -749,10 +749,10 @@ function enterDrawPhaseInner(autoAdvance = true, onComplete = null) {
     // Multiplayer la ricerca resta automatica per entrambi, perché questa
     // scelta non viaggia fra i due client.
     const freedOwner = gameState.currentPlayer;
-    const freedField = freedOwner === 'player' ? gameState.playerMonsterField : gameState.botMonsterField;
+    const freedField = Tavolo.mostri(freedOwner);
     const freedSlot = (freedField || []).find((s) => s && !s.isFaceDown && s.card.id === 888);
     if (freedSlot && gameState.freedChoiceTurn !== gameState.turn) {
-        const freedDeckKey = freedOwner === 'player' ? 'playerDeck' : 'botDeck';
+        const freedDeckKey = Tavolo.chiave(freedOwner, 'Deck');
         const freedDeck = gameState[freedDeckKey];
         const isTarget = (c) => c.type === 'monster' && c.race === 'Guerriero' && (c.level || 0) <= 4;
         const candidati = Array.isArray(freedDeck) ? freedDeck.filter(isTarget) : [];
@@ -765,7 +765,7 @@ function enterDrawPhaseInner(autoAdvance = true, onComplete = null) {
                 const i = freedDeck.indexOf(scelta);
                 if (i === -1) { prosegui(); return; }
                 freedDeck.splice(i, 1);
-                gameState[freedOwner === 'player' ? 'playerHand' : 'botHand'].push(scelta);
+                Tavolo.mano(freedOwner).push(scelta);
                 gameState[freedDeckKey === 'playerDeck' ? 'playerDeckCount' : 'botDeckCount'] = freedDeck.length;
                 addToLog(`⚔️ Freed il Generale Senza Rivali cerca ${freedOwner === 'player' ? scelta.name : 'un Guerriero'} dal Deck invece di pescare!`);
                 updateUI();
@@ -822,8 +822,8 @@ function enterDrawPhaseInner(autoAdvance = true, onComplete = null) {
     gameState.discardHandBeforeDrawFor = gameState.discardHandBeforeDrawFor || {};
     if (gameState.discardHandBeforeDrawFor[gameState.currentPlayer]) {
         gameState.discardHandBeforeDrawFor[gameState.currentPlayer] = false;
-        const handKey = gameState.currentPlayer === 'player' ? 'playerHand' : 'botHand';
-        const graveyardKey = gameState.currentPlayer === 'player' ? 'playerGraveyard' : 'botGraveyard';
+        const handKey = Tavolo.chiave(gameState.currentPlayer, 'Hand');
+        const graveyardKey = Tavolo.chiave(gameState.currentPlayer, 'Graveyard');
         const discardedAll = gameState[handKey].splice(0, gameState[handKey].length);
         gameState[graveyardKey].push(...discardedAll);
         if (discardedAll.length > 0) {
@@ -932,7 +932,7 @@ function enterStandbyPhase(autoAdvance = true) {
         // Finestra di priorità per chi non è di turno (vedi
         // passaIlTurnoDopoLaPriorita più sotto): senza candidati prosegue
         // subito. Nel turno del bot (autoAdvance false) la apre botTurn.
-        const nonDiTurno = gameState.currentPlayer === 'player' ? 'bot' : 'player';
+        const nonDiTurno = Tavolo.avversario(gameState.currentPlayer);
         if (window.DuelEngine && typeof DuelEngine.openPriorityWindow === 'function') {
             DuelEngine.openPriorityWindow(nonDiTurno, 'standby', () => schedulePhaseTransition(() => enterMainPhase1(), 500));
         } else {
@@ -1015,7 +1015,7 @@ function enterBattlePhase() {
     // botTurn in bot.js); il giocatore non può dichiarare attacchi mentre il
     // modale o la Catena sono aperti.
     if (window.DuelEngine && typeof DuelEngine.openPriorityWindow === 'function') {
-        const nonDiTurno = gameState.currentPlayer === 'player' ? 'bot' : 'player';
+        const nonDiTurno = Tavolo.avversario(gameState.currentPlayer);
         DuelEngine.openPriorityWindow(nonDiTurno, 'battle', () => updateUI());
     }
 }
@@ -1041,7 +1041,7 @@ function canConductSecondBattlePhase(owner) {
 function startSecondBattlePhase(owner) {
     if (!canConductSecondBattlePhase(owner)) return false;
     gameState.extraBattlePhase.used = true;
-    const campo = owner === 'player' ? gameState.playerMonsterField : gameState.botMonsterField;
+    const campo = Tavolo.mostri(owner);
     campo.forEach((slot) => {
         if (!slot) return;
         slot.hasAttacked = false;
@@ -1137,11 +1137,11 @@ function enterEndPhase() {
             delete gameState.pendingNecrofearRevival[uid];
             if (pending.forTurn !== gameState.turn) return;
             const owner = pending.owner;
-            const opponent = owner === 'player' ? 'bot' : 'player';
-            const grave = owner === 'player' ? gameState.playerGraveyard : gameState.botGraveyard;
+            const opponent = Tavolo.avversario(owner);
+            const grave = Tavolo.cimitero(owner);
             const graveIdx = grave.findIndex((c) => c.uid === uid);
             if (graveIdx === -1) return; // non più nel Cimitero (bandita/rimescolata/ecc. nel frattempo)
-            const oppField = owner === 'player' ? gameState.botMonsterField : gameState.playerMonsterField;
+            const oppField = Tavolo.mostri(Tavolo.avversario(owner));
             // Il bersaglio lo sceglie chi controlla la carta: prendersi il
             // mostro sbagliato e' l'unico modo di sprecare questo effetto.
             // I candidati partono ordinati per ATK decrescente perche' e'
@@ -1179,7 +1179,7 @@ function enterEndPhase() {
                 const targetCard = targetSlot.card;
                 const [card] = grave.splice(idx, 1);
                 card._necrofearControlledUid = targetCard.uid;
-                const stField = owner === 'player' ? gameState.playerSTField : gameState.botSTField;
+                const stField = Tavolo.magieTrappole(owner);
                 stField[stSlotIndex] = { card: card, isFaceDown: false };
                 // permanent:true — il controllo NON deve tornare da solo a
                 // fine turno (a differenza di Cambio di Cuore): dura finché
@@ -1208,7 +1208,7 @@ function enterEndPhase() {
         // accetta già qualunque stringa, nessuna modifica lì necessaria).
         if (wasInBattlePhase) {
             DuelEngine.firePhaseTrigger('onBattlePhaseEnd', gameState.currentPlayer);
-            DuelEngine.firePhaseTrigger('onBattlePhaseEnd', gameState.currentPlayer === 'player' ? 'bot' : 'player');
+            DuelEngine.firePhaseTrigger('onBattlePhaseEnd', Tavolo.avversario(gameState.currentPlayer));
             // Cappelli Magici (id 363): le 2 carte del Deck travestite da
             // Mostri vanno distrutte qui — la carta Cappelli Magici stessa
             // è già finita nel Cimitero (Trappola Normale, non Continua)
@@ -1218,7 +1218,7 @@ function enterEndPhase() {
             Tavolo.ordine().forEach((owner) => {
                 const pending = gameState.pendingMagicalHatsDestroy && gameState.pendingMagicalHatsDestroy[owner];
                 if (!pending || pending.length === 0) return;
-                const field = owner === 'player' ? gameState.playerMonsterField : gameState.botMonsterField;
+                const field = Tavolo.mostri(owner);
                 pending.forEach((uid) => {
                     const idx = field.findIndex((s) => s && s.card.uid === uid);
                     if (idx !== -1) DuelEngine.actions.destroyMonster(owner, idx);
@@ -1248,8 +1248,8 @@ function enterEndPhase() {
     if (gameState.discardHandAtEndPhaseFor && gameState.discardHandAtEndPhaseFor[gameState.currentPlayer]) {
         gameState.discardHandAtEndPhaseFor[gameState.currentPlayer] = false;
         const owner = gameState.currentPlayer;
-        const hand = owner === 'player' ? gameState.playerHand : gameState.botHand;
-        const graveyard = owner === 'player' ? gameState.playerGraveyard : gameState.botGraveyard;
+        const hand = Tavolo.mano(owner);
+        const graveyard = Tavolo.cimitero(owner);
         if (hand.length > 0) {
             graveyard.push(...hand.splice(0, hand.length));
             addToLog(`🗑️ ${owner === 'player' ? 'Mandi' : 'Il bot manda'} l'intera mano al Cimitero (Carta della Rovina)!`);
@@ -1264,8 +1264,8 @@ function enterEndPhase() {
     // startHandDiscardSelection in js/engine/actions.js) — in quel caso il timer
     // che cambia turno riparte solo a scelta completata, non su un tempo
     // fisso, esattamente come già succede per l'Evocazione Tributo.
-    const handKey = gameState.currentPlayer === 'player' ? 'playerHand' : 'botHand';
-    const stKey = gameState.currentPlayer === 'player' ? 'playerSTField' : 'botSTField';
+    const handKey = Tavolo.chiave(gameState.currentPlayer, 'Hand');
+    const stKey = Tavolo.chiave(gameState.currentPlayer, 'STField');
     // Carte Infinite (id 307): "non c'è alcun limite al numero di carte
     // nella mano dei giocatori" — sopprime lo scarto per eccesso mentre è
     // scoperta sul Terreno di CHI sta terminando il turno (stesso spirito
@@ -1335,7 +1335,7 @@ function consumaScartoFineTurnoAtteso(posto) {
  * finestra di priorità, insieme a Standby Phase e inizio Battle Phase.
  */
 function passaIlTurnoDopoLaPriorita(delay) {
-    const nonDiTurno = gameState.currentPlayer === 'player' ? 'bot' : 'player';
+    const nonDiTurno = Tavolo.avversario(gameState.currentPlayer);
     if (window.DuelEngine && typeof DuelEngine.openPriorityWindow === 'function') {
         DuelEngine.openPriorityWindow(nonDiTurno, 'end', () => schedulePhaseTransition(changeTurn, delay));
         return;
@@ -1373,7 +1373,7 @@ function hasExodiaAssembled(hand) {
 }
 
 function hasDestinyBoardComplete(owner) {
-    const stField = owner === 'player' ? gameState.playerSTField : gameState.botSTField;
+    const stField = Tavolo.magieTrappole(owner);
     return DESTINY_BOARD_CARD_IDS.every((id) => stField.some((slot) => slot && !slot.isFaceDown && slot.card.id === id));
 }
 
@@ -1386,7 +1386,7 @@ function hasDestinyBoardComplete(owner) {
  * proprio costo, non per vincere).
  */
 function hasExodiaInGraveyard(owner) {
-    const graveyard = owner === 'player' ? gameState.playerGraveyard : gameState.botGraveyard;
+    const graveyard = Tavolo.cimitero(owner);
     return EXODIA_PIECE_IDS.every((pieceId) => graveyard.some((card) => card.id === pieceId));
 }
 

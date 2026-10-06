@@ -18,7 +18,7 @@
  */
 
 function fieldOfOwner(owner) {
-    return owner === 'player' ? gameState.playerMonsterField : gameState.botMonsterField;
+    return Tavolo.mostri(owner);
 }
 
 /**
@@ -33,7 +33,7 @@ function attackedEnemyUidsOf(slot) {
 }
 
 function graveyardOfOwner(owner) {
-    return owner === 'player' ? gameState.playerGraveyard : gameState.botGraveyard;
+    return Tavolo.cimitero(owner);
 }
 
 /**
@@ -60,7 +60,7 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
     // basta questo controllo perché nulla si muova più sotto la schermata
     // di Vittoria/Sconfitta.
     if (gameState.gameOver) { done(); return; }
-    const defenderOwner = attackerOwner === 'player' ? 'bot' : 'player';
+    const defenderOwner = Tavolo.avversario(attackerOwner);
     const attackerField = fieldOfOwner(attackerOwner);
     const defenderField = fieldOfOwner(defenderOwner);
     const attackerSlot = attackerField[attackerIndex];
@@ -622,7 +622,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
             return fs && !fs.isFaceDown && fs.card.id === 497;
         });
         if (umiOnField) {
-            const ownerSTField = owner === 'player' ? gameState.playerSTField : gameState.botSTField;
+            const ownerSTField = Tavolo.magieTrappole(owner);
             if (ownerSTField.some((slot) => slot && !slot.isFaceDown && slot.card.id === 489)) {
                 addToLog(`🌪️ Muro del Tornado protegge ${owner === 'player' ? 'te' : 'il bot'} dal danno da battaglia finché "Umi" resta sul Terreno!`);
                 return;
@@ -630,7 +630,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
         }
         const involvedDef = involvedCard && DuelEngine.getDefinition(involvedCard.id);
         if (involvedDef && involvedDef.redirectOwnBattleDamageToOpponent) {
-            const opp = owner === 'player' ? 'bot' : 'player';
+            const opp = Tavolo.avversario(owner);
             addToLog(`🔄 ${involvedCard.name} redirige il danno da battaglia al tuo avversario!`);
             DuelEngine.actions.dealDamage(opp, amount);
             const oppInfoEl = PortaUI.byId(opp === 'player' ? 'playerInfo' : 'botInfo');
@@ -701,7 +701,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
         // scoperto" invece di un uid specifico. gameState.negatesFiendBattleKillsFor
         // (per-owner, ricalcolato ogni render dentro static(), duel-engine.js).
         if (opponentBattleCard && opponentBattleCard.race === 'Demone') {
-            const destroyerOwner = owner === 'player' ? 'bot' : 'player';
+            const destroyerOwner = Tavolo.avversario(owner);
             if (gameState.negatesFiendBattleKillsFor && gameState.negatesFiendBattleKillsFor[destroyerOwner]) {
                 gameState.monsterEffectsNegatedUidsFor = gameState.monsterEffectsNegatedUidsFor || { player: new Set(), bot: new Set() };
                 gameState.monsterEffectsNegatedUidsFor[owner].add(card.uid);
@@ -724,7 +724,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
         // Un distruttore con gli effetti a sua volta annullati non annulla
         // niente.
         if (opponentBattleCard) {
-            const destroyerOwner = owner === 'player' ? 'bot' : 'player';
+            const destroyerOwner = Tavolo.avversario(owner);
             const killerDef = DuelEngine.getDefinition(opponentBattleCard.id);
             const regola = killerDef && killerDef.negatesEffectsOfBattleVictims;
             const negatoIlDistruttore = DuelEngine.isMonsterCardEffectsNegated(destroyerOwner, opponentBattleCard.uid);
@@ -745,7 +745,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
         // appendere un effetto. L'avversario è chi controllava l'altro
         // mostro della battaglia.
         if (opponentBattleCard && card.battleDestroyedDamageToOpponent) {
-            const contro = owner === 'player' ? 'bot' : 'player';
+            const contro = Tavolo.avversario(owner);
             DuelEngine.actions.dealDamage(contro, card.battleDestroyedDamageToOpponent);
             addToLog(`☠️ ${card.name} distrutto in battaglia: ${card.battleDestroyedDamageToOpponent} danni all'avversario!`);
         }
@@ -785,7 +785,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
         // appartiene sempre all'altro lato rispetto a `owner` (una
         // battaglia coinvolge solo i due giocatori).
         if (opponentBattleCard) {
-            const destroyerOwner = owner === 'player' ? 'bot' : 'player';
+            const destroyerOwner = Tavolo.avversario(owner);
             const destroyerDef = DuelEngine.getDefinition(opponentBattleCard.id);
             if (destroyerDef && typeof destroyerDef.onDestroysMonsterByBattle === 'function') {
                 destroyerDef.onDestroysMonsterByBattle(DuelEngine.makeContext(destroyerOwner, { card: opponentBattleCard, destroyedCard: card, destroyedCardOwner: owner, destroyedWasAttackPosition: !!destroyedWasAttackPosition }));
@@ -855,7 +855,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
         // sul Terreno di chi controlla l'attaccante, stesso spirito di
         // reactToAnyNormalOrFlipSummon (duel-engine.js) ma per il danno da
         // battaglia.
-        const stField = attackerOwner === 'player' ? gameState.playerSTField : gameState.botSTField;
+        const stField = Tavolo.magieTrappole(attackerOwner);
         stField.forEach((slot) => {
             if (!slot || slot.isFaceDown) return;
             const def = DuelEngine.getDefinition(slot.card.id);
@@ -900,7 +900,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
         // Ingranaggio Antico, id 840) — stesso spirito di
         // onOwnMonsterDealsBattleDamage qui sopra, ma per l'Equip invece
         // che per una Magia/Trappola Continua qualsiasi sul Terreno.
-        const ownerStField = owner === 'player' ? gameState.playerSTField : gameState.botSTField;
+        const ownerStField = Tavolo.magieTrappole(owner);
         ownerStField.forEach((slot) => {
             if (!slot || slot.isFaceDown || slot.card.equippedToUid !== card.uid) return;
             const eqDef = DuelEngine.getDefinition(slot.card.id);
@@ -922,7 +922,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
         if (!opponentSurvived) {
             const opponentDef = DuelEngine.getDefinition(opponentCard.id);
             if (opponentDef && typeof opponentDef.onDestroyedInBattle === 'function') {
-                const destroyedOwner = owner === 'player' ? 'bot' : 'player';
+                const destroyedOwner = Tavolo.avversario(owner);
                 opponentDef.onDestroyedInBattle(DuelEngine.makeContext(destroyedOwner, { destroyerCard: card }));
             }
         }
@@ -960,8 +960,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
         // cambio di turno (il confronto col turno non corrisponde più).
         const protezioni = gameState.battleProtectionByName || [];
         if (protezioni.length && card.name) {
-            const lato = gameState.playerMonsterField.some((s) => s && s.card.uid === card.uid) ? 'player'
-                : gameState.botMonsterField.some((s) => s && s.card.uid === card.uid) ? 'bot' : null;
+            const lato = Tavolo.ordine().find((owner) => Tavolo.mostri(owner).some((s) => s && s.card.uid === card.uid)) || null;
             if (lato && protezioni.some((p) => p.owner === lato && p.turn === gameState.turn && card.name.includes(p.nameIncludes))) return true;
         }
         // 395 — Orgoth l'Implacabile: indistruttibilità TEMPORANEA per uid
@@ -1016,7 +1015,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
         // avversario" nel testo reale è sempre relativo a QUESTO lato, non
         // al controllore dell'attaccante.
         Tavolo.ordine().forEach((stOwner) => {
-            (stOwner === 'player' ? gameState.playerSTField : gameState.botSTField).forEach((slot) => {
+            (Tavolo.magieTrappole(stOwner)).forEach((slot) => {
                 if (!slot || slot.isFaceDown) return;
                 const eqDef = DuelEngine.getDefinition(slot.card.id);
                 if (!eqDef || !eqDef.isEquip || slot.card.equippedToUid !== attackerCard.uid) return;
@@ -1336,7 +1335,8 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
                 // l'attaccante subisce danno per aver attaccato un mostro
                 // in Difesa più forte, quindi il posto giusto per un
                 // moltiplicatore così di nicchia.
-                const canyonActive = [gameState.playerFieldSpell, gameState.botFieldSpell].some((fs) => fs && !fs.isFaceDown && fs.card.id === 767);
+                const canyonActive = Tavolo.ordine().map((owner) => Tavolo.magiaTerreno(owner))
+                    .some((fs) => fs && !fs.isFaceDown && fs.card.id === 767);
                 if (target.race === 'Roccia' && canyonActive) {
                     damage *= 2;
                     addToLog('🏜️ Canyon raddoppia il danno da battaglia!');

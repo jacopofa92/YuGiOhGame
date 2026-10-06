@@ -221,7 +221,7 @@
             });
             ctx.log('🫙 Barattolo Cyber si rivela e distrugge tutti i mostri sul Terreno!');
             Tavolo.ordine().forEach((owner) => {
-                const deck = gameState[owner === 'player' ? 'playerDeck' : 'botDeck'];
+                const deck = Tavolo.mazzo(owner);
                 if (!Array.isArray(deck) || deck.length === 0) {
                     ctx.log(`🫙 ${owner === 'player' ? 'Non hai' : 'Il bot non ha'} un Deck reale da cui rivelare carte in questa modalità.`);
                     return;
@@ -250,7 +250,7 @@
     CardEffects.register(238, {
         onFlip(ctx) {
             Tavolo.ordine().forEach((owner) => {
-                const deck = gameState[owner === 'player' ? 'playerDeck' : 'botDeck'];
+                const deck = Tavolo.mazzo(owner);
                 if (!Array.isArray(deck)) {
                     ctx.log(`🫙 ${owner === 'player' ? 'Non hai' : 'Il bot non ha'} un Deck reale in questa modalità: Barattolo di Fibra non ha effetto per questo lato.`);
                     return;
@@ -267,7 +267,7 @@
                 ctx.stField(owner).forEach((slot, index) => {
                     if (slot) { toShuffle.push(slot.card); ctx.stField(owner)[index] = null; }
                 });
-                const fieldSpellKey = owner === 'player' ? 'playerFieldSpell' : 'botFieldSpell';
+                const fieldSpellKey = Tavolo.chiave(owner, 'FieldSpell');
                 if (gameState[fieldSpellKey]) {
                     toShuffle.push(gameState[fieldSpellKey].card);
                     gameState[fieldSpellKey] = null;
@@ -388,7 +388,7 @@
             ctx.declareTargetWaiting(ctx.opponent, ctx.summonedSlotIndex, { totalTargetCount: 1 }, (decl) => {
                 if (!decl.allowed) return;
                 const target = ctx.field(decl.targetOwner)[decl.targetIndex];
-                const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+                const lpKey = Tavolo.chiave(ctx.owner, 'LP');
                 const cost = Math.ceil(ctx.gameState[lpKey] / 2);
                 ctx.dealDamage(ctx.owner, cost);
                 ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
@@ -396,7 +396,7 @@
             });
         },
         activate(ctx) {
-            const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+            const lpKey = Tavolo.chiave(ctx.owner, 'LP');
             const cost = Math.ceil(ctx.gameState[lpKey] / 2);
             ctx.dealDamage(ctx.owner, cost);
             if (ctx.negateActivation()) {
@@ -551,7 +551,7 @@
     });
 
     function orichalcosPuoEstendere(ctx) {
-        const fieldSpellKey = ctx.owner === 'player' ? 'playerFieldSpell' : 'botFieldSpell';
+        const fieldSpellKey = Tavolo.chiave(ctx.owner, 'FieldSpell');
         if (!gameState[fieldSpellKey] || gameState[fieldSpellKey].isFaceDown) return false;
         if (ctx.hasUsedOncePerTurn(`orichalcos-extend:${ctx.card.uid}`)) return false;
         const equippedUid = equippedTarget(ctx).uid;
@@ -664,11 +664,11 @@
     // ================================================================
     CardEffects.register(397, {
         canActivate(ctx) {
-            const deck = ctx.gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
+            const deck = Tavolo.mazzo(ctx.owner, ctx.gameState);
             return Array.isArray(deck) && deck.length > 0;
         },
         activate(ctx) {
-            const deck = ctx.gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
+            const deck = Tavolo.mazzo(ctx.owner, ctx.gameState);
             if (!Array.isArray(deck) || deck.length === 0) {
                 ctx.log('⚠️ Nessun Deck reale da cui scegliere in questa modalità.');
                 return;
@@ -811,7 +811,7 @@
                 }
             });
             if (sacrificedCount === 0) { ctx.log('⚠️ Nessun mostro da sacrificare.'); return; }
-            const deck = ctx.gameState[ctx.opponent === 'player' ? 'playerDeck' : 'botDeck'];
+            const deck = Tavolo.mazzo(ctx.opponent, ctx.gameState);
             if (!Array.isArray(deck)) {
                 ctx.log(`💣 Cannone Virus sacrifica ${sacrificedCount} mostr${sacrificedCount === 1 ? 'o' : 'i'}, ma l'avversario non ha un Deck reale in questa modalità.`);
                 return;
@@ -842,7 +842,7 @@
             if (heads) {
                 ctx.log('🪙 Jirai Gumo lancia la moneta prima di attaccare: indovinato!');
             } else {
-                const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+                const lpKey = Tavolo.chiave(ctx.owner, 'LP');
                 const cost = Math.ceil(ctx.gameState[lpKey] / 2);
                 ctx.dealDamage(ctx.owner, cost);
                 ctx.log(`🪙 Jirai Gumo lancia la moneta prima di attaccare: sbagliato! ${ctx.owner === 'player' ? 'Perdi' : 'Il bot perde'} ${cost} Life Points!`);
@@ -1006,8 +1006,8 @@
                 });
             });
             Tavolo.ordine().forEach((owner) => {
-                const deckKey = owner === 'player' ? 'playerDeck' : 'botDeck';
-                const countKey = owner === 'player' ? 'playerDeckCount' : 'botDeckCount';
+                const deckKey = Tavolo.chiave(owner, 'Deck');
+                const countKey = Tavolo.chiave(owner, 'DeckCount');
                 const deck = gameState[deckKey];
                 if (!Array.isArray(deck)) return;
                 for (let i = deck.length - 1; i >= 0; i--) {
@@ -1448,11 +1448,11 @@
     // ================================================================
     CardEffects.register(555, {
         canActivate(ctx) {
-            const deck = ctx.gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
+            const deck = Tavolo.mazzo(ctx.owner, ctx.gameState);
             return ctx.graveyard(ctx.owner).some((c) => c.type === 'monster') && Array.isArray(deck) && ctx.findEmptyMonsterSlot(ctx.owner) !== -1;
         },
         activate(ctx) {
-            const deck = ctx.gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
+            const deck = Tavolo.mazzo(ctx.owner, ctx.gameState);
             if (!Array.isArray(deck)) { ctx.log('⚠️ Nessun Deck reale in questa modalità.'); return; }
             if (ctx.findEmptyMonsterSlot(ctx.owner) === -1) { ctx.log('⚠️ Il Terreno è pieno.'); return; }
             searchDeckWithChoice(ctx, (c) => c.type === 'monster' && c.attack <= 1500, {
@@ -1588,7 +1588,7 @@
         continuous: true,
         repeatableWhileContinuous: true,
         canActivate(ctx) {
-            const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+            const lpKey = Tavolo.chiave(ctx.owner, 'LP');
             if (gameState[lpKey] < 500) return false;
             // findTriggerCandidates (duel-engine.js) applica questo STESSO
             // canActivate anche come filtro per la candidatura a
@@ -1608,13 +1608,13 @@
             return gameState.phase === 'main1' || gameState.phase === 'main2';
         },
         activate(ctx) {
-            const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+            const lpKey = Tavolo.chiave(ctx.owner, 'LP');
             gameState[lpKey] -= 500;
             gameState.hasNormalSummoned = false;
             ctx.log("💰 Offerta Suprema: paghi 500 LP e puoi Evocare Normalmente/Set un altro mostro!");
         },
         onAttackDeclare(ctx) {
-            const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+            const lpKey = Tavolo.chiave(ctx.owner, 'LP');
             if (gameState[lpKey] < 500) return;
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) return;
@@ -1720,11 +1720,11 @@
     // ================================================================
     CardEffects.register(576, {
         canActivate(ctx) {
-            const deck = ctx.gameState[ctx.opponent === 'player' ? 'playerDeck' : 'botDeck'];
+            const deck = Tavolo.mazzo(ctx.opponent, ctx.gameState);
             return Array.isArray(deck) && deck.length > 0;
         },
         activate(ctx) {
-            const deck = ctx.gameState[ctx.opponent === 'player' ? 'playerDeck' : 'botDeck'];
+            const deck = Tavolo.mazzo(ctx.opponent, ctx.gameState);
             if (!Array.isArray(deck) || deck.length === 0) { ctx.log('⚠️ Nessun Deck reale in questa modalità.'); return; }
             const top5 = deck.slice(Math.max(0, deck.length - 5)).slice().reverse();
             if (Decisioni.rispondeUnaPersona(ctx.owner)) {
@@ -1951,7 +1951,7 @@
     // ================================================================
     CardEffects.register(589, {
         onFlip(ctx) {
-            const deck = ctx.gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
+            const deck = Tavolo.mazzo(ctx.owner, ctx.gameState);
             if (!Array.isArray(deck) || deck.length === 0) { ctx.log('⚠️ Nessun Deck reale in questa modalità.'); return; }
             const top5 = deck.slice(Math.max(0, deck.length - 5)).slice().reverse();
             if (Decisioni.rispondeUnaPersona(ctx.owner)) {
@@ -1974,7 +1974,7 @@
     // ================================================================
     CardEffects.register(590, {
         onFlip(ctx) {
-            const fieldSpellKey = ctx.opponent === 'player' ? 'playerFieldSpell' : 'botFieldSpell';
+            const fieldSpellKey = Tavolo.chiave(ctx.opponent, 'FieldSpell');
             const count = ctx.stField(ctx.opponent).filter((s) => s).length + (ctx.gameState[fieldSpellKey] ? 1 : 0);
             if (count === 0) return;
             const damage = count * 500;
@@ -2067,7 +2067,7 @@
         // "più di 0": pagare fino a restare a zero vorrebbe dire perdere
         // il duello per riprendersi un equip, che nessuno sceglierebbe.
         onSentToGraveyardFromField(ctx) {
-            const chiaveLP = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+            const chiaveLP = Tavolo.chiave(ctx.owner, 'LP');
             if (gameState[chiaveLP] <= 500) return;
             if (riprendiDalCimitero(ctx, 'deck')) {
                 ctx.dealDamage(ctx.owner, 500);

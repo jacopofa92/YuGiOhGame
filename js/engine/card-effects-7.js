@@ -260,7 +260,7 @@
             const hasAncientGear = ctx.field(ctx.owner).some((s) => s && !s.isFaceDown && s.card.name && s.card.name.includes('Ingranaggio Antico'));
             if (!hasAncientGear) return false;
             if (ctx.hand(ctx.owner).length === 0) return false;
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
             const deck = gameState[deckKey];
             return Array.isArray(deck) && deck.some((c) => c.type === 'spell') && ctx.stField(ctx.owner).some((s) => s === null);
         },
@@ -421,7 +421,7 @@
         },
         onStandbyPhase(ctx) {
             if (ctx.hasUsedOncePerTurn(`weapon-change:${ctx.card.uid}`)) return;
-            const ownLP = ctx.owner === 'player' ? gameState.playerLP : gameState.botLP;
+            const ownLP = Tavolo.lp(ctx.owner);
             if (ownLP <= 700) return;
             const targets = collectFieldTargets(ctx, {
                 zone: 'monster', owner: 'self',
@@ -485,7 +485,7 @@
      */
     function duplicaMacchina(ctx, targetSlot) {
             if (!targetSlot) return;
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
             const deck = gameState[deckKey];
             if (!Array.isArray(deck)) return;
             let summoned = 0;
@@ -498,7 +498,7 @@
                 ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'deck');
                 summoned++;
             }
-            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+            gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = deck.length;
             ctx.log(`⚙️ Duplicazione Meccanica Special Summona ${summoned} copie di ${targetSlot.card.name}!`);
     }
 
@@ -910,7 +910,7 @@
             }
         },
         onStandbyPhase(ctx) {
-            const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+            const lpKey = Tavolo.chiave(ctx.owner, 'LP');
             gameState[lpKey] -= 500;
             ctx.log(`🧚 Scatola delle Fate: ${ctx.owner === 'player' ? 'paghi' : 'il bot paga'} 500 Life Points per mantenerla in campo.`);
         }
@@ -975,7 +975,7 @@
         onOpponentStandbyPhase(ctx) {
             const hasSpell = ctx.hand(ctx.standbyOwner).some((c) => c.type === 'spell');
             if (!hasSpell) return;
-            const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+            const lpKey = Tavolo.chiave(ctx.owner, 'LP');
             gameState[lpKey] += 1000;
             ctx.log("👁️ L'Occhio della Verità: l'avversario ha una Magia in mano, guadagni 1000 Life Points!");
         }
@@ -1139,7 +1139,7 @@
         for (let i = hand.length - 1; i >= 0; i--) {
             if (hand[i].name === name) { ctx.discardChosenFromHand(controllore, i); count++; }
         }
-        const deckKey = controllore === 'player' ? 'playerDeck' : 'botDeck';
+        const deckKey = Tavolo.chiave(controllore, 'Deck');
         const deck = gameState[deckKey];
         if (Array.isArray(deck)) {
             for (let i = deck.length - 1; i >= 0; i--) {
@@ -1280,8 +1280,8 @@
     // ================================================================
     CardEffects.register(197, {
         activate(ctx) {
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
-            const countKey = ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount';
+            const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
+            const countKey = Tavolo.chiave(ctx.owner, 'DeckCount');
             const deck = gameState[deckKey];
             if (!Array.isArray(deck)) return;
             const index = deck.findIndex((c) => c.id === 200);
@@ -1336,13 +1336,13 @@
     // ------------------------------------------------------------------
     CardEffects.register(199, {
         canActivate(ctx) {
-            const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+            const lpKey = Tavolo.chiave(ctx.owner, 'LP');
             if (gameState[lpKey] < 1000) return false;
             if (!ctx.field(ctx.opponent).some((s) => s)) return false;
             return findLevel7SpellcasterTarget(ctx) !== -1;
         },
         activate(ctx) {
-            const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+            const lpKey = Tavolo.chiave(ctx.owner, 'LP');
             const scelto = findLevel7SpellcasterTarget(ctx);
             if (scelto === -1) return;
             gameState[lpKey] -= 1000; // costo: si paga prima di scegliere il bersaglio
@@ -1594,9 +1594,9 @@
     // ------------------------------------------------------------------
     CardEffects.register(356, {
         canActivate(ctx) {
-            const ownLP = ctx.owner === 'player' ? gameState.playerLP : gameState.botLP;
+            const ownLP = Tavolo.lp(ctx.owner);
             if (ownLP <= 2000) return false;
-            const deckKey = ctx.opponent === 'player' ? 'playerDeck' : 'botDeck';
+            const deckKey = Tavolo.chiave(ctx.opponent, 'Deck');
             const deck = gameState[deckKey];
             return Array.isArray(deck) && deck.some((c) => c.type === 'monster');
         },
@@ -1698,7 +1698,7 @@
     // ------------------------------------------------------------------
     CardEffects.register(419, {
         canActivate(ctx) {
-            const oppLP = ctx.owner === 'player' ? gameState.botLP : gameState.playerLP;
+            const oppLP = Tavolo.lp(ctx.opponent);
             return ctx.field(ctx.opponent).some((s) => s && !s.isFaceDown && (s.card.attack || 0) <= oppLP);
         },
         activate(ctx) {
@@ -1706,7 +1706,7 @@
             // e' anche il danno che SUBISCO io per primo, quindi scegliere
             // da soli il piu' grosso poteva far perdere il duello a chi ha
             // attivato la carta.
-            const oppLP = ctx.owner === 'player' ? gameState.botLP : gameState.playerLP;
+            const oppLP = Tavolo.lp(ctx.opponent);
             const candidates = collectFieldTargets(ctx, {
                 zone: 'monster', owner: 'opponent',
                 filter: (c) => (c.attack || 0) <= oppLP
@@ -2106,7 +2106,7 @@
             if (!nextId) return; // già complete (la vittoria scatta da sola in checkGameOver prima di arrivare qui)
             const hand = ctx.hand(owner);
             const handIdx = hand.findIndex((c) => c.id === nextId);
-            const deckKey = owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deckKey = Tavolo.chiave(owner, 'Deck');
             const deck = gameState[deckKey];
             const deckIdx = Array.isArray(deck) ? deck.findIndex((c) => c.id === nextId) : -1;
             if (handIdx === -1 && deckIdx === -1) return; // non hai la prossima Spirit Message: nessun effetto questo turno
@@ -2115,7 +2115,7 @@
             const takeCard = () => {
                 if (handIdx !== -1) return hand.splice(handIdx, 1)[0];
                 const [card] = deck.splice(deckIdx, 1);
-                gameState[owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+                gameState[Tavolo.chiave(owner, 'DeckCount')] = deck.length;
                 return card;
             };
 
@@ -2133,7 +2133,7 @@
             // Santuario Oscuro (id 192): Magia Terreno scoperta dello
             // stesso controllore — offre la scelta "puoi Special
             // Summonarla come Mostro Normale invece".
-            const fieldSpellKey = owner === 'player' ? 'playerFieldSpell' : 'botFieldSpell';
+            const fieldSpellKey = Tavolo.chiave(owner, 'FieldSpell');
             const fs = gameState[fieldSpellKey];
             const hasSanctuary = !!(fs && !fs.isFaceDown && fs.card.id === 192);
 
@@ -2227,7 +2227,7 @@
     // ctx.searchDeckToHand, che non offriva alcuna scelta).
     CardEffects.register(871, {
         canActivate(ctx) {
-            const deck = ctx.owner === 'player' ? gameState.playerDeck : gameState.botDeck;
+            const deck = Tavolo.mazzo(ctx.owner);
             return Array.isArray(deck) && deck.some((c) => c.type === 'spell' && c.subtype === 'field');
         },
         activate(ctx) {
@@ -2448,7 +2448,7 @@
             });
         },
         onStandbyPhase(ctx) {
-            const lp = ctx.owner === 'player' ? gameState.playerLP : gameState.botLP;
+            const lp = Tavolo.lp(ctx.owner);
             if (lp <= 100) { messaggeroLasciaAndare(ctx); return; }
             if (Decisioni.rispondeUnaPersona(ctx.owner)) {
                 Decisioni.chiedi({
@@ -2542,7 +2542,7 @@
         continuous: true,
         usableByEitherPlayer: true,
         canActivate(ctx) {
-            const lp = ctx.owner === 'player' ? gameState.playerLP : gameState.botLP;
+            const lp = Tavolo.lp(ctx.owner);
             return ctx.summonedVia === 'special' && typeof ctx.summonedCard !== 'undefined' && lp > 800;
         },
         onOpponentSummon(ctx) {
@@ -2568,12 +2568,12 @@
     CardEffects.register(883, {
         onDealsBattleDamage(ctx) {
             const vittima = ctx.opponent;
-            const deckKey = vittima === 'player' ? 'playerDeck' : 'botDeck';
+            const deckKey = Tavolo.chiave(vittima, 'Deck');
             const deck = gameState[deckKey];
             // In Multiplayer il Deck dell'avversario non esiste da questa
             // parte (si tiene solo il conteggio): il mill si può offrire
             // solo se c'è un mazzo vero, o se il conteggio dice che ce n'è.
-            const deckCount = Array.isArray(deck) ? deck.length : (gameState[vittima === 'player' ? 'playerDeckCount' : 'botDeckCount'] || 0);
+            const deckCount = Array.isArray(deck) ? deck.length : (Tavolo.conteggioMazzo(vittima) || 0);
             const puoScartare = ctx.hand(vittima).length > 0;
             const puoMandare = deckCount > 0;
             if (!puoScartare && !puoMandare) return;
@@ -2654,7 +2654,7 @@
     // Deck, scambia i Life Points se indovina.
     CardEffects.register(885, {
         canActivate(ctx) {
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
             return Array.isArray(gameState[deckKey]) && gameState[deckKey].length > 0;
         },
         activate(ctx) {
@@ -2670,12 +2670,12 @@
                 ctx.graveyard(ctx.owner).push(slot.card);
                 ctx.stField(ctx.owner)[index] = null;
             });
-            const fsKey = ctx.owner === 'player' ? 'playerFieldSpell' : 'botFieldSpell';
+            const fsKey = Tavolo.chiave(ctx.owner, 'FieldSpell');
             if (gameState[fsKey]) {
                 ctx.graveyard(ctx.owner).push(gameState[fsKey].card);
                 gameState[fsKey] = null;
             }
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
             const deck = gameState[deckKey];
             if (!Array.isArray(deck) || deck.length === 0) {
                 ctx.log('🎲 Quiz Inverso: il Deck è vuoto, nessuna carta in cima da dichiarare.');
@@ -2712,7 +2712,7 @@
                     const correct = topCard.type === guess;
                     ctx.log(`🎲 Quiz Inverso: ${ctx.owner === 'player' ? 'dichiari' : 'il bot dichiara'} "${labels[guess]}" — la carta in cima è ${topCard.name} (${labels[topCard.type]})!`);
                     if (correct) {
-                        const lpKeyOwn = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+                        const lpKeyOwn = Tavolo.chiave(ctx.owner, 'LP');
                         const lpKeyOpp = ctx.owner === 'player' ? 'botLP' : 'playerLP';
                         const tmp = gameState[lpKeyOwn];
                         gameState[lpKeyOwn] = gameState[lpKeyOpp];
@@ -2737,7 +2737,7 @@
     // non più sempre il più debole/il primo trovato nell'Extra Deck.
     CardEffects.register(886, {
         canActivate(ctx) {
-            const extraDeck = ctx.owner === 'player' ? gameState.playerExtraDeck : gameState.botExtraDeck;
+            const extraDeck = Tavolo.extraDeck(ctx.owner);
             if (!Array.isArray(extraDeck) || extraDeck.length === 0) return false;
             // Il Sigillo di Orichalcos (id 469) vieta l'Extra Deck: meglio non
             // attivarla che pagare il Tributo per un'Evocazione che non avverrà.
@@ -2746,7 +2746,7 @@
         },
         activate(ctx) {
             const field = ctx.field(ctx.owner);
-            const extraDeck = ctx.owner === 'player' ? gameState.playerExtraDeck : gameState.botExtraDeck;
+            const extraDeck = Tavolo.extraDeck(ctx.owner);
             const tributeCandidates = field
                 .map((slot) => (slot && extraDeck.some((c) => c.level === slot.card.level) ? slot.card : null))
                 .filter(Boolean);
@@ -2916,7 +2916,7 @@
         beforeDamageCalculation(ctx) {
             if (!ctx.opponentCard) return; // "se combatte contro un mostro avversario" — mai per un attacco diretto
             if (ctx.card.usedInjectionThisBattle) return;
-            const ownerLP = ctx.owner === 'player' ? gameState.playerLP : gameState.botLP;
+            const ownerLP = Tavolo.lp(ctx.owner);
             if (ownerLP <= 2000) return; // mai scendere a 0 o sotto pagando questo costo
             const mioSlot = ctx.field(ctx.owner)[ctx.slotIndex];
             // In Difesa i 3000 ATK non entrano nel calcolo: non c'è niente

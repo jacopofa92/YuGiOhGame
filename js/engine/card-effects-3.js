@@ -182,7 +182,7 @@
                 // DuelEngineUI.openChoicePopover (già usato altrove per
                 // scelte binarie).
                 const hasDarkMagician = ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 2);
-                const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+                const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
                 const deck = gameState[deckKey];
                 const deckIndex = Array.isArray(deck) ? deck.findIndex((c) => c.id === 191) : -1;
                 if (hasDarkMagician && deckIndex !== -1) {
@@ -198,7 +198,7 @@
                         const freshIndex = freshDeck.findIndex((c) => c.id === 191);
                         if (freshIndex === -1) return;
                         const [sage] = freshDeck.splice(freshIndex, 1);
-                        gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = freshDeck.length;
+                        gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = freshDeck.length;
                         ctx.specialSummon(ctx.owner, sage, slotIndex, 'attack', 'deck');
                         const searchDef = DuelEngine.getDefinition(191);
                         if (searchDef && typeof searchDef.onSpecialSummon === 'function') {
@@ -807,7 +807,7 @@
             let index = hand.findIndex((c) => c.id === 381);
             let source = 'hand';
             let card = index !== -1 ? hand[index] : null;
-            const deckKey = owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deckKey = Tavolo.chiave(owner, 'Deck');
             const deck = gameState[deckKey];
             if (!card && Array.isArray(deck)) {
                 index = deck.findIndex((c) => c.id === 381);
@@ -820,7 +820,7 @@
                 hand.splice(index, 1);
             } else {
                 deck.splice(index, 1);
-                gameState[owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+                gameState[Tavolo.chiave(owner, 'DeckCount')] = deck.length;
             }
             ctx.specialSummon(owner, card, slotIndex, 'attack', source);
             ctx.log('🔥 Cavaliere della Fiamma Oscura, distrutta in battaglia, Special Summona Cavaliere del Miraggio!');
@@ -1256,7 +1256,7 @@
     CardEffects.register(354, {
         onCardActivated(ctx) {
             Tavolo.ordine().forEach((side) => {
-                const rival = side === 'player' ? 'bot' : 'player';
+                const rival = Tavolo.avversario(side);
 
                 const monsterKey = `${ctx.card.uid}:destroyMonster:${side}`;
                 if (!ctx.hasUsedOncePerTurn(monsterKey)) {
@@ -1483,7 +1483,7 @@
         canActivateFromGraveyardMainPhase(ctx) {
             if (ctx.hasUsedOncePerTurn(`153-grave:${ctx.card.uid}`)) return false;
             if (ctx.hand(ctx.owner).length === 0) return false;
-            const deck = gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
+            const deck = Tavolo.mazzo(ctx.owner);
             return Array.isArray(deck) && deck.some((c) => c.type === 'monster' && c.race === 'Macchina' && c.attribute === 'TERRA');
         },
         activateFromGraveyardMainPhase(ctx) {
@@ -1492,7 +1492,7 @@
             if (graveIdx === -1) return;
             const hand = ctx.hand(ctx.owner);
             if (hand.length === 0) return;
-            const deck = gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
+            const deck = Tavolo.mazzo(ctx.owner);
             if (!Array.isArray(deck) || !deck.some((c) => c.type === 'monster' && c.race === 'Macchina' && c.attribute === 'TERRA')) return;
             // Necrovalley (id 890): se blocca il bando, l'intero costo
             // fallisce — niente scarto/ricerca senza il bando reale.
@@ -1645,7 +1645,7 @@
         },
         canActivateFromGraveyardMainPhase(ctx) {
             if (ctx.card._sentToGraveyardOnTurn === gameState.turn) return false;
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
             const deck = gameState[deckKey];
             return Array.isArray(deck) && deck.some((c) => (c.type === 'spell' || c.type === 'trap') && c.name && c.name.includes('Occhi Rossi'));
         },
@@ -1653,7 +1653,7 @@
             const grave = ctx.graveyard(ctx.owner);
             const cardIndex = grave.findIndex((c) => c.uid === ctx.card.uid);
             if (cardIndex === -1) return;
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
             const deck = gameState[deckKey];
             const isRedEyesSpellTrap = (c) => (c.type === 'spell' || c.type === 'trap') && c.name && c.name.includes('Occhi Rossi');
             if (!Array.isArray(deck) || !deck.some(isRedEyesSpellTrap)) return;
@@ -1738,7 +1738,7 @@
         canActivate(ctx) {
             if (ctx.hasUsedOncePerTurn(`855:${ctx.card.uid}`)) return false;
             const inHand = ctx.hand(ctx.owner).some((c) => c.race === 'Drago' && c.name.includes('Occhi Rossi'));
-            const deck = gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
+            const deck = Tavolo.mazzo(ctx.owner);
             const inDeck = Array.isArray(deck) && deck.some((c) => c.race === 'Drago' && c.name.includes('Occhi Rossi'));
             return inHand || inDeck;
         },
@@ -1756,8 +1756,8 @@
                 [redEyesCard] = hand.splice(handIndex, 1);
                 fromZone = 'hand';
             } else {
-                const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
-                const countKey = ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount';
+                const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
+                const countKey = Tavolo.chiave(ctx.owner, 'DeckCount');
                 const deck = gameState[deckKey];
                 let bestIndex = -1;
                 let bestLevel = -1;
@@ -1840,7 +1840,7 @@
             const hasDarkMagician = ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 2);
             if (!hasDarkMagician) return false;
             const inHand = ctx.hand(ctx.owner).some((c) => c.id === 856);
-            const deck = gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
+            const deck = Tavolo.mazzo(ctx.owner);
             const inDeck = Array.isArray(deck) && deck.some((c) => c.id === 856);
             const inGrave = ctx.graveyard(ctx.owner).some((c) => c.id === 856);
             return inHand || inDeck || inGrave;
@@ -1860,8 +1860,8 @@
                 [knightCard] = hand.splice(handIndex, 1);
                 fromZone = 'hand';
             } else {
-                const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
-                const countKey = ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount';
+                const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
+                const countKey = Tavolo.chiave(ctx.owner, 'DeckCount');
                 const deck = gameState[deckKey];
                 const deckIndex = Array.isArray(deck) ? deck.findIndex((c) => c.id === 856) : -1;
                 if (deckIndex !== -1) {
@@ -1911,7 +1911,7 @@
             if (field.length !== 1 || field[0].isFaceDown || field[0].card.level !== 5) return false;
             const kuribohIds = [22, 859, 860, 861, 862];
             const hand = ctx.hand(ctx.owner);
-            const deck = gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'] || [];
+            const deck = Tavolo.mazzo(ctx.owner) || [];
             const grave = ctx.graveyard(ctx.owner);
             return kuribohIds.every((id) => hand.some((c) => c.id === id) || deck.some((c) => c.id === id) || grave.some((c) => c.id === id));
         },
@@ -1924,8 +1924,8 @@
 
             const kuribohIds = [22, 859, 860, 861, 862];
             const hand = ctx.hand(ctx.owner);
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
-            const countKey = ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount';
+            const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
+            const countKey = Tavolo.chiave(ctx.owner, 'DeckCount');
             const deck = gameState[deckKey];
             const grave = ctx.graveyard(ctx.owner);
 
@@ -1990,7 +1990,7 @@
         canActivate(ctx) {
             if (gameState.currentPlayer === ctx.owner) return false;
             if (gameState.phase !== 'battle') return false;
-            const deck = gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
+            const deck = Tavolo.mazzo(ctx.owner);
             const qualifyingDeckCards = Array.isArray(deck) ? deck.filter((c) => c.type === 'spell' || c.type === 'trap').length : 0;
             if (qualifyingDeckCards < 2) return false;
             const hasOwnMonster = ctx.field(ctx.owner).some((s) => s);
@@ -2004,7 +2004,7 @@
         // non esiste su questo client: lì non si fa nulla, e la fotografia
         // di stato di chi ha attivato allinea il Terreno.
         activate(ctx) {
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
             const deck = gameState[deckKey];
             if (!Array.isArray(deck)) return;
             const magieTrappole = deck.filter((c) => c.type === 'spell' || c.type === 'trap');
@@ -2036,8 +2036,8 @@
 
     function cappelliMagiciApplica(ctx, scelteDalDeck, monsterIndex) {
         {
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
-            const countKey = ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount';
+            const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
+            const countKey = Tavolo.chiave(ctx.owner, 'DeckCount');
             const deck = gameState[deckKey];
             const chosen = [];
             scelteDalDeck.forEach((card) => {
@@ -2088,7 +2088,7 @@
         repeatableWhileContinuous: true,
         canActivate(ctx) {
             if (!ctx.card.equippedToOwner) return findEquipTarget(ctx, (c) => c.id === 337) !== -1;
-            const deck = gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
+            const deck = Tavolo.mazzo(ctx.owner);
             return Array.isArray(deck) && deck.some((c) => c.id === 857) && ctx.findEmptyMonsterSlot(ctx.owner) !== -1;
         },
         activate(ctx) {
@@ -2104,8 +2104,8 @@
             ctx.stField(ctx.owner)[ctx.index] = null;
             ctx.graveyard(ctx.owner).push(ctx.card);
 
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
-            const countKey = ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount';
+            const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
+            const countKey = Tavolo.chiave(ctx.owner, 'DeckCount');
             const deck = gameState[deckKey];
             const deckIndex = deck.findIndex((c) => c.id === 857);
             if (deckIndex === -1) return;
@@ -2665,7 +2665,7 @@
         continuous: true,
         activate(ctx) {
             Tavolo.ordine().forEach((o) => {
-                const fs = o === 'player' ? gameState.playerFieldSpell : gameState.botFieldSpell;
+                const fs = Tavolo.magiaTerreno(o);
                 if (fs) {
                     ctx.destroyFieldSpell(o);
                     ctx.log(`🔥 Terra in Fiamme distrugge ${fs.card.name}!`);
@@ -3004,7 +3004,7 @@
     //     def.blocksOwnExtraDeckSummons -> DuelEngine.isExtraDeckSummonBlocked;
     //  6. "solo una volta per Duello": gameState.orichalcosActivatedFor.
     const piuDeboliProtetti = (owner, uid) => {
-        const campo = owner === 'player' ? gameState.playerMonsterField : gameState.botMonsterField;
+        const campo = Tavolo.mostri(owner);
         const inAttacco = campo.filter((s) => s && !s.isFaceDown && s.position === 'attack');
         if (inAttacco.length < 2) return false;
         const minimo = Math.min(...inAttacco.map((s) => DuelEngine.getEffectiveAtk(s.card)));

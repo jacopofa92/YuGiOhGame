@@ -161,7 +161,7 @@
             const handIdx = hand.findIndex((c) => c.id === 2);
             if (handIdx !== -1) { source = hand; from = handIdx; }
             if (!source) {
-                const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+                const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
                 const deck = gameState[deckKey];
                 if (Array.isArray(deck)) {
                     const deckIdx = deck.findIndex((c) => c.id === 2);
@@ -180,7 +180,7 @@
             const zonaMago = source === hand ? 'hand' : (source === grave ? 'graveyard' : 'deck');
             const [darkMagician] = source.splice(from, 1);
             if (source === gameState.playerDeck || source === gameState.botDeck) {
-                gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = source.length;
+                gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = source.length;
             }
             const field = ctx.field(ctx.owner);
             const selfIndex = field.findIndex((s) => s && s.card.uid === ctx.card.uid);
@@ -498,13 +498,13 @@
     // ================================================================
     CardEffects.register(747, {
         canActivate(ctx) {
-            const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+            const lpKey = Tavolo.chiave(ctx.owner, 'LP');
             if (gameState[lpKey] < 1000) return false;
             if (!ctx.field(ctx.opponent).some((s) => s)) return false;
             return findLevel7SpellcasterTarget(ctx) !== -1;
         },
         activate(ctx) {
-            const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+            const lpKey = Tavolo.chiave(ctx.owner, 'LP');
             const scelto = findLevel7SpellcasterTarget(ctx);
             if (scelto === -1) return;
             gameState[lpKey] -= 1000; // costo: si paga prima di scegliere il bersaglio
@@ -1160,7 +1160,7 @@
         continuous: true,
         repeatableWhileContinuous: true,
         canActivate(ctx) {
-            const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+            const lpKey = Tavolo.chiave(ctx.owner, 'LP');
             if (gameState[lpKey] < 300) return false;
             if (ctx.hasUsedOncePerTurn(`769:${ctx.card.uid}`)) return false;
             const eligible = ctx.field(ctx.owner).filter((slot) => slot && slot.isFaceDown && slot.position === 'defense');
@@ -1168,7 +1168,7 @@
         },
         activate(ctx) {
             ctx.markUsedOncePerTurn(`769:${ctx.card.uid}`);
-            const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+            const lpKey = Tavolo.chiave(ctx.owner, 'LP');
             gameState[lpKey] -= 300;
             const field = ctx.field(ctx.owner);
             const indices = field.map((slot, i) => (slot && slot.isFaceDown && slot.position === 'defense') ? i : -1).filter((i) => i !== -1);
@@ -1566,7 +1566,7 @@
             if (!hasHarpieLady) return false;
             if (ctx.findEmptyMonsterSlot(ctx.owner) === -1) return false;
             const evocabile = (c) => isHarpieLadySupport(c) || c.name === 'Sorelle Lady Arpia';
-            const deck = ctx.gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
+            const deck = Tavolo.mazzo(ctx.owner, ctx.gameState);
             return ctx.hand(ctx.owner).some(evocabile) || (Array.isArray(deck) && deck.some(evocabile));
         },
         activate(ctx) {
@@ -2062,7 +2062,7 @@
         static(ctx) {
             const oppField = ctx.field(ctx.opponent);
             const oppST = ctx.stField(ctx.opponent);
-            const oppFieldSpell = ctx.opponent === 'player' ? gameState.playerFieldSpell : gameState.botFieldSpell;
+            const oppFieldSpell = Tavolo.magiaTerreno(ctx.opponent);
             const hasMonsters = oppField.some((s) => s);
             const allDefense = oppField.every((s) => !s || s.position === 'defense');
             const noOtherCards = oppST.every((s) => s === null) && !oppFieldSpell;
@@ -2097,13 +2097,13 @@
         onDestroysMonsterInBattle(ctx) {
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) return;
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
             const deck = gameState[deckKey];
             if (!Array.isArray(deck)) return;
             const index = deck.findIndex((c) => c.id === 803);
             if (index === -1) return;
             const card = deck.splice(index, 1)[0];
-            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+            gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = deck.length;
             ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'deck');
             ctx.log('🦖 Idrogeddon Special Summona un\'altra copia dal Deck!');
         }
@@ -2259,11 +2259,11 @@
         },
         canActivate(ctx) {
             if (!ctx.card.counters) return false;
-            const deck = gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
+            const deck = Tavolo.mazzo(ctx.owner);
             return Array.isArray(deck) && deck.some((c) => c.type === 'monster' && c.race === 'Dinosauro' && c.level <= ctx.card.counters);
         },
         activate(ctx) {
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
             const deck = gameState[deckKey];
             let bestIndex = -1;
             let bestLevel = -1;
@@ -2275,7 +2275,7 @@
             });
             if (bestIndex === -1) return;
             const [dino] = deck.splice(bestIndex, 1);
-            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+            gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = deck.length;
             const ownIndex = ctx.index;
             ctx.field(ctx.owner)[ownIndex] = null;
             ctx.graveyard(ctx.owner).push(ctx.card);
@@ -2546,7 +2546,7 @@
     // ================================================================
     CardEffects.register(817, {
         onEndPhase(ctx) {
-            const fieldSpell = ctx.owner === 'player' ? gameState.playerFieldSpell : gameState.botFieldSpell;
+            const fieldSpell = Tavolo.magiaTerreno(ctx.owner);
             if (!fieldSpell || fieldSpell.isFaceDown || fieldSpell.card.id !== 812) return;
             let count = 0;
             Tavolo.ordine().forEach((owner) => {
@@ -2745,7 +2745,7 @@
             }
         }
         if (link.ctx && link.ctx.zone === 'fieldSpell') {
-            const fieldKey = link.owner === 'player' ? 'playerFieldSpell' : 'botFieldSpell';
+            const fieldKey = Tavolo.chiave(link.owner, 'FieldSpell');
             if (gameState[fieldKey] && gameState[fieldKey].card === link.card) {
                 gameState[fieldKey] = null;
                 return true;
@@ -3063,13 +3063,13 @@
     // (Verde id 828 → Rosso id 829 → Giallo id 830 → Verde...).
     // ================================================================
     function searchGadgetToHand(ctx, targetId, targetName) {
-        const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+        const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
         const deck = gameState[deckKey];
         if (!Array.isArray(deck)) return;
         const index = deck.findIndex((c) => c.id === targetId);
         if (index === -1) return;
         const card = deck.splice(index, 1)[0];
-        gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+        gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = deck.length;
         ctx.hand(ctx.owner).push(card);
         ctx.log(`⚙️ ${ctx.card.name} aggiunge ${card.name} alla mano dal Deck!`);
     }

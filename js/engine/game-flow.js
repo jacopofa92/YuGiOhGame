@@ -619,7 +619,7 @@ function renderBanishedBadge(owner) {
     const badge = document.getElementById(owner === 'player' ? 'playerBanishedBadge' : 'botBanishedBadge');
     const countEl = document.getElementById(owner === 'player' ? 'playerBanishedCount' : 'botBanishedCount');
     if (!badge || !countEl) return;
-    const banished = owner === 'player' ? gameState.playerBanished : gameState.botBanished;
+    const banished = Tavolo.banditi(owner);
     countEl.textContent = banished.length;
     badge.classList.toggle('has-cards', banished.length > 0);
     badge.onclick = () => {
@@ -699,7 +699,7 @@ function renderEquipLinks() {
     // sono nuovi — vedi il commento più sotto, dentro il ciclo.
     const nuoveCoppieEquip = new Set();
     ['player', 'bot'].forEach((owner) => {
-        const stField = owner === 'player' ? gameState.playerSTField : gameState.botSTField;
+        const stField = Tavolo.magieTrappole(owner);
         stField.forEach((slot) => {
             if (!slot || slot.isFaceDown || !slot.card || !slot.card.equippedToUid) return;
             const equipEl = findFieldCardElementByUid(slot.card.uid);
@@ -897,7 +897,7 @@ function renderFields() {
         // comunque da handleSlotClick — e, se occupata, mostra la carta
         // vera al posto della sola etichetta testuale "Terreno".
         const isFieldSpellZone = specialConfig.firstZone.zone === 'fieldSpell';
-        const fieldSpellSlotState = isFieldSpellZone ? (owner === 'player' ? gameState.playerFieldSpell : gameState.botFieldSpell) : null;
+        const fieldSpellSlotState = isFieldSpellZone ? (Tavolo.magiaTerreno(owner)) : null;
         const firstSpecial = createSlotElement(owner, specialConfig.firstZone.type, -1, {
             special: true,
             zone: specialConfig.firstZone.zone,
@@ -1894,7 +1894,7 @@ function createSlotElement(owner, type, index, options = {}) {
         // dell'Extra Deck qui sopra. Mai un bersaglio di piazzamento;
         // stesso modale usato per rianimare/scegliere un mostro.
         if (options.zone === 'graveyard') {
-            const graveyard = owner === 'player' ? gameState.playerGraveyard : gameState.botGraveyard;
+            const graveyard = Tavolo.cimitero(owner);
             if (graveyard.length > 0 && window.DuelEngineUI) {
                 window.DuelEngineUI.openCardListPicker(graveyard, {
                     title: owner === 'player' ? '⚰️ Cimitero' : '⚰️ Cimitero dell\'avversario',
@@ -2075,7 +2075,7 @@ function suonaCinematicaVittoria(kind, playerWon, fatto) {
     } else if (kind === 'destinyboard') {
         bannerText = 'FINAL';
         const owner = playerWon ? 'player' : 'bot';
-        const stField = owner === 'player' ? gameState.playerSTField : gameState.botSTField;
+        const stField = Tavolo.magieTrappole(owner);
         const uids = DESTINY_BOARD_CARD_IDS
             .map((id) => stField.find((slot) => slot && !slot.isFaceDown && slot.card.id === id))
             .filter(Boolean)

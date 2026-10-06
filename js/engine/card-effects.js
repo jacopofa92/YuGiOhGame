@@ -618,8 +618,8 @@
             ctx.hand(ctx.owner).push(carta);
             return true;
         }
-        const chiaveDeck = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
-        const chiaveConteggio = ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount';
+        const chiaveDeck = Tavolo.chiave(ctx.owner, 'Deck');
+        const chiaveConteggio = Tavolo.chiave(ctx.owner, 'DeckCount');
         if (Array.isArray(gameState[chiaveDeck])) {
             // `pop()` pesca dalla FINE dell'array, quindi "in cima al
             // Deck" è la fine, non l'inizio (vedi drawCardsToHand).
@@ -720,10 +720,10 @@
         // searchZoneWithChoice) resta sempre determinato da ctx.owner,
         // indipendentemente da QUALE Deck si sta cercando.
         const deckOwner = (options && options.deckOwner) || ctx.owner;
-        const deckKey = deckOwner === 'player' ? 'playerDeck' : 'botDeck';
+        const deckKey = Tavolo.chiave(deckOwner, 'Deck');
         const deck = ctx.gameState[deckKey];
         return searchZoneWithChoice(ctx, deck, filterFn, options, (card) => {
-            gameState[deckOwner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+            gameState[Tavolo.chiave(deckOwner, 'DeckCount')] = deck.length;
             onChosen(card);
         });
     }

@@ -435,7 +435,7 @@
     // di una copia di sé dal Deck in Difesa coperta, poi rimescola.
     CardEffects.register(1023, {
         onFlip(ctx) {
-            const deck = ctx.owner === 'player' ? gameState.playerDeck : gameState.botDeck;
+            const deck = Tavolo.mazzo(ctx.owner);
             if (!Array.isArray(deck)) { ctx.log('🐀 Nessun Deck reale in questa modalità.'); return; }
             const index = deck.findIndex((c) => c.id === 1023);
             if (index === -1) return;
@@ -496,7 +496,7 @@
      * Necrovalley" del vero testo di entrambe le carte.
      */
     function searchAndPlaceOnTopOrHandIfNecrovalley(ctx, matchFn, emoji) {
-        const deck = ctx.owner === 'player' ? gameState.playerDeck : gameState.botDeck;
+        const deck = Tavolo.mazzo(ctx.owner);
         if (!Array.isArray(deck)) { ctx.log(`${emoji} Nessun Deck reale in questa modalità.`); return; }
         searchDeckWithChoice(ctx, matchFn, { title: `${emoji} Scegli una carta`, text: 'Scegli quale carta cercare nel Deck.' }, (card) => {
             const necrovalleyOnField = ['playerFieldSpell', 'botFieldSpell'].some((k) => { const fs = gameState[k]; return fs && !fs.isFaceDown && fs.card.id === 890; });
@@ -807,7 +807,7 @@
     // infligge 800 danni.
     CardEffects.register(1037, {
         onFlip(ctx) {
-            const deck = ctx.owner === 'player' ? gameState.playerDeck : gameState.botDeck;
+            const deck = Tavolo.mazzo(ctx.owner);
             if (!Array.isArray(deck)) { ctx.log('🔥 Nessun Deck reale in questa modalità.'); return; }
             const banished = deck.splice(-3, 3);
             banished.forEach((c) => ctx.banish(ctx.owner, c));
@@ -829,7 +829,7 @@
     // auto-selezionato (il primo nell'Extra Deck).
     CardEffects.register(1038, {
         onFlip(ctx) {
-            const extraDeck = ctx.owner === 'player' ? gameState.playerExtraDeck : gameState.botExtraDeck;
+            const extraDeck = Tavolo.extraDeck(ctx.owner);
             if (!Array.isArray(extraDeck) || extraDeck.length === 0) return;
             // Il Sigillo di Orichalcos (id 469): niente Extra Deck, e quindi
             // nessun Tributo da pagare a vuoto.
@@ -1121,13 +1121,13 @@
             if (!ctx.destroyedByOpponentCard) return;
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) return;
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
             const deck = gameState[deckKey];
             if (!Array.isArray(deck)) return;
             const index = deck.findIndex((c) => c.id === 1050);
             if (index === -1) return;
             const card = deck.splice(index, 1)[0];
-            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+            gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = deck.length;
             ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'deck');
             ctx.log('🐉 Drago della Truppa Special Summona un\'altra copia dal Deck!');
         }
@@ -1144,7 +1144,7 @@
         onDestroy(ctx) {
             if (!ctx.destroyedByOpponentCard) return;
             ctx.dealDamage(ctx.owner, -1000);
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
             const deck = gameState[deckKey];
             if (!Array.isArray(deck)) return;
             let summoned = 0;
@@ -1153,7 +1153,7 @@
                 const index = deck.findIndex((c) => c.id === 1051);
                 if (index === -1) break;
                 const card = deck.splice(index, 1)[0];
-                gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+                gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = deck.length;
                 ctx.specialSummon(ctx.owner, card, slotIndex, 'defense', 'deck');
                 summoned++;
             }
@@ -1461,9 +1461,9 @@
                 if (idx === -1) return;
                 if (ctx.graveyardMoveNegated(ctx.owner)) return;
                 const [card] = grave.splice(idx, 1);
-                const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+                const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
                 gameState[deckKey].unshift(card);
-                gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = gameState[deckKey].length;
+                gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = gameState[deckKey].length;
                 ctx.log(`🔥 Sentinella Cremisi rimanda ${card.name} in fondo al Deck!`);
             };
             if (!Decisioni.rispondeUnaPersona(ctx.owner)) { returnToDeck(stillInGrave[0]); return; }
@@ -1573,9 +1573,9 @@
                 if (idx === -1) return;
                 if (ctx.graveyardMoveNegated(ctx.owner)) return;
                 const [card] = grave.splice(idx, 1);
-                const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+                const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
                 gameState[deckKey].unshift(card);
-                gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = gameState[deckKey].length;
+                gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = gameState[deckKey].length;
                 ctx.log(`🧚 Guardiana delle Fate rimanda ${card.name} in fondo al Deck!`);
             };
             if (!Decisioni.rispondeUnaPersona(ctx.owner)) { returnToDeck(stillInGrave[0]); return; }
@@ -1708,7 +1708,7 @@
     // qualunque futura carta con lo stesso bisogno.
     function findCardFieldLocation(targetCard) {
         for (const owner of Tavolo.ordine()) {
-            const field = owner === 'player' ? gameState.playerMonsterField : gameState.botMonsterField;
+            const field = Tavolo.mostri(owner);
             const index = field.findIndex((s) => s && s.card.uid === targetCard.uid);
             if (index !== -1) return { owner: owner, index: index };
         }
@@ -1909,9 +1909,9 @@
                 if (idx === -1) return;
                 if (ctx.graveyardMoveNegated(ctx.owner)) return;
                 const [card] = grave.splice(idx, 1);
-                const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+                const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
                 gameState[deckKey].push(card);
-                gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = gameState[deckKey].length;
+                gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = gameState[deckKey].length;
                 ctx.log(`🐆 Pantera Signora rimanda ${card.name} in cima al Deck!`);
             };
             if (!Decisioni.rispondeUnaPersona(ctx.owner)) { returnToDeckTop(stillInGrave[0]); return; }
@@ -2016,7 +2016,7 @@
         },
         canActivate(ctx) {
             if (gameState.phase !== 'end' || gameState.currentPlayer !== ctx.owner) return false;
-            return gameState[ctx.owner === 'player' ? 'playerLP' : 'botLP'] > 500;
+            return Tavolo.lp(ctx.owner) > 500;
         },
         activate(ctx) {
             ctx.dealDamage(ctx.owner, 500);
@@ -2083,8 +2083,8 @@
     CardEffects.register(1088, {
         onSentToGraveyardFromDeck(ctx) {
             if (ctx.milledByOwner !== ctx.opponent) return;
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
-            const graveKey = ctx.owner === 'player' ? 'playerGraveyard' : 'botGraveyard';
+            const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
+            const graveKey = Tavolo.chiave(ctx.owner, 'Graveyard');
             const merged = [...gameState[deckKey], ...gameState[graveKey]];
             // Math.random() e non ctx.random(): un RIMESCOLO non ha nulla
             // da accordare fra i due client di un Multiplayer. Quello che
@@ -2098,7 +2098,7 @@
             }
             gameState[deckKey] = merged;
             gameState[graveKey] = [];
-            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = merged.length;
+            gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = merged.length;
             ctx.log('🐧 Cavaliere Pinguino rimescola il Cimitero nel Deck!');
         }
     });
@@ -2381,7 +2381,7 @@
     CardEffects.register(1098, {
         onPositionChange(ctx) {
             if (ctx.fromPosition !== 'attack' || ctx.toPosition !== 'defense') return;
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
             const deck = gameState[deckKey];
             for (let i = deck.length - 1; i > 0; i--) {
                 const j = Math.floor(Casuale.random() * (i + 1));
@@ -2629,12 +2629,12 @@
         // resta nel Cimitero.
         cannotBeSpecialSummonedFromGraveyard: true,
         specialSummonFromGraveyardException(owner, card) {
-            const campo = owner === 'player' ? gameState.playerMonsterField : gameState.botMonsterField;
+            const campo = Tavolo.mostri(owner);
             const i = campo.findIndex((s) => s && s.card.race === 'Drago' && s.card.uid !== card.uid);
             if (i === -1) return false;
             const tributato = campo[i].card;
             campo[i] = null;
-            (owner === 'player' ? gameState.playerGraveyard : gameState.botGraveyard).push(tributato);
+            (Tavolo.cimitero(owner)).push(tributato);
             addToLog(`🐉 ${tributato.name} viene tributato per Special Summonare ${card.name} dal Cimitero.`);
             return true;
         },
@@ -2731,9 +2731,9 @@
             if (idx === -1) return;
             if (ctx.graveyardMoveNegated(ctx.destroyedCardOwner)) return;
             const [card] = grave.splice(idx, 1);
-            const deckKey = ctx.destroyedCardOwner === 'player' ? 'playerDeck' : 'botDeck';
+            const deckKey = Tavolo.chiave(ctx.destroyedCardOwner, 'Deck');
             gameState[deckKey].push(card);
-            gameState[ctx.destroyedCardOwner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = gameState[deckKey].length;
+            gameState[Tavolo.chiave(ctx.destroyedCardOwner, 'DeckCount')] = gameState[deckKey].length;
             ctx.log(`🦅 Falcos il Saggio Alato rimanda ${card.name} in cima al Deck avversario!`);
         }
     });
@@ -2748,9 +2748,9 @@
             if (idx === -1) return;
             if (ctx.graveyardMoveNegated(ctx.destroyedCardOwner)) return;
             const [card] = grave.splice(idx, 1);
-            const deckKey = ctx.destroyedCardOwner === 'player' ? 'playerDeck' : 'botDeck';
+            const deckKey = Tavolo.chiave(ctx.destroyedCardOwner, 'Deck');
             gameState[deckKey].push(card);
-            gameState[ctx.destroyedCardOwner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = gameState[deckKey].length;
+            gameState[Tavolo.chiave(ctx.destroyedCardOwner, 'DeckCount')] = gameState[deckKey].length;
             ctx.log(`⚔️ Cavaliere Mistico di Sciacallo rimanda ${card.name} in cima al Deck avversario!`);
         }
     });
@@ -2885,9 +2885,9 @@
                     return true;
                 });
                 if (spostate.length === 0) return;
-                const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+                const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
                 gameState[deckKey].unshift(...spostate);
-                gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = gameState[deckKey].length;
+                gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = gameState[deckKey].length;
                 ctx.log(`🐢 Yado Karu rimanda ${spostate.length} cart${spostate.length === 1 ? 'a' : 'e'} dalla mano in fondo al Deck!`);
             });
         }
@@ -2905,7 +2905,7 @@
         negatesEffectsOfBattleVictims(destroyerOwner, destroyer, victim) {
             const victimDef = DuelEngine.getDefinition(victim.id);
             if (!victimDef || typeof victimDef.onFlip !== 'function') return false;
-            const campo = destroyerOwner === 'player' ? gameState.playerMonsterField : gameState.botMonsterField;
+            const campo = Tavolo.mostri(destroyerOwner);
             return campo.some((s) => s && s.card.uid !== destroyer.uid && s.card.race === 'Demone');
         }
     });
@@ -3210,7 +3210,7 @@
     CardEffects.register(1128, {
         onSacrificedForTribute(ctx) {
             if (!ctx.summonedCard || ctx.summonedCard.type !== 'monster' || ctx.summonedCard.race !== 'Demone') return;
-            const deck = ctx.gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
+            const deck = Tavolo.mazzo(ctx.owner, ctx.gameState);
             if (!Array.isArray(deck)) return;
             const deckIdx = deck.findIndex((c) => c.id === 1128);
             if (deckIdx === -1) return;
@@ -3266,7 +3266,7 @@
     function findFushiohRichieCandidate(ctx) {
         const handIdx = ctx.hand(ctx.owner).findIndex((c) => c.id === 1130);
         if (handIdx !== -1) return { zone: ctx.hand(ctx.owner), index: handIdx };
-        const deck = ctx.gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck'];
+        const deck = Tavolo.mazzo(ctx.owner, ctx.gameState);
         if (Array.isArray(deck)) {
             const deckIdx = deck.findIndex((c) => c.id === 1130);
             if (deckIdx !== -1) return { zone: deck, index: deckIdx };
