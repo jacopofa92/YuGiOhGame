@@ -15,23 +15,11 @@
 // `fetch('duelMonstersCore.html')`, e su file:// quella fetch è bloccata
 // dal browser. Vedi tests/helpers/local-servers.js.
 //
-// Cosa verifica, in ordine: accoppiamento in stanza; una mossa per ogni
-// tipo di messaggio del protocollo (summon / spelltrap / fieldspell);
-// che dopo OGNI mossa il checksum anti-desync dei due lati coincida; che
-// una Magia Terreno non faccia scattare un resync; che il difensore
-// venga davvero interpellato per rispondere in Catena e che la sua
-// risposta arrivi all'altro lato; e che una resa arrivi all'avversario
-// come vittoria.
+// Cosa verifica, in ordine: indirizzi e risveglio del relay;
+// accoppiamento in stanza; impostazioni scelte dall'host; barriera dei due
+// "Pronto"; avvio obbligatorio a passo comune con stato identico e mani
+// vere su entrambi i motori; resa comunicata come vittoria.
 const { startStaticServer, startRoomServer } = require('../helpers/local-servers');
-
-// Nota su come il test si procura le carte da giocare: la mano è pescata
-// a caso dal mazzo, quindi ogni mossa parte SOSTITUENDO una carta della
-// mano con quella che serve (`gameState.playerHand[i] = ...`), mai
-// aggiungendone una — il CONTEGGIO della mano entra nel checksum
-// anti-desync, quindi allungarla disallineerebbe i due client per colpa
-// del test invece che per un bug del motore. Il contenuto della mano non
-// viaggia mai sulla rete (solo il conteggio), quindi sostituirla è
-// invisibile all'avversario, esattamente come una pescata vera.
 
 module.exports = {
     name: 'Multiplayer end-to-end: due client attraverso il server di stanze',
@@ -53,8 +41,7 @@ module.exports = {
                 // le stesse ragioni: nessun account Supabase in questa suite,
                 // e nessuna morra cinese da cliccare (in Multiplayer chi
                 // comincia lo decide comunque il server, vedi MP_startingRole).
-                // MP_SENZA_PASSO_COMUNE: questo spec verifica il Multiplayer di prima (ripiego con un client vecchio).
-                await page.addInitScript(() => { window.AUTH_GATE_SKIP = true; window.DUEL_RPS_SKIP = true; window.MP_SENZA_PASSO_COMUNE = true; });
+                await page.addInitScript(() => { window.AUTH_GATE_SKIP = true; window.DUEL_RPS_SKIP = true; });
                 await page.goto(statics.origin + '/multiplayer.html', { waitUntil: 'load' });
                 await page.waitForSelector('#mpCreateBtn');
                 // Il velo di caricamento condiviso (js/ui/page-loader.js) copre
@@ -209,142 +196,22 @@ module.exports = {
             const actor = aStarts ? pageA : pageB;      // chi gioca le mosse
             const watcher = aStarts ? pageB : pageA;    // chi deve vederle arrivare
 
-            // La cascata naturale di apertura (draw -> standby -> main1) parte
-            // da sola solo dal lato di chi comincia; l'altro la riceve come
-            // messaggi 'phase'. Che arrivi anche di là è già la prima
-            // verifica del protocollo.
+            // La cascata naturale di apertura (draw -> standby -> main1) si
+            // esegue su entrambi i motori. Il comando viaggia nel passo
+            // comune e i nomi dei posti restano specchiati.
             await actor.waitForFunction(() => gameState.phase === 'main1' && gameState.currentPlayer === 'player', { timeout: 25000 });
             await watcher.waitForFunction(() => gameState.phase === 'main1' && gameState.currentPlayer === 'bot', { timeout: 25000 });
+            const avvio = await Promise.all([actor, watcher].map((page) => page.evaluate(() => ({
+                passoComune: window.MP_PASSO_COMUNE === true && PassoComune.attivo(),
+                manoAvversariaVera: gameState.botHand.every((c) => c && c.id !== -1 && c.name !== '???'),
+                impronta: PassoComune.impronta()
+            }))));
+            assert(avvio.every((x) => x.passoComune), 'Il duello deve usare obbligatoriamente il passo comune');
+            assert(avvio.every((x) => x.manoAvversariaVera), 'Entrambi i motori devono avere la mano vera dell\'altro posto');
+            assert(avvio[0].impronta === avvio[1].impronta,
+                `I due motori devono partire allineati: ${avvio[0].impronta} contro ${avvio[1].impronta}`);
 
-            // Spia sul canale in USCITA del lato che osserva: serve per
-            // dimostrare che non chiede resync (vedi la Magia Terreno più
-            // sotto). Avvolge MP_broadcast senza sostituirlo, come fa
-            // multiplayer.js stesso col suo wrapping del checksum.
-            await watcher.evaluate(() => {
-                window.__mpSent = [];
-                const inner = window.MP_broadcast;
-                window.MP_broadcast = function (action) {
-                    window.__mpSent.push(action.kind);
-                    return inner(action);
-                };
-            });
-
-            const checksumsMatch = async (what) => {
-                const [a, b] = await Promise.all([
-                    actor.evaluate(() => DuelEngine.computeStateChecksum()),
-                    watcher.evaluate(() => DuelEngine.computeStateChecksum())
-                ]);
-                assert(a === b, `${what}: i due client devono avere lo stesso checksum di stato (attivo: "${a}", osservatore: "${b}")`);
-            };
-            await checksumsMatch('Apertura del duello');
-
-            // --- 1) Evocazione ------------------------------------------
-            const monsterName = await actor.evaluate(() => {
-                // `cardDatabase` è un const di js/data/cards-db.js: esiste nello
-                // scope globale della pagina ma NON su window (trappola già
-                // costata tempo altrove in questo progetto), quindi va letto
-                // così, per nome, da dentro la pagina.
-                const card = Object.assign({}, cardDatabase.find((c) => c.type === 'monster' && !c.extraDeck && (c.level || 4) <= 4), { uid: 'mp_test_monster' });
-                gameState.playerHand[0] = card;
-                summonMonster(card, 0, 'attack', 0);
-                return card.name;
-            });
-            await watcher.waitForFunction(
-                (name) => !!gameState.botMonsterField[0] && gameState.botMonsterField[0].card.name === name,
-                monsterName,
-                { timeout: 15000 }
-            );
-            const summonSeen = await watcher.evaluate(() => ({
-                position: gameState.botMonsterField[0].position,
-                handCount: gameState.botHand.length
-            }));
-            assert(summonSeen.position === 'attack', 'Evocazione: la Posizione deve arrivare all\'avversario');
-            await checksumsMatch('Dopo l\'Evocazione');
-
-            // --- 2) Magia/Trappola coperta -------------------------------
-            await actor.evaluate(() => {
-                const card = Object.assign({}, cardDatabase.find((c) => c.type === 'trap'), { uid: 'mp_test_trap' });
-                gameState.playerHand[1] = card;
-                setSpellTrap(card, 0, 1);
-            });
-            await watcher.waitForFunction(() => !!gameState.botSTField[0], { timeout: 15000 });
-            const stSeen = await watcher.evaluate(() => ({
-                faceDown: gameState.botSTField[0].isFaceDown,
-                handCount: gameState.botHand.length
-            }));
-            assert(stSeen.faceDown === true, 'Una carta Settata deve restare coperta anche dal lato avversario');
-            assert(stSeen.handCount === summonSeen.handCount - 1, 'Ogni carta giocata deve far calare di 1 la mano vista dall\'avversario');
-            await checksumsMatch('Dopo la carta coperta');
-
-            // --- 3) Magia Terreno (una regressione già corretta) ----------
-            // Prima del ramo 'fieldspell' in multiplayer.js questo messaggio
-            // finiva nel `default: break`: la mano dell'avversario non
-            // calava, il checksum divergeva e partiva un resync completo.
-            // Qui si verifica sia l'effetto visibile (la Magia Terreno c'è)
-            // sia l'assenza di quel sintomo (nessuna richiesta di resync).
-            await watcher.evaluate(() => { window.__mpSent.length = 0; });
-            await actor.evaluate(() => {
-                const card = Object.assign({}, cardDatabase.find((c) => c.type === 'spell' && c.subtype === 'field'), { uid: 'mp_test_field' });
-                gameState.playerHand[2] = card;
-                setFieldSpell(card, 2);
-            });
-            await watcher.waitForFunction(() => !!gameState.botFieldSpell, { timeout: 15000 });
-            const fieldSeen = await watcher.evaluate(() => ({
-                handCount: gameState.botHand.length,
-                sent: window.__mpSent.slice()
-            }));
-            assert(fieldSeen.handCount === stSeen.handCount - 1,
-                'Magia Terreno: la mano dell\'avversario deve calare di 1 (era proprio questo a far divergere il checksum)');
-            assert(!fieldSeen.sent.includes('request-resync'),
-                `Magia Terreno: nessun resync deve più scattare (inviati: ${JSON.stringify(fieldSeen.sent)})`);
-            await checksumsMatch('Dopo la Magia Terreno');
-
-            // --- 4) Catena: il difensore risponde DAVVERO lui -------------
-            // Due buchi chiusi insieme qui. La finestra di risposta a
-            // un'Evocazione si apriva SOLO sul client di chi evocava, e lì
-            // a decidere per il difensore era l'euristica dell'IA: la
-            // persona dall'altra parte non veniva mai interpellata, e la
-            // sua vera mano non la conosceva nessuno. Ora la domanda arriva
-            // a chi ha le carte e la risposta torna indietro.
-            await watcher.evaluate(() => {
-                const trap = Object.assign({}, cardDatabase.find((c) => c.id === 40), { uid: 'mp_test_trap_hole' });
-                gameState.playerHand[0] = trap;
-                // Chi non è di turno non può Settare una carta: il server lo
-                // rifiuta (giustamente), quindi qui la Trappola si mette
-                // in campo con la trasmissione della mossa spenta e si
-                // comunica poi la situazione con una fotografia di stato,
-                // che non è legata al turno.
-                // Il broadcast di 'spelltrap' parte in differita, quindi si
-                // filtra quel solo tipo di messaggio invece di spegnere tutto
-                // per la durata della chiamata.
-                const broadcastVero = window.MP_broadcast;
-                window.MP_broadcast = (azione) => { if (azione && azione.kind !== 'spelltrap') broadcastVero(azione); };
-                setSpellTrap(trap, 1, 0);
-                setTimeout(() => DuelEngine.broadcastLocalStatePush(null), 500);
-            });
-            await actor.waitForFunction(() => !!gameState.botSTField[1], { timeout: 15000 });
-            // Una Trappola non può rispondere nel turno in cui è stata
-            // piazzata: la si retrodata invece di far passare un turno
-            // intero solo per arrivare a questo punto.
-            await watcher.evaluate(() => { gameState.playerSTField[1].setOnTurn = 0; });
-
-            await actor.evaluate(() => {
-                gameState.hasNormalSummoned = false; // una seconda Evocazione, solo per il test
-                const card = Object.assign({}, cardDatabase.find((c) => c.type === 'monster' && !c.extraDeck && (c.level || 4) <= 4 && c.attack >= 1000), { uid: 'mp_test_monster2' });
-                gameState.playerHand[3] = card;
-                summonMonster(card, 1, 'attack', 3);
-            });
-            // Il difensore riceve davvero la domanda...
-            await watcher.waitForSelector('#activateModal.open', { timeout: 20000 });
-            await watcher.click('#activateConfirmBtn');
-            // ...e la sua risposta arriva a chi ha evocato: il mostro appena
-            // messo in campo sparisce da ENTRAMBI i lati, senza che nessuno
-            // dei due client abbia indovinato nulla per conto dell'altro.
-            await actor.waitForFunction(() => gameState.playerMonsterField[1] === null, { timeout: 25000 });
-            await watcher.waitForFunction(() => gameState.botMonsterField[1] === null, { timeout: 25000 });
-            await checksumsMatch('Dopo la Catena');
-
-            // --- 5) Resa: l'esito deve arrivare all'avversario ------------
+            // --- Resa: l'esito deve arrivare all'avversario ---------------
             // DuelSession.finish naviga via dalla pagina ~900ms dopo la fine
             // del duello: neutralizzata su ENTRAMBI i lati perché il test
             // possa leggere l'esito. È l'unica cosa stubbata in tutto lo

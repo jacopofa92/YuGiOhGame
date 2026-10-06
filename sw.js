@@ -403,7 +403,9 @@
 // v159: indicatore dell'attesa di una decisione remota nel Multiplayer.
 // v160: una risposta HTTP non valida non sostituisce più una copia buona;
 // le scritture vengono attese prima di concludere la risposta intercettata.
-const CACHE_NAME = 'ygo-duel-arena-v160';
+// v161: il client Multiplayer usa esclusivamente il passo comune; rimossi
+// dispatcher, messaggi per singola mossa e fotografie di stato legacy.
+const CACHE_NAME = 'ygo-duel-arena-v161';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

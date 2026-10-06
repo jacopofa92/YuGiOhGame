@@ -66,8 +66,8 @@ JSDoc), niente build, `file://` resta.
     allineate su 8 coppie e 3 livelli;
   - pagina: `js/multiplayer/mp-passo-comune.js` (scambio mazzi e seme dentro
     `initGame`, invio a lotti, ripresa dopo una caduta di linea); il server
-    accetta 'mazzo', 'passo', 'passo-riprendi'. Con un client o un relay della
-    versione precedente si ripiega da soli sul protocollo vecchio.
+    accetta 'mazzo', 'passo', 'passo-riprendi'. Il protocollo versione 2 è
+    obbligatorio: un client o relay precedente produce un errore esplicito.
 - **Dopo, su segnalazione dell'utente** (`d46d30a`): la morra cinese del
   Multiplayer fa scegliere al vincitore chi comincia e si chiude su entrambi
   (messaggio 'rps' con `iniziaChiManda`); il campo del Multiplayer non sborda
@@ -90,13 +90,20 @@ ora emette `attesa-decisione-remota` da `PassoComune`; la pagina mostra vicino
 all'avversario «L'avversario sta scegliendo…» finché la risposta non viene
 consumata, senza polling.
 
+Sul branch `refactor/rimuovi-protocollo-multiplayer-vecchio` il client legacy
+è stato rimosso: nessuna replica di mosse, mano a segnaposto, fotografia di
+stato o coda di scelte per uid. `multiplayer.js` gestisce solo connessione,
+abbandono, rientro e `game-over`; un guardrail impedisce il ritorno delle API
+eliminate. Il relay mantiene temporaneamente l'allowlist precedente per non
+tagliare fuori l'APK beta.21 prima che ne venga distribuito uno nuovo.
+
 **Cosa resta** (dettagli in `WORK_IN_PROGRESS.md`):
 
 1. Bilanciamento delle difficoltà con dati veri: ora si può, il duello senza
    testa gioca IA contro IA in ~0,1 s a partita (`--giocatore`,
    `--livello-giocatore`).
-2. Togliere il protocollo Multiplayer vecchio quando server e client saranno
-   tutti aggiornati (elenco dei pezzi in `WORK_IN_PROGRESS.md`).
+2. Completare il rollout del Multiplayer nuovo: APK aggiornata, poi allowlist
+   legacy rimossa dal relay, suite completa e merge del branch dedicato.
 3. I circa 400 ternari "player ? … : bot …" del nucleo si possono portare sugli
    accessori di `Tavolo` un file alla volta (non bloccano nulla).
 4. Più grandi: tutorial; Forbidden Memories come secondo set di regole.
@@ -110,14 +117,14 @@ consumata, senza polling.
 - Applicazione HTML/CSS/JavaScript puro: nessun framework, bundler o build del
   frontend. Gli script globali devono essere caricati nell'ordine giusto.
 - 19 pagine HTML, 104 file JS applicativi sotto `js/` (esclusi i vendor),
-  1.129 carte, 207 spec Playwright (2026-10-06). I numeri invecchiano:
+  1.129 carte, 202 spec Playwright (2026-10-06). I numeri invecchiano:
   contarli quando contano.
 - 3 `missingEffectNote` in `data/cards.json` (192, 235, 622): promemoria su
   limiti del motore, vedi `CLAUDE.md`.
 - PWA tramite `manifest.json`, `sw.js` e `js/pwa-register.js`.
 - App Android/Capacitor: nel repository è presente un vecchio APK beta.21;
   non coincide con la versione sorgente 1.0.43; la cache WebView/PWA corrente
-  è `ygo-duel-arena-v160`.
+  è `ygo-duel-arena-v161` sul branch di rimozione del protocollo legacy.
 - Cloud tramite Supabase; multiplayer tramite relay WebSocket Node nativo.
 - Le preferenze utente (`save.settings`: dettagli video, ologrammi, aptica,
   volume e mute musica/SFX) fanno parte del salvataggio unificato e quindi di
@@ -407,14 +414,12 @@ e ascoltano gli eventi del canale.
   stato di chi lo manda, confrontato da chi lo riceve. Stato SPECCHIATO: ogni
   client chiama 'player' sé stesso. Costo dichiarato: ogni client ha in
   memoria mazzo e mano dell'altro.
-- **Protocollo vecchio** (mosse raccontate, mano a segnaposto, fotografie di
-  stato): resta solo come ripiego con un avversario o un relay della versione
-  precedente; gli spec che lo verificano lo forzano con
-  `MP_SENZA_PASSO_COMUNE`. L'audit del 2026-10-06 ha contato 23 invii legacy,
-  un dispatcher `applyRemote*` da oltre 600 righe e 10 spec ancora forzati sul
-  vecchio percorso. La rimozione richiede un branch dedicato e una nuova APK
-  distribuita prima del merge: la beta.21 presente nel repository dipende da
-  questa compatibilità. Checklist completa in `WORK_IN_PROGRESS.md`.
+- **Protocollo vecchio**: rimosso dal client sul branch dedicato. Non esistono
+  più mosse raccontate, segnaposto, fotografie di stato, resync o dispatcher
+  `applyRemote*`; il guardrail `guardrail-protocollo-multiplayer-unico` lo
+  sorveglia. Il relay accetta ancora temporaneamente i vecchi tipi soltanto
+  per la beta.21 già distribuita: dopo una nuova APK si restringe l'allowlist,
+  si esegue la suite completa e si può unire il branch.
 - La morra cinese: il vincitore sceglie chi comincia, e la scelta viaggia
   ('rps' con `iniziaChiManda`).
 - Il server inoltra le azioni ma non è un motore autorevole: la logica resta
