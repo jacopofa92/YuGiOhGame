@@ -213,12 +213,48 @@
         867: 'Completa il capitolo Regno dei Duellanti.', 868: 'Completa Battle City I.',
         869: 'Completa il Mondo Virtuale.', 870: 'Completa Battle City II.',
         246: 'Prima copia: 25 vittorie contro Pegasus a Difficile; poi rarissima in offerte premium.',
-        1: 'Prima copia dalle sfide contro Kaiba; poi può apparire raramente nel Negozio.',
-        2: 'Prima copia dalle sfide contro Yugi/Yami Yugi; poi può apparire raramente nel Negozio.',
-        12: 'Prima copia dalle sfide contro Joey; poi può apparire raramente nel Negozio.',
-        123: 'Prima copia dalle sfide contro Pegasus; poi può apparire raramente nel Negozio.',
-        291: 'Prima copia dalle sfide contro Mai; poi può apparire raramente nel Negozio.'
+        1: 'Ottieni una copia a 50 e una a 100 vittorie contro Kaiba a Difficile. Dopo il primo sblocco può apparire raramente nel Negozio, fino al limite di 3 copie.',
+        2: 'Ottieni una copia a 50 e una a 100 vittorie complessive contro Yugi Muto o Yami Yugi a Difficile. Dopo il primo sblocco può apparire raramente nel Negozio.',
+        12: 'Sconfiggi Joey 50 volte a Difficile. Dopo il primo sblocco può apparire raramente nel Negozio.',
+        123: 'Sconfiggi Pegasus 50 volte a Difficile. Dopo il primo sblocco può apparire raramente nel Negozio.',
+        291: 'Sconfiggi Mai 50 volte a Difficile. Dopo il primo sblocco può apparire raramente nel Negozio.'
     };
+
+    EXODIA.forEach((id) => {
+        SOURCES[id] = 'Drop dopo una vittoria PvE: 0,15% a Facile, 0,45% a Normale e 0,90% a Difficile. Contro Seeker a Difficile la probabilità raddoppia; ogni 10 vittorie è garantito un pezzo mancante. Pity globale dopo 250 vittorie valide senza un pezzo.';
+    });
+
+    function progressoSfida(id) {
+        if (!window.SaveManager || typeof SaveManager.getChallengeProgress !== 'function') return 0;
+        return Number((SaveManager.getChallengeProgress(id) || {}).count) || 0;
+    }
+
+    /** Progresso leggibile mostrato nella Cartoteca solo quando ha senso. */
+    function progressFor(cardId) {
+        const id = Number(cardId);
+        const s = state();
+        const c = s.counters;
+        const sfide = {
+            1: [['carta-kaiba-drago-bianco-50', 50], ['carta-kaiba-drago-bianco-100', 100]],
+            2: [['carta-yugi-mago-nero-50', 50], ['carta-yugi-mago-nero-100', 100]],
+            12: [['carta-joey-occhi-rossi-50', 50]],
+            123: [['carta-pegasus-toon-50', 50]],
+            246: [['carta-pegasus-elefante-25', 25]],
+            291: [['carta-mai-piumino-50', 50]],
+            866: [['carta-bakura-destiny-board-25', 25]]
+        };
+        if (sfide[id]) return sfide[id].map(([challengeId, target]) =>
+            `${Math.min(progressoSfida(challengeId), target)}/${target}`).join(' · ');
+        if (EXODIA.indexOf(id) !== -1) {
+            return `Pity globale: ${Math.min(s.exodiaPity || 0, RULES.exodiaPity)}/${RULES.exodiaPity} · Seeker a Difficile: ${(c.seekerHard || 0) % RULES.seekerGuaranteeEvery}/${RULES.seekerGuaranteeEvery}`;
+        }
+        if (id === 31) return `Battle City I Difficile: ${s.completedChaptersByDifficulty['battlecity1:difficile'] ? 'completata' : 'da completare'} · Strings: ${Math.min(c.sliferStringsHard || 0, 30)}/30 · vittoria con almeno 4000 LP: ${Math.min(c.sliferStringsHealthy || 0, 1)}/1`;
+        if (id === 472) return `Battle City II Difficile: ${s.completedChaptersByDifficulty['battlecity2:difficile'] ? 'completata' : 'da completare'} · tornei Battle City: ${Math.min(c.battleCityHardWins || 0, 3)}/3 · Marik: ${Math.min(c.raMarikHard || 0, 40)}/40 · vittorie controllate: ${Math.min(c.raMarikControlled || 0, 10)}/10`;
+        if (id === 30) return `Ricompensa: ${s.claimed['obelisk-anime'] ? 'ottenuta' : 'non ancora ottenuta'}`;
+        const capitolo = Object.keys(SPIRIT_BY_CHAPTER).find((key) => SPIRIT_BY_CHAPTER[key] === id);
+        if (capitolo) return `Capitolo richiesto: ${s.completedChapters[capitolo] ? 'completato' : 'da completare'}`;
+        return '';
+    }
 
     window.CardAcquisition = {
         EXODIA: EXODIA, SIGNATURE_GATED: SIGNATURE_GATED, RULES: RULES,
@@ -227,6 +263,7 @@
         isSignatureUnlocked: isSignatureUnlocked, isChapterComplete: isChapterComplete,
         unlockPack: unlockPack, isPackUnlocked: isPackUnlocked,
         persistAnimation: animateDrop,
+        progressFor: progressFor,
         sourceFor: (id) => {
             const db = typeof cardDatabase !== 'undefined' ? cardDatabase : (window.cardDatabase || []);
             const card = db.find((c) => c.id === id);

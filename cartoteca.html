@@ -480,6 +480,14 @@
     .card-modal-stat.atk { color: #ff8a7a; }
     .card-modal-stat.def { color: #7dd3fc; }
     .card-modal-effect { color: #dbe6ff; line-height: 1.5; font-size: 0.92rem; }
+    .card-modal-acquisition {
+        display: grid; gap: 6px; margin-top: 14px; padding: 12px 14px;
+        border: 1px solid rgba(247,215,116,.35); border-radius: 10px;
+        background: rgba(247,215,116,.07); color: #dbe6ff;
+        font-size: .84rem; line-height: 1.45;
+    }
+    .card-modal-acquisition strong { color: #f7d774; font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; }
+    .card-modal-acquisition small { color: #8ee6b0; font-size: .76rem; font-weight: 700; }
     .card-modal-partial-note {
         margin-top: 10px;
         padding: 10px 12px;
@@ -1098,7 +1106,7 @@
                 </div>
             ` : ''}
             <p class="card-modal-effect">${effectText || (card.type === 'monster' ? `${cardTerms.monsterSingular} normale senza effetto speciale.` : 'Questa carta non presenta un effetto scritto.')}</p>
-            ${window.CardAcquisition ? `<p class="card-modal-effect"><strong>Come si ottiene:</strong> ${CardAcquisition.sourceFor(card.id)}</p>` : ''}
+            ${window.CardAcquisition ? `<div class="card-modal-acquisition"><strong>Come si ottiene</strong><span>${CardAcquisition.sourceFor(card.id)}</span>${CardAcquisition.progressFor && CardAcquisition.progressFor(card.id) ? `<small>Progresso: ${CardAcquisition.progressFor(card.id)}</small>` : ''}</div>` : ''}
             ${card.missingEffectNote ? `<p class="card-modal-partial-note">🟡 Effetto implementato parzialmente: ${card.missingEffectNote}</p>` : ''}
         `;
 
