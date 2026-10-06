@@ -58,11 +58,24 @@
     function numero(n) { return Number(n).toLocaleString('it-IT'); }
 
     function applicaEmblema(nodo, busta) {
+        const mostroId = busta && busta.mostroSimboloId;
+        if (mostroId) {
+            const carta = cartaPerId(mostroId);
+            const immagine = document.createElement('img');
+            immagine.src = carta && typeof window.getCardImagePath === 'function'
+                ? window.getCardImagePath(carta)
+                : `images/cards/${mostroId}.jpg`;
+            immagine.alt = carta ? carta.name : '';
+            immagine.loading = 'lazy';
+            nodo.classList.add('pack-theme-monster');
+            nodo.appendChild(immagine);
+            return;
+        }
         const pos = busta && busta.emblema;
         if (!pos) { nodo.textContent = '✦'; return; }
         nodo.classList.add('pack-emblem-sprite');
         nodo.style.setProperty('--emblem-x', `${pos[0] * 100 / 3}%`);
-        nodo.style.setProperty('--emblem-y', `${pos[1] * 100 / 2}%`);
+        nodo.style.setProperty('--emblem-y', '0%');
     }
 
     /**

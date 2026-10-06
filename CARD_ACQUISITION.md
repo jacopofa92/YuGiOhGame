@@ -33,7 +33,10 @@ Segrete e Mitiche non entrano nelle buste generiche.
 - Ogni tematica contiene soltanto carte del proprio soggetto. Quattro slot
   sono creature base deboli; nella Premium gli slot base sono due.
 - Le illustrazioni delle confezioni usano lo sprite originale
-  `images/shop/pack-emblems.png`, generato per il progetto senza testo.
+  `images/shop/generic-pack-emblems.png`, generato per il progetto senza
+  testo. Le buste tematiche usano invece l'artwork di un mostro simbolo del
+  tema già presente in `images/cards/` (per esempio Drago Bianco per i Draghi
+  e Lady Arpia per le Arpie), non un emblema inventato.
 
 Le carte firma entrano nel commercio soltanto dopo la prima copia ottenuta
 dalla relativa impresa. I boss come Genesi del Vampiro sono Leggendari e

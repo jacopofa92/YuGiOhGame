@@ -176,11 +176,28 @@
     width: 46%;
     aspect-ratio: 1;
     font-size: 0;
-    background-image: url('../../images/shop/pack-emblems.png');
-    background-size: 400% 300%;
+    background-image: url('../../images/shop/generic-pack-emblems.png');
+    background-size: 400% 100%;
     background-position: var(--emblem-x) var(--emblem-y);
     background-repeat: no-repeat;
     filter: drop-shadow(0 5px 8px rgba(0,0,0,.72));
+}
+.po-pack-emblem.pack-theme-monster {
+    width: 52%;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border: 1px solid rgba(255, 235, 174, .68);
+    border-radius: 50% 50% 46% 46%;
+    background: rgba(5, 8, 18, .75);
+    box-shadow: 0 0 0 2px rgba(25, 18, 8, .55), 0 6px 14px rgba(0, 0, 0, .75), inset 0 0 14px rgba(255, 215, 112, .24);
+}
+.po-pack-emblem.pack-theme-monster img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    object-position: center;
+    transform: scale(1.08);
 }
 .po-pack-count {
     position: absolute;

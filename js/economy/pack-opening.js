@@ -129,11 +129,21 @@
         corpo.appendChild(el('div', 'po-pack-tear'));
         corpo.appendChild(el('div', 'po-pack-band', (busta && busta.nomeBreve) || (busta && busta.nome) || 'BUSTINA'));
         const emblema = el('div', 'po-pack-emblem');
+        const mostroId = busta && busta.mostroSimboloId;
+        const cartaSimbolo = mostroId ? cartaPerId(mostroId) : null;
         const pos = busta && busta.emblema;
-        if (pos) {
+        if (mostroId) {
+            const immagine = document.createElement('img');
+            immagine.src = cartaSimbolo && typeof window.getCardImagePath === 'function'
+                ? window.getCardImagePath(cartaSimbolo)
+                : `images/cards/${mostroId}.jpg`;
+            immagine.alt = cartaSimbolo ? cartaSimbolo.name : '';
+            emblema.classList.add('pack-theme-monster');
+            emblema.appendChild(immagine);
+        } else if (pos) {
             emblema.classList.add('pack-emblem-sprite');
             emblema.style.setProperty('--emblem-x', `${pos[0] * 100 / 3}%`);
-            emblema.style.setProperty('--emblem-y', `${pos[1] * 100 / 2}%`);
+            emblema.style.setProperty('--emblem-y', '0%');
         } else emblema.textContent = '✦';
         corpo.appendChild(emblema);
         corpo.appendChild(el('div', 'po-pack-count', `${(busta && busta.carte) || ''} CARTE`));

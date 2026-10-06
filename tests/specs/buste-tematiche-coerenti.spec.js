@@ -35,6 +35,23 @@ module.exports = {
                 assert(r.deboliTrovati >= r.richieste,
                     `${r.tema}: attese ${r.richieste} creature base, trovate ${r.deboliTrovati}`);
             });
+
+            const simboli = await page.evaluate(() => ({
+                temi: ShopCatalog.TEMI.map((t) => ({
+                    id: t.id,
+                    mostroId: t.mostroSimboloId,
+                    carta: cardDatabase.find((c) => c.id === t.mostroSimboloId)
+                })),
+                generiche: ShopCatalog.BUSTE.map((b) => ({ emblema: b.emblema, mostroId: b.mostroSimboloId }))
+            }));
+            simboli.temi.forEach((tema) => {
+                assert(tema.mostroId && tema.carta && tema.carta.type === 'monster',
+                    `${tema.id}: manca un mostro simbolo valido`);
+            });
+            simboli.generiche.forEach((busta) => {
+                assert(Array.isArray(busta.emblema), 'una busta generica non ha il proprio emblema originale');
+                assert(!busta.mostroId, 'una busta generica usa per errore il mostro di una tematica');
+            });
         } finally {
             await context.close();
         }

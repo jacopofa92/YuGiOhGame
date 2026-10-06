@@ -32,6 +32,9 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.1.2 — le buste generiche conservano emblemi originali, mentre quelle
+ *   tematiche espongono l'artwork di un vero mostro simbolo del tema.
+ *
  * 1.1.1 — Drop Exodia triplicati, Slifer a 30 vittorie su Strings,
  *   buste tematiche bilanciate con creature base e nuove illustrazioni;
  *   pulsante admin temporaneo per provare la cinematica ricompensa.
@@ -620,4 +623,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.1.1';
+window.GAME_VERSION = '1.1.2';

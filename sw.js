@@ -406,7 +406,8 @@
 // v161: il client Multiplayer usa esclusivamente il passo comune; rimossi
 // dispatcher, messaggi per singola mossa e fotografie di stato legacy.
 // v165: nuovi emblemi illustrati e bilanciamento di drop/buste tematiche.
-const CACHE_NAME = 'ygo-duel-arena-v165';
+// v166: emblemi originali solo sulle generiche; artwork veri sulle tematiche.
+const CACHE_NAME = 'ygo-duel-arena-v166';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -559,7 +560,6 @@ const APP_SHELL = [
     'js/economy/shop.css',
     'js/economy/pack-opening.js',
     'js/economy/pack-opening.css',
-    'images/shop/pack-emblems.png',
     'js/ui/deck-box.js',
     'js/ui/deck-box.css',
     'js/ui/mp-lobby.css',
