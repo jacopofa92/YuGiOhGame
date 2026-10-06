@@ -112,6 +112,22 @@
        inserisce lo stesso markup di duelMonstersCore.html quando è il
        momento. */
     #arenaMount:empty { display: none; }
+    /* A duello avviato #arenaMount sta fra <body> e .game-container, che
+       nell'arena (duelMonstersCore.html) è un figlio DIRETTO del body:
+       body è una colonna flessibile alta quanto la finestra, e il campo
+       prende lo spazio che resta (flex: 1, min-height: 0). Un #arenaMount
+       semplice blocco spezzava quella catena: il campo cresceva quanto il
+       suo contenuto (919px su una finestra da 900), lo stepper delle fasi
+       non veniva più compresso e la pagina scorreva — i "layout un po'
+       disallineati a inizio partita" segnalati dall'utente in Multiplayer.
+       Qui #arenaMount diventa a sua volta quella colonna, e il campo si
+       comporta come nella pagina del duello. */
+    body.mp-in-duello #arenaMount {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
 </style>
 </head>
 <body>

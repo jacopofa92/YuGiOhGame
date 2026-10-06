@@ -39,6 +39,10 @@
     // rivelazione: è il ritmo con cui si gioca davvero.
     const CHANT = ['Sasso…', 'Carta…', 'Forbice!'];
     const CHANT_STEP_MS = 300;
+    // Multiplayer: quanto aspettare la scelta del vincitore ("comincio io /
+    // comincia lui") prima di far cominciare lui comunque — un avversario con
+    // la versione precedente del gioco non la manda.
+    const ATTESA_SCELTA_INIZIO_MS = 20000;
 
     function choiceById(id) {
         return CHOICES.find((c) => c.id === id);
@@ -66,14 +70,16 @@
      *                  persona e non un sorteggio locale:
      *   - inviaScelta(id)      trasmette la propria mossa all'altro
      *   - attendiScelta()      Promise con la mossa dell'altro
-     *   Con queste due presenti cambiano tre cose, tutte per la stessa
-     *   ragione — i due schermi devono raccontare la STESSA morra:
-     *   la mossa avversaria non si sorteggia ma si aspetta; chi vince
-     *   comincia e basta (lasciar scegliere vorrebbe dire far viaggiare
-     *   anche quella decisione, e il vincitore terrebbe l'altro fermo
-     *   davanti a un pannello che non spiega cosa sta aspettando); e un
-     *   pareggio si rigioca DA SÉ, senza un pulsante che i due
-     *   premerebbero in momenti diversi.
+     *   - inviaInizio(starter) trasmette chi comincia, scelto dal vincitore
+     *   - attendiInizio()      Promise con quella scelta, già dal nostro
+     *                          punto di vista ('player' | 'bot')
+     *   Con queste presenti cambiano tre cose, tutte per la stessa ragione
+     *   — i due schermi devono raccontare la STESSA morra: la mossa
+     *   avversaria non si sorteggia ma si aspetta; chi vince sceglie e la
+     *   scelta viaggia, così il pannello si chiude su entrambi nello stesso
+     *   momento (chi ha perso legge che l'altro sta scegliendo); e un
+     *   pareggio si rigioca DA SÉ, senza un pulsante che i due premerebbero
+     *   in momenti diversi.
      */
     function play(opponent, opts) {
         const remoto = !!(opts && typeof opts.attendiScelta === 'function');
@@ -213,9 +219,46 @@
                     primary.textContent = 'Rigioca ↻';
                     primary.onclick = resetForNewRound;
                     useSecondary('', null);
+                } else if (remoto && typeof opts.inviaInizio === 'function' && typeof opts.attendiInizio === 'function') {
+                    // Contro una persona chi vince SCEGLIE, come contro l'IA,
+                    // e la scelta VIAGGIA: appena il vincitore decide, il
+                    // pannello si chiude su entrambi gli schermi. Prima ognuno
+                    // doveva premere il proprio "Inizia il duello", e chi non
+                    // l'aveva ancora premuto restava fermo davanti alla morra
+                    // mentre l'altro era già in partita (segnalato
+                    // dall'utente giocando su due dispositivi).
+                    if (result === 'win') {
+                        sub.textContent = 'Hai vinto la morra: scegli chi gioca per primo.';
+                        const scegli = (starter) => {
+                            primary.onclick = null;
+                            secondary.onclick = null;
+                            opts.inviaInizio(starter);
+                            finish(starter);
+                        };
+                        primary.textContent = '⚔️ Comincio io';
+                        primary.onclick = () => scegli('player');
+                        useSecondary('🛡️ Comincia lui', () => scegli('bot'));
+                    } else {
+                        sub.textContent = `${opponentName} ha vinto la morra e sta scegliendo chi comincia…`;
+                        primary.style.visibility = 'hidden';
+                        useSecondary('', null);
+                        // `starter` arriva già dal NOSTRO punto di vista (vedi
+                        // attendiInizio in mp-lobby.js). Un avversario con la
+                        // versione precedente del gioco non manda la scelta:
+                        // dopo il tetto comincia lui, com'era allora.
+                        let chiuso = false;
+                        const chiudi = (starter) => {
+                            if (chiuso) return;
+                            chiuso = true;
+                            primary.style.visibility = '';
+                            finish(starter);
+                        };
+                        opts.attendiInizio().then(chiudi);
+                        setTimeout(() => chiudi('bot'), ATTESA_SCELTA_INIZIO_MS);
+                    }
                 } else if (remoto) {
-                    // Contro una persona chi vince comincia, senza scelta:
-                    // vedi il commento su `opts` in cima a play().
+                    // Senza il canale per la scelta (chiamante più vecchio):
+                    // chi vince comincia, e ognuno preme il proprio pulsante.
                     const hoVinto = result === 'win';
                     sub.textContent = hoVinto
                         ? 'Hai vinto la morra: cominci tu.'

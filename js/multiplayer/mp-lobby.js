@@ -594,7 +594,11 @@
         // aperto il proprio pannello (l'altro ha scelto in fretta): si
         // conserva, e attendiSceltaRps la trova già lì.
         if (azione.kind === 'rps') {
-            riceviSceltaRps(azione.scelta);
+            // Lo stesso tipo porta due cose: la mossa (`scelta`) e, a morra
+            // vinta, chi comincia (`iniziaChiManda`). Un tipo nuovo andrebbe
+            // aggiunto anche al relay e ridistribuito; un campo in più no.
+            if (typeof azione.iniziaChiManda === 'boolean') riceviInizioRps(azione.iniziaChiManda);
+            else riceviSceltaRps(azione.scelta);
             return;
         }
 
@@ -803,6 +807,32 @@
         return new Promise((risolvi) => { attesaSceltaRps = risolvi; });
     }
 
+    // Chi comincia, deciso dal vincitore: stesso schema della mossa qui
+    // sopra (può arrivare prima che di qua l'esito sia a schermo).
+    let inizioAvversarioRps = null;    // il valore arrivato, già dal nostro punto di vista
+    let attesaInizioRps = null;
+
+    /** `iniziaChiManda`: vero se a cominciare è chi ha mandato il messaggio, cioè l'avversario. */
+    function riceviInizioRps(iniziaChiManda) {
+        const starter = iniziaChiManda ? 'bot' : 'player';
+        if (attesaInizioRps) {
+            const risolvi = attesaInizioRps;
+            attesaInizioRps = null;
+            risolvi(starter);
+            return;
+        }
+        inizioAvversarioRps = starter;
+    }
+
+    function attendiInizioRps() {
+        if (inizioAvversarioRps) {
+            const starter = inizioAvversarioRps;
+            inizioAvversarioRps = null;
+            return Promise.resolve(starter);
+        }
+        return new Promise((risolvi) => { attesaInizioRps = risolvi; });
+    }
+
     function morraCinese(youStart) {
         const ripiego = youStart ? 'player' : 'bot';
         if (!window.DuelRPS || window.DUEL_RPS_SKIP) return Promise.resolve(ripiego);
@@ -810,7 +840,10 @@
         const nomeAvversario = ($('mpSeatOppName') && $('mpSeatOppName').textContent.trim()) || 'Avversario';
         return DuelRPS.play({ name: nomeAvversario }, {
             inviaScelta: (id) => net.sendAction({ kind: 'rps', scelta: id }),
-            attendiScelta: attendiSceltaRps
+            attendiScelta: attendiSceltaRps,
+            // `starter` è dal MIO punto di vista: 'player' = comincio io.
+            inviaInizio: (starter) => net.sendAction({ kind: 'rps', iniziaChiManda: starter === 'player' }),
+            attendiInizio: attendiInizioRps
         }).catch(() => ripiego);
     }
 
