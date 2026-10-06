@@ -85,14 +85,14 @@ module.exports = {
         // Media già presente: cache-first puro, senza chiamare la rete.
         rispostaInCache = risposta(true, 'campo-in-cache');
         const retePrima = chiamateRete;
-        const mediaRestituito = await intercetta('images/fields/arena.jpg');
+        const mediaRestituito = await intercetta('images/fields/anticoEgittoGiorno_1.jpg');
         assert(mediaRestituito === rispostaInCache, 'Un media già memorizzato viene servito dalla cache');
         assert(chiamateRete === retePrima, 'Con un media in cache la rete non viene interrogata');
 
         // Media nuovo valido: stessa garanzia sulla scrittura completata.
         rispostaInCache = null;
         rispostaDiRete = risposta(true, 'campo-nuovo');
-        const richiestaMedia = intercetta('images/fields/nuovo.jpg');
+        const richiestaMedia = intercetta('images/fields/anticoEgittoGiorno_2.jpg');
         let mediaConcluso = false;
         richiestaMedia.then(() => { mediaConcluso = true; });
         await new Promise((resolve) => setImmediate(resolve));
