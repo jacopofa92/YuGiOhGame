@@ -8,9 +8,9 @@
  *  - lo SCAMBIO DEI MAZZI all'avvio. A passo comune ogni client esegue la
  *    partita intera, quindi deve conoscere anche il mazzo dell'altro. Ognuno
  *    manda il proprio (la specifica: id e quantità), l'host anche il SEME
- *    della casualità di gioco. Se l'altro non risponde entro il tetto è un
- *    client più vecchio: `prepara` fallisce e il duello parte col
- *    Multiplayer di prima (initGame in js/engine/game-flow.js).
+ *    della casualità di gioco. Il passo comune è l'unico protocollo
+ *    supportato: se l'altro client o il relay non lo conoscono, `prepara`
+ *    fallisce con un errore leggibile invece di avviare due motori diversi.
  *    Costo dichiarato: ogni client ha in memoria mazzo e mano dell'altro.
  *
  *  - l'INVIO A LOTTI. Il relay accetta 20 messaggi al secondo per giocatore
@@ -34,7 +34,9 @@
 const MpPassoComune = (function () {
     'use strict';
 
-    /** Quanto aspettare il mazzo dell'altro prima di ripiegare sul protocollo vecchio. */
+    /** Versione del protocollo deterministico scambiata insieme al mazzo. */
+    const VERSIONE_PROTOCOLLO = 2;
+    /** Quanto aspettare prima di dichiarare incompatibile/non raggiungibile l'altro client. */
     const ATTESA_MAZZO_MS = 15000;
     /** Un lotto più grande di così si spezza: il relay accetta messaggi fino a 64 KB. */
     const LOTTO_MAX_CARATTERI = 40000;
@@ -46,6 +48,8 @@ const MpPassoComune = (function () {
 
     let mazzoAvversario = null;   // { spec, seme }
     let attesaMazzo = null;       // chi lo sta aspettando
+    let rifiutaAttesaMazzo = null;
+    let timerAttesaMazzo = null;
     let inAttesaDelMotore = [];   // messaggi arrivati prima di PassoComune.avvia
     let coda = [];
     let lottoProgrammato = false;
@@ -79,13 +83,18 @@ const MpPassoComune = (function () {
             if (!azione) return;
             if (azione.kind === 'mazzo') { riceviMazzo(azione); return; }
             if (azione.kind === 'passo') { consegna(azione.messaggi); return; }
-            if (azione.kind === 'passo-riprendi') { rimanda(azione.ultimo); }
+            if (azione.kind === 'passo-riprendi') { rimanda(azione.ultimo); return; }
+            // Un client precedente racconta le mosse invece di scambiare
+            // il mazzo. Riconoscerlo evita quindici secondi di campo fermo.
+            if (rifiutaAttesaMazzo && ['phase', 'summon', 'tribute', 'position', 'spelltrap', 'fieldspell', 'attack', 'activate', 'state-push', 'state-sync'].includes(azione.kind)) {
+                rifiutaAttesaMazzo('L\'avversario usa una versione Multiplayer non più compatibile');
+            }
         });
         // Rientrato io: chiedo quello che ho perso. Rientrato lui: lo chiede
         // lui, ma gli rimando comunque subito quello che il relay non gli ha
         // potuto consegnare mentre non c'era (le due richieste si coprono a
         // vicenda, e i doppioni il motore li scarta).
-        net.on('error', relayVecchio);
+        net.on('error', relayIncompatibile);
         net.on('reconnected', chiediRipresa);
         net.on('opponent-reconnected', chiediRipresa);
         // Chi esce dalla stanza prima del duello si porta via il suo mazzo:
@@ -106,16 +115,20 @@ const MpPassoComune = (function () {
     // --- Scambio dei mazzi -------------------------------------------
 
     function riceviMazzo(azione) {
+        if (azione.protocollo !== VERSIONE_PROTOCOLLO) {
+            if (rifiutaAttesaMazzo) rifiutaAttesaMazzo('La versione Multiplayer dell\'avversario non è compatibile');
+            return;
+        }
         mazzoAvversario = { spec: azione.spec, seme: azione.seme };
         if (attesaMazzo) {
             const risolvi = attesaMazzo;
             attesaMazzo = null;
+            rifiutaAttesaMazzo = null;
+            clearTimeout(timerAttesaMazzo);
+            timerAttesaMazzo = null;
             risolvi(mazzoAvversario);
         }
     }
-
-    /** Chi aspetta il mazzo, per poterlo anche far fallire (vedi il relay vecchio qui sotto). */
-    let rifiutaAttesaMazzo = null;
 
     function aspettaMazzoAvversario() {
         if (mazzoAvversario) return Promise.resolve(mazzoAvversario);
@@ -125,20 +138,21 @@ const MpPassoComune = (function () {
                 if (attesaMazzo !== risolvi) return;
                 attesaMazzo = null;
                 rifiutaAttesaMazzo = null;
+                clearTimeout(timerAttesaMazzo);
+                timerAttesaMazzo = null;
                 rifiuta(new Error(motivo));
             };
-            setTimeout(() => rifiutaAttesaMazzo && rifiutaAttesaMazzo('Il mazzo dell\'avversario non è arrivato'), ATTESA_MAZZO_MS);
+            timerAttesaMazzo = setTimeout(() => {
+                if (rifiutaAttesaMazzo) rifiutaAttesaMazzo('L\'avversario non ha confermato una versione Multiplayer compatibile');
+            }, ATTESA_MAZZO_MS);
         });
     }
 
     /**
-     * Un relay della versione precedente non conosce 'mazzo' e lo rifiuta
-     * subito ("azione sconosciuta"): niente passo comune possibile con quel
-     * server, e non ha senso aspettare i 15 secondi del tetto — si riparte
-     * col protocollo di prima. Succede finché server/server.js non è
-     * ridistribuito dove gira.
+     * Un relay precedente non conosce 'mazzo' e lo rifiuta subito. Non ha
+     * senso aspettare il tetto: si mostra immediatamente l'incompatibilità.
      */
-    function relayVecchio(msg) {
+    function relayIncompatibile(msg) {
         const testo = (msg && msg.message) || '';
         if (rifiutaAttesaMazzo && /azione sconosciuta/i.test(testo)) {
             rifiutaAttesaMazzo('Il server non conosce ancora il passo comune');
@@ -153,7 +167,7 @@ const MpPassoComune = (function () {
     function prepara(mioMazzo) {
         if (!acceso || !net) return Promise.reject(new Error('Passo comune non configurato'));
         const mioSeme = sonoHost ? Math.floor(Math.random() * 2147483647) : undefined;
-        net.sendAction({ kind: 'mazzo', spec: mioMazzo, seme: mioSeme });
+        net.sendAction({ kind: 'mazzo', protocollo: VERSIONE_PROTOCOLLO, spec: mioMazzo, seme: mioSeme });
         return aspettaMazzoAvversario().then((suo) => {
             const seme = sonoHost ? mioSeme : suo.seme;
             if (typeof seme !== 'number') throw new Error('Seme della partita mancante');
@@ -165,12 +179,6 @@ const MpPassoComune = (function () {
                 iniziaHost: sonoHost ? iniziaIo : !iniziaIo
             };
         });
-    }
-
-    /** Il passo comune non parte (l'altro è un client vecchio): si torna al protocollo di prima. */
-    function rinuncia() {
-        acceso = false;
-        window.MP_PASSO_COMUNE = false;
     }
 
     // --- Invio e consegna -----------------------------------------------
@@ -228,7 +236,6 @@ const MpPassoComune = (function () {
     return {
         configura,
         prepara,
-        rinuncia,
         invia,
         motoreAvviato,
         acceso: () => acceso

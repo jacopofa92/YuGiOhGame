@@ -820,8 +820,7 @@
             // (attendiScelta), che deve sapere anche quando il giocatore
             // chiude la lista senza scegliere. Senza, chiudere lascia le
             // cose come stanno, come sempre.
-            annullabile: !!onCancel,
-            viaggia: (c) => c.card && c.card.uid
+            annullabile: !!onCancel
         }, (scelto) => {
             if (scelto) onChosen(scelto);
             else if (onCancel) onCancel();
@@ -940,21 +939,13 @@
      * - `options.optional`: aggiunge "Annulla" (o `options.optionalLabel`);
      *   chiudendo, `onChosen(null)`.
      *
-     * In Multiplayer la scelta viaggia sulla stessa coda delle scelte di
-     * bersaglio (awaitRemoteCardChoice), con un uid finto `opzione:<value>`:
-     * le due code si accoppiano in ordine, quindi una scelta d'opzione e
-     * una di bersaglio non devono vivere su code separate che potrebbero
-     * scambiarsi di posto. E si comunica SEMPRE, anche quando l'opzione è
-     * una sola.
+     * Nel Multiplayer a passo comune ogni scelta, opzioni comprese, viaggia
+     * come posizione nello stesso elenco calcolato dai due motori.
      */
     function chooseOption(ctx, options, onChosen) {
         const o = options || {};
         const voci = (o.options || []).filter(Boolean);
         if (voci.length === 0) { onChosen(null); return; }
-        // "Annulla", quando c'è, viaggia anch'esso (Decisioni.UID_ANNULLA):
-        // di là si riconosce per uid, invece di ricadere nel primo
-        // candidato come fa awaitRemoteCardChoice con una scelta che non
-        // trova.
         Decisioni.chiedi({
             chi: o.chooser || ctx.owner,
             tipo: 'opzioni',
@@ -966,8 +957,7 @@
                 return elenco.find((v) => v.value === scelto) || elenco[0];
             },
             annullabile: !!o.optional,
-            etichettaAnnulla: o.optionalLabel,
-            viaggia: (v) => 'opzione:' + String(v.value)
+            etichettaAnnulla: o.optionalLabel
         }, (voce) => onChosen(voce ? voce.value : null));
     }
 
@@ -1232,29 +1222,19 @@
      *    si può rifiutare.
      *  - Vittima bot: scarta la carta che vale meno per lui (punteggio di
      *    impatto più basso, AI_SHARED.scoreCardImpact), non la prima a caso.
-     *  - Multiplayer, vittima REMOTA: su questo client non si fa nulla. La
-     *    sua mano qui è fatta di segnaposto; la scelta la fa lei sul suo
-     *    client (dove per lei la vittima è 'player'), che poi spedisce la
-     *    propria fotografia di stato (broadcastLocalStatePush) e allinea anche
-     *    noi. `onDiscarded` quindi su questo lato non viene chiamata: chi
-     *    chiama non deve contarci per cambiare lo stato, solo per il log.
-     * La fotografia parte dentro un setTimeout: se la scelta si risolve
-     * subito (una sola carta) può trovarsi ancora dentro l'applicazione di
-     * una mossa remota, dove broadcastLocalStatePush tace.
+     *  - Multiplayer: entrambi i motori conoscono la stessa mano e
+     *    `Decisioni` aspetta sul client specchio la posizione scelta dalla
+     *    vittima reale; non servono segnaposto né fotografie correttive.
      * Torna false se la mano della vittima è vuota.
      */
     function victimChoosesDiscard(ctx, victimOwner, options, onDiscarded) {
         const o = options || {};
-        if (window.DuelEngine && DuelEngine.isRemoteChooser && DuelEngine.isRemoteChooser(victimOwner)) return true;
         const mano = ctx.hand(victimOwner);
         if (mano.length === 0) return false;
         const scarta = (card) => {
             const i = ctx.hand(victimOwner).indexOf(card);
             if (i === -1) return;
             const scartata = ctx.discardChosenFromHand(victimOwner, i);
-            if (window.MULTIPLAYER_MODE && victimOwner === 'player' && window.DuelEngine && DuelEngine.broadcastLocalStatePush) {
-                setTimeout(() => DuelEngine.broadcastLocalStatePush(null), 0);
-            }
             if (typeof onDiscarded === 'function') onDiscarded(scartata);
         };
         const apri = () => {

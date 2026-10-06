@@ -722,9 +722,6 @@ function enterDrawPhaseInner(autoAdvance = true, onComplete = null) {
     if (window.DuelDialogues && gameState.turn > 1 && gameState.freedChoiceTurn !== gameState.turn) {
         DuelDialogues.say(gameState.currentPlayer, 'turnStart');
     }
-    if (window.MP_broadcast && !window.MP_applyingRemote) {
-        window.MP_broadcast({ kind: 'phase', name: 'draw' });
-    }
     // Avidità Sconsiderata (id 653): "pesca 2 carte e salta le tue
     // prossime 2 Draw Phase" — gameState.skipDrawFor[owner] è un
     // contatore (non un booleano) per coprire il "2 volte", stesso
@@ -919,9 +916,6 @@ function enterDrawPhaseInner(autoAdvance = true, onComplete = null) {
 function enterStandbyPhase(autoAdvance = true) {
     clearPhaseTransitionTimeout();
     gameState.phase = 'standby';
-    if (window.MP_broadcast && !window.MP_applyingRemote) {
-        window.MP_broadcast({ kind: 'phase', name: 'standby' });
-    }
     EventiDuello.emetti('annuncio-fase', 'Standby', 'Standby Phase');
     addToLog('⏳ Standby Phase');
     if (window.DuelEngine) {
@@ -965,9 +959,6 @@ function enterMainPhase1() {
         }
     }
     gameState.phase = 'main1';
-    if (window.MP_broadcast && !window.MP_applyingRemote) {
-        window.MP_broadcast({ kind: 'phase', name: 'main1' });
-    }
     EventiDuello.emetti('annuncio-fase', 'Main Phase 1');
     addToLog('⚡ Main Phase 1');
     if (window.DuelEngine) {
@@ -1003,9 +994,6 @@ function enterBattlePhase() {
         return;
     }
     gameState.phase = 'battle';
-    if (window.MP_broadcast && !window.MP_applyingRemote) {
-        window.MP_broadcast({ kind: 'phase', name: 'battle' });
-    }
     EventiDuello.emetti('annuncio-fase', 'Battaglia', 'Battle Phase', 'battle');
     addToLog('⚔️ Battle Phase! Clicca e trascina da un tuo mostro per attaccare.');
     // "All'inizio della Battle Phase" (es. Prigione dei Dadi, id 197) —
@@ -1068,9 +1056,6 @@ function startSecondBattlePhase(owner) {
 function enterMainPhase2() {
     clearPhaseTransitionTimeout();
     gameState.phase = 'main2';
-    if (window.MP_broadcast && !window.MP_applyingRemote) {
-        window.MP_broadcast({ kind: 'phase', name: 'main2' });
-    }
     EventiDuello.emetti('annuncio-fase', 'Main Phase 2');
     addToLog('⚡ Main Phase 2');
     if (canConductSecondBattlePhase('player')) {
@@ -1087,9 +1072,6 @@ function enterEndPhase() {
     // 'onBattlePhaseEnd' più sotto.
     const wasInBattlePhase = gameState.phase === 'battle';
     gameState.phase = 'end';
-    if (window.MP_broadcast && !window.MP_applyingRemote) {
-        window.MP_broadcast({ kind: 'phase', name: 'end' });
-    }
     EventiDuello.emetti('annuncio-fase', 'Fine', 'End Phase');
     addToLog('🏁 End Phase');
     // Waboku (id 503) protegge solo "in questo turno": la barriera e i

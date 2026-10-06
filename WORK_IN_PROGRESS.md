@@ -116,39 +116,30 @@ righe, actions.js 3.855, game-flow.js 3.797; 205 accessi al DOM e 85
             Spec `multiplayer-passo-comune` (due pagine, relay vero, 6 turni,
             caduta di linea a metà), verificato al contrario.
       - [x] Server: Render lo ridistribuisce da solo col push su `main`
-            (render.yaml non fissa un branch). Finché un relay non conosce
-            i tre tipi nuovi li rifiuta, e i client ripiegano subito sul
-            protocollo vecchio. Da controllare una volta nella scheda
-            *Events* del servizio su render.com.
+            (render.yaml non fissa un branch). Il client nuovo richiede che
+            anche l'altro client e il relay parlino la versione 2 del passo
+            comune; un abbinamento incompatibile si ferma con un errore
+            esplicito invece di avviare due protocolli diversi.
       - [x] Suite completa 204/204, branch unito in `main` (0a21581).
-      - [ ] Il protocollo vecchio resta come ripiego con un client della
-            versione precedente (gli spec Multiplayer di prima lo forzano
-            con `MP_SENZA_PASSO_COMUNE`). Quando tutti i client e il server
-            saranno aggiornati si può togliere: applyRemote* in
-            multiplayer.js, i broadcast nei comandi e nelle fasi, la mano a
-            segnaposto, le fotografie di stato, `isRemoteResponder`/
-            `awaitRemote*` in duel-engine.js.
-            Audit 2026-10-06: il lavoro è un refactor rischioso da fare su
-            branch dedicato. Prima va distribuita una nuova APK: nel repo
-            resta `YuGiOhGame-1.0.0-beta.21.apk`, che dipende dal protocollo
-            vecchio. Sequenza prevista:
-            1. rendere obbligatorio il passo comune e sostituire il timeout/
-               fallback di `mp-passo-comune.js` con un errore esplicito di
-               versione incompatibile;
-            2. ridurre `multiplayer.js` alla UI di disconnessione/rientro e
-               alla rete di sicurezza `game-over`, eliminando dispatcher,
-               `applyRemote*`, checksum, resync, state-push e segnaposto;
-            3. togliere i 23 invii legacy da battaglia, evocazioni, fasi,
-               comandi ed effetti, poi le code `awaitRemote*`/broadcast e le
-               API legacy esportate da `duel-engine.js`;
-            4. restringere l'allowlist del relay a controllo lobby + `mazzo`,
-               `passo`, `passo-riprendi` e `game-over`, riallineando i test
-               anti-imbroglio;
-            5. migrare i 10 spec che oggi forzano
-               `MP_SENZA_PASSO_COMUNE`: conservare i test di abbandono e
-               connessione, portare gli scenari di carte/turni sul passo
-               comune, eliminare solo le asserzioni su fotografie e
-               segnaposto; infine suite completa prima del merge in `main`.
+      - [x] Rimozione del protocollo vecchio, branch
+            `refactor/rimuovi-protocollo-multiplayer-vecchio` (2026-10-06):
+            - [x] passo comune obbligatorio, handshake versione 2 ed errore
+                  esplicito per client o relay incompatibili;
+            - [x] `multiplayer.js` ridotto a connessione, abbandono,
+                  riconnessione e rete di sicurezza `game-over`;
+            - [x] rimossi dispatcher `applyRemote*`, 23 invii per singola
+                  mossa, segnaposto, checksum/resync, fotografie di stato,
+                  code `awaitRemote*` e API legacy del motore;
+            - [x] migrati i test di connessione/abbandono e il test
+                  end-to-end; gli scenari delle carte restano coperti dagli
+                  spec di regola e dal duello gemello. Un nuovo guardrail
+                  impedisce di reintrodurre il vecchio client;
+            - [x] compilata l'APK di produzione beta.22 (`versionCode 22`);
+                  `GAME_ACTION_KINDS` del relay ristretto a controllo lobby +
+                  `mazzo`, `passo`, `passo-riprendi` e `game-over`, con
+                  `server-anti-imbroglio` riallineato;
+            - [x] suite completa 202/202 e merge in `main`, autorizzati
+                  dall'utente e completati il 2026-10-06.
       Costo dichiarato: ogni client conosce mazzo e mano dell'avversario
       (non mostrati, ma in memoria).
 
@@ -202,14 +193,12 @@ Decisioni aperte dell'utente: i 6 PNG di avatar non usati; le regole del
       `scripts/pre-commit.js`): sintassi dei .js in stage, accenti corrotti
       nelle righe aggiunte, BOM, `cards.json` senza file generato. Su un
       clone nuovo va attivato con `npm run hooks`.
-- [x] Multiplayer: il relay ora rifiuta azioni sconosciute, indici assurdi e
-      mosse da turno (Evocare, attaccare, calare carte, avanzare di fase)
-      fuori dal proprio turno (`validateGameAction` in `server/server.js`).
-      RESTA APERTO: il server non conosce il campo, quindi un client
-      modificato può ancora mentire su ciò che fa nel proprio turno (carte
-      che non ha, danni, pescate). Servirebbe far girare il motore anche lato
-      server: da fare solo se si apre a sconosciuti. Il server va ridistribuito
-      dove gira per avere i nuovi controlli.
+- [x] Multiplayer: `validateGameAction` accetta soltanto i sette tipi del
+      protocollo corrente (lobby, mazzo, passo comune, ripresa, esito) e
+      rifiuta tutte le mosse raccontate del client vecchio. Il server non
+      conosce comunque il campo: per un arbitraggio competitivo servirebbe
+      far girare il motore anche lato server, da valutare solo se si apre a
+      sconosciuti. Render ridistribuisce il relay col push su `main`.
 
 ## Esperienza di gioco
 

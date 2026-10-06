@@ -12,8 +12,8 @@
  *
  * Ora una carta descrive la scelta (una RICHIESTA) e dice cosa fare col
  * risultato. Qui si decide CHI risponde, sempre allo stesso modo:
- *  1. l'avversario remoto, in Multiplayer, se la richiesta lo prevede
- *     (`viaggia`): si aspetta la sua scelta, che arriva dalla rete;
+ *  1. l'avversario remoto, nel Multiplayer a passo comune: si aspetta la
+ *     posizione scelta nello stesso elenco calcolato dai due motori;
  *  2. la persona davanti allo schermo, se a scegliere è 'player' e
  *     un'interfaccia ascolta l'evento 'decisione' (actions.js apre la
  *     lista, il popover, le opzioni);
@@ -44,22 +44,12 @@
  *              duello senza interfaccia. Default: il primo candidato.
  *   annullabile la persona può chiudere senza scegliere: si risolve con null
  *   automaticaSeUnica  con un solo candidato non si chiede nulla
- *   viaggia    (candidato) => uid: in Multiplayer la scelta viaggia fra i due
- *              client. SOLO per le scelte che il protocollo racconta (un
- *              bersaglio, un'opzione): una scelta sul proprio lato la
- *              copre già la fotografia di stato che segue ogni attivazione,
- *              e farla viaggiare sbilancerebbe le code (l'altro client non
- *              aspetta nulla).
- *
  * Il risultato arriva a `onDeciso(candidato | null)`. Asincrono quando
  * risponde una persona: tutto ciò che dipende dalla scelta va dentro
  * onDeciso, mai dopo la chiamata.
  */
 (function () {
     'use strict';
-
-    /** uid con cui viaggia un "annulla" (vedi `viaggia`). */
-    const UID_ANNULLA = 'decisione:annulla';
 
     /** @type {null | { id: number, richiesta: any, fine: (valore: any) => void }} */
     let aperta = null;
@@ -145,8 +135,6 @@
     function chiedi(richiesta, onDeciso) {
         const r = Object.assign({ tipo: 'carte', candidati: [] }, richiesta);
         if (r.tipo === 'posizione' && (!r.candidati || r.candidati.length === 0)) r.candidati = ['attack', 'defense'];
-        const viaggia = typeof r.viaggia === 'function';
-        const DuelEngine = g.DuelEngine;
         const aPassoComune = passoComune();
 
         // 0. Passo comune: OGNI scelta dell'altro client si aspetta (non
@@ -157,17 +145,6 @@
                 const scelta = indice >= 0 ? r.candidati[indice] : null;
                 onDeciso(scelta === undefined ? null : scelta);
             });
-            return;
-        }
-
-        // 1. L'avversario remoto: la sua scelta arriva dalla rete, per uid.
-        // awaitRemoteCardChoice (duel-engine.js) accoppia in ordine le
-        // scelte attese con quelle arrivate, e ricade sul primo candidato
-        // se non arriva nulla entro il tempo limite.
-        if (viaggia && DuelEngine && DuelEngine.isRemoteChooser && DuelEngine.isRemoteChooser(r.chi)) {
-            const attesi = r.candidati.map((/** @type {any} */ c) => ({ card: { uid: r.viaggia(c) }, valore: c }));
-            if (r.annullabile) attesi.push({ card: { uid: UID_ANNULLA }, valore: null });
-            DuelEngine.awaitRemoteCardChoice(attesi, (/** @type {any} */ s) => onDeciso(s ? s.valore : (r.candidati[0] === undefined ? null : r.candidati[0])));
             return;
         }
 
@@ -192,13 +169,6 @@
                 if (sincrona) g.PassoComune.differisci(() => onDeciso(scelta));
                 else onDeciso(scelta);
                 return;
-            }
-            // In Multiplayer la mia scelta si comunica SEMPRE, anche quando
-            // era obbligata o automatica: dall'altra parte qualcuno la sta
-            // aspettando, e le due code si accoppiano in ordine — un
-            // messaggio mancante lascerebbe l'altro lato ad aspettare.
-            if (viaggia && g.MULTIPLAYER_MODE && r.chi === 'player' && DuelEngine && DuelEngine.broadcastCardChoice) {
-                DuelEngine.broadcastCardChoice(valore === null || valore === undefined ? UID_ANNULLA : r.viaggia(valore));
             }
             onDeciso(valore === undefined ? null : valore);
         };
@@ -251,9 +221,7 @@
             const scelta = typeof valore === 'number' ? richiesta.candidati[valore] : valore;
             fine(scelta === undefined ? null : scelta);
             return true;
-        },
-
-        UID_ANNULLA
+        }
     };
 
     g.Decisioni = Decisioni;

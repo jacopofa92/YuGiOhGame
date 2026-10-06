@@ -9,8 +9,8 @@
 //    prima: con un auto-pick sulla prima il test non proverebbe nulla);
 //  - lo scarto è obbligatorio: chiudere il picker lo riapre;
 //  - vittima bot: scarta la carta che vale meno per lui;
-//  - Multiplayer con vittima remota: su questo client non si tocca nulla
-//    (sceglie il suo client, poi arriva la sua fotografia di stato).
+//  - Multiplayer a passo comune con vittima remota: questo motore aspetta
+//    la posizione scelta dall'altro client e poi esegue lo stesso scarto.
 module.exports = {
     name: 'Scelta di chi subisce lo scarto: Criosfinge (761) e Duo Delinquente (873)',
     async run(t) {
@@ -68,13 +68,31 @@ module.exports = {
                 Math.random = origRandom;
                 out.bot = { mano: gameState.botHand.map((c) => c.uid), cimitero: gameState.botGraveyard.map((c) => c.uid) };
 
-                // --- Multiplayer, vittima remota: niente su questo client ---
+                // --- Multiplayer a passo comune, vittima remota ---
                 window.MULTIPLAYER_MODE = true;
+                Tavolo.imposta({ bot: 'remoto' });
+                PassoComune.avvia({ invia: () => {} });
                 gameState.botHand = [carta('r1'), carta('r2')];
+                gameState.botGraveyard = [];
                 const esito = CardEffectsShared.victimChoosesDiscard(DuelEngine.makeContext('player', {}), 'bot', {}, () => { out.chiamataRemota = true; });
-                window.MULTIPLAYER_MODE = false;
-                out.remoto = { esito, mano: gameState.botHand.length, callback: !!out.chiamataRemota };
-                ok(out);
+                out.remotoPrima = {
+                    esito,
+                    mano: gameState.botHand.length,
+                    callback: !!out.chiamataRemota,
+                    attese: PassoComune.stato().decisioniAttese
+                };
+                PassoComune.ricevi({ tipo: 'decisione', indice: 1 });
+                setTimeout(() => {
+                    out.remotoDopo = {
+                        mano: gameState.botHand.map((c) => c.uid),
+                        cimitero: gameState.botGraveyard.map((c) => c.uid),
+                        callback: !!out.chiamataRemota
+                    };
+                    PassoComune.ferma();
+                    Tavolo.azzera();
+                    window.MULTIPLAYER_MODE = false;
+                    ok(out);
+                }, 0);
             }, 50));
         });
 
@@ -86,7 +104,11 @@ module.exports = {
             `Criosfinge: chiudere il picker lo riapre, lo scarto è obbligatorio e lo sceglie chi ha ripreso il mostro: ${JSON.stringify(r.obbligatorio)}`);
         t.assert(r.bot.mano.indexOf('buco') !== -1 && r.bot.cimitero.indexOf('debole') !== -1,
             `Il bot sceglie di scartare la carta che vale meno (tiene Buco Nero): ${JSON.stringify(r.bot)}`);
-        t.assert(r.remoto.esito === true && r.remoto.mano === 2 && !r.remoto.callback,
-            `In Multiplayer con vittima remota non si scarta nulla di qua: ${JSON.stringify(r.remoto)}`);
+        t.assert(r.remotoPrima.esito === true && r.remotoPrima.mano === 2
+            && !r.remotoPrima.callback && r.remotoPrima.attese === 1,
+            `Il motore aspetta davvero la scelta del client remoto: ${JSON.stringify(r.remotoPrima)}`);
+        t.assert(JSON.stringify(r.remotoDopo.mano) === '["r1"]'
+            && JSON.stringify(r.remotoDopo.cimitero) === '["r2"]' && r.remotoDopo.callback,
+            `Ricevuta la posizione, anche questo motore esegue lo stesso scarto: ${JSON.stringify(r.remotoDopo)}`);
     }
 };

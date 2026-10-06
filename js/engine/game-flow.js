@@ -331,10 +331,14 @@ function initGame() {
     }
     // Multiplayer a passo comune (js/engine/passo-comune.js,
     // js/multiplayer/mp-passo-comune.js): prima di tutto i due client si
-    // scambiano i mazzi (e il seme), poi preparano lo STESSO duello. Se
-    // l'altro non risponde — un client più vecchio — si parte col
-    // Multiplayer di prima.
-    if (window.MULTIPLAYER_MODE && window.MP_PASSO_COMUNE && window.MpPassoComune && typeof PassoComune !== 'undefined') {
+    // scambiano i mazzi (e il seme), poi preparano lo STESSO duello. Non
+    // esiste più un secondo motore di rete: una versione incompatibile si
+    // ferma con un messaggio chiaro, senza iniziare una partita divergente.
+    if (window.MULTIPLAYER_MODE) {
+        if (!window.MpPassoComune || typeof PassoComune === 'undefined') {
+            mostraErroreProtocolloMultiplayer('I componenti Multiplayer non sono aggiornati. Ricarica il gioco.');
+            return;
+        }
         const mioMazzo = (window.SaveManager && SaveManager.getActiveDeck())
             || (typeof buildBalancedDemoDeckSpec === 'function' ? buildBalancedDemoDeckSpec() : null);
         MpPassoComune.prepara(mioMazzo).then((partita) => {
@@ -344,15 +348,31 @@ function initGame() {
             MpPassoComune.motoreAvviato();
             avviaDuelloPreparato();
         }, (err) => {
-            console.warn('Passo comune non disponibile, si gioca col Multiplayer di prima:', err);
-            MpPassoComune.rinuncia();
-            preparaManiIniziali();
-            avviaDuelloPreparato();
+            console.error('Duello Multiplayer non avviato:', err);
+            mostraErroreProtocolloMultiplayer('Impossibile avviare il duello: l\'avversario o il server usa una versione non compatibile.');
         });
         return;
     }
     preparaManiIniziali();
     avviaDuelloPreparato();
+}
+
+/** Arresto leggibile prima dell'avvio, senza lasciare un campo muto. */
+function mostraErroreProtocolloMultiplayer(messaggio) {
+    let banner = document.getElementById('mpConnectionBanner');
+    if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'mpConnectionBanner';
+        banner.className = 'mp-opponent-left-banner';
+        document.body.appendChild(banner);
+    }
+    banner.innerHTML = '';
+    const testo = document.createElement('span');
+    testo.textContent = messaggio;
+    const torna = document.createElement('a');
+    torna.href = 'index.html';
+    torna.textContent = 'Torna al Menu';
+    banner.append(testo, torna);
 }
 
 /** Chi comincia e le mani iniziali, fuori dal passo comune (vedi initGame). */
@@ -2100,11 +2120,11 @@ function chiudiDuelloASchermo(playerWon, opzioni) {
     // Chi arriva per primo alla conclusione la dichiara, e per l'altro
     // l'esito è rovesciato (la mia vittoria è la sua sconfitta; un
     // pareggio resta un pareggio per entrambi).
-    // `MP_applyingRemote` evita il rimbalzo infinito quando è proprio il
+    // `MP_ricezioneEsito` evita il rimbalzo infinito quando è proprio il
     // messaggio dell'avversario ad averci portato qui; `gameState.gameOver`
     // già impostato significa che il duello era finito e non c'è nulla da
     // annunciare.
-    if (window.MP_broadcast && !window.MP_applyingRemote && !gameState.gameOver) {
+    if (window.MP_broadcast && !window.MP_ricezioneEsito && !gameState.gameOver) {
         window.MP_broadcast({
             kind: 'game-over',
             // Dal punto di vista di CHI RICEVE.

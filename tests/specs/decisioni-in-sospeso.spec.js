@@ -8,14 +8,13 @@
 //  2. sceglie il giocatore e un'interfaccia ascolta: la decisione resta
 //     IN SOSPESO (Decisioni.inSospeso) finché qualcuno non risponde
 //     (Decisioni.rispondi, o l'interfaccia), con "annulla" che arriva come null;
-//  3. Multiplayer con `viaggia`: se sceglie l'avversario remoto si aspetta
-//     la sua scelta dalla rete; la mia si comunica sempre, anche
-//     automatica, con l'annulla che viaggia come uid dedicato.
+//  3. Multiplayer a passo comune: la scelta remota arriva come posizione
+//     nell'elenco condiviso e quella locale viene spedita nello stesso modo.
 const path = require('path');
 const vm = require('vm');
 
 module.exports = {
-    name: 'Decisioni: scelta automatica, decisione in sospeso, scelta che viaggia in Multiplayer',
+    name: 'Decisioni: scelta automatica, decisione in sospeso e passo comune Multiplayer',
     standalone: true,
     async run({ assert }) {
         const { creaContesto } = require(path.join(__dirname, '..', '..', 'tools', 'duello-senza-testa.js'));
@@ -71,32 +70,27 @@ module.exports = {
             out.mostrate = mostrate.slice();
             togli();
 
-            // --- 3. Multiplayer ---
-            const inviati = [];
-            const attese = [];
-            const originali = { a: DuelEngine.awaitRemoteCardChoice, b: DuelEngine.broadcastCardChoice };
-            DuelEngine.awaitRemoteCardChoice = (candidati, cb) => attese.push({ uids: candidati.map((c) => c.card.uid), cb });
-            DuelEngine.broadcastCardChoice = (uid) => inviati.push(uid);
-            window.MULTIPLAYER_MODE = true;
-            let s9 = 'non arrivata';
-            Decisioni.chiedi({ chi: 'bot', candidati: carte, annullabile: true, viaggia: (c) => c.uid }, (x) => { s9 = x && x.uid; });
-            out.remotaAttesa = attese.length === 1 ? attese[0].uids : null;
-            attese[0].cb({ card: { uid: 'c' }, valore: carte[2] });
-            out.remotaArrivata = s9;
-            let s10 = 'non arrivata';
-            Decisioni.chiedi({ chi: 'player', candidati: carte, viaggia: (c) => c.uid }, (x) => { s10 = x && x.uid; });
-            out.miaAutomatica = s10;
-            const togli2 = EventiDuello.ascolta('decisione', () => {});
-            Decisioni.chiedi({ chi: 'player', candidati: carte, annullabile: true, viaggia: (c) => c.uid }, () => {});
-            Decisioni.rispondi(null);
-            togli2();
-            // Senza viaggia la scelta resta di qua: niente rete.
-            Decisioni.chiedi({ chi: 'player', candidati: carte }, () => {});
-            out.inviati = inviati.slice();
-            window.MULTIPLAYER_MODE = false;
-            DuelEngine.awaitRemoteCardChoice = originali.a;
-            DuelEngine.broadcastCardChoice = originali.b;
             return out;
+        })()`, contesto);
+
+        const multiplayer = await vm.runInContext(`(async function () {
+            const carte = [{ uid: 'a', name: 'A' }, { uid: 'b', name: 'B' }, { uid: 'c', name: 'C' }];
+            const inviati = [];
+            Tavolo.imposta({ player: 'persona', bot: 'remoto' });
+            PassoComune.avvia({ invia: (messaggio) => inviati.push(messaggio) });
+
+            let remota = 'non arrivata';
+            Decisioni.chiedi({ chi: 'bot', candidati: carte }, (scelta) => { remota = scelta && scelta.uid; });
+            const attesePrima = PassoComune.stato().decisioniAttese;
+            PassoComune.ricevi({ tipo: 'decisione', indice: 2 });
+            await Promise.resolve();
+
+            let locale = 'non arrivata';
+            Decisioni.chiedi({ chi: 'player', candidati: carte }, (scelta) => { locale = scelta && scelta.uid; });
+            await Promise.resolve();
+            PassoComune.ferma();
+            Tavolo.azzera();
+            return { remota, locale, attesePrima, inviati };
         })()`, contesto);
 
         assert(r.senzaInterfaccia === 'a', `Senza interfaccia sceglie da sé il primo candidato: ${r.senzaInterfaccia}`);
@@ -113,11 +107,10 @@ module.exports = {
         assert(r.unica === 'a', `Un solo candidato con automaticaSeUnica: si prende quello, senza chiedere: ${r.unica}`);
         assert(r.posizioneNonMostrabile === 'attack', `Un tipo che l'interfaccia non sa mostrare passa alla scelta automatica (per una Posizione, Attacco): ${r.posizioneNonMostrabile}`);
         assert(JSON.stringify(r.mostrate) === '["carte","carte"]', `All'interfaccia arrivano solo le scelte della persona: ${JSON.stringify(r.mostrate)}`);
-        assert(JSON.stringify(r.remotaAttesa) === '["a","b","c","decisione:annulla"]',
-            `Se sceglie l'avversario remoto si aspetta la sua scelta (con l'annulla fra i possibili): ${JSON.stringify(r.remotaAttesa)}`);
-        assert(r.remotaArrivata === 'c', `La scelta remota arriva a chi aspetta: ${r.remotaArrivata}`);
-        assert(r.miaAutomatica === 'a', 'La mia scelta automatica arriva anche a me');
-        assert(JSON.stringify(r.inviati) === '["a","decisione:annulla"]',
-            `La mia scelta viaggia sempre, anche automatica, e l'annulla col suo uid; senza viaggia niente rete: ${JSON.stringify(r.inviati)}`);
+        assert(multiplayer.attesePrima === 1, 'Una decisione del posto remoto mette il passo comune in attesa');
+        assert(multiplayer.remota === 'c', `La posizione ricevuta sceglie lo stesso candidato remoto: ${multiplayer.remota}`);
+        assert(multiplayer.locale === 'a', `La scelta locale automatica viene applicata: ${multiplayer.locale}`);
+        assert(multiplayer.inviati.length === 1 && multiplayer.inviati[0].tipo === 'decisione' && multiplayer.inviati[0].indice === 0,
+            `La scelta locale viaggia come posizione nell'elenco: ${JSON.stringify(multiplayer.inviati)}`);
     }
 };

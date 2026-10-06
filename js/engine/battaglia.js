@@ -250,10 +250,6 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
         }
     }
 
-    if (attackerOwner === 'player' && window.MP_broadcast && !window.MP_applyingRemote) {
-        window.MP_broadcast({ kind: 'attack', attackerIndex, targetIndex });
-    }
-
     const attackerBoardId = attackerOwner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
     const defenderBoardId = defenderOwner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
     // Interroga il DOM per gli elementi carta attaccante/bersaglio: NON va

@@ -273,88 +273,29 @@ function isRateLimited(socket) {
 // ------------------------------------------------------------
 // Controlli anti-imbroglio del RELAY (NON le regole del duello).
 //
-// Il server resta cieco rispetto alla partita: non sa cosa c'è sul campo
-// e non lo deve sapere. Ma qualche invariante si può far rispettare senza
-// il motore, ed è quello che chiude le scorciatoie più banali per barare
-// con un client modificato:
-//   1) il tipo di azione deve essere uno di quelli che il protocollo usa;
-//   2) i campi numerici (indici di zona, nome fase) devono essere sensati;
-//   3) le mosse che si fanno SOLO nel proprio turno (Evocare, attaccare,
-//      calare una carta, cambiare Posizione, avanzare di fase) vengono
-//      inoltrate solo se il mittente è davvero di turno.
-// Le risposte in Catena, le scelte di bersaglio, le attivazioni (anche una
-// Trappola sul turno altrui) e i messaggi di resync NON sono legate al
-// turno: lì chi risponde è per definizione quello che non è di turno.
+// Il relay non interpreta più le mosse del duello. Col passo comune i due
+// client eseguono lo stesso motore e si scambiano soltanto l'avvio della
+// stanza, i mazzi, i comandi/decisioni ordinati e l'esito finale. L'elenco
+// chiuso qui sotto è quindi anche la barriera che impedisce a un client
+// vecchio di riattivare il protocollo a mosse raccontate.
 // ------------------------------------------------------------
 
 const GAME_ACTION_KINDS = new Set([
-    'phase', 'summon', 'tribute', 'position', 'spelltrap', 'fieldspell', 'attack',
-    'activate', 'chain-response', 'card-choice', 'state-push', 'game-over',
-    'request-resync', 'state-sync', 'room-config', 'ready', 'rps',
-    // Multiplayer "a passo comune" (js/engine/passo-comune.js): 'mazzo' è lo
-    // scambio dei mazzi (e del seme) prima del duello, 'passo' porta i
-    // comandi e le decisioni durante il duello, 'passo-riprendi' chiede di
-    // rimandare quelli persi in una caduta di linea. NON legati al turno qui:
-    // a passo comune ogni client riesegue la partita intera e rifiuta da sé
-    // un comando fuori turno (lo stato di qua non lo permetterebbe), quindi
-    // il relay non ha niente da aggiungere — e non vede dentro il messaggio.
-    'mazzo', 'passo', 'passo-riprendi'
+    'room-config', 'ready', 'rps',
+    'mazzo', 'passo', 'passo-riprendi',
+    'game-over'
 ]);
-// Le sole mosse che hanno senso nel turno di chi le manda.
-const TURN_BOUND_KINDS = new Set(['summon', 'tribute', 'position', 'spelltrap', 'fieldspell', 'attack']);
-const PHASE_NAMES = new Set(['draw', 'standby', 'main1', 'battle', 'main2', 'end']);
-// Messaggi che segnano l'inizio di un duello (o la sua fine): il turno
-// tracciato dal server si azzera, così una rivincita nella stessa stanza
-// non eredita il turno di quella prima.
-const TURN_RESET_KINDS = new Set(['game-over', 'ready', 'rps', 'room-config']);
-
-function isSmallIndex(v) {
-    return v === null || v === undefined || (Number.isInteger(v) && v >= 0 && v <= 60);
-}
 
 /**
- * Torna null se l'azione può essere inoltrata, altrimenti il motivo del rifiuto.
- * Aggiorna `room.turn` ({ owner, ended }) man mano che passano le fasi.
- * Il proprietario del turno NON si assume dall'ordine d'ingresso in stanza
- * (chi comincia lo decide la lobby, anche a sasso-carta-forbice): è chi
- * manda per primo una fase, poi cambia solo quando chi era di turno ha
- * chiuso con 'end' e l'altro apre con 'draw'.
+ * Torna null se il messaggio appartiene al protocollo corrente, altrimenti
+ * il motivo del rifiuto. `room` e `senderId` restano nella firma pubblica:
+ * consentono di aggiungere controlli server-side senza cambiare il punto di
+ * chiamata, ma il relay attuale non conosce lo stato del motore.
  */
-function validateGameAction(room, senderId, action) {
+function validateGameAction(room, senderId, action) { // eslint-disable-line no-unused-vars
+    if (!action || typeof action !== 'object' || Array.isArray(action)) return 'azione non valida';
     const kind = action.kind;
     if (typeof kind !== 'string' || !GAME_ACTION_KINDS.has(kind)) return 'azione sconosciuta';
-
-    if (['slotIndex', 'attackerIndex', 'targetIndex', 'handIndex'].some((k) => !isSmallIndex(action[k]))) return 'indice non valido';
-    if (action.indices !== undefined && (!Array.isArray(action.indices) || action.indices.length > 10 || !action.indices.every((i) => Number.isInteger(i) && i >= 0 && i <= 60))) return 'indici non validi';
-
-    if (TURN_RESET_KINDS.has(kind)) {
-        room.turn = null;
-        return null;
-    }
-
-    if (kind === 'phase') {
-        if (typeof action.name !== 'string' || !PHASE_NAMES.has(action.name)) return 'fase sconosciuta';
-        const turn = room.turn;
-        if (!turn) {
-            room.turn = { owner: senderId, ended: action.name === 'end' };
-            return null;
-        }
-        if (turn.owner === senderId) {
-            // Una fase nuova dello stesso giocatore dopo il suo 'end' non
-            // esiste: sarebbe un secondo turno di fila senza che l'altro abbia giocato.
-            if (turn.ended && action.name !== 'end') return 'turno già concluso';
-            if (action.name === 'end') turn.ended = true;
-            return null;
-        }
-        // Mittente non di turno: può solo APRIRE il proprio, e solo dopo che l'altro ha chiuso.
-        if (turn.ended && action.name === 'draw') {
-            room.turn = { owner: senderId, ended: false };
-            return null;
-        }
-        return 'non è il tuo turno';
-    }
-
-    if (TURN_BOUND_KINDS.has(kind) && room.turn && room.turn.owner !== senderId) return 'non è il tuo turno';
     return null;
 }
 
