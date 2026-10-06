@@ -921,6 +921,65 @@ const challengesDatabase = [
         target: 23, reward: { credits: 2000, starChips: 4, locatorCards: 2, millenniumCards: 1 }
     },
 
+    // --- Carte firma e vittorie istantanee: una sola ricompensa ---------
+    // Il matching include la difficoltà ricevuta dal punto unico di fine
+    // duello. Queste carte aprono poi la loro presenza (rarissima) nelle
+    // rotazioni: prima del traguardo non sono comprabili.
+    {
+        id: 'carta-kaiba-drago-bianco-50', icon: '🐉', label: 'Il Drago di Kaiba',
+        description: 'Sconfiggi Seto Kaiba 50 volte a Difficile',
+        type: 'defeatCharacter', match: { characterId: 'kaiba', difficulty: 'Difficile' }, target: 50,
+        reward: { cards: [{ id: 1, qty: 1, nome: 'Drago Bianco Occhi Blu' }] }
+    },
+    {
+        id: 'carta-kaiba-drago-bianco-100', icon: '🐉', label: 'Tre Draghi, un solo padrone',
+        description: 'Sconfiggi Seto Kaiba 100 volte a Difficile',
+        type: 'defeatCharacter', match: { characterId: 'kaiba', difficulty: 'Difficile' }, target: 100,
+        reward: { cards: [{ id: 1, qty: 1, nome: 'Drago Bianco Occhi Blu' }] }
+    },
+    {
+        id: 'carta-yugi-mago-nero-50', icon: '🪄', label: 'Il mago definitivo',
+        description: 'Sconfiggi Yugi o Yami Yugi 50 volte a Difficile',
+        type: 'defeatCharacter', match: { characterId: ['yugiMuto', 'yamiYugi'], difficulty: 'Difficile' }, target: 50,
+        reward: { cards: [{ id: 2, qty: 1, nome: 'Mago Nero' }] }
+    },
+    {
+        id: 'carta-yugi-mago-nero-100', icon: '🪄', label: 'Legame col Mago Nero',
+        description: 'Sconfiggi Yugi o Yami Yugi 100 volte a Difficile',
+        type: 'defeatCharacter', match: { characterId: ['yugiMuto', 'yamiYugi'], difficulty: 'Difficile' }, target: 100,
+        reward: { cards: [{ id: 2, qty: 1, nome: 'Mago Nero' }] }
+    },
+    {
+        id: 'carta-joey-occhi-rossi-50', icon: '🔥', label: 'Il potenziale degli Occhi Rossi',
+        description: 'Sconfiggi Joey 50 volte a Difficile',
+        type: 'defeatCharacter', match: { characterId: 'joey', difficulty: 'Difficile' }, target: 50,
+        reward: { cards: [{ id: 12, qty: 1, nome: 'Drago Nero Occhi Rossi' }] }
+    },
+    {
+        id: 'carta-pegasus-elefante-25', icon: '🐘', label: 'La vittoria impossibile',
+        description: 'Sconfiggi Pegasus 25 volte a Difficile',
+        type: 'defeatCharacter', match: { characterId: 'pegasus', difficulty: 'Difficile' }, target: 25,
+        reward: { cards: [{ id: 246, qty: 1, nome: 'Elefante Volante' }] }
+    },
+    {
+        id: 'carta-pegasus-toon-50', icon: '📖', label: 'Il drago del Mondo Toon',
+        description: 'Sconfiggi Pegasus 50 volte a Difficile',
+        type: 'defeatCharacter', match: { characterId: 'pegasus', difficulty: 'Difficile' }, target: 50,
+        reward: { cards: [{ id: 123, qty: 1, nome: 'Drago Toon Occhi Blu' }] }
+    },
+    {
+        id: 'carta-mai-piumino-50', icon: '🪶', label: 'La tempesta delle Arpie',
+        description: 'Sconfiggi Mai 50 volte a Difficile',
+        type: 'defeatCharacter', match: { characterId: 'mai', difficulty: 'Difficile' }, target: 50,
+        reward: { cards: [{ id: 291, qty: 1, nome: 'Piumino delle Arpie' }] }
+    },
+    {
+        id: 'carta-bakura-destiny-board-25', icon: '💀', label: 'Il messaggio del destino',
+        description: 'Sconfiggi Bakura 25 volte a Difficile',
+        type: 'defeatCharacter', match: { characterId: 'bakura', difficulty: 'Difficile' }, target: 25,
+        reward: { cards: [{ id: 866, qty: 1, nome: 'Destiny Board' }] }
+    },
+
     // --- I livelli: completa a Normale, a Difficile, e tutti e tre -------
     // Richiesta dell'utente ("completa in facile, media e difficile"). La
     // Facile ce l'ha già ogni campagna: è la sfida "Completa …" qui sopra,

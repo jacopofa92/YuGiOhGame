@@ -110,9 +110,14 @@
     min-width: 0;
 }
 .shop-root .shop-item.rarity-rare { border-color: rgba(120, 180, 255, 0.45); }
+.shop-root .shop-item.rarity-super { border-color: rgba(190, 126, 255, 0.55); }
 .shop-root .shop-item.rarity-ultra {
     border-color: rgba(247, 215, 116, 0.6);
     box-shadow: 0 0 22px rgba(247, 215, 116, 0.18), 0 10px 26px rgba(0,0,0,0.4);
+}
+.shop-root .shop-item.rarity-legendary {
+    border-color: rgba(247, 201, 88, 0.72);
+    box-shadow: 0 15px 38px rgba(0,0,0,.36), 0 0 20px rgba(247,201,88,.13);
 }
 .shop-root .shop-item.owned { opacity: 0.55; }
 .shop-root .shop-item.owned.admin-rebuy { opacity: 1; }
@@ -137,7 +142,9 @@
 }
 .shop-root .shop-badge.common { background: rgba(159, 176, 201, 0.2); color: #c7d2e3; }
 .shop-root .shop-badge.rare { background: rgba(120, 180, 255, 0.22); color: #a8cdff; }
+.shop-root .shop-badge.super { background: rgba(151, 82, 214, 0.28); color: #dfbaff; }
 .shop-root .shop-badge.ultra { background: linear-gradient(180deg, #ffe9b3, #e0b249); color: #221802; }
+.shop-root .shop-badge.legendary { background: linear-gradient(135deg, #f8df88, #a86c18); color: #1c1203; }
 .shop-root .shop-owned-note { font-size: 0.68rem; color: #34d399; font-weight: bold; }
 .shop-root .admin-rebuy-note { color: #f7d774; }
 

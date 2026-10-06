@@ -2,6 +2,14 @@
 
 Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
 
+## Economia e acquisizione carte
+
+- [x] Rarità a sette fasce, rotazioni e buste tematiche.
+- [x] Deck non cumulativi, tetto a tre copie e sblocchi tramite Storia.
+- [x] Carte firma, Spirit Message, Carte Dio ed Exodia con pity.
+- [ ] Simulare il farming necessario e ritoccare i numeri con dati reali.
+- [ ] Animazione epica finto 3D per l'ottenimento di una carta speciale.
+
 ## Piano di attacco (deciso il 2026-10-04)
 
 Obiettivi dell'utente: un motore scalabile e "plug in", e in prospettiva

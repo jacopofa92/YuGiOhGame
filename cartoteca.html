@@ -657,6 +657,8 @@
      va caricata PRIMA di cards-db.js, che ora contiene solo le funzioni di supporto. -->
 <script src="js/data/cards-data.generated.js"></script>
 <script src="js/data/cards-db.js"></script>
+<script src="js/data/card-rarity.js"></script>
+<script src="js/economy/card-acquisition.js"></script>
 <script src="js/data/custom-cards.js"></script>
 <script src="js/data/custom-taxonomy.js"></script>
 <!-- gruppo-script:motore -->
@@ -1081,6 +1083,7 @@
         if (card.race) tags.push(card.race);
         if (card.attribute) tags.push(card.attribute);
         if (card.type === 'monster' && card.level) tags.push(`⭐ Livello ${card.level}`);
+        if (window.CardRarity) tags.push(CardRarity.label(CardRarity.of(card.id)));
 
         const tributes = (typeof getTributesRequired === 'function') ? getTributesRequired(card) : 0;
         if (tributes > 0) tags.push(`Richiede ${tributes} Tribut${tributes > 1 ? 'i' : 'o'}`);
@@ -1095,6 +1098,7 @@
                 </div>
             ` : ''}
             <p class="card-modal-effect">${effectText || (card.type === 'monster' ? `${cardTerms.monsterSingular} normale senza effetto speciale.` : 'Questa carta non presenta un effetto scritto.')}</p>
+            ${window.CardAcquisition ? `<p class="card-modal-effect"><strong>Come si ottiene:</strong> ${CardAcquisition.sourceFor(card.id)}</p>` : ''}
             ${card.missingEffectNote ? `<p class="card-modal-partial-note">🟡 Effetto implementato parzialmente: ${card.missingEffectNote}</p>` : ''}
         `;
 

@@ -323,6 +323,12 @@
                 }
             }
         }
+        // Le acquisizioni speciali (Exodia, Carte Dio e traguardi composti)
+        // ricevono la stessa vittoria già validata qui. L'autowin admin usa
+        // intenzionalmente questo percorso: per decisione di progetto conta.
+        if (window.CardAcquisition) {
+            rewards.push(...CardAcquisition.onDuelWin(o));
+        }
         return rewards;
     }
 
@@ -332,7 +338,7 @@
      * un giocatore che vede numeri diversi alla seconda vittoria deve
      * capire subito perché.
      */
-    function forTournament(tournamentId, firstTime) {
+    function forTournament(tournamentId, firstTime, difficulty) {
         const tabella = TOURNAMENT_COMPLETION[tournamentId];
         const rewards = [];
         if (!tabella || !window.SaveManager) return rewards;
@@ -357,8 +363,9 @@
         // volta sola per ogni torneo portato a termine, ed e' l'unico
         // punto attraversato da tutte e tre le pagine torneo.
         if (window.ChallengeTracker) {
-            ChallengeTracker.recordProgress('completeTournament', { tournamentId: tournamentId });
+            ChallengeTracker.recordProgress('completeTournament', { tournamentId: tournamentId, difficulty: difficulty });
         }
+        if (window.CardAcquisition) rewards.push(...CardAcquisition.onTournamentWin(tournamentId, difficulty));
         return rewards;
     }
 
@@ -416,10 +423,18 @@
         const rewards = [];
         if (!def || !def.reward || !window.SaveManager) return rewards;
         Object.keys(def.reward).forEach((currency) => {
+            if (currency === 'cards' || currency === 'unlockPacks') return;
             const importo = def.reward[currency];
             if (!importo || importo <= 0) return;
             SaveManager.addCurrency(currency, importo);
             rewards.push(voce(currency, importo, `Sfida completata — ${def.label}`));
+        });
+        (def.reward.cards || []).forEach((entry) => {
+            const id = Number(entry.id || entry.cardId);
+            const qty = Math.max(1, Number(entry.qty) || 1);
+            const prima = SaveManager.getOwnedCount(id);
+            const dopo = SaveManager.addOwnedCards(id, qty);
+            if (dopo > prima) rewards.push({ cardId: id, amount: dopo - prima, icon: '🃏', nome: entry.nome || `Carta #${id}`, rule: `Sfida completata — ${def.label}` });
         });
         return rewards;
     }
@@ -435,9 +450,11 @@
      */
     function previewChallenge(def) {
         if (!def || !def.reward) return [];
-        return Object.keys(def.reward)
-            .filter((currency) => def.reward[currency] > 0)
+        const out = Object.keys(def.reward)
+            .filter((currency) => currency !== 'cards' && currency !== 'unlockPacks' && def.reward[currency] > 0)
             .map((currency) => voce(currency, def.reward[currency], `Premio di "${def.label}"`));
+        (def.reward.cards || []).forEach((entry) => out.push({ cardId: entry.id || entry.cardId, amount: entry.qty || 1, icon: '🃏', nome: entry.nome || `Carta #${entry.id || entry.cardId}`, rule: `Premio di "${def.label}"` }));
+        return out;
     }
 
     /**

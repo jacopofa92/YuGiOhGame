@@ -2,6 +2,15 @@
 
 Ultimo aggiornamento verificato: 2026-10-06.
 
+## Rework acquisizione carte
+
+La fonte di verità di requisiti, probabilità e prezzi è
+`CARD_ACQUISITION.md`. La logica speciale è in
+`js/economy/card-acquisition.js`; rarità, commercio e accrediti restano
+separati rispettivamente in `card-rarity.js`, `shop-catalog.js` e
+`rewards.js`. Pity e traguardi sono persistiti nel campo `cardAcquisition`
+del salvataggio.
+
 Questo file è la memoria breve e stabile del progetto. Va letto all'inizio di
 una nuova sessione prima di scandire di nuovo l'intero repository. Per la
 cronologia dettagliata delle decisioni e delle correzioni precedenti resta

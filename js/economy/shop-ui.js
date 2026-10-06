@@ -319,7 +319,7 @@
             // domani con la rotazione nuova (ShopCatalog.carteDelGiorno la
             // marca `acquistataOggi` leggendo lo stesso dayKey della
             // rotazione, vedi shop-catalog.js).
-            const disponibili = carte.filter((voce) => !voce.acquistataOggi);
+            const disponibili = carte.filter((voce) => !voce.acquistataOggi && SaveManager.getOwnedCount(voce.cardId) < 3);
             if (disponibili.length === 0) {
                 secCarte.grid.appendChild(el('div', 'shop-empty-note',
                     'Hai già comprato tutte le carte di oggi. Torna a mezzanotte per una rotazione nuova.'));
@@ -344,8 +344,8 @@
                     possedute > 0 ? `Ne possiedi ${possedute}` : 'Non ancora nella collezione'));
 
                 const riga = el('div', 'buy-row');
-                const compra = (valuta, importo) => {
-                    if (!paga(valuta, importo)) return;
+                const compra = () => {
+                    if (!pagaComposto(voce.costo)) return;
                     SaveManager.addOwnedCards(voce.cardId, 1);
                     // Segnata SUBITO, prima di qualunque refresh: sia quello
                     // immediato qui sotto sia quello passato come callback a
@@ -362,10 +362,7 @@
                     }
                     refresh();
                 };
-                riga.appendChild(pulsanteAcquisto('credits', voce.costo.credits, false, compra));
-                if (voce.costo.millenniumCards) {
-                    riga.appendChild(pulsanteAcquisto('millenniumCards', voce.costo.millenniumCards, true, compra));
-                }
+                riga.appendChild(pulsanteComposto(voce.costo, '', false, compra));
                 item.appendChild(riga);
                 secCarte.grid.appendChild(item);
             });
@@ -423,13 +420,14 @@
                     // La percentuale di ultra rara è scritta a chiare
                     // lettere: è la sola differenza vera fra le tre buste,
                     // e nasconderla renderebbe la scelta un tiro al buio.
-                    `${busta.descrizione} Probabilità di ultra rara: ${Math.round(busta.ultraChance * 100)}%.`);
+                    busta.descrizione + (busta.legendaryChance
+                        ? ` Probabilità di leggendaria: ${Math.round(busta.legendaryChance * 100)}%.` : ''));
                 desc.style.lineHeight = '1.45';
                 item.appendChild(desc);
 
                 const riga = el('div', 'buy-row');
-                const apri = (valuta, importo) => {
-                    if (!paga(valuta, importo)) return;
+                const apri = () => {
+                    if (!pagaComposto(busta.costo)) return;
                     const estratte = ShopCatalog.apriBusta(busta);
                     const nuove = estratte.filter((id) => SaveManager.getOwnedCount(id) === 0);
                     estratte.forEach((id) => SaveManager.addOwnedCards(id, 1));
@@ -449,10 +447,7 @@
                     }
                     refresh();
                 };
-                riga.appendChild(pulsanteAcquisto('credits', busta.costo.credits, false, apri));
-                if (busta.costo.locatorCards) {
-                    riga.appendChild(pulsanteAcquisto('locatorCards', busta.costo.locatorCards, true, apri));
-                }
+                riga.appendChild(pulsanteComposto(busta.costo, '', false, apri));
                 item.appendChild(riga);
                 secBuste.grid.appendChild(item);
             });

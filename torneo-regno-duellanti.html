@@ -664,6 +664,7 @@
     }
 </script>
 <script src="js/cloud/server-date.js"></script>
+<script src="js/economy/card-acquisition.js"></script>
 <script src="js/economy/rewards.js"></script>
 <script src="js/data/characters-db.js"></script>
 <!-- Intermezzi narrativi delle tappe del torneo (Cancello di Kaiba,
@@ -1962,7 +1963,7 @@
                     // contatore sarebbe già a 1 e il raddoppio non
                     // scatterebbe mai).
                     const primaVolta = (SaveManager.getTournamentStats(TOURNAMENT_ID).completions || 0) === 0;
-                    state.rewards = window.Rewards ? Rewards.forTournament(TOURNAMENT_ID, primaVolta) : [];
+                    state.rewards = window.Rewards ? Rewards.forTournament(TOURNAMENT_ID, primaVolta, state.difficulty) : [];
                     SaveManager.incrementTournamentStat(TOURNAMENT_ID, 'completions');
                     TournamentDialogues.mostraUnaVolta(TOURNAMENT_ID, 'champion', state, saveState);
                     showToast(`👑 Hai sconfitto Maximillion Pegasus! Sei il Campione del Regno dei Duellanti!`, reaction);

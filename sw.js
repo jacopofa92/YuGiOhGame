@@ -405,7 +405,9 @@
 // le scritture vengono attese prima di concludere la risposta intercettata.
 // v161: il client Multiplayer usa esclusivamente il passo comune; rimossi
 // dispatcher, messaggi per singola mossa e fotografie di stato legacy.
-const CACHE_NAME = 'ygo-duel-arena-v162';
+// v163: rarità a sette fasce, buste tematiche, drop speciali e regole
+// persistenti di acquisizione (card-acquisition.js).
+const CACHE_NAME = 'ygo-duel-arena-v163';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -548,6 +550,7 @@ const APP_SHELL = [
     // Economia e Negozio
     'js/cloud/server-date.js',
     'js/data/card-rarity.js',
+    'js/economy/card-acquisition.js',
     'js/economy/rewards.js',
     'js/economy/rewards.css',
     'js/economy/shop-catalog.js',

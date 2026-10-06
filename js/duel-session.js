@@ -601,7 +601,14 @@
         // lui — stessa condizione già usata per recordCharacterResult qui
         // sopra) e mai un Pareggio.
         if (playerWon === true && session.opponent.id && window.ChallengeTracker) {
-            ChallengeTracker.recordProgress('defeatCharacter', { characterId: session.opponent.id });
+            const lpFinali = (typeof gameState !== 'undefined' && gameState) ? gameState.playerLP : 0;
+            const parametriVittoria = {
+                characterId: session.opponent.id,
+                difficulty: session.difficulty,
+                playerLP: lpFinali,
+                lpLost: Math.max(0, 8000 - lpFinali)
+            };
+            ChallengeTracker.recordProgress('defeatCharacter', parametriVittoria);
             ChallengeTracker.recordProgress('winDuels', {});
             // 'perfectWin': vinto senza perdere un solo Life Point.
             // `gameState` è dichiarato con `let` a livello di script in
@@ -642,7 +649,10 @@
                 // quindi non serve che il torneo se li passi da se'.
                 tournamentId: session.tournamentId || null,
                 opponentId: (session.opponent && session.opponent.id) || null,
-                abbandono: abbandono
+                abbandono: abbandono,
+                playerLP: (typeof gameState !== 'undefined' && gameState) ? gameState.playerLP : 0,
+                lpLost: (typeof gameState !== 'undefined' && gameState)
+                    ? Math.max(0, 8000 - gameState.playerLP) : 8000
             });
         }
         // Lo sblocco di un Duellante si annuncia nello stesso elenco delle

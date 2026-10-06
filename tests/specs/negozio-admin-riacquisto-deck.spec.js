@@ -67,7 +67,10 @@ module.exports = {
                     adminLabel,
                     before,
                     after,
-                    expected: Math.min(SaveManager.CARD_COPY_CAP, before + (qtyPerPurchase * 2)),
+                    // Riacquistare resta consentito all'admin per fare
+                    // prove di UI/economia, ma i deck non accumulano più
+                    // doppioni: valgono come base minima della collezione.
+                    expected: Math.max(before, Math.min(SaveManager.CARD_COPY_CAP, qtyPerPurchase)),
                     packRegistrations: SaveManager.getOwnedPacks().filter((id) => id === deck.packId).length,
                     normalHasBuyButton: !!normalItem.querySelector('.buy-btn:not(.ghost)'),
                     normalOwnedLabel: (normalItem.querySelector('.shop-owned-note') || {}).textContent || ''
@@ -77,7 +80,7 @@ module.exports = {
             assert(/Admin.*senza limiti/i.test(result.adminLabel),
                 `La vetrina non spiega il privilegio admin: "${result.adminLabel}"`);
             assert(result.after === result.expected,
-                `Due riacquisti devono aggiungere due volte le carte (${result.before} -> ${result.expected}, trovato ${result.after})`);
+                `I riacquisti admin non devono sommare doppioni del deck (${result.before} -> ${result.expected}, trovato ${result.after})`);
             assert(result.packRegistrations === 1,
                 `Il pack deve restare registrato una sola volta (trovato ${result.packRegistrations})`);
             assert(!result.normalHasBuyButton && /Già acquistato/i.test(result.normalOwnedLabel),

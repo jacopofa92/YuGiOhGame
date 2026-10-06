@@ -612,8 +612,13 @@
     // ================================================================
     // Collezione: quante copie di ciascuna carta il giocatore possiede.
     // ================================================================
-    /** Tetto massimo di copie possedute della stessa carta. */
-    const CARD_COPY_CAP = 99;
+    /**
+     * Tetto normale della collezione. Yu-Gi-Oh permette tre copie: tenere
+     * lo stesso limite anche nel possesso impedisce che premi e buste
+     * continuino a regalare doppioni ormai inutilizzabili. L'admin resta
+     * virtualmente al massimo tramite isAdminUser(), senza sporcare il save.
+     */
+    const CARD_COPY_CAP = 3;
 
     /**
      * Un amministratore possiede SEMPRE tutto al massimo, senza che il
@@ -652,16 +657,35 @@
         return next;
     }
 
-    /** Aggiunge in blocco tutte le carte di un mazzo/pacchetto. */
+    /**
+     * Acquisisce un mazzo senza sommare i doppioni fra scatole diverse.
+     * Un deck è una base di costruzione, non una scorciatoia per fare tre
+     * copie: possedere 1 Anfora e comprare un deck con 1 Anfora lascia 1;
+     * soltanto un deck che ne contiene 2 porta il possesso almeno a 2.
+     */
     function addOwnedCardsFromDeck(deck) {
         const save = load() || createNew();
         save.collection = save.collection || {};
         [...((deck && deck.main) || []), ...((deck && deck.extra) || [])].forEach((entry) => {
             const current = Number(save.collection[entry.id]) || 0;
-            save.collection[entry.id] = Math.max(0, Math.min(CARD_COPY_CAP, current + (entry.qty || 0)));
+            save.collection[entry.id] = Math.max(current, Math.min(CARD_COPY_CAP, entry.qty || 0));
         });
         touch(save);
         return save.collection;
+    }
+
+    /** Stato persistente del sistema di acquisizione (pity, traguardi e sblocchi). */
+    function getCardAcquisitionState() {
+        const save = load() || createNew();
+        save.cardAcquisition = save.cardAcquisition || {};
+        return JSON.parse(JSON.stringify(save.cardAcquisition));
+    }
+
+    function setCardAcquisitionState(state) {
+        const save = load() || createNew();
+        save.cardAcquisition = state && typeof state === 'object' ? state : {};
+        touch(save);
+        return getCardAcquisitionState();
     }
 
     function getCollection() {
@@ -1041,6 +1065,8 @@
         getOwnedCount: getOwnedCount,
         addOwnedCards: addOwnedCards,
         addOwnedCardsFromDeck: addOwnedCardsFromDeck,
+        getCardAcquisitionState: getCardAcquisitionState,
+        setCardAcquisitionState: setCardAcquisitionState,
         getCollection: getCollection,
         getTournamentState: getTournamentState,
         setTournamentState: setTournamentState,

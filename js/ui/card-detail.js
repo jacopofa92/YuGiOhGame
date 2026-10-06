@@ -113,6 +113,7 @@
                 </div>
             ` : ''}
             <p class="cd-effect">${escapeHtml(testoDi(card.effect, card) || fallbackEffetto)}</p>
+            ${window.CardAcquisition ? `<p class="cd-effect"><strong>Come si ottiene:</strong> ${escapeHtml(CardAcquisition.sourceFor(card.id))}</p>` : ''}
             ${card.missingEffectNote ? `<p class="cd-note">🟡 Effetto implementato parzialmente: ${escapeHtml(card.missingEffectNote)}</p>` : ''}
         `;
         backdrop.classList.add('open');
