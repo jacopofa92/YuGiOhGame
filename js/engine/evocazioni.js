@@ -74,17 +74,6 @@ function eseguiTributo(posto, c, extra) {
     const perCarta = c.perCarta !== undefined && c.perCarta !== null
         ? (Tavolo.mano(posto).find((x) => x && x.uid === c.perCarta) || null) : null;
     const attesa = typeof c.attesaMs === 'number' ? c.attesaMs : 0;
-    const MP_vecchio = posto === 'player' && window.MP_broadcast && !window.MP_applyingRemote;
-    if (MP_vecchio && attesa > 0) {
-        // `summonedCard` NON è ridondante con il messaggio 'summon' che
-        // arriverà fra poco: serve PRIMA, perché una carta sacrificata può
-        // reagire al mostro per cui viene sacrificata (Skull Knight #2 id
-        // 1128, "se Tributi questa carta per l'Evocazione Tributo di un
-        // mostro Tipo Demone") — vedi notifySacrificedForTribute in
-        // js/engine/duel-engine.js.
-        window.MP_broadcast({ kind: 'tribute', indices, delayMs: attesa, summonedCard: perCarta });
-    }
-
     if (attesa > 0) {
         addToLog(perChi(posto, '🔻 Sacrificio in corso...', '🔻 L\'avversario sacrifica per un\'Evocazione Tributo...'));
         if (window.SFX) SFX.tribute();
@@ -127,15 +116,6 @@ function eseguiTributo(posto, c, extra) {
             DuelEngine.notifySacrificedForTribute(posto, slot.card, perCarta);
         });
         updateUI();
-        if (MP_vecchio && attesa <= 0) {
-            // Trasmesso DOPO aver applicato: ogni azione porta il checksum
-            // dello stato di chi la manda, e chi la riceve confronta il
-            // proprio a mossa applicata (vedi js/multiplayer/multiplayer.js).
-            const msg = { kind: 'tribute', indices, delayMs: 0 };
-            if (suMagieTrappole) msg.zone = 'st';
-            if (perCarta) msg.summonedCard = perCarta;
-            window.MP_broadcast(msg);
-        }
         if (typeof extra.dopo === 'function') extra.dopo();
     };
     // Un timer delle regole: a passo comune aspetta le scelte aperte
@@ -191,14 +171,6 @@ function eseguiScartoFineTurno(posto, c, extra) {
     updateUI();
 
     // In Multiplayer questo scarto non viaggiava: l'avversario continuava
-    // a contare la mano di prima, e il conteggio della mano entra nel
-    // checksum. Si manda la fotografia a scelta fatta — anche il Cimitero
-    // cambia, e queste carte sono comunque pubbliche una volta scartate.
-    // Vedi broadcastLocalStatePush in js/engine/duel-engine.js.
-    if (posto === 'player' && window.DuelEngine && typeof DuelEngine.broadcastLocalStatePush === 'function') {
-        DuelEngine.broadcastLocalStatePush(null);
-    }
-
     if (extra && typeof extra.dopo === 'function') extra.dopo();
     // A passo comune, lo scarto del posto remoto fa ripartire il turno che
     // enterEndPhase (fasi.js) aveva lasciato in attesa.
@@ -304,9 +276,6 @@ function eseguiEvocazioneNormale(posto, c, extra) {
         Tavolo.mostri(posto)[slotIndex] = { card: card, position: position, isFaceDown: isFaceDown, hasAttacked: false, canChangePosition: false, summonedOnTurn: gameState.turn };
         if (!isFaceDown && window.DuelDialogues) DuelDialogues.summon(posto, card);
         gameState.hasNormalSummoned = true;
-        if (dellaPersona && window.MP_broadcast && !window.MP_applyingRemote) {
-            window.MP_broadcast({ kind: 'summon', card, slotIndex, position });
-        }
         addToLog(position === 'attack'
             ? `${usedTribute ? '🔺 Evocazione Tributo: ' : ''}${perChi(posto, 'Hai Evocato', 'L\'avversario ha Evocato')} ${card.name}!`
             : `${usedTribute ? '🔺 Evocazione Tributo: ' : ''}${perChi(posto, 'Hai Posizionato un mostro.', 'L\'avversario ha Posizionato un mostro.')}`);
@@ -395,9 +364,6 @@ function eseguiCambioPosizione(posto, c) {
             DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_FLIP, flipCtx);
         }
     }
-    if (dellaPersona && window.MP_broadcast && !window.MP_applyingRemote) {
-        window.MP_broadcast({ kind: 'position', slotIndex, position: monsterSlot.position });
-    }
     addToLog(`${perChi(posto, 'Hai cambiato', 'L\'avversario ha cambiato')} ${monsterSlot.card.name} in Posizione di ${monsterSlot.position}.`);
     if (window.SFX) SFX.place();
     if (dellaPersona) clearSelection(); else updateUI();
@@ -464,9 +430,6 @@ function eseguiSetMagiaTrappola(posto, c, extra) {
         // Trappola Set non si può attivare nello stesso turno in cui è stata
         // piazzata".
         Tavolo.magieTrappole(posto)[slotIndex] = { card: card, isFaceDown: true, setOnTurn: gameState.turn };
-        if (dellaPersona && window.MP_broadcast && !window.MP_applyingRemote) {
-            window.MP_broadcast({ kind: 'spelltrap', card, slotIndex });
-        }
         chiudi();
         // L'ATTERRAGGIO. Il volo dalla mano c'era gia' (flyCardToSlot qui
         // sopra), ma la carta arrivava e si fermava di colpo: nessun
@@ -515,9 +478,6 @@ function eseguiSetMagiaTerreno(posto, c, extra) {
         const indiceOra = manoOra.indexOf(card);
         if (indiceOra !== -1) manoOra.splice(indiceOra, 1);
         gameState[posto + 'FieldSpell'] = { card: card, isFaceDown: true, setOnTurn: gameState.turn };
-        if (dellaPersona && window.MP_broadcast && !window.MP_applyingRemote) {
-            window.MP_broadcast({ kind: 'fieldspell', card });
-        }
         if (dellaPersona) clearSelection(); else updateUI();
     });
 }

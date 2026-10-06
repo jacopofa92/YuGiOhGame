@@ -506,17 +506,6 @@ async function botPerformAttacks(giro = 0, soloUids = null, io = 'bot') {
 }
 
 /**
- * Wrapper storico, usato ormai solo dalla replica di un attacco remoto in
- * Multiplayer (applyRemoteAttack, js/multiplayer/multiplayer.js: lì i costi
- * li ha già pagati l'altro client). L'IA attacca col comando 'attacca'.
- * `onComplete` viene inoltrato così chi aspetta può attendere la
- * risoluzione piena.
- */
-function botExecuteAttack(attackerIndex, targetIndex, onComplete, io = 'bot') {
-    resolveAttack(io, attackerIndex, targetIndex, onComplete);
-}
-
-/**
  * Sposta una Trappola dalla mano del bot al primo slot Magia/Trappola
  * libero, coperta — SENZA rivelarne il nome nel log: il giocatore umano
  * non deve poter sapere cosa il bot ha appena Settato, esattamente come

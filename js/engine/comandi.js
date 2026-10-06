@@ -62,11 +62,6 @@ const Comandi = (function () {
         if (typeof def.canActivateAsTurnPlayer === 'function' && !def.canActivateAsTurnPlayer(ctx)) return false;
         addToLog(`${perChi(posto, 'Usi', 'L\'avversario usa')} ${fs.card.name} del ${perChi(posto, 'suo', 'tuo')} Terreno.`);
         def.activateAsTurnPlayer(ctx);
-        // Multiplayer di oggi (fino al passo D): il risultato viaggia come
-        // fotografia di stato, solo per la mossa fatta qui.
-        if (posto === 'player' && !window.MP_applyingRemote && DuelEngine.broadcastLocalStatePush) {
-            DuelEngine.broadcastLocalStatePush(null);
-        }
         updateUI();
         return true;
     }

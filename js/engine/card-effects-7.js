@@ -2399,10 +2399,8 @@
     // bot paga finché ha più di 1000 LP, poi la lascia andare (100 LP a
     // turno diventano pesanti quando si è vicini a perdere). Con 100 LP o
     // meno non si può pagare: la carta viene distrutta.
-    // In Multiplayer si paga sempre in automatico, da entrambe le parti:
-    // la scelta dell'avversario remoto non viaggia (le scelte che viaggiano
-    // sono fra carte, vedi awaitRemoteCardChoice), e due client che
-    // decidessero ognuno per conto suo mostrerebbero due partite diverse.
+    // Nel Multiplayer a passo comune la scelta viaggia da `Decisioni` come
+    // ogni altra: il proprietario reale decide e il motore specchio aspetta.
     const messaggeroPaga = (ctx) => {
         ctx.dealDamage(ctx.owner, 100);
         ctx.log('🕊️ Messaggero della Pace: pagati 100 Life Points per mantenerla attiva.');
@@ -2427,7 +2425,6 @@
         },
         onStandbyPhase(ctx) {
             const lp = ctx.owner === 'player' ? gameState.playerLP : gameState.botLP;
-            if (window.MULTIPLAYER_MODE) { messaggeroPaga(ctx); return; }
             if (lp <= 100) { messaggeroLasciaAndare(ctx); return; }
             if (Decisioni.rispondeUnaPersona(ctx.owner)) {
                 Decisioni.chiedi({
@@ -2655,22 +2652,6 @@
             }
             const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
             const deck = gameState[deckKey];
-            const remoto = !!(window.DuelEngine && DuelEngine.isRemoteChooser && DuelEngine.isRemoteChooser(ctx.owner));
-            if (remoto && !Array.isArray(deck)) {
-                // Multiplayer, carta dell'avversario: il suo Deck da questa
-                // parte non esiste. La sua dichiarazione va comunque
-                // consumata dalla coda delle scelte, o si accoppierebbe con
-                // la prossima scelta che non c'entra nulla. L'esito (i Life
-                // Points scambiati o no) arriva con la fotografia di stato
-                // che segue ogni attivazione.
-                const fine = attendiScelta(ctx);
-                chooseOption(ctx, { options: [{ value: 'monster', label: 'Mostro' }, { value: 'spell', label: 'Magia' }, { value: 'trap', label: 'Trappola' }] }, (guess) => {
-                    const nomi = { monster: 'Mostro', spell: 'Magia', trap: 'Trappola' };
-                    ctx.log(`🎲 Quiz Inverso: l'avversario dichiara "${nomi[guess] || guess}".`);
-                    fine();
-                });
-                return;
-            }
             if (!Array.isArray(deck) || deck.length === 0) {
                 ctx.log('🎲 Quiz Inverso: il Deck è vuoto, nessuna carta in cima da dichiarare.');
                 return;
