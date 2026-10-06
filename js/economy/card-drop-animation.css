@@ -2,8 +2,8 @@
     --drop: #f7d774; --drop-soft: rgba(247,215,116,.42);
     position: fixed; inset: 0; z-index: 101400; overflow: hidden;
     display: grid; place-items: center; padding: 16px;
-    background: radial-gradient(circle at 50% 47%, rgba(28,22,40,.94), rgba(3,5,10,.995) 64%);
-    opacity: 0; transition: opacity .32s ease; perspective: 1100px;
+    background: radial-gradient(circle at 50% 46%, #171423 0%, #080a11 47%, #020308 100%);
+    opacity: 0; transition: opacity .28s ease; perspective: 1100px;
 }
 .cdrop-overlay.cdrop-secret { --drop: #77f6dd; --drop-soft: rgba(80,224,211,.44); }
 .cdrop-overlay.cdrop-mythic { --drop: #ffd35e; --drop-soft: rgba(255,116,37,.52); }
@@ -11,20 +11,20 @@
 .cdrop-overlay.cdrop-leaving { opacity: 0; }
 .cdrop-depth, .cdrop-particles { position: absolute; inset: 0; pointer-events: none; }
 .cdrop-horizon {
-    position: absolute; left: -20%; right: -20%; top: 56%; height: 45%;
-    background: repeating-linear-gradient(90deg, transparent 0 7%, color-mix(in srgb, var(--drop) 25%, transparent) 7.2% 7.35%, transparent 7.55% 14%),
-                linear-gradient(180deg, var(--drop-soft), transparent 2px);
-    transform: rotateX(72deg); transform-origin: 50% 0; opacity: .28;
+    position: absolute; left: 50%; top: 52%; width: min(76vw, 760px); height: min(24vh, 190px);
+    border-radius: 50%; border: 1px solid color-mix(in srgb, var(--drop) 24%, transparent);
+    background: radial-gradient(ellipse, color-mix(in srgb, var(--drop) 10%, transparent), transparent 68%);
+    transform: translate(-50%,-50%) rotateX(70deg); opacity: .5;
 }
 .cdrop-ring {
     position: absolute; left: 50%; top: 48%; width: min(68vmin, 560px); aspect-ratio: 1;
     border: 2px solid var(--drop); border-radius: 50%; opacity: .28;
-    box-shadow: 0 0 24px var(--drop-soft), inset 0 0 24px var(--drop-soft);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--drop) 20%, transparent);
     transform-style: preserve-3d;
 }
-.cdrop-ring-a { animation: cdropRingA 7s linear infinite; }
-.cdrop-ring-b { width: min(53vmin, 430px); animation: cdropRingB 5s linear infinite reverse; }
-.cdrop-ring-c { width: min(84vmin, 690px); animation: cdropRingC 9s linear infinite; opacity: .12; }
+.cdrop-ring-a { animation: cdropRingA 11s linear infinite; }
+.cdrop-ring-b { width: min(53vmin, 430px); animation: cdropRingB 9s linear infinite reverse; }
+.cdrop-ring-c { width: min(84vmin, 690px); animation: cdropRingC 14s linear infinite; opacity: .09; }
 @keyframes cdropRingA { from { transform: translate(-50%,-50%) rotateX(66deg) rotateZ(0); } to { transform: translate(-50%,-50%) rotateX(66deg) rotateZ(360deg); } }
 @keyframes cdropRingB { from { transform: translate(-50%,-50%) rotateY(68deg) rotateZ(0); } to { transform: translate(-50%,-50%) rotateY(68deg) rotateZ(360deg); } }
 @keyframes cdropRingC { from { transform: translate(-50%,-50%) rotateX(76deg) rotateY(18deg) rotateZ(0); } to { transform: translate(-50%,-50%) rotateX(76deg) rotateY(18deg) rotateZ(360deg); } }
@@ -34,18 +34,18 @@
 .cdrop-beam {
     position: absolute; width: min(58vw, 360px); height: 85%;
     background: linear-gradient(90deg, transparent, var(--drop-soft), rgba(255,255,255,.5), var(--drop-soft), transparent);
-    filter: blur(18px); clip-path: polygon(42% 0,58% 0,100% 100%,0 100%);
-    opacity: 0; animation: cdropBeam 1.4s .25s ease-out forwards;
+    filter: blur(6px); clip-path: polygon(45% 0,55% 0,82% 100%,18% 100%);
+    opacity: 0; animation: cdropBeam 1.15s .2s ease-out forwards;
 }
-@keyframes cdropBeam { 0% { opacity:0; transform:scaleY(.15); } 35% { opacity:.9; } 100% { opacity:.32; transform:scaleY(1); } }
-.cdrop-card { position: relative; width: clamp(150px, min(36vw, 32vh), 240px); aspect-ratio: .685; transform-style: preserve-3d; opacity: 0; animation: cdropArrive 2.15s .18s cubic-bezier(.16,.82,.24,1) forwards, cdropFloat 3.8s 2.4s ease-in-out infinite; }
-@keyframes cdropArrive { 0% { opacity:0; transform:translate3d(0,90px,-500px) rotateY(-540deg) rotateX(28deg) scale(.3); } 68% { opacity:1; transform:translate3d(0,-10px,28px) rotateY(12deg) rotateX(-3deg) scale(1.08); } 100% { opacity:1; transform:translate3d(0,0,0) rotateY(0) scale(1); } }
-@keyframes cdropFloat { 0%,100% { transform:translateY(0) rotateY(-3deg); } 50% { transform:translateY(-10px) rotateY(4deg); } }
-.cdrop-card::after { content:''; position:absolute; inset:-7%; border-radius:12px; z-index:-1; background:radial-gradient(circle,var(--drop-soft),transparent 68%); filter:blur(14px); animation:cdropPulse 1.6s ease-in-out infinite; }
-@keyframes cdropPulse { 50% { transform:scale(1.18); opacity:.6; } }
+@keyframes cdropBeam { 0% { opacity:0; transform:scaleY(.3); } 40% { opacity:.72; } 100% { opacity:.24; transform:scaleY(1); } }
+.cdrop-card { position: relative; width: clamp(150px, min(36vw, 32vh), 240px); aspect-ratio: .685; transform-style: preserve-3d; opacity: 0; will-change: transform,opacity; animation: cdropArrive 1.45s .12s cubic-bezier(.18,.78,.2,1) forwards; }
+@keyframes cdropArrive { 0% { opacity:0; transform:translate3d(0,72px,-360px) rotateY(-360deg) rotateX(18deg) scale(.48); } 72% { opacity:1; transform:translate3d(0,-7px,18px) rotateY(8deg) rotateX(-2deg) scale(1.035); } 100% { opacity:1; transform:translate3d(0,0,0) rotateY(0) rotateX(0) scale(1); } }
+@keyframes cdropFloat { 0%,100% { transform:translate3d(0,0,0); } 50% { transform:translate3d(0,-6px,0); } }
+.cdrop-card::after { content:''; position:absolute; inset:-5%; border-radius:12px; z-index:-1; background:radial-gradient(circle,var(--drop-soft),transparent 70%); opacity:.5; }
 .cdrop-card-back, .cdrop-card-front { position:absolute; inset:0; backface-visibility:hidden; border-radius:8px; overflow:hidden; }
 .cdrop-card-back { transform:rotateY(180deg); background:repeating-radial-gradient(ellipse at center,#d97823 0 4px,#21100b 9px 13px); border:5px solid #111; }
-.cdrop-card-front { background:#17131d; box-shadow:0 24px 55px rgba(0,0,0,.7),0 0 32px var(--drop-soft); }
+.cdrop-card-front { background:#17131d; box-shadow:0 18px 38px rgba(0,0,0,.72),0 0 18px var(--drop-soft); }
+.cdrop-revealed .cdrop-card-front { animation:cdropFloat 4s ease-in-out infinite; }
 .cdrop-card-front > .card { width:100% !important; height:100% !important; }
 .cdrop-fallback-card { width:100%; height:100%; position:relative; overflow:hidden; border:5px solid #b68a3e; background:#18131c; }
 .cdrop-fallback-card img { width:100%; height:100%; object-fit:cover; display:block; }
@@ -54,11 +54,11 @@
 .cdrop-name { margin-top:-5px; font:900 clamp(1.25rem,4vw,2rem)/1.05 Georgia,serif; color:#fff7dc; text-shadow:0 3px 20px #000,0 0 18px var(--drop-soft); }
 .cdrop-rarity { display:inline-block; margin-top:8px; padding:4px 14px; border:1px solid var(--drop); border-radius:999px; color:var(--drop); font-size:.68rem; font-weight:900; letter-spacing:.16em; text-transform:uppercase; background:rgba(0,0,0,.4); transition-delay:.1s; }
 .cdrop-rule { margin:10px auto 0; max-width:54ch; color:rgba(255,255,255,.74); font-size:clamp(.72rem,2.5vw,.9rem); line-height:1.4; transition-delay:.18s; }
-.cdrop-ready .cdrop-name, .cdrop-ready .cdrop-rarity, .cdrop-ready .cdrop-rule { opacity:1; transform:none; }
+.cdrop-revealed .cdrop-name, .cdrop-revealed .cdrop-rarity, .cdrop-revealed .cdrop-rule { opacity:1; transform:none; }
 .cdrop-continue { margin-top:14px; border:1px solid var(--drop); border-radius:4px; padding:11px 22px; background:linear-gradient(180deg,color-mix(in srgb,var(--drop) 90%,#fff 10%),color-mix(in srgb,var(--drop) 66%,#54300d 34%)); color:#171006; font-weight:900; cursor:pointer; box-shadow:0 8px 28px var(--drop-soft); opacity:0; transform:translateY(8px); pointer-events:none; transition:opacity .4s ease,transform .4s ease,filter .2s ease; }
 .cdrop-ready .cdrop-continue { opacity:1; transform:none; pointer-events:auto; }
 .cdrop-continue:hover { filter:brightness(1.1); }
-.cdrop-particle { position:absolute; left:50%; top:48%; width:var(--size); height:var(--size); border-radius:50%; background:var(--drop); box-shadow:0 0 8px var(--drop); opacity:0; animation:cdropParticle 1.5s var(--delay) ease-out infinite; }
+.cdrop-particle { position:absolute; left:50%; top:48%; width:var(--size); height:var(--size); border-radius:50%; background:var(--drop); box-shadow:0 0 4px var(--drop); opacity:0; animation:cdropParticle 2.4s var(--delay) ease-out infinite; }
 @keyframes cdropParticle { 0% { opacity:0; transform:rotate(var(--a)) translateX(18px) scale(.2); } 18% { opacity:1; } 100% { opacity:0; transform:rotate(var(--a)) translateX(var(--d)) scale(1.1); } }
 @media (max-height: 560px) and (orientation: landscape) { .cdrop-stage { height:54vh; } .cdrop-card { width:clamp(110px,24vh,150px); } .cdrop-rule { display:none; } .cdrop-name { font-size:1rem; } }
 @media (prefers-reduced-motion: reduce) { .cdrop-overlay *, .cdrop-overlay *::after { animation:none !important; transition:none !important; } .cdrop-overlay { transition:none; } .cdrop-card { opacity:1; } .cdrop-beam { opacity:.25; } .cdrop-name,.cdrop-rarity,.cdrop-rule,.cdrop-continue { opacity:1; transform:none; } }

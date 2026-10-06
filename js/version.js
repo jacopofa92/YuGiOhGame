@@ -32,6 +32,9 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.1.4 — cinematica ricompensa alleggerita: niente griglia o blur pesanti,
+ *   meno particelle e ingresso separato dal movimento di attesa.
+ *
  * 1.1.3 — ricompensa carta più lunga e non interrompibile durante la
  *   rivelazione; le carte sbustate scorrono con touch, mouse e rotellina.
  *
@@ -626,4 +629,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.1.3';
+window.GAME_VERSION = '1.1.4';

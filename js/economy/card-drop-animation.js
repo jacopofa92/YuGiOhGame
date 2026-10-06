@@ -9,7 +9,8 @@
     // Prima di questo istante la carta sta ancora compiendo la rotazione
     // d'ingresso: permettere di chiudere il fondale produceva una cerimonia
     // troncata e, con premi in coda, due animazioni quasi sovrapposte.
-    const REVEAL_READY_MS = 2600;
+    const REVEAL_TEXT_MS = 1650;
+    const REVEAL_READY_MS = 2450;
     const queue = [];
     let active = false;
 
@@ -74,7 +75,9 @@
         depth.appendChild(make('div', 'cdrop-ring cdrop-ring-b'));
         depth.appendChild(make('div', 'cdrop-ring cdrop-ring-c'));
         overlay.appendChild(depth);
-        particles(overlay, r === 'mythic' ? 72 : r === 'secret' ? 56 : 42);
+        // Poche particelle ben separate sono piu leggibili e molto meno
+        // costose dei vecchi 42-72 punti, soprattutto nella WebView Android.
+        particles(overlay, r === 'mythic' ? 36 : r === 'secret' ? 30 : 24);
 
         const content = make('div', 'cdrop-content');
         content.appendChild(make('div', 'cdrop-kicker', 'RICOMPENSA OTTENUTA'));
@@ -111,8 +114,13 @@
         if (window.NativeHaptics) NativeHaptics.success();
         if (window.SFX && typeof SFX.summon === 'function') SFX.summon('effect');
         if (reducedMotion()) {
-            overlay.classList.add('cdrop-reduced', 'cdrop-ready');
+            overlay.classList.add('cdrop-reduced', 'cdrop-revealed', 'cdrop-ready');
         } else {
+            setTimeout(() => {
+                if (overlay.isConnected && !overlay.classList.contains('cdrop-leaving')) {
+                    overlay.classList.add('cdrop-revealed');
+                }
+            }, REVEAL_TEXT_MS);
             setTimeout(() => {
                 if (!overlay.isConnected || overlay.classList.contains('cdrop-leaving')) return;
                 button.disabled = false;

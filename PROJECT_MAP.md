@@ -15,7 +15,9 @@ Il costo in vittorie è misurato in modo riproducibile da
 `FARMING_REPORT.md`.
 
 La cerimonia di una carta premio vive in `card-drop-animation.js`: la
-rivelazione dura 2,6 secondi e non può essere chiusa a metà. Il riepilogo
+rivelazione dura circa 2,5 secondi e non può essere chiusa a metà. Usa uno
+sfondo opaco senza griglia, poche particelle e trasformazioni separate per
+restare fluida anche nella WebView Android. Il riepilogo
 dello sbustamento in `pack-opening.js` è un carosello orizzontale: pan nativo
 su touch, trascinamento e rotellina su desktop; uno swipe non apre il dettaglio.
 

@@ -25,12 +25,16 @@ module.exports = {
                 return {
                     name: overlay.querySelector('.cdrop-name').textContent,
                     z: Number(getComputedStyle(overlay).zIndex),
+                    particles: overlay.querySelectorAll('.cdrop-particle').length,
+                    backgroundOpaque: getComputedStyle(overlay).backgroundImage.indexOf('rgba') === -1,
                     cardInside: card.left >= 0 && card.right <= innerWidth && card.top >= 0 && card.bottom <= innerHeight,
                     buttonInside: button.bottom <= innerHeight && button.left >= 0 && button.right <= innerWidth
                 };
             });
             assert(first.name.includes('Ra'), 'La prima carta della coda deve essere Ra');
             assert(first.z > 100000, 'La cerimonia deve stare sopra alla UI di gioco');
+            assert(first.particles <= 36 && first.backgroundOpaque,
+                'La scena deve restare leggera e coprire davvero la pagina sottostante');
             assert(first.cardInside && first.buttonInside, 'Carta e pulsante devono restare nello schermo mobile');
             // Un tocco impaziente durante la rotazione non deve troncare il
             // premio né far partire subito quello successivo.
