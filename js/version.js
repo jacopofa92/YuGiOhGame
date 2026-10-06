@@ -32,6 +32,9 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.1.1 — Drop Exodia triplicati, Slifer a 30 vittorie su Strings,
+ *   buste tematiche bilanciate con creature base e nuove illustrazioni;
+ *   pulsante admin temporaneo per provare la cinematica ricompensa.
  * 1.1.0 — Rework dell'acquisizione: sette rarità, rotazioni e buste
  *   tematiche, carte firma, Dei Egizi, Exodia con pity, audit del farming
  *   e cinematica finto 3D per ogni carta guadagnata.
@@ -617,4 +620,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.1.0';
+window.GAME_VERSION = '1.1.1';

@@ -298,6 +298,16 @@
     font-size: 30cqw;
     filter: drop-shadow(0 3px 6px rgba(0,0,0,0.65));
 }
+.shop-root .pk-emblem.pack-emblem-sprite {
+    width: 44cqw;
+    aspect-ratio: 1;
+    font-size: 0;
+    background-image: url('../../images/shop/pack-emblems.png');
+    background-size: 400% 300%;
+    background-position: var(--emblem-x) var(--emblem-y);
+    background-repeat: no-repeat;
+    filter: drop-shadow(0 4px 7px rgba(0,0,0,.72));
+}
 /* Numero di carte, stampato in basso come sulle bustine vere. */
 .shop-root .pk-count {
     position: absolute;
@@ -325,6 +335,15 @@
 .shop-root .rule-icon { font-size: 1.05rem; flex: none; }
 .shop-root .rule-title { font-size: 0.82rem; font-weight: bold; color: #ffe9b3; }
 .shop-root .rule-text { font-size: 0.76rem; color: var(--shop-ink-dim); line-height: 1.45; }
+
+.shop-root .shop-admin-tools {
+    padding: 17px;
+    border: 1px dashed rgba(103, 232, 249, .42);
+    border-radius: 14px;
+    background: rgba(8, 145, 178, .07);
+}
+.shop-root .shop-admin-tools h2 { color: #a5f3fc; font-size: .9rem; margin-bottom: 5px; }
+.shop-root .admin-drop-preview { width: min(100%, 360px); margin-top: 9px; }
 
 .shop-root .clock-warning {
     margin-bottom: 18px;

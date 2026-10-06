@@ -30,6 +30,10 @@ Segrete e Mitiche non entrano nelle buste generiche.
 - Ogni settimana: 2 tematiche da 1050 + 4 Stelle e 1 Premium da
   1800 + 8 Stelle + 1 Carta Locazione. Temi: Draghi, Incantatori, Macchine,
   Non-Morti, Guerrieri, Acqua, Arpie/Amazzoni e Toon.
+- Ogni tematica contiene soltanto carte del proprio soggetto. Quattro slot
+  sono creature base deboli; nella Premium gli slot base sono due.
+- Le illustrazioni delle confezioni usano lo sprite originale
+  `images/shop/pack-emblems.png`, generato per il progetto senza testo.
 
 Le carte firma entrano nel commercio soltanto dopo la prima copia ottenuta
 dalla relativa impresa. I boss come Genesi del Vampiro sono Leggendari e
@@ -52,14 +56,14 @@ possono uscire da fonti premium coerenti.
 ## Carte Dio
 
 - Obelisk: storia anime completa a Normale o Difficile.
-- Slifer: Battle City I a Difficile; Strings 50 volte a Difficile e almeno
+- Slifer: Battle City I a Difficile; Strings 30 volte a Difficile e almeno
   una vittoria terminata con 4000 LP o più.
 - Ra: Battle City II a Difficile; torneo Battle City 3 volte a Difficile;
   Marik 40 volte a Difficile, di cui 10 perdendo al massimo 2000 LP.
 
 ## Exodia
 
-- Drop per vittoria PvE: Facile 0,05%, Normale 0,15%, Difficile 0,30%.
+- Drop per vittoria PvE: Facile 0,15%, Normale 0,45%, Difficile 0,90%.
 - Seeker a Difficile raddoppia la chance e garantisce un pezzo mancante ogni
   10 vittorie. Pity globale dopo 250 vittorie valide senza pezzo.
 - Multiplayer e abbandoni esclusi. L'autowin admin conta per tutto.

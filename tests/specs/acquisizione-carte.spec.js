@@ -29,11 +29,25 @@ module.exports = {
                     });
                 }
                 for (let i = 0; i < 3; i++) CardAcquisition.onTournamentWin('battleCity', 'Difficile');
-                return { dopoDeckUno, dopoDeckDue, ra: SaveManager.getOwnedCount(472) };
+                CardAcquisition.onStoryProgress('anime', 'difficile', ['battlecity1'], false);
+                for (let i = 0; i < 29; i++) CardAcquisition.onDuelWin({
+                    difficulty: 'Difficile', opponentId: 'strings', playerLP: i === 0 ? 4000 : 3000, lpLost: 4000
+                });
+                const sliferA29 = SaveManager.getOwnedCount(31);
+                CardAcquisition.onDuelWin({ difficulty: 'Difficile', opponentId: 'strings', playerLP: 3000, lpLost: 5000 });
+                return {
+                    dopoDeckUno, dopoDeckDue, ra: SaveManager.getOwnedCount(472),
+                    sliferA29, sliferA30: SaveManager.getOwnedCount(31),
+                    rates: CardAcquisition.RULES.exodiaRates
+                };
             });
             assert(result.dopoDeckUno === 1, 'Un deck con 1 copia non deve sommare un doppione');
             assert(result.dopoDeckDue === 2, 'Un deck con 2 copie deve portare il possesso da 1 a 2');
             assert(result.ra === 1, 'Ra deve arrivare dopo 40 Marik (10 controllate), capitolo e 3 tornei difficili');
+            assert(result.sliferA29 === 0 && result.sliferA30 === 1,
+                'Slifer deve arrivare esattamente alla 30ª vittoria difficile contro Strings');
+            assert(result.rates.Facile === 0.0015 && result.rates.Medio === 0.0045 && result.rates.Difficile === 0.009,
+                'Le probabilità Exodia devono essere triplicate');
         } finally {
             await context.close();
         }

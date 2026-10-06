@@ -57,6 +57,14 @@
     /** "1.250" invece di "1250": i prezzi grandi si leggono a colpo d'occhio. */
     function numero(n) { return Number(n).toLocaleString('it-IT'); }
 
+    function applicaEmblema(nodo, busta) {
+        const pos = busta && busta.emblema;
+        if (!pos) { nodo.textContent = '✦'; return; }
+        nodo.classList.add('pack-emblem-sprite');
+        nodo.style.setProperty('--emblem-x', `${pos[0] * 100 / 3}%`);
+        nodo.style.setProperty('--emblem-y', `${pos[1] * 100 / 2}%`);
+    }
+
     /**
      * Solo l'account amministratore può riacquistare un mazzo già suo.
      * Il privilegio deriva dal profilo Cloud (con la cache offline già
@@ -149,10 +157,10 @@
             return { grid: grid, timer: timer };
         }
 
-        const secCarte = sezione('🗓️ Carte del giorno',
-            'Quattro carte singole: <strong>3 comuni</strong> e <strong>1 rara</strong>. Cambiano tutte insieme a mezzanotte e sono le stesse per tutti. La rara si può prendere anche con <strong>1 🔱 Carta del Millennio</strong>, che arriva soprattutto dal Torneo Kaiba: è il modo di avere a colpo sicuro una carta che le buste non ti danno mai.');
+        const secCarte = sezione('🗓️ Carte in rotazione',
+            '<strong>3 comuni e 2 rare</strong> cambiano ogni giorno; Super, Ultra e Leggendaria hanno rotazioni più lunghe. Ogni acquisto richiede Crediti e Stelle, e le carte firma compaiono soltanto dopo il primo sblocco.');
         const secBuste = sezione('📦 Buste della settimana',
-            'Tre buste da <strong>10 carte</strong> ciascuna: cambia la qualità, mai la quantità. Le rare indicate sono <strong>garantite</strong>; la percentuale è la probabilità che una di esse venga promossa a <strong>ultra rara</strong>. Il contenuto è estratto al momento dell\'apertura, quindi è diverso per ognuno. Ruotano ogni lunedì.');
+            'Tre buste generiche e tre tematiche da <strong>10 carte</strong>. Nelle tematiche ogni carta rispetta il soggetto; alcune creature base mantengono l\'apertura equilibrata. I temi ruotano ogni lunedì.');
         secBuste.grid.classList.add('packs');
         // Starter e Structure in due scaffali distinti — richiesta
         // esplicita dell'utente: sono due cose diverse (i primi
@@ -213,6 +221,25 @@
         });
         secRegole.appendChild(rulesBox);
         root.appendChild(secRegole);
+
+        // Strumento temporaneo richiesto per provare la nuova cerimonia,
+        // invisibile a chiunque non sia amministratore. Non accredita la
+        // carta: mostra soltanto l'animazione con Kuriboo (id 861).
+        if (adminPuoRiacquistareMazzi()) {
+            const adminTools = el('section', 'shop-section shop-admin-tools');
+            adminTools.appendChild(el('h2', null, 'Strumenti Admin'));
+            adminTools.appendChild(el('p', 'shop-rule', 'Anteprima temporanea: non modifica la collezione.'));
+            const provaDrop = el('button', 'buy-btn admin-drop-preview', 'Prova animazione ricompensa · Kuriboo');
+            provaDrop.type = 'button';
+            provaDrop.onclick = () => {
+                if (window.CardDropAnimation) CardDropAnimation.enqueue({
+                    cardId: 861, nome: 'Kuriboo',
+                    rule: 'Anteprima amministratore — nessuna carta è stata aggiunta alla collezione.'
+                });
+            };
+            adminTools.appendChild(provaDrop);
+            root.appendChild(adminTools);
+        }
 
         // ---- Modale di apertura busta
         const pullBackdrop = el('div', 'shop-pull-backdrop');
@@ -407,9 +434,10 @@
                 art.innerHTML = '<div class="pk-body">'
                     + '<div class="pk-tear"></div>'
                     + `<div class="pk-band">${busta.nomeBreve}</div>`
-                    + `<div class="pk-emblem">${busta.icona}</div>`
+                    + '<div class="pk-emblem"></div>'
                     + `<div class="pk-count">${busta.carte} CARTE</div>`
                     + '</div>';
+                applicaEmblema(art.querySelector('.pk-emblem'), busta);
                 stage.appendChild(art);
                 item.appendChild(stage);
 

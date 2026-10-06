@@ -14,13 +14,15 @@
     const SIGNATURE_GATED = new Set([1, 2, 12, 123, 291]);
     const CARD_CAP = 3;
     const RULES = Object.freeze({
-        exodiaRates: Object.freeze({ Facile: 0.0005, Medio: 0.0015, Difficile: 0.003 }),
+        // Triplicate dopo il primo audit di farming: il percorso generico
+        // resta raro, ma non è più soltanto una lotteria da centinaia di ore.
+        exodiaRates: Object.freeze({ Facile: 0.0015, Medio: 0.0045, Difficile: 0.009 }),
         exodiaPity: 250,
         seekerMultiplier: 2,
         seekerGuaranteeEvery: 10,
         elephantPremiumChance: 0.002,
         ra: Object.freeze({ marikHard: 40, controlled: 10, maxLpLost: 2000, tournamentHard: 3 }),
-        slifer: Object.freeze({ stringsHard: 50, healthyWins: 1, minFinalLp: 4000 })
+        slifer: Object.freeze({ stringsHard: 30, healthyWins: 1, minFinalLp: 4000 })
     });
 
     function state() {
@@ -174,7 +176,7 @@
         if (s.completedChaptersByDifficulty['battlecity1:difficile']
             && (s.counters.sliferStringsHard || 0) >= RULES.slifer.stringsHard
             && (s.counters.sliferStringsHealthy || 0) >= RULES.slifer.healthyWins) {
-            const got = award(31, 'Battle City I a Difficile e 50 vittorie difficili contro Strings, una con almeno 4000 LP', 'slifer');
+            const got = award(31, 'Battle City I a Difficile e 30 vittorie difficili contro Strings, una con almeno 4000 LP', 'slifer');
             if (got) out.push(got);
         }
         if (s.completedChaptersByDifficulty['battlecity2:difficile']
@@ -205,7 +207,7 @@
 
     const SOURCES = {
         30: 'Completa tutta la storia anime a Normale o Difficile.',
-        31: 'Completa Battle City I a Difficile; batti Strings 50 volte a Difficile e almeno una volta termina con 4000 LP.',
+        31: 'Completa Battle City I a Difficile; batti Strings 30 volte a Difficile e almeno una volta termina con 4000 LP.',
         472: 'Completa Battle City II a Difficile, vinci 3 tornei Battle City a Difficile e batti Marik 40 volte a Difficile; in 10 vittorie perdi al massimo 2000 LP.',
         866: 'Sconfiggi Bakura 25 volte a Difficile.',
         867: 'Completa il capitolo Regno dei Duellanti.', 868: 'Completa Battle City I.',

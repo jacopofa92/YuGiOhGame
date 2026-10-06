@@ -242,7 +242,7 @@
             // ci starebbe leggibile, e su una bustina vera c'è comunque
             // solo il nome dell'espansione.
             nomeBreve: 'BASE',
-            icona: '📦',
+            emblema: [3, 2],
             // `colore` è l'unico valore da dare alla bustina: tutte le sue
             // sfumature sono derivate da lì con color-mix (--pack-base).
             colore: '#1d4f9e',
@@ -255,7 +255,7 @@
             id: 'avanzata',
             nome: 'Busta Avanzata',
             nomeBreve: 'AVANZATA',
-            icona: '🎁',
+            emblema: [1, 2],
             colore: '#6a2da8',
             costo: { credits: PREZZI.bustaAvanzata, starChips: 2 },
             carte: 10,
@@ -266,7 +266,7 @@
             id: 'leggendaria',
             nome: 'Busta Leggendaria',
             nomeBreve: 'LEGGENDARIA',
-            icona: '👁️',
+            emblema: [0, 2],
             colore: '#b8860b',
             costo: { credits: PREZZI.bustaLeggendaria, starChips: 5, locatorCards: PREZZI.bustaLeggendariaInLocazione },
             carte: 10,
@@ -276,14 +276,14 @@
     ];
 
     const TEMI = [
-        { id: 'draghi', nome: 'Dominio dei Draghi', colore: '#3467a8', test: (c) => c.race === 'Drago' || /drago/i.test(c.name) },
-        { id: 'maghi', nome: 'Segreti degli Incantatori', colore: '#7046a8', test: (c) => c.race === 'Incantatore' || /mago|magia/i.test(c.name) },
-        { id: 'macchine', nome: 'KaibaCorp: Acciaio', colore: '#607782', test: (c) => c.race === 'Macchina' },
-        { id: 'nonmorti', nome: 'Ombre dal Cimitero', colore: '#57406f', test: (c) => c.race === 'Zombie' || /vampir|cimitero/i.test((c.name || '') + ' ' + (c.effect || '')) },
-        { id: 'guerrieri', nome: 'Leggende dei Guerrieri', colore: '#9a542d', test: (c) => c.race === 'Guerriero' },
-        { id: 'mare', nome: 'Furia dagli Abissi', colore: '#176d88', test: (c) => c.attribute === 'ACQUA' || /mare|oceano|acqua/i.test(c.name) },
-        { id: 'arpie', nome: 'Vento delle Arpie', colore: '#9b477b', test: (c) => /arpia|amazzone/i.test(c.name) },
-        { id: 'toon', nome: 'Mondo Toon', colore: '#b24b80', test: (c) => /toon/i.test((c.name || '') + ' ' + (c.effect || '')) }
+        { id: 'draghi', nome: 'Dominio dei Draghi', colore: '#3467a8', emblema: [0, 0], test: (c) => c.race === 'Drago' || /drago/i.test(c.name) },
+        { id: 'maghi', nome: 'Segreti degli Incantatori', colore: '#7046a8', emblema: [1, 0], test: (c) => c.race === 'Incantatore' || /mago|magia/i.test(c.name) },
+        { id: 'macchine', nome: 'KaibaCorp: Acciaio', colore: '#607782', emblema: [2, 0], test: (c) => c.race === 'Macchina' },
+        { id: 'nonmorti', nome: 'Ombre dal Cimitero', colore: '#57406f', emblema: [3, 0], test: (c) => c.race === 'Zombie' || /vampir|cimitero/i.test((c.name || '') + ' ' + (c.effect || '')) },
+        { id: 'guerrieri', nome: 'Leggende dei Guerrieri', colore: '#9a542d', emblema: [0, 1], test: (c) => c.race === 'Guerriero' },
+        { id: 'mare', nome: 'Furia dagli Abissi', colore: '#176d88', emblema: [1, 1], test: (c) => c.attribute === 'ACQUA' || /mare|oceano|acqua/i.test(c.name) },
+        { id: 'arpie', nome: 'Vento delle Arpie', colore: '#9b477b', emblema: [2, 1], test: (c) => /arpia|amazzone/i.test(c.name) },
+        { id: 'toon', nome: 'Mondo Toon', colore: '#b24b80', emblema: [3, 1], test: (c) => /toon/i.test((c.name || '') + ' ' + (c.effect || '')) }
     ];
 
     // ================================================================
@@ -319,6 +319,14 @@
             const idx = Math.floor(random() * copia.length);
             out.push(copia.splice(idx, 1)[0]);
         }
+        return out;
+    }
+
+    /** Estrae anche con ripetizione: serve ai temi molto stretti (es. Toon). */
+    function pescaConRipetizione(pool, quanti, random) {
+        if (!pool.length) return [];
+        const out = pesca(pool, quanti, random);
+        while (out.length < quanti) out.push(pool[Math.floor(random() * pool.length)]);
         return out;
     }
 
@@ -380,16 +388,16 @@
         const settimana = weekKey();
         const scelte = pesca(TEMI, 3, rng(hash('temi-' + settimana)));
         const tematizzate = scelte.slice(0, 2).map((tema) => ({
-            id: 'tema-' + tema.id, nome: tema.nome, nomeBreve: tema.id.toUpperCase(), icona: '✦', colore: tema.colore,
+            id: 'tema-' + tema.id, nome: tema.nome, nomeBreve: tema.id.toUpperCase(), emblema: tema.emblema, colore: tema.colore,
             costo: { credits: 1050, starChips: 4 }, carte: 10,
-            composizione: { common: 5, rare: 3, super: 1, ultra: 1 }, temaId: tema.id,
-            descrizione: 'Busta tematica: carte coerenti col tema, con una ultra garantita.'
+            composizione: { common: 5, rare: 3, super: 1, ultra: 1 }, temaId: tema.id, deboliGarantiti: 4,
+            descrizione: 'Busta tematica: tutte carte coerenti col tema, incluse 4 creature base volutamente meno forti.'
         }));
         const premium = scelte[2] ? [{
-            id: 'premium-' + scelte[2].id, nome: scelte[2].nome + ' Premium', nomeBreve: 'PREMIUM', icona: '✦', colore: scelte[2].colore,
+            id: 'premium-' + scelte[2].id, nome: scelte[2].nome + ' Premium', nomeBreve: 'PREMIUM', emblema: scelte[2].emblema, colore: scelte[2].colore,
             costo: { credits: 1800, starChips: 8, locatorCards: 1 }, carte: 10,
-            composizione: { common: 3, rare: 3, super: 2, ultra: 1, legendary: 1 }, temaId: scelte[2].id,
-            descrizione: 'Busta tematica premium: include una carta leggendaria.'
+            composizione: { common: 3, rare: 3, super: 2, ultra: 1, legendary: 1 }, temaId: scelte[2].id, deboliGarantiti: 2,
+            descrizione: 'Busta tematica premium: punta alla fascia più alta disponibile nel tema e include 2 creature base.'
         }] : [];
         return BUSTE.concat(tematizzate, premium).map((b) => Object.assign({}, b, { temaSeed: hash(b.id + '-' + settimana) }));
     }
@@ -410,12 +418,31 @@
                 .filter((id) => !window.CardAcquisition || CardAcquisition.isSignatureUnlocked(id));
             if (tema) {
                 const themed = pool.filter((id) => { const c = db.find((x) => x.id === id); return c && tema.test(c); });
-                // Un tema molto stretto non deve produrre una busta vuota:
-                // ripiega sulla rarità globale soltanto per gli slot mancanti.
-                if (themed.length >= (busta.composizione[rarity] || 0)) pool = themed;
+                // Mai carte fuori tema. Se una fascia è troppo stretta si
+                // pesca dal tema intero: la rarità promessa resta garantita
+                // dagli altri slot e la bustina non tradisce il soggetto.
+                const tuttoIlTema = db.filter((c) => (c.origin || 'yu-gi-oh') === 'yu-gi-oh'
+                    && tema.test(c)
+                    && (!window.CardAcquisition || CardAcquisition.isSignatureUnlocked(c.id)))
+                    .map((c) => c.id);
+                pool = themed.length ? themed : tuttoIlTema;
             }
-            estratte.push(...pesca(pool, busta.composizione[rarity], casuale));
+            estratte.push(...pescaConRipetizione(pool, busta.composizione[rarity], casuale));
         });
+        if (tema && busta.deboliGarantiti) {
+            const mostriTema = db.filter((c) => c.type === 'monster'
+                && (c.origin || 'yu-gi-oh') === 'yu-gi-oh' && tema.test(c)
+                && (!window.CardAcquisition || CardAcquisition.isSignatureUnlocked(c.id)))
+                .sort((a, b) => ((a.attack || 0) + (a.defense || 0)) - ((b.attack || 0) + (b.defense || 0)));
+            const davveroDeboli = mostriTema.filter((c) => (c.level || 0) <= 4
+                && (c.attack || 0) <= 1400 && (c.defense || 0) <= 1600);
+            const deboli = davveroDeboli.length ? davveroDeboli : mostriTema.slice(0, Math.max(1, busta.deboliGarantiti));
+            const scelteDeboli = pescaConRipetizione(deboli.map((c) => c.id), busta.deboliGarantiti, casuale);
+            // Sostituiamo gli slot comuni iniziali: il numero di carte e
+            // le garanzie alte restano invariati, ma l'apertura non parte
+            // subito con dieci carte tutte da deck competitivo.
+            scelteDeboli.forEach((id, i) => { if (i < estratte.length) estratte[i] = id; });
+        }
         if (busta.legendaryChance && Math.random() < busta.legendaryChance) {
             const leggendarie = CardRarity.idsByRarity('legendary')
                 .filter((id) => !window.CardAcquisition || CardAcquisition.isSignatureUnlocked(id));
@@ -516,6 +543,7 @@
         PREZZI: PREZZI,
         PREZZI_MAZZI: PREZZI_MAZZI,
         BUSTE: BUSTE,
+        TEMI: TEMI,
         costoMazzo: costoMazzo,
         /** Quante carte speciali servono al dato numero di acquisti già fatti — vedi il commento sopra EXTRA_MAZZO. Esposta perché la UI possa scrivere il numero VERO nella regola invece di uno fisso destinato a invecchiare male. */
         extraRichieste: extraRichieste,

@@ -128,7 +128,14 @@
         const corpo = el('div', 'po-pack-body');
         corpo.appendChild(el('div', 'po-pack-tear'));
         corpo.appendChild(el('div', 'po-pack-band', (busta && busta.nomeBreve) || (busta && busta.nome) || 'BUSTINA'));
-        corpo.appendChild(el('div', 'po-pack-emblem', (busta && busta.icona) || '🎴'));
+        const emblema = el('div', 'po-pack-emblem');
+        const pos = busta && busta.emblema;
+        if (pos) {
+            emblema.classList.add('pack-emblem-sprite');
+            emblema.style.setProperty('--emblem-x', `${pos[0] * 100 / 3}%`);
+            emblema.style.setProperty('--emblem-y', `${pos[1] * 100 / 2}%`);
+        } else emblema.textContent = '✦';
+        corpo.appendChild(emblema);
         corpo.appendChild(el('div', 'po-pack-count', `${(busta && busta.carte) || ''} CARTE`));
         corpo.appendChild(el('div', 'po-bustina-luccichio'));
         bustina.appendChild(corpo);

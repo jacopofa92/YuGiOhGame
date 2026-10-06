@@ -2950,7 +2950,7 @@
             // dei file dell'economia: pesanti e inutili finché non si
             // apre questa vista, quindi caricati alla prima apertura con
             // ensureViewScripts (sequenziale e una volta sola).
-            const stylesReady = ensureViewStyles(['js/ui/card.css', 'js/ui/card-detail.css', 'js/economy/shop.css', 'js/economy/pack-opening.css']);
+            const stylesReady = ensureViewStyles(['js/ui/card.css', 'js/ui/card-detail.css', 'js/economy/shop.css', 'js/economy/pack-opening.css', 'js/economy/card-drop-animation.css']);
             // NON rielencare qui gli script che index.html carica già in
             // fondo al documento (cards-db.js, starter-structure-decks.js,
             // ...): ricaricarli rieseguirebbe le loro dichiarazioni `const`
@@ -2965,6 +2965,7 @@
                 'js/cloud/server-date.js',
                 'js/data/card-rarity.js',
                 'js/economy/card-acquisition.js',
+                'js/economy/card-drop-animation.js',
                 'js/economy/rewards.js',
                 'js/economy/shop-catalog.js',
                 'js/economy/pack-opening.js',

@@ -172,6 +172,16 @@
     font-size: clamp(2.5rem, 11vw, 4rem);
     filter: drop-shadow(0 4px 7px rgba(0,0,0,.65));
 }
+.po-pack-emblem.pack-emblem-sprite {
+    width: 46%;
+    aspect-ratio: 1;
+    font-size: 0;
+    background-image: url('../../images/shop/pack-emblems.png');
+    background-size: 400% 300%;
+    background-position: var(--emblem-x) var(--emblem-y);
+    background-repeat: no-repeat;
+    filter: drop-shadow(0 5px 8px rgba(0,0,0,.72));
+}
 .po-pack-count {
     position: absolute;
     left: 0; right: 0; bottom: 5%;

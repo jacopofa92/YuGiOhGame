@@ -43,6 +43,10 @@ module.exports = {
                 document.body.appendChild(mount);
                 const shop = ShopUI.mount(mount);
                 shop.refresh();
+                let previewCardId = null;
+                CardDropAnimation.enqueue = (entry) => { previewCardId = entry.cardId; };
+                const previewButton = mount.querySelector('.admin-drop-preview');
+                if (previewButton) previewButton.click();
 
                 function itemForDeck() {
                     return Array.from(mount.querySelectorAll('.shop-item.deck-box'))
@@ -73,7 +77,8 @@ module.exports = {
                     expected: Math.max(before, Math.min(SaveManager.CARD_COPY_CAP, qtyPerPurchase)),
                     packRegistrations: SaveManager.getOwnedPacks().filter((id) => id === deck.packId).length,
                     normalHasBuyButton: !!normalItem.querySelector('.buy-btn:not(.ghost)'),
-                    normalOwnedLabel: (normalItem.querySelector('.shop-owned-note') || {}).textContent || ''
+                    normalOwnedLabel: (normalItem.querySelector('.shop-owned-note') || {}).textContent || '',
+                    previewCardId
                 };
             });
 
@@ -85,6 +90,7 @@ module.exports = {
                 `Il pack deve restare registrato una sola volta (trovato ${result.packRegistrations})`);
             assert(!result.normalHasBuyButton && /Già acquistato/i.test(result.normalOwnedLabel),
                 'Un giocatore normale non deve poter riacquistare il deck');
+            assert(result.previewCardId === 861, 'Il pulsante admin deve mostrare l’animazione di Kuriboo');
             assert(pageErrors.length === 0, 'Errori JS in pagina: ' + pageErrors.join(' | '));
         } finally {
             await context.close();

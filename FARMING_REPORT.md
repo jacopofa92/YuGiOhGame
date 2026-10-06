@@ -15,19 +15,19 @@ del deck o dell'avversario. Le ore sotto assumono 8 minuti per duello.
 
 | Percorso | Media primo set | Mediana | 90% entro | Ore medie | Media tre set |
 |---|---:|---:|---:|---:|---:|
-| Qualunque avversario, Facile | 1.175 | 1.250 | 1.250 | 156,7 h | 3.525 |
-| Qualunque avversario, Normale | 1.043 | 1.057 | 1.250 | 139,1 h | 3.126 |
-| Qualunque avversario, Difficile | 878 | 887 | 1.125 | 117,1 h | 2.641 |
-| Seeker, Difficile | 48 | 50 | 50 | 6,4 h | 143 |
+| Qualunque avversario, Facile | 1.042 | 1.055 | 1.250 | 138,9 h | 3.128 |
+| Qualunque avversario, Normale | 750 | 755 | 1.012 | 100 h | 2.253 |
+| Qualunque avversario, Difficile | 497 | 488 | 735 | 66,3 h | 1.491 |
+| Seeker, Difficile | 44 | 43 | 50 | 5,9 h | 130 |
 
 Il pity limita il caso peggiore del primo set generico a 1.250 vittorie.
 Contro Seeker la garanzia ogni dieci vittorie porta il primo set entro 50 e
-tre copie di ogni pezzo entro 150; i drop casuali anticipano leggermente la
-media.
+tre copie di ogni pezzo entro 150; le probabilità triplicate anticipano la
+media a 44 e 130 vittorie.
 
 Valutazione: la probabilità generica è corretta come sorpresa passiva, ma non
 come percorso da inseguire volontariamente. Il farming intenzionale deve
-essere comunicato chiaramente come sfida a Seeker: 6-7 ore medie per il primo
+essere comunicato chiaramente come sfida a Seeker: circa 6 ore medie per il primo
 set sono lunghe ma leggibili per la ricompensa più speciale del gioco. Non è
 stato necessario cambiare le percentuali concordate.
 
@@ -38,7 +38,7 @@ stato necessario cambiare le percentuali concordate.
 | Destiny Board / Elefante Volante | 25 | 3,3 h |
 | Prima carta firma | 50 | 6,7 h |
 | Seconda soglia Kaiba/Yugi | 100 totali | 13,3 h totali |
-| Slifer contro Strings | 50 | 6,7 h, oltre al capitolo |
+| Slifer contro Strings | 30 | 4 h, oltre al capitolo |
 | Ra contro Marik | 40 | 5,3 h, oltre a storia e 3 tornei |
 
 Per Ra le dieci vittorie con perdita massima di 2000 LP sono comprese nelle
