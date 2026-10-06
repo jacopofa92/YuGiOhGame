@@ -114,8 +114,8 @@ tavolo» e «Multiplayer a passo comune» (con le regole per il codice nuovo).
   limiti del motore, vedi `CLAUDE.md`.
 - PWA tramite `manifest.json`, `sw.js` e `js/pwa-register.js`.
 - App Android/Capacitor: nel repository è presente un vecchio APK beta.21;
-  non coincide con la versione sorgente 1.0.6; la cache WebView/PWA corrente
-  è `ygo-duel-arena-v119`.
+  non coincide con la versione sorgente 1.0.43; la cache WebView/PWA corrente
+  è `ygo-duel-arena-v158`.
 - Cloud tramite Supabase; multiplayer tramite relay WebSocket Node nativo.
 - Le preferenze utente (`save.settings`: dettagli video, ologrammi, aptica,
   volume e mute musica/SFX) fanno parte del salvataggio unificato e quindi di

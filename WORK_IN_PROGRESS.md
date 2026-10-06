@@ -248,8 +248,10 @@ Decisioni aperte dell'utente: i 6 PNG di avatar non usati; le regole del
 
 - [ ] Nuove funzioni in file piccoli e separati: `duelMonstersCore.html`,
       `game-flow.js` e `actions.js` sono molto grandi e con funzioni globali.
-- [ ] La lista di `<script>` è duplicata a mano in molte pagine HTML: spostarla
-      in un unico file condiviso caricato da tutte.
+- [x] La lista di `<script>` non viene più mantenuta a mano nelle singole
+      pagine: la fonte unica è `scripts/gruppi-script.js` e
+      `scripts/sync-script-groups.js` riallinea gli HTML (controllo incluso
+      nel pre-commit).
 
 ## Battle City
 
