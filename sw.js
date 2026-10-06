@@ -8,7 +8,8 @@
  * <link href> nelle pagine HTML: NON aggiungere mai uno "/" iniziale.
  *
  * Strategia in due parti, diverse per tipo di file:
- *   - APP SHELL (HTML/CSS/JS, ~3MB in tutto): "network-first" — prova
+ *   - APP SHELL (HTML/CSS/JS, ~8,3 MB non compressi al 2026-10-06):
+ *     "network-first" — prova
  *     sempre la rete per avere subito l'ultima versione pubblicata (utile
  *     visto lo sviluppo continuo del progetto), e ripiega sulla cache
  *     SOLO se offline. Così un aggiornamento pubblicato arriva sempre al
@@ -400,7 +401,9 @@
 // v150: checkpoint di targeting coperto ovunque (Equip, Union, ~30 carte).
 // v151: carte usabili da entrambi i giocatori (Oppressione Reale).
 // v159: indicatore dell'attesa di una decisione remota nel Multiplayer.
-const CACHE_NAME = 'ygo-duel-arena-v159';
+// v160: una risposta HTTP non valida non sostituisce più una copia buona;
+// le scritture vengono attese prima di concludere la risposta intercettata.
+const CACHE_NAME = 'ygo-duel-arena-v160';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -638,9 +641,20 @@ self.addEventListener('fetch', (event) => {
             // HTTP".
             fetch(req, { cache: 'reload' })
                 .then((response) => {
+                    // Un 404/500 è comunque una fetch risolta: senza questo
+                    // controllo sostituirebbe nella Cache Storage una copia
+                    // buona, rendendo guasto anche il successivo avvio
+                    // offline. La risposta di rete resta visibile online,
+                    // ma non viene resa persistente.
+                    if (!response || !response.ok) return response;
                     const copy = response.clone();
-                    caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
-                    return response;
+                    // La Promise di put fa parte di respondWith: se la si
+                    // lasciasse staccata, il worker potrebbe essere sospeso
+                    // dopo aver consegnato `response` ma prima di aver
+                    // terminato l'aggiornamento della cache.
+                    return caches.open(CACHE_NAME)
+                        .then((cache) => cache.put(req, copy))
+                        .then(() => response);
                 })
                 .catch(() => caches.match(req))
         );
@@ -656,7 +670,11 @@ self.addEventListener('fetch', (event) => {
                 // grafico lato client — non deve "incollarsi" in cache).
                 if (response && response.ok) {
                     const copy = response.clone();
-                    caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
+                    // Anche la cache al primo uso deve completare la propria
+                    // scrittura dentro la vita della richiesta del worker.
+                    return caches.open(CACHE_NAME)
+                        .then((cache) => cache.put(req, copy))
+                        .then(() => response);
                 }
                 return response;
             });

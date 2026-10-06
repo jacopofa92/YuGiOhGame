@@ -128,6 +128,27 @@ righe, actions.js 3.855, game-flow.js 3.797; 205 accessi al DOM e 85
             multiplayer.js, i broadcast nei comandi e nelle fasi, la mano a
             segnaposto, le fotografie di stato, `isRemoteResponder`/
             `awaitRemote*` in duel-engine.js.
+            Audit 2026-10-06: il lavoro è un refactor rischioso da fare su
+            branch dedicato. Prima va distribuita una nuova APK: nel repo
+            resta `YuGiOhGame-1.0.0-beta.21.apk`, che dipende dal protocollo
+            vecchio. Sequenza prevista:
+            1. rendere obbligatorio il passo comune e sostituire il timeout/
+               fallback di `mp-passo-comune.js` con un errore esplicito di
+               versione incompatibile;
+            2. ridurre `multiplayer.js` alla UI di disconnessione/rientro e
+               alla rete di sicurezza `game-over`, eliminando dispatcher,
+               `applyRemote*`, checksum, resync, state-push e segnaposto;
+            3. togliere i 23 invii legacy da battaglia, evocazioni, fasi,
+               comandi ed effetti, poi le code `awaitRemote*`/broadcast e le
+               API legacy esportate da `duel-engine.js`;
+            4. restringere l'allowlist del relay a controllo lobby + `mazzo`,
+               `passo`, `passo-riprendi` e `game-over`, riallineando i test
+               anti-imbroglio;
+            5. migrare i 10 spec che oggi forzano
+               `MP_SENZA_PASSO_COMUNE`: conservare i test di abbandono e
+               connessione, portare gli scenari di carte/turni sul passo
+               comune, eliminare solo le asserzioni su fotografie e
+               segnaposto; infine suite completa prima del merge in `main`.
       Costo dichiarato: ogni client conosce mazzo e mano dell'avversario
       (non mostrati, ma in memoria).
 
@@ -138,7 +159,7 @@ righe, actions.js 3.855, game-flow.js 3.797; 205 accessi al DOM e 85
       l'evento nell'indicatore vicino all'avatar avversario, senza polling;
       lo spec `multiplayer-attesa-remota` verifica coda, callback, pulizia e
       posizione desktop/mobile.
-- [ ] Service worker più leggero (vedi «Peso e velocità» qui sotto).
+- [x] Service worker più leggero e verificato (vedi «Peso e velocità»).
 - [ ] Tutorial o partita guidata (meglio dopo la Priorità 2).
 - [ ] Bilanciamento delle difficoltà con simulazioni bot contro bot.
 
@@ -157,9 +178,14 @@ Decisioni aperte dell'utente: i 6 PNG di avatar non usati; le regole del
       stanno in `images/characters/avatarTrasparenza/`, le copie leggere usate
       dal gioco in `images/characters/pedine/` (da ~100 MB a ~10 MB).
       Un nuovo PNG va messo in `avatarTrasparenza/` e ridimensionato in `pedine/`.
-- [ ] Il service worker precarica tutta l'app a ogni installazione: con asset
-      grossi l'aggiornamento su telefono diventa lento. Valutare di non
-      precaricare le immagini pesanti (cache al primo uso).
+- [x] Audit service worker (2026-10-06): `APP_SHELL` contiene 156 file
+      unici, tutti esistenti, per 8.246.245 byte non compressi; nessuna
+      immagine/audio/video pesante, soltanto le quattro icone dell'app.
+      Campi, carte, ritratti, audio e video restano cache-on-demand. Il
+      guardrail impedisce file mancanti, duplicati, media pesanti e una
+      crescita oltre 12 MiB. Corretto anche il rischio di cache errata:
+      risposte HTTP non valide non sostituiscono più copie buone e
+      `cache.put` viene atteso sia per l'app shell sia per i media.
 
 ## Affidabilità
 

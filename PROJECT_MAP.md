@@ -95,13 +95,12 @@ consumata, senza polling.
 1. Bilanciamento delle difficoltà con dati veri: ora si può, il duello senza
    testa gioca IA contro IA in ~0,1 s a partita (`--giocatore`,
    `--livello-giocatore`).
-2. Service worker più leggero (immagini pesanti in cache al primo uso).
-3. Togliere il protocollo Multiplayer vecchio quando server e client saranno
+2. Togliere il protocollo Multiplayer vecchio quando server e client saranno
    tutti aggiornati (elenco dei pezzi in `WORK_IN_PROGRESS.md`).
-4. I circa 400 ternari "player ? … : bot …" del nucleo si possono portare sugli
+3. I circa 400 ternari "player ? … : bot …" del nucleo si possono portare sugli
    accessori di `Tavolo` un file alla volta (non bloccano nulla).
-5. Più grandi: tutorial; Forbidden Memories come secondo set di regole.
-6. Decisioni aperte dell'utente: i 6 avatar PNG non usati; eliminare il branch
+4. Più grandi: tutorial; Forbidden Memories come secondo set di regole.
+5. Decisioni aperte dell'utente: i 6 avatar PNG non usati; eliminare il branch
    `refactor/posti-al-tavolo` (già unito).
 
 ## Stato rapido
@@ -111,14 +110,14 @@ consumata, senza polling.
 - Applicazione HTML/CSS/JavaScript puro: nessun framework, bundler o build del
   frontend. Gli script globali devono essere caricati nell'ordine giusto.
 - 19 pagine HTML, 104 file JS applicativi sotto `js/` (esclusi i vendor),
-  1.129 carte, 206 spec Playwright (2026-10-06). I numeri invecchiano:
+  1.129 carte, 207 spec Playwright (2026-10-06). I numeri invecchiano:
   contarli quando contano.
 - 3 `missingEffectNote` in `data/cards.json` (192, 235, 622): promemoria su
   limiti del motore, vedi `CLAUDE.md`.
 - PWA tramite `manifest.json`, `sw.js` e `js/pwa-register.js`.
 - App Android/Capacitor: nel repository è presente un vecchio APK beta.21;
   non coincide con la versione sorgente 1.0.43; la cache WebView/PWA corrente
-  è `ygo-duel-arena-v159`.
+  è `ygo-duel-arena-v160`.
 - Cloud tramite Supabase; multiplayer tramite relay WebSocket Node nativo.
 - Le preferenze utente (`save.settings`: dettagli video, ologrammi, aptica,
   volume e mute musica/SFX) fanno parte del salvataggio unificato e quindi di
@@ -411,7 +410,11 @@ e ascoltano gli eventi del canale.
 - **Protocollo vecchio** (mosse raccontate, mano a segnaposto, fotografie di
   stato): resta solo come ripiego con un avversario o un relay della versione
   precedente; gli spec che lo verificano lo forzano con
-  `MP_SENZA_PASSO_COMUNE`. Da togliere più avanti.
+  `MP_SENZA_PASSO_COMUNE`. L'audit del 2026-10-06 ha contato 23 invii legacy,
+  un dispatcher `applyRemote*` da oltre 600 righe e 10 spec ancora forzati sul
+  vecchio percorso. La rimozione richiede un branch dedicato e una nuova APK
+  distribuita prima del merge: la beta.21 presente nel repository dipende da
+  questa compatibilità. Checklist completa in `WORK_IN_PROGRESS.md`.
 - La morra cinese: il vincitore sceglie chi comincia, e la scelta viaggia
   ('rps' con `iniziaChiManda`).
 - Il server inoltra le azioni ma non è un motore autorevole: la logica resta

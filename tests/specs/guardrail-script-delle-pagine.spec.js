@@ -137,7 +137,36 @@ module.exports = {
         const sw = fs.readFileSync(path.join(RADICE, 'sw.js'), 'utf8');
         const blocco = /const APP_SHELL = \[([\s\S]*?)\];/.exec(sw);
         t.assert(blocco, 'sw.js deve dichiarare un array APP_SHELL (è la lista dei file precaricati per l\'uso offline)');
-        const nellaShell = new Set([...blocco[1].matchAll(/'([^']+)'/g)].map((m) => m[1]));
+        const vociShell = [...blocco[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+        const nellaShell = new Set(vociShell);
+
+        // L'audit del 2026-10-06 ha confermato che la shell contiene solo
+        // codice, pagine, font e le quattro icone dell'app: immagini dei
+        // campi/carte e audio restano cache-on-demand. Questi controlli
+        // impediscono sia un refuso silenzioso sia il ritorno accidentale
+        // dei media pesanti nel download di installazione.
+        const duplicatiShell = vociShell.filter((voce, i) => vociShell.indexOf(voce) !== i);
+        t.assert(duplicatiShell.length === 0,
+            `Voci duplicate in APP_SHELL: ${[...new Set(duplicatiShell)].join(', ')}`);
+
+        const inesistentiShell = vociShell
+            .filter((voce) => voce !== './')
+            .filter((voce) => !fs.existsSync(path.join(RADICE, voce)));
+        t.assert(inesistentiShell.length === 0,
+            `File dichiarati in APP_SHELL ma inesistenti: ${inesistentiShell.join(', ')}`);
+
+        const estensioneMedia = /\.(?:avif|gif|jpe?g|mp3|mp4|ogg|png|webm|webp)$/i;
+        const mediaPesanti = vociShell.filter((voce) => estensioneMedia.test(voce) && !voce.startsWith('images/icons/'));
+        t.assert(mediaPesanti.length === 0,
+            `Media da lasciare cache-on-demand entrati in APP_SHELL: ${mediaPesanti.join(', ')}`);
+
+        const pesoShell = vociShell.reduce((totale, voce) => {
+            if (voce === './') return totale;
+            const stat = fs.statSync(path.join(RADICE, voce));
+            return totale + (stat.isFile() ? stat.size : 0);
+        }, 0);
+        t.assert(pesoShell < 12 * 1024 * 1024,
+            `APP_SHELL è cresciuta oltre 12 MiB non compressi (${(pesoShell / 1024 / 1024).toFixed(2)} MiB): verificare cosa è entrato nel precache`);
 
         // ⚠️ TEMPORANEO, va via col commit delle scorciatoie di prova:
         // js/dev/ contiene aiuti per lo sviluppo che NON devono finire
