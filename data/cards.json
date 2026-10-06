@@ -1945,8 +1945,7 @@
     "type": "spell",
     "subtype": "field",
     "effect": "Se una carta \"Spirit Message\" verrebbe piazzata sul Terreno con \"Destiny Board\": puoi Special Summonarla come Mostro Normale (Demone/OSCURITÀ/Livello 1/ATK 0/DEF 0) invece. Quando un mostro dell'avversario dichiara un attacco: lancia una moneta; se esce Testa, annulla l'attacco e infliggi danno pari a metà dell'ATK di quel mostro.",
-    "artOnly": true,
-    "missingEffectNote": "Tutte e tre le clausole sono implementate, compresa la vittoria alternativa con Destiny Board (id 866-870). L'immunita' agli effetti Carta del Mostro generato copre gli effetti che lo scelgono come bersaglio, non un effetto di massa che lo colpisce senza sceglierlo: il motore non ha un punto unico da cui passino gli effetti non mirati."
+    "artOnly": true
   },
   {
     "id": 193,
@@ -2396,8 +2395,7 @@
     "type": "trap",
     "subtype": "normal",
     "effect": "Quando il tuo avversario attiva una Magia che ha come bersaglio esattamente 1 mostro sul Terreno (e nessun'altra carta): scegli un altro bersaglio valido; quella Magia ora ha come bersaglio la nuova carta.",
-    "artOnly": true,
-    "missingEffectNote": "Implementata, ma il nuovo bersaglio lo sceglie da sola (priorita' al campo di chi ha attivato la Magia), mai il giocatore: la reazione passa dal checkpoint di targeting condiviso (ctx.declareTarget, duel-engine.js), che e' SINCRONO — chi ha attivato la Magia legge il bersaglio finale subito dopo — quindi li' non puo' aspettare una scelta."
+    "artOnly": true
   },
   {
     "id": 237,
@@ -6871,8 +6869,7 @@
     "type": "trap",
     "subtype": "normal",
     "effect": "Quando il tuo avversario designa esattamente 1 mostro che controlli (e nessun'altra carta) come bersaglio per un attacco, o con un effetto Magia/Trappola: scegli un altro mostro che controlli come nuovo bersaglio adatto; quell'attacco/effetto ora ha come bersaglio la nuova carta.",
-    "artOnly": true,
-    "missingEffectNote": "Entrambe le meta' (attacco e Magia/Trappola) sono implementate. Nella meta' attacco il nuovo bersaglio lo sceglie il giocatore; nella meta' Magia/Trappola lo sceglie da sola, perche' passa dal checkpoint di targeting condiviso (ctx.declareTarget, duel-engine.js), che e' sincrono e non puo' aspettare una scelta."
+    "artOnly": true
   },
   {
     "id": 623,

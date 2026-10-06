@@ -821,12 +821,13 @@
                 }
             });
             if (targetIndex === -1) return;
-            const decl = ctx.declareTarget(ctx.opponent, targetIndex, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const target = ctx.field(decl.targetOwner)[decl.targetIndex];
-            const name = target ? target.card.name : field[targetIndex].card.name;
-            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
-            ctx.log(`⚡ Faglia distrugge ${name} (ATK più basso)!`);
+            ctx.declareTargetWaiting(ctx.opponent, targetIndex, { totalTargetCount: 1 }, (decl) => {
+                if (!decl.allowed) return;
+                const target = ctx.field(decl.targetOwner)[decl.targetIndex];
+                const name = target ? target.card.name : field[targetIndex].card.name;
+                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+                ctx.log(`⚡ Faglia distrugge ${name} (ATK più basso)!`);
+            });
         }
     });
 
@@ -1389,11 +1390,12 @@
             // "Scegli come bersaglio il mostro attaccante": checkpoint di
             // targeting (un attaccante Drago sotto Signore dei D., per
             // esempio, non si può scegliere).
-            const decl = ctx.declareTarget(ctx.attackerOwner, ctx.attackerIndex, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            ctx.changePosition(ctx.attackerOwner, ctx.attackerIndex, 'defense');
-            ctx.cancelAttack();
-            ctx.log("🗡️ Kunai con Catena costringe il mostro attaccante in Posizione di Difesa, annullando l'attacco!");
+            ctx.declareTargetWaiting(ctx.attackerOwner, ctx.attackerIndex, { totalTargetCount: 1 }, (decl) => {
+                if (!decl.allowed) return;
+                ctx.changePosition(decl.targetOwner, decl.targetIndex, 'defense');
+                ctx.cancelAttack();
+                ctx.log("🗡️ Kunai con Catena costringe il mostro attaccante in Posizione di Difesa, annullando l'attacco!");
+            });
         }
     });
 
@@ -2407,13 +2409,14 @@
             // targeting. Il checkpoint non guarda i mostri coperti (i suoi
             // floodgate leggono la carta scoperta), ma lo stesso passaggio
             // serve alle reazioni come Gran Scudo Gardna.
-            const decl = ctx.declareTarget(ctx.opponent, ctx.summonedSlotIndex, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const slot = ctx.field(decl.targetOwner)[decl.targetIndex];
-            if (!slot || !slot.isFaceDown) return;
-            slot.isFaceDown = false;
-            slot.position = 'attack';
-            ctx.log(`👁️ Ombra degli Occhi gira scoperto ${slot.card.name} in Posizione di Attacco!`);
+            ctx.declareTargetWaiting(ctx.opponent, ctx.summonedSlotIndex, { totalTargetCount: 1 }, (decl) => {
+                if (!decl.allowed) return;
+                const slot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!slot || !slot.isFaceDown) return;
+                slot.isFaceDown = false;
+                slot.position = 'attack';
+                ctx.log(`👁️ Ombra degli Occhi gira scoperto ${slot.card.name} in Posizione di Attacco!`);
+            });
         }
     });
 
@@ -2480,13 +2483,14 @@
                 // permette a un floodgate o a Specchietto della Fata di
                 // dire la sua sul bersaglio. La scelta del giocatore
                 // decide COSA bersagliare, non se sia lecito.
-                const decl = ctx.declareTarget(scelto.owner, scelto.index, { totalTargetCount: 1 });
-                if (!decl.allowed) return;
-                const target = ctx.field(decl.targetOwner)[decl.targetIndex];
-                const name = target ? target.card.name : scelto.card.name;
-                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
-                ctx.dealDamage(ctx.opponent, -1000);
-                ctx.log(`💀 Cacciatore di Anime distrugge ${name}, l'avversario guadagna 1000 Life Points!`);
+                ctx.declareTargetWaiting(scelto.owner, scelto.index, { totalTargetCount: 1 }, (decl) => {
+                    if (!decl.allowed) return;
+                    const target = ctx.field(decl.targetOwner)[decl.targetIndex];
+                    const name = target ? target.card.name : scelto.card.name;
+                    ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+                    ctx.dealDamage(ctx.opponent, -1000);
+                    ctx.log(`💀 Cacciatore di Anime distrugge ${name}, l'avversario guadagna 1000 Life Points!`);
+                });
             });
         }
     });
@@ -2594,12 +2598,13 @@
                 title: '🗡️ Mille Coltelli',
                 text: 'Scegli quale mostro avversario distruggere.'
             }, (scelto) => {
-                const decl = ctx.declareTarget(scelto.owner, scelto.index, { totalTargetCount: 1 });
-                if (!decl.allowed) return;
-                const target = ctx.field(decl.targetOwner)[decl.targetIndex];
-                const name = target ? target.card.name : scelto.card.name;
-                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
-                ctx.log(`🗡️ Mille Coltelli distrugge ${name}!`);
+                ctx.declareTargetWaiting(scelto.owner, scelto.index, { totalTargetCount: 1 }, (decl) => {
+                    if (!decl.allowed) return;
+                    const target = ctx.field(decl.targetOwner)[decl.targetIndex];
+                    const name = target ? target.card.name : scelto.card.name;
+                    ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+                    ctx.log(`🗡️ Mille Coltelli distrugge ${name}!`);
+                });
             });
         }
     });
@@ -2841,12 +2846,13 @@
                 const field = ctx.field(ctx.opponent);
                 const index = field.findIndex((slot) => slot && !slot.isFaceDown);
                 if (index === -1) return;
-                const decl = ctx.declareTarget(ctx.opponent, index, { totalTargetCount: 1 });
-                if (!decl.allowed) return;
-                const target = ctx.field(decl.targetOwner)[decl.targetIndex];
-                const name = target ? target.card.name : field[index].card.name;
-                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
-                ctx.log(`⚰️ Tributo ai Dannati scarta ${discarded.name} e distrugge ${name}!`);
+                ctx.declareTargetWaiting(ctx.opponent, index, { totalTargetCount: 1 }, (decl) => {
+                    if (!decl.allowed) return;
+                    const target = ctx.field(decl.targetOwner)[decl.targetIndex];
+                    const name = target ? target.card.name : field[index].card.name;
+                    ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+                    ctx.log(`⚰️ Tributo ai Dannati scarta ${discarded.name} e distrugge ${name}!`);
+                });
             });
         }
     });

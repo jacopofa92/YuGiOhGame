@@ -779,9 +779,10 @@
         // remota) ci passa allo stesso modo.
         const onChosen = options && options.dichiara
             ? (scelto) => {
-                const finale = dichiaraBersaglioScelto(ctx, scelto, options);
-                if (finale) onChosenOriginale(finale);
-                else if (typeof options.onNegato === 'function') options.onNegato();
+                dichiaraBersaglioSceltoWaiting(ctx, scelto, options, (finale) => {
+                    if (finale) onChosenOriginale(finale);
+                    else if (typeof options.onNegato === 'function') options.onNegato();
+                });
             }
             : onChosenOriginale;
         // In Multiplayer la scelta VIAGGIA (`viaggia`, vedi
@@ -988,6 +989,23 @@
         const slot = ctx.field(decl.targetOwner)[decl.targetIndex];
         if (!slot) return null;
         return { owner: decl.targetOwner, index: decl.targetIndex, zone: 'monster', card: slot.card, slot: slot };
+    }
+
+    /**
+     * Gemella con continuazione di dichiaraBersaglioScelto. È il percorso
+     * usato dai picker: se Specchietto della Fata o Spostamento chiedono al
+     * loro controllore un nuovo bersaglio, la callback della carta parte
+     * soltanto dopo quella decisione (anche nel Multiplayer a passo comune).
+     */
+    function dichiaraBersaglioSceltoWaiting(ctx, scelto, options, onDone) {
+        if (!scelto || scelto.zone === 'st') { onDone(scelto); return; }
+        ctx.declareTargetWaiting(scelto.owner, scelto.index,
+            { totalTargetCount: (options && options.totalTargetCount) || 1 }, (decl) => {
+                if (!decl.allowed) { onDone(null); return; }
+                const slot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!slot) { onDone(null); return; }
+                onDone({ owner: decl.targetOwner, index: decl.targetIndex, zone: 'monster', card: slot.card, slot: slot });
+            });
     }
 
     /**
@@ -1692,5 +1710,5 @@
         return ctx.hand(ctx.owner).filter((c) => !selfUid || c.uid !== selfUid);
     }
 
-    window.CardEffectsShared = { chooseFieldTargetsInSequence, attendiScelta, chooseOption, chooseFieldCardTargetWaiting, dichiaraBersaglioScelto, otherHandCards, blockBanishFromField, isHarpieLadySupport, findEquipTarget, collectEquipTargets, equipToChosenTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchZoneWithChoice, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, chooseCardFromList, chooseUpToNFromList, destroyTargetingSpellIfItStays, victimChoosesDiscard, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost, resolveSpecialSummonTributeCost, attachUnionMonster, maxRitualTributeLevel, performRitualTribute, findPetitMothReadyForCocoonSummon, releaseRelinquishedTarget, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach, returnSpellTrapToHand };
+    window.CardEffectsShared = { chooseFieldTargetsInSequence, attendiScelta, chooseOption, chooseFieldCardTargetWaiting, dichiaraBersaglioScelto, dichiaraBersaglioSceltoWaiting, otherHandCards, blockBanishFromField, isHarpieLadySupport, findEquipTarget, collectEquipTargets, equipToChosenTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchZoneWithChoice, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, chooseCardFromList, chooseUpToNFromList, destroyTargetingSpellIfItStays, victimChoosesDiscard, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost, resolveSpecialSummonTributeCost, attachUnionMonster, maxRitualTributeLevel, performRitualTribute, findPetitMothReadyForCocoonSummon, releaseRelinquishedTarget, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach, returnSpellTrapToHand };
 })();

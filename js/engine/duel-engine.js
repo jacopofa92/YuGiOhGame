@@ -105,7 +105,71 @@
      * effetto a catena su OGNI carta successiva nello stesso ciclo, non
      * solo su quella rotta.
      */
-    function safeCallCardHandler(card, handlerLabel, fn) {
+    /**
+     * Le Spirit Message trasformate in Mostri da Santuario Oscuro sono
+     * immuni agli effetti di OGNI altra carta. Il solo checkpoint di
+     * targeting non basta per Raigeki, Buco Nero, rimbalzi di massa o codice
+     * carta che modifica direttamente uno slot. Questa piccola transazione
+     * fotografa soltanto quelle istanze e le ripristina dopo un handler:
+     * centralizza anche gli effetti non mirati senza disseminare controlli
+     * nelle oltre mille definizioni. Destiny Board e la carta stessa sono
+     * eccezioni esplicite previste dal testo.
+     */
+    function snapshotUnaffectedMonsters(sourceCard) {
+        const snapshots = [];
+        Tavolo.ordine().forEach((owner) => {
+            fieldOf(owner).forEach((slot, index) => {
+                if (!slot || slot.card.type !== 'monster' || ![867, 868, 869, 870].includes(slot.card.id)) return;
+                if (sourceCard && (sourceCard.id === 866 || sourceCard.uid === slot.card.uid)) return;
+                const uidState = {};
+                Object.keys(gameState).forEach((key) => {
+                    const value = gameState[key];
+                    if (value instanceof Set) uidState[key] = { set: true, had: value.has(slot.card.uid) };
+                    else if (value && typeof value === 'object' && !Array.isArray(value)) {
+                        const had = Object.prototype.hasOwnProperty.call(value, slot.card.uid);
+                        uidState[key] = { set: false, had, value: had ? value[slot.card.uid] : undefined };
+                    }
+                });
+                snapshots.push({ owner, index, slot, slotState: Object.assign({}, slot), card: slot.card,
+                    cardState: Object.assign({}, slot.card), uidState });
+            });
+        });
+        return snapshots;
+    }
+
+    function restoreUnaffectedMonsters(snapshots) {
+        snapshots.forEach((s) => {
+            const uid = s.card.uid;
+            // Un effetto può averla spostata a mano prima di chiamare un
+            // helper: si elimina la copia da ogni zona e si rimette nello
+            // slot originario, senza duplicarla.
+            Tavolo.ordine().forEach((owner) => {
+                fieldOf(owner).forEach((slot, index) => {
+                    if (slot && slot.card.uid === uid) fieldOf(owner)[index] = null;
+                });
+                [handOf(owner), graveyardOf(owner), banishedOf(owner)].forEach((zone) => {
+                    for (let i = zone.length - 1; i >= 0; i--) if (zone[i] && zone[i].uid === uid) zone.splice(i, 1);
+                });
+            });
+            Object.keys(s.card).forEach((key) => { if (!Object.prototype.hasOwnProperty.call(s.cardState, key)) delete s.card[key]; });
+            Object.assign(s.card, s.cardState);
+            Object.keys(s.slot).forEach((key) => { if (!Object.prototype.hasOwnProperty.call(s.slotState, key)) delete s.slot[key]; });
+            Object.assign(s.slot, s.slotState, { card: s.card });
+            fieldOf(s.owner)[s.index] = s.slot;
+            Object.keys(s.uidState).forEach((key) => {
+                const saved = s.uidState[key];
+                const value = gameState[key];
+                if (saved.set && value instanceof Set) {
+                    if (saved.had) value.add(uid); else value.delete(uid);
+                } else if (!saved.set && value && typeof value === 'object') {
+                    if (saved.had) value[uid] = saved.value; else delete value[uid];
+                }
+            });
+        });
+    }
+
+    function safeCallCardHandler(card, handlerLabel, fn, onError) {
+        const unaffected = snapshotUnaffectedMonsters(card);
         try {
             return fn();
         } catch (err) {
@@ -114,7 +178,10 @@
             if (typeof addToLog === 'function') {
                 addToLog(`⚠️ ${name}: effetto non valido (${handlerLabel}), saltato.`);
             }
+            if (typeof onError === 'function') onError(err);
             return undefined;
+        } finally {
+            restoreUnaffectedMonsters(unaffected);
         }
     }
 
@@ -150,9 +217,13 @@
         let inAttesa = 0;
         let sincronoFinito = false;
         let proseguito = false;
+        // safeCallCardHandler protegge il tratto sincrono; questa fotografia
+        // più lunga resta viva anche mentre l'handler aspetta un picker.
+        const unaffected = snapshotUnaffectedMonsters(card);
         const prosegui = () => {
             if (proseguito) return;
             proseguito = true;
+            restoreUnaffectedMonsters(unaffected);
             then();
         };
         const precedente = ctx ? ctx.waitForChoice : undefined;
@@ -613,6 +684,16 @@
     // necessario, così un effetto-carta in card-effects.js resta un
     // elenco di 2-3 chiamate a questi helper, leggibile a colpo d'occhio.
     // ============================================================
+    function unaffectedBySourceCard(ctx, slot) {
+        if (!slot || !slot.card || slot.card.type !== 'monster') return false;
+        if (![867, 868, 869, 870].includes(slot.card.id)) return false;
+        const source = ctx && ctx.card;
+        // Una regola senza carta sorgente (battaglia, costo, pulizia di
+        // stato) non è un "effetto di un'altra carta" e non va fermata.
+        if (!source) return false;
+        return source.id !== 866 && source.uid !== slot.card.uid;
+    }
+
     const ACTIONS = {
         /**
          * Distrugge il mostro nello slot indicato (owner+index, il
@@ -625,6 +706,10 @@
             const field = fieldOf(owner);
             const slot = field[index];
             if (!slot) return;
+            if (unaffectedBySourceCard(this, slot)) {
+                addToLog(`🛡️ ${slot.card.name} non è influenzata dall'effetto di ${this.card ? this.card.name : 'un’altra carta'}!`);
+                return;
+            }
             // Chi ha causato QUESTA distruzione (es. Signore dei Vampiri,
             // id 658: "distrutta da un effetto DELL'AVVERSARIO") — letto da
             // `this.owner`, valido perché ogni chiamata da un effetto-carta
@@ -984,6 +1069,7 @@
         changePosition(owner, index, newPosition) {
             const slot = fieldOf(owner)[index];
             if (!slot || slot.position === newPosition) return;
+            if (unaffectedBySourceCard(this, slot)) return;
             const fromPosition = slot.position;
             slot.position = newPosition;
             fireTrigger(TRIGGER.ON_POSITION_CHANGE, makeContext(owner, {
@@ -1063,6 +1149,39 @@
         },
 
         /**
+         * Variante con continuazione del checkpoint di targeting. Serve alle
+         * rarissime reazioni che devono far scegliere il nuovo bersaglio a
+         * una persona (Specchietto della Fata e Spostamento): il chiamante
+         * prosegue soltanto da `onDeclared`, dopo l'eventuale decisione UI o
+         * remota. Il vecchio declareTarget resta sincrono per le carte che
+         * non hanno bisogno di sospendere la risoluzione.
+         */
+        declareTargetWaiting(targetOwner, targetIndex, options, onDeclared) {
+            const sourceCtx = this;
+            // Se il link di Chain/la battaglia supporta l'attesa, la arma
+            // qui: ogni chiamante ottiene la stessa garanzia senza dover
+            // ricordare anche attendiScelta(ctx). Fuori da quei percorsi la
+            // funzione di rilascio è un no-op.
+            const release = sourceCtx && typeof sourceCtx.waitForChoice === 'function'
+                ? sourceCtx.waitForChoice()
+                : function () {};
+            declareCardEffectTargetWaiting(sourceCtx, targetOwner, targetIndex, options, (esito) => {
+                try {
+                    if (esito && esito.allowed && sourceCtx && typeof sourceCtx === 'object') {
+                        const slot = fieldOf(esito.targetOwner)[esito.targetIndex];
+                        if (slot && slot.card.uid) {
+                            sourceCtx.__declaredTargetUids = sourceCtx.__declaredTargetUids || new Set();
+                            sourceCtx.__declaredTargetUids.add(slot.card.uid);
+                        }
+                    }
+                    onDeclared(esito);
+                } finally {
+                    release();
+                }
+            });
+        },
+
+        /**
          * Combina declareTarget(...) + destroyMonster(...) in UNA sola
          * chiamata — il caso più comune di "un effetto sceglie 1 mostro
          * come bersaglio e lo distrugge" (decine di carte in questo
@@ -1118,6 +1237,8 @@
          * Rimozione del Limitatore).
          */
         grantTemporaryAtkDefBonus(card, atk, def, destroyAfter) {
+            const slot = Tavolo.ordine().flatMap((owner) => fieldOf(owner)).find((s) => s && s.card.uid === card.uid);
+            if (unaffectedBySourceCard(this, slot)) return;
             gameState.temporaryAtkDefBonus = gameState.temporaryAtkDefBonus || {};
             gameState.temporaryAtkDefBonus[card.uid] = { atk: atk || 0, def: def || 0, destroyAfter: !!destroyAfter };
         },
@@ -1128,6 +1249,8 @@
          * sopra), non fino a fine turno — es. Fuoco di Copertura (id 852).
          */
         grantDamageStepOnlyBonus(card, atk, def) {
+            const slot = Tavolo.ordine().flatMap((owner) => fieldOf(owner)).find((s) => s && s.card.uid === card.uid);
+            if (unaffectedBySourceCard(this, slot)) return;
             gameState.damageStepOnlyBonusFor = gameState.damageStepOnlyBonusFor || {};
             gameState.damageStepOnlyBonusFor[card.uid] = { atk: atk || 0, def: def || 0 };
         },
@@ -1196,6 +1319,8 @@
          * Tipo originale).
          */
         overrideRaceUntilEndOfTurn(card, newRace) {
+            const slot = Tavolo.ordine().flatMap((owner) => fieldOf(owner)).find((s) => s && s.card.uid === card.uid);
+            if (unaffectedBySourceCard(this, slot)) return;
             gameState.raceOverridesUntilEndOfTurn = gameState.raceOverridesUntilEndOfTurn || [];
             const alreadyTracked = gameState.raceOverridesUntilEndOfTurn.some((e) => e.card === card);
             if (!alreadyTracked) {
@@ -2060,6 +2185,7 @@
             const field = fieldOf(owner);
             const slot = field[index];
             if (!slot) return null;
+            if (unaffectedBySourceCard(this, slot)) return null;
             const card = slot.card;
             // "Torna in mano al PROPRIETARIO": un mostro preso in prestito
             // (Cambio di Cuore & co., slot.originalOwner) torna nella mano
@@ -2130,6 +2256,7 @@
             const fromField = fieldOf(fromOwner);
             const slot = fromField[fromIndex];
             if (!slot) return false;
+            if (unaffectedBySourceCard(this, slot)) return false;
             // Mataza il Fulminatore (id 717): "il controllo di questa
             // carta non può essere scambiato" — controllo centralizzato
             // qui, l'unico punto per cui passa ogni cambio di controllo
@@ -2210,6 +2337,7 @@
             const slotA = fieldA[indexA];
             const slotB = fieldB[indexB];
             if (!slotA || !slotB) return false;
+            if (unaffectedBySourceCard(this, slotA) || unaffectedBySourceCard(this, slotB)) return false;
             // Mataza il Fulminatore (id 717) & co.: basta che UNO dei due
             // sia immune perché l'intero scambio non possa avvenire — non
             // esiste "mezzo scambio".
@@ -3763,10 +3891,18 @@
         // della zona ST, come Suijin/Kazejin per ON_ATTACK_DECLARE.
         const targetSlot = fieldOf(currentOwner)[currentIndex];
         let reacted = false;
-        if (targetSlot) {
+        if (targetSlot && !opts.skipTargetReaction) {
             reacted = tryReact(currentOwner, targetSlot.card, currentIndex, 'monster');
         }
         if (currentOwner === null) return { allowed: false, targetOwner: targetOwner, targetIndex: targetIndex };
+
+        // La variante con continuazione usa questa prima passata per
+        // applicare immunità e reazioni del mostro bersaglio, ma deve poter
+        // fermarsi PRIMA delle Trappole Set: una di esse può aprire una vera
+        // decisione e quindi non può essere eseguita sincronicamente.
+        if (opts.skipSTReactions) {
+            return { allowed: true, targetOwner: currentOwner, targetIndex: currentIndex, targetReacted: reacted };
+        }
 
         // 3) SOLO se il mostro bersaglio non ha già reagito lui stesso, la
         // zona ST del suo controllore può farlo (es. Specchietto della
@@ -3791,6 +3927,92 @@
         if (currentOwner === null) return { allowed: false, targetOwner: targetOwner, targetIndex: targetIndex };
 
         return { allowed: true, targetOwner: currentOwner, targetIndex: currentIndex };
+    }
+
+    /**
+     * Percorso asincrono opt-in del targeting. Non rende asincrone le oltre
+     * sessanta carte esistenti: viene usato soltanto dai chiamanti che
+     * possono incontrare una reazione con scelta del nuovo bersaglio.
+     *
+     * Prima lascia al checkpoint storico immunità e reazione del mostro
+     * preso di mira. Se quel mostro ha reagito, la zona Magie/Trappole non
+     * viene interpellata, come nel percorso sincrono. Altrimenti individua
+     * la prima carta Set realmente eleggibile. Le normali reazioni restano
+     * sincrone; solo una definizione `targetDeclareRequiresChoice` sospende
+     * il chiamante tramite Decisioni e richiama `onDone` a scelta conclusa.
+     */
+    function declareCardEffectTargetWaiting(sourceCtx, targetOwner, targetIndex, options, onDone) {
+        const opts = Object.assign({}, options || {}, { skipSTReactions: true });
+        const preliminare = declareCardEffectTarget(sourceCtx, targetOwner, targetIndex, opts);
+        if (!preliminare.allowed || preliminare.targetReacted) {
+            onDone(preliminare);
+            return;
+        }
+
+        const owner = preliminare.targetOwner;
+        const indexTarget = preliminare.targetIndex;
+        const slots = stFieldOf(owner);
+        let scelta = null;
+        let reactCtx = null;
+
+        for (let index = 0; index < slots.length; index++) {
+            const slot = slots[index];
+            if (!slot || (slot.card.type === 'trap' && slot.setOnTurn === gameState.turn)
+                || (slot.card.type === 'trap' && areTrapsNegatedFor(owner))) continue;
+            const def = getDefinition(slot.card.id);
+            if (!def || typeof def.onCardEffectTargetDeclare !== 'function') continue;
+            const candidatoCtx = makeContext(owner, Object.assign({}, options || {}, {
+                card: slot.card,
+                zone: 'st',
+                index: index,
+                sourceCard: sourceCtx.card || null,
+                sourceOwner: sourceCtx.owner,
+                sourceType: sourceCtx.card ? sourceCtx.card.type : null,
+                targetOwner: owner,
+                targetIndex: indexTarget,
+                totalTargetCount: options && options.totalTargetCount,
+                cancelled: false,
+                cancel() { this.cancelled = true; },
+                redirectedOwner: null,
+                redirectedIndex: null,
+                redirect(newOwner, newIndex) { this.redirectedOwner = newOwner; this.redirectedIndex = newIndex; }
+            }));
+            const condizione = typeof def.canReactToTargetDeclare === 'function' ? def.canReactToTargetDeclare : def.canActivate;
+            if (condizione && !condizione(candidatoCtx)) continue;
+            scelta = { slot, index, def };
+            reactCtx = candidatoCtx;
+            break;
+        }
+
+        if (!scelta || !scelta.def.targetDeclareRequiresChoice
+            || typeof scelta.def.onCardEffectTargetDeclareWaiting !== 'function') {
+            // Nessuna scelta asincrona: esegui il normale tratto ST senza
+            // ripetere la reazione del mostro già controllata sopra.
+            onDone(declareCardEffectTarget(sourceCtx, owner, indexTarget,
+                Object.assign({}, options || {}, { skipTargetReaction: true })));
+            return;
+        }
+
+        // Una Trappola Normale si consuma quando decide di reagire, prima
+        // della scelta, esattamente come nel percorso sincrono storico.
+        if (!scelta.def.continuous) {
+            slots[scelta.index] = null;
+            graveyardOf(owner).push(scelta.slot.card);
+        }
+        safeCallCardHandler(scelta.slot.card, 'onCardEffectTargetDeclareWaiting', () => {
+            scelta.def.onCardEffectTargetDeclareWaiting(reactCtx, () => {
+                if (reactCtx.cancelled) {
+                    onDone({ allowed: false, targetOwner, targetIndex });
+                    return;
+                }
+                const redirected = reactCtx.redirectedOwner != null && reactCtx.redirectedIndex != null;
+                onDone({
+                    allowed: true,
+                    targetOwner: redirected ? reactCtx.redirectedOwner : owner,
+                    targetIndex: redirected ? reactCtx.redirectedIndex : indexTarget
+                });
+            });
+        }, () => onDone(preliminare));
     }
 
     /**

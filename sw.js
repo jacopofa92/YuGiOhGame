@@ -405,7 +405,7 @@
 // le scritture vengono attese prima di concludere la risposta intercettata.
 // v161: il client Multiplayer usa esclusivamente il passo comune; rimossi
 // dispatcher, messaggi per singola mossa e fotografie di stato legacy.
-const CACHE_NAME = 'ygo-duel-arena-v161';
+const CACHE_NAME = 'ygo-duel-arena-v162';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

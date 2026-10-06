@@ -3722,9 +3722,9 @@ priorità o richiedono un refactor ampio):
   scelta di bersaglio annullabile, annullata in Multiplayer, non arrivava
   all'altro client (che dopo 30 secondi prendeva il primo candidato): ora
   l'annullo viaggia come uid dedicato (`Decisioni.UID_ANNULLA`).
-  **Le note 235 e 622 NON si chiudono con questo**: il loro limite è il
-  checkpoint di targeting, che restituisce il bersaglio subito a circa
-  cento chiamanti.
+  Nota storica: in quel passaggio 235 e 622 restavano aperte perché il
+  checkpoint restituiva subito il bersaglio. Sono state poi chiuse con la
+  variante attendibile `ctx.declareTargetWaiting`.
 
 - ✅ **Posti al tavolo (Priorità 3, branch `refactor/posti-al-tavolo`, poi
   MERGIATO in `main` su richiesta esplicita dell'utente dopo la suite
@@ -3811,7 +3811,7 @@ priorità o richiedono un refactor ampio):
 ## Carte con limiti noti (da riprendere)
 
 **Fonte di verità: `grep missingEffectNote data/cards.json`, e nient'altro.**
-3 risultati (erano 55 dopo la revisione completa descritta più sopra,
+0 risultati (erano 55 dopo la revisione completa descritta più sopra,
 poi 52 contati di nuovo; chiuse in tre giri 142/511/512/899, poi
 420/523/772/880/901/1040/1043/1113/1114/1121, poi tutte le 17 della
 famiglia A, poi 873 con la scelta di chi subisce, poi le 6 della
@@ -3846,8 +3846,9 @@ sua mano vera) e allinea l'altro con la propria fotografia di stato.
 **Usarlo per ogni futura carta "l'avversario scarta 1 carta a sua
 scelta"** (761, 873; spec `scelta-di-chi-subisce.spec.js`).
 
-**B — implementata, il limite è del motore (3 carte).** La nota è un
-promemoria, non lavoro arretrato: 192, 235, 622.
+**B — implementata, il limite è del motore: nessuna carta.** Le ultime tre
+(192, 235, 622) sono state chiuse con immunità transazionale delle Spirit
+Message e targeting attendibile con scelta via `Decisioni`.
 
 *Carte usabili da "uno dei due giocatori"* (chiuso in 1.0.38):
 `def.usableByEitherPlayer` rende una carta SCOPERTA sul Terreno di chi la
@@ -3888,9 +3889,9 @@ eccezioni per categoria (bersagli nel Cimitero, bersaglio di un
 attacco, carte che reagiscono al checkpoint, bersagli Magia/Trappola);
 `targeting-checkpoint-guardrail.spec.js` è un ratchet sul numero di
 chiamate. **Una carta nuova che bersaglia un mostro deve passare di lì,
-o la suite fallisce.** Il limite che resta è di forma, non di
-copertura: il checkpoint è SINCRONO, quindi una reazione che sceglie un
-nuovo bersaglio (235, metà Magia/Trappola di 622) sceglie da sola.
+o la suite fallisce.** Il percorso storico resta sincrono; per reazioni
+che richiedono una decisione esiste `ctx.declareTargetWaiting`, protetto
+dal guardrail `guardrail-targeting-attendibile.spec.js`.
 
 *Finestra di priorità per gli Effetti Veloci* (chiuso in 1.0.39, su
 richiesta esplicita): `DuelEngine.openPriorityWindow(chi, momento, onDone)`
@@ -3960,10 +3961,8 @@ con `chooseFieldCardTarget` su un contesto della vittima
 **C — la scelta la fa il motore, non il giocatore: nessuna carta.** Le
 ultime sei (100, 883, 885, 889, 895, 1120) sono state chiuse con
 `callCardHandlerWaiting`/`attendiScelta` e `chooseOption` (vedi
-l'aggiornamento 1.0.35 sulla regola di `onAttackDeclare`). Restano due
-scelte automatiche DENTRO note di famiglia B, perché vivono nel
-checkpoint di targeting, che è sincrono: 235 e la metà Magia/Trappola
-di 622.
+l'aggiornamento 1.0.35 sulla regola di `onAttackDeclare`). Anche 235 e
+622 ora usano il checkpoint attendibile `ctx.declareTargetWaiting`.
 
 ## Test: insidie note
 

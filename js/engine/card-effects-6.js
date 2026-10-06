@@ -53,7 +53,8 @@
             if (candidati.length === 0) return;
             chooseFieldCardTarget(ctx, candidati, {
                 title: '💥 Esplosione a Catena',
-                text: 'Scegli quale carta sul Terreno distruggere.'
+                text: 'Scegli quale carta sul Terreno distruggere.',
+                dichiara: true
             }, (scelto) => {
                 if (scelto.zone === 'st') {
                     const nome = scelto.card.name;
@@ -61,12 +62,10 @@
                     ctx.log(`💥 Esplosione a Catena distrugge ${nome}!`);
                     return;
                 }
-                const decl = ctx.declareTarget(scelto.owner, scelto.index, { totalTargetCount: 1 });
-                if (!decl.allowed) return;
-                const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                const finalSlot = ctx.field(scelto.owner)[scelto.index];
                 if (!finalSlot) return;
                 const name = finalSlot.card.name;
-                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+                ctx.destroyMonster(scelto.owner, scelto.index);
                 ctx.log(`💥 Esplosione a Catena distrugge ${name}!`);
             });
         }
@@ -510,7 +509,7 @@
             if (scelto === -1) return;
             gameState[lpKey] -= 1000; // costo: si paga prima di scegliere il bersaglio
             // Checkpoint di targeting, come Movimento d'Onda Diffuso (id 199).
-            const decl = ctx.declareTarget(ctx.owner, scelto, { totalTargetCount: 1 });
+            ctx.declareTargetWaiting(ctx.owner, scelto, { totalTargetCount: 1 }, (decl) => {
             if (!decl.allowed || decl.targetOwner !== ctx.owner) return;
             const targetIndex = decl.targetIndex;
             const targetSlot = ctx.field(ctx.owner)[targetIndex];
@@ -522,6 +521,7 @@
             gameState.negatesEffectsOnForcedAttackFor = gameState.negatesEffectsOnForcedAttackFor || new Set();
             gameState.negatesEffectsOnForcedAttackFor.add(targetSlot.card.uid);
             ctx.log(`🌊 Onda di Diffusione: ${targetSlot.card.name} deve attaccare tutti i mostri avversari, e i loro effetti non si attiveranno se distrutti!`);
+            });
         }
     });
 
@@ -1835,14 +1835,15 @@
             const field = ctx.field(ctx.opponent);
             const attackerSlot = field[ctx.attackerIndex];
             if (!attackerSlot) return;
-            const decl = ctx.declareTarget(ctx.opponent, ctx.attackerIndex, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
-            if (!targetSlot) return;
-            const name = targetSlot.card.name;
-            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
-            ctx.cancelAttack();
-            ctx.log(`🛡️ Armatura Sakuretsu distrugge ${name}!`);
+            ctx.declareTargetWaiting(ctx.opponent, ctx.attackerIndex, { totalTargetCount: 1 }, (decl) => {
+                if (!decl.allowed) return;
+                const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!targetSlot) return;
+                const name = targetSlot.card.name;
+                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+                ctx.cancelAttack();
+                ctx.log(`🛡️ Armatura Sakuretsu distrugge ${name}!`);
+            });
         }
     });
 
@@ -2659,18 +2660,17 @@
             });
             chooseFieldCardTargetWaiting(ctx, candidati, {
                 title: '🛡️ Scudo con Braccio Magico',
-                text: 'Scegli il mostro dell\'avversario da prendere e mettere davanti all\'attacco.'
+                text: 'Scegli il mostro dell\'avversario da prendere e mettere davanti all\'attacco.',
+                dichiara: true
             }, (scelto) => {
                 // Riletta adesso: durante la scelta la casella libera
                 // potrebbe non esserlo più.
                 const freeIndex = ctx.field(ctx.owner).findIndex((s) => s === null);
                 if (freeIndex === -1) return;
-                const decl = ctx.declareTarget(scelto.owner, scelto.index, { totalTargetCount: 1 });
-                if (!decl.allowed) return;
-                const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                const targetSlot = ctx.field(scelto.owner)[scelto.index];
                 if (!targetSlot) return;
                 const stolenName = targetSlot.card.name;
-                if (!ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex)) return;
+                if (!ctx.takeControl(ctx.owner, scelto.owner, scelto.index)) return;
                 // takeControl mette il mostro nella prima casella libera:
                 // è quella letta qui sopra.
                 ctx.redirectAttack(freeIndex, ctx.owner);
@@ -2694,11 +2694,12 @@
         onAttackDeclare(ctx) {
             // "Scegli come bersaglio il mostro attaccante": checkpoint di
             // targeting.
-            const decl = ctx.declareTarget(ctx.attackerOwner, ctx.attackerIndex, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            ctx.cancelAttack();
-            ctx.endBattlePhase();
-            ctx.log("🛡️ Nega Attacco annulla l'attacco e termina la Battle Phase!");
+            ctx.declareTargetWaiting(ctx.attackerOwner, ctx.attackerIndex, { totalTargetCount: 1 }, (decl) => {
+                if (!decl.allowed) return;
+                ctx.cancelAttack();
+                ctx.endBattlePhase();
+                ctx.log("🛡️ Nega Attacco annulla l'attacco e termina la Battle Phase!");
+            });
         }
     });
 

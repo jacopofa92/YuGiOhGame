@@ -118,15 +118,16 @@ del protocollo corrente.
 - Applicazione HTML/CSS/JavaScript puro: nessun framework, bundler o build del
   frontend. Gli script globali devono essere caricati nell'ordine giusto.
 - 19 pagine HTML, 104 file JS applicativi sotto `js/` (esclusi i vendor),
-  1.129 carte, 202 spec Playwright (2026-10-06). I numeri invecchiano:
+  1.129 carte, 205 spec Playwright (2026-10-06). I numeri invecchiano:
   contarli quando contano.
-- 3 `missingEffectNote` in `data/cards.json` (192, 235, 622): promemoria su
-  limiti del motore, vedi `CLAUDE.md`.
+- 0 `missingEffectNote` in `data/cards.json`: le ultime tre limitazioni del
+  motore (192, 235, 622) sono state chiuse sul branch
+  `refactor/chiudi-ultime-carte`.
 - PWA tramite `manifest.json`, `sw.js` e `js/pwa-register.js`.
 - App Android/Capacitor: la shell di produzione beta.22 (`versionCode 22`) è
   stata compilata il 2026-10-06 e punta a GitHub Pages; gli APK sono ignorati
   da Git e restano artefatti locali rigenerabili. La cache WebView/PWA corrente
-  è `ygo-duel-arena-v161` sul branch di rimozione del protocollo legacy.
+  è `ygo-duel-arena-v162` sul branch di chiusura delle ultime carte.
 - Cloud tramite Supabase; multiplayer tramite relay WebSocket Node nativo.
 - Le preferenze utente (`save.settings`: dettagli video, ologrammi, aptica,
   volume e mute musica/SFX) fanno parte del salvataggio unificato e quindi di

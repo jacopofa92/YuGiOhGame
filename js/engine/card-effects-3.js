@@ -2151,14 +2151,13 @@
             });
             chooseFieldMonsterTarget(ctx, candidati, {
                 title: '💫 Cambio di Cuore',
-                text: 'Scegli quale mostro avversario prendere sotto controllo.'
+                text: 'Scegli quale mostro avversario prendere sotto controllo.',
+                dichiara: true
             }, (scelta) => {
-                const decl = ctx.declareTarget(scelta.owner, scelta.index, { totalTargetCount: 1 });
-                if (!decl.allowed) return;
-                const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                const targetSlot = ctx.field(scelta.owner)[scelta.index];
                 if (!targetSlot) return;
                 const stolen = targetSlot.card;
-                if (ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex)) {
+                if (ctx.takeControl(ctx.owner, scelta.owner, scelta.index)) {
                     ctx.log(`💫 ${ctx.owner === 'player' ? 'Hai preso' : 'Il bot ha preso'} il controllo di ${stolen.name} fino alla End Phase!`);
                 }
             });
@@ -2615,14 +2614,13 @@
             });
             chooseFieldMonsterTarget(ctx, candidati, {
                 title: '👻 Incantesimo Ombra',
-                text: 'Scegli quale mostro avversario legare (-700 ATK, non può attaccare né cambiare Posizione).'
+                text: 'Scegli quale mostro avversario legare (-700 ATK, non può attaccare né cambiare Posizione).',
+                dichiara: true
             }, (scelta) => {
-                const decl = ctx.declareTarget(scelta.owner, scelta.index, { totalTargetCount: 1 });
-                if (!decl.allowed) return;
-                const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                const targetSlot = ctx.field(scelta.owner)[scelta.index];
                 if (!targetSlot) return;
-                ctx.card.targetOwner = decl.targetOwner;
-                ctx.card.targetIndex = decl.targetIndex;
+                ctx.card.targetOwner = scelta.owner;
+                ctx.card.targetIndex = scelta.index;
                 ctx.card.targetUid = targetSlot.card.uid;
                 ctx.log(`👻 Incantesimo Ombra lega ${targetSlot.card.name}!`);
             });
@@ -2891,19 +2889,26 @@
         onOpponentSummon(ctx) {
             const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
             if (slotIndex === -1) return;
+            const creaClone = (bersaglio) => {
+                const originale = cardDatabase.find((c) => c.id === bersaglio.id) || bersaglio;
+                const template = {
+                    name: bersaglio.name, race: originale.race, attribute: originale.attribute,
+                    level: originale.level, attack: originale.attack, defense: originale.defense,
+                    destroyWhenDestroyedUid: bersaglio.uid
+                };
+                ctx.createTokens(ctx.owner, 1, template);
+                ctx.log(`🎭 Clonazione crea un Token copia di ${bersaglio.name}!`);
+            };
             // "Scegli come bersaglio quel mostro": checkpoint di targeting.
             if (typeof ctx.summonedSlotIndex === 'number') {
-                const decl = ctx.declareTarget(ctx.opponent, ctx.summonedSlotIndex, { totalTargetCount: 1 });
-                if (!decl.allowed) return;
+                ctx.declareTargetWaiting(ctx.opponent, ctx.summonedSlotIndex, { totalTargetCount: 1 }, (decl) => {
+                    if (!decl.allowed) return;
+                    const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                    if (finalSlot) creaClone(finalSlot.card);
+                });
+                return;
             }
-            const originale = cardDatabase.find((c) => c.id === ctx.summonedCard.id) || ctx.summonedCard;
-            const template = {
-                name: ctx.summonedCard.name, race: originale.race, attribute: originale.attribute,
-                level: originale.level, attack: originale.attack, defense: originale.defense,
-                destroyWhenDestroyedUid: ctx.summonedCard.uid
-            };
-            ctx.createTokens(ctx.owner, 1, template);
-            ctx.log(`🎭 Clonazione crea un Token copia di ${ctx.summonedCard.name}!`);
+            creaClone(ctx.summonedCard);
         }
     });
 
@@ -3150,14 +3155,13 @@
             if (candidati.length === 0) return;
             chooseFieldCardTarget(ctx, candidati, {
                 title: '💀 Michizure',
-                text: 'Scegli quale mostro trascinare con te.'
+                text: 'Scegli quale mostro trascinare con te.',
+                dichiara: true
             }, (scelto) => {
-                const decl = ctx.declareTarget(scelto.owner, scelto.index, { totalTargetCount: 1 });
-                if (!decl.allowed) return;
-                const destroyedSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                const destroyedSlot = ctx.field(scelto.owner)[scelto.index];
                 if (!destroyedSlot) return;
                 const destroyed = destroyedSlot.card;
-                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+                ctx.destroyMonster(scelto.owner, scelto.index);
                 ctx.log(`💀 Michizure distrugge ${destroyed.name}!`);
             });
         }
