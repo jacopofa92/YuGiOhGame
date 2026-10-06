@@ -724,10 +724,8 @@
         const desired = wantsCastle ? 'castle' : 'forest';
         if (desired === currentMapTrack) return;
         currentMapTrack = desired;
-        if (!window.DuelMusic || !DuelMusic.audio) return;
-        DuelMusic.audio.src = desired === 'castle' ? CASTLE_MAP_TRACK : FOREST_MAP_TRACK;
-        DuelMusic.audio.currentTime = 0;
-        DuelMusic.audio.play().catch(() => { /* stessa policy autoplay già gestita da audio-manager.js */ });
+        if (!window.DuelMusic || !DuelMusic.setTrack) return;
+        DuelMusic.setTrack(desired === 'castle' ? CASTLE_MAP_TRACK : FOREST_MAP_TRACK, { restart: true });
     }
     // Solo i Duellanti del vero Regno dei Duellanti (Duelist Kingdom) —
     // MAI Kaiba o Pegasus, che compaiono solo tramite il percorso

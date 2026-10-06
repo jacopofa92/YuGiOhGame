@@ -32,6 +32,9 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.1.5 — streaming delle soundtrack compatibile con le risposte HTTP 206;
+ *   continuità web più robusta e player musicale nativo persistente nell'APK.
+ *
  * 1.1.4 — cinematica ricompensa alleggerita: niente griglia o blur pesanti,
  *   meno particelle e ingresso separato dal movimento di attesa.
  *
@@ -629,4 +632,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.1.4';
+window.GAME_VERSION = '1.1.5';

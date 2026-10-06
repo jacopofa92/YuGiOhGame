@@ -409,7 +409,7 @@
 // v166: emblemi originali solo sulle generiche; artwork veri sulle tematiche.
 // v167: ricompensa carta rifinita e carosello sbustamento trascinabile.
 // v168: cinematica ricompensa alleggerita e sfondo senza griglia.
-const CACHE_NAME = 'ygo-duel-arena-v168';
+const CACHE_NAME = 'ygo-duel-arena-v169';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -636,6 +636,17 @@ self.addEventListener('fetch', (event) => {
     const url = new URL(req.url);
     if (url.origin !== self.location.origin) return; // mai toccare richieste verso altri domini
 
+    // Audio/video vengono richiesti a segmenti tramite Range. Cache Storage
+    // non accetta risposte HTTP 206: un cache.put() trasformerebbe uno stream
+    // valido in ERR_FAILED. I segmenti passano quindi direttamente dalla rete.
+    const rangeHeader = req.headers && typeof req.headers.get === 'function'
+        ? req.headers.get('range')
+        : null;
+    if (rangeHeader) {
+        event.respondWith(fetch(req));
+        return;
+    }
+
     if (isAppShellRequest(url)) {
         event.respondWith(
             // cache: 'reload' forza il bypass della cache HTTP del BROWSER
@@ -662,7 +673,7 @@ self.addEventListener('fetch', (event) => {
                     // dopo aver consegnato `response` ma prima di aver
                     // terminato l'aggiornamento della cache.
                     return caches.open(CACHE_NAME)
-                        .then((cache) => cache.put(req, copy))
+                        .then((cache) => cache.put(req, copy).catch(() => {}))
                         .then(() => response);
                 })
                 .catch(() => caches.match(req))
@@ -677,12 +688,12 @@ self.addEventListener('fetch', (event) => {
                 // Solo risposte valide vengono messe in cache (una 404 per
                 // un'immagine mancante — caso già gestito con un fallback
                 // grafico lato client — non deve "incollarsi" in cache).
-                if (response && response.ok) {
+                if (response && response.ok && response.status !== 206) {
                     const copy = response.clone();
                     // Anche la cache al primo uso deve completare la propria
                     // scrittura dentro la vita della richiesta del worker.
                     return caches.open(CACHE_NAME)
-                        .then((cache) => cache.put(req, copy))
+                        .then((cache) => cache.put(req, copy).catch(() => {}))
                         .then(() => response);
                 }
                 return response;

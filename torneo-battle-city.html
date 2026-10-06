@@ -1560,10 +1560,8 @@
         const src = PHASE_TRACKS[phase] || PHASE_TRACKS.city;
         if (src === currentPhaseTrack) return;
         currentPhaseTrack = src;
-        if (!window.DuelMusic || !DuelMusic.audio) return;
-        DuelMusic.audio.src = src;
-        DuelMusic.audio.currentTime = 0;
-        DuelMusic.audio.play().catch(() => { /* stessa policy autoplay già gestita da audio-manager.js */ });
+        if (!window.DuelMusic || !DuelMusic.setTrack) return;
+        DuelMusic.setTrack(src, { restart: true });
     }
 
     function applyPhaseBackdrop(phase) {

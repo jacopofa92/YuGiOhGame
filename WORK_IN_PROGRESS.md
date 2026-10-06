@@ -10,6 +10,14 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
 - [x] Simulare il farming necessario (`FARMING_REPORT.md`, 50.000 profili).
 - [x] Animazione epica finto 3D per l'ottenimento di una carta speciale.
 
+## Audio multipagina
+
+- [x] Escludere stream Range/HTTP 206 dalla Cache Storage senza interrompere
+      la risposta di rete.
+- [x] Conservare posizione e traccia nel browser fra pagine e bfcache.
+- [x] Player nativo persistente per la soundtrack nelle shell Android dev e
+      produzione; effetti, voci e jingle restano nella WebView.
+
 ## Piano di attacco (deciso il 2026-10-04)
 
 Obiettivi dell'utente: un motore scalabile e "plug in", e in prospettiva
