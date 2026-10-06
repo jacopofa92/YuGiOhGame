@@ -401,7 +401,12 @@
     scroll-snap-type: x proximity;
     scrollbar-width: thin;
     scrollbar-color: rgba(247,215,116,.42) rgba(255,255,255,.05);
+    touch-action: pan-x;
+    cursor: grab;
 }
+.po-striscia.is-dragging { cursor: grabbing; scroll-snap-type: none; user-select: none; }
+.po-striscia .po-slot,
+.po-striscia .card { touch-action: pan-x; }
 .po-striscia:not(.is-scrollable) { justify-content: center; }
 .po-striscia.is-scrollable { justify-content: flex-start; }
 .po-striscia::-webkit-scrollbar { height: 4px; }

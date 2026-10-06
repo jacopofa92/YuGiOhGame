@@ -407,7 +407,8 @@
 // dispatcher, messaggi per singola mossa e fotografie di stato legacy.
 // v165: nuovi emblemi illustrati e bilanciamento di drop/buste tematiche.
 // v166: emblemi originali solo sulle generiche; artwork veri sulle tematiche.
-const CACHE_NAME = 'ygo-duel-arena-v166';
+// v167: ricompensa carta rifinita e carosello sbustamento trascinabile.
+const CACHE_NAME = 'ygo-duel-arena-v167';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

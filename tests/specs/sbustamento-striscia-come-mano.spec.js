@@ -35,6 +35,23 @@ module.exports = {
             assert(layout.width >= 81 && !layout.overlap && layout.oneRow && layout.scrollable && layout.summaryInHead,
                 `Il carosello mobile non conserva carte intere e leggibili: ${JSON.stringify(layout)}`);
 
+            const fascia = await page.locator('.po-striscia').boundingBox();
+            await page.mouse.move(fascia.x + fascia.width - 24, fascia.y + fascia.height / 2);
+            await page.mouse.down();
+            await page.mouse.move(fascia.x + 40, fascia.y + fascia.height / 2, { steps: 8 });
+            await page.mouse.up();
+            const gesto = await page.evaluate(() => {
+                const strip = document.querySelector('.po-striscia');
+                return {
+                    scrollLeft: strip.scrollLeft,
+                    touchStrip: getComputedStyle(strip).touchAction,
+                    touchCard: getComputedStyle(strip.querySelector('.card')).touchAction,
+                    dettaglioAperto: !!document.querySelector('.cd-backdrop.open')
+                };
+            });
+            assert(gesto.scrollLeft > 20 && gesto.touchStrip === 'pan-x' && gesto.touchCard === 'pan-x' && !gesto.dettaglioAperto,
+                `La fila non risponde correttamente a swipe/trascinamento: ${JSON.stringify(gesto)}`);
+
             await page.setViewportSize({ width: 1200, height: 900 });
             await page.waitForTimeout(180);
             const desktop = await page.evaluate(() => {

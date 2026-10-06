@@ -6,6 +6,10 @@
 (function () {
     'use strict';
     const STORAGE_KEY = 'duelArenaPendingCardDrops';
+    // Prima di questo istante la carta sta ancora compiendo la rotazione
+    // d'ingresso: permettere di chiudere il fondale produceva una cerimonia
+    // troncata e, con premi in coda, due animazioni quasi sovrapposte.
+    const REVEAL_READY_MS = 2600;
     const queue = [];
     let active = false;
 
@@ -90,21 +94,33 @@
         // cerimonia, quindi non deve fingere di effettuare ora l'accredito.
         const button = make('button', 'cdrop-continue', 'Continua ›');
         button.type = 'button';
+        button.disabled = !reducedMotion();
+        button.setAttribute('aria-disabled', button.disabled ? 'true' : 'false');
         content.appendChild(button);
         overlay.appendChild(content);
         document.body.appendChild(overlay);
 
         const close = () => {
+            if (button.disabled) return;
             if (overlay.classList.contains('cdrop-leaving')) return;
             overlay.classList.add('cdrop-leaving');
             setTimeout(() => { overlay.remove(); active = false; showNext(); }, reducedMotion() ? 20 : 380);
         };
         button.onclick = close;
-        overlay.addEventListener('click', (event) => { if (event.target === overlay) close(); });
         requestAnimationFrame(() => overlay.classList.add('cdrop-visible'));
         if (window.NativeHaptics) NativeHaptics.success();
         if (window.SFX && typeof SFX.summon === 'function') SFX.summon('effect');
-        if (reducedMotion()) overlay.classList.add('cdrop-reduced');
+        if (reducedMotion()) {
+            overlay.classList.add('cdrop-reduced', 'cdrop-ready');
+        } else {
+            setTimeout(() => {
+                if (!overlay.isConnected || overlay.classList.contains('cdrop-leaving')) return;
+                button.disabled = false;
+                button.setAttribute('aria-disabled', 'false');
+                overlay.classList.add('cdrop-ready');
+                button.focus({ preventScroll: true });
+            }, REVEAL_READY_MS);
+        }
     }
 
     function enqueue(entry) {

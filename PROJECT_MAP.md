@@ -14,6 +14,11 @@ Il costo in vittorie è misurato in modo riproducibile da
 `tools/simula-farming-carte.js`; risultati e giudizio sono in
 `FARMING_REPORT.md`.
 
+La cerimonia di una carta premio vive in `card-drop-animation.js`: la
+rivelazione dura 2,6 secondi e non può essere chiusa a metà. Il riepilogo
+dello sbustamento in `pack-opening.js` è un carosello orizzontale: pan nativo
+su touch, trascinamento e rotellina su desktop; uno swipe non apre il dettaglio.
+
 Questo file è la memoria breve e stabile del progetto. Va letto all'inizio di
 una nuova sessione prima di scandire di nuovo l'intero repository. Per la
 cronologia dettagliata delle decisioni e delle correzioni precedenti resta

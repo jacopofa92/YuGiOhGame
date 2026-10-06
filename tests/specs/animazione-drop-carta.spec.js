@@ -32,8 +32,16 @@ module.exports = {
             assert(first.name.includes('Ra'), 'La prima carta della coda deve essere Ra');
             assert(first.z > 100000, 'La cerimonia deve stare sopra alla UI di gioco');
             assert(first.cardInside && first.buttonInside, 'Carta e pulsante devono restare nello schermo mobile');
+            // Un tocco impaziente durante la rotazione non deve troncare il
+            // premio né far partire subito quello successivo.
+            await page.locator('.cdrop-continue').dispatchEvent('click');
+            await page.waitForTimeout(250);
+            assert(await page.locator('.cdrop-name').textContent().then((t) => t.includes('Ra')),
+                'La ricompensa non deve chiudersi prima della rivelazione completa');
+            await page.waitForSelector('.cdrop-overlay.cdrop-ready');
             await page.click('.cdrop-continue');
             await page.waitForFunction(() => document.querySelector('.cdrop-name')?.textContent.includes('Slifer'));
+            await page.waitForSelector('.cdrop-overlay.cdrop-ready');
             await page.click('.cdrop-continue');
             await page.waitForFunction(() => !document.querySelector('.cdrop-overlay'));
             assert(errors.length === 0, 'Errori JS: ' + errors.join(' | '));

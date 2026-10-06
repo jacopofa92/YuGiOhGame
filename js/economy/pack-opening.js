@@ -121,6 +121,52 @@
         striscia.classList.toggle('is-scrollable', naturalWidth > striscia.clientWidth + 1);
     }
 
+    /**
+     * Su touch lo scorrimento resta nativo; su desktop si puo trascinare la
+     * fila come un carosello. Il flag `haTrascinato` impedisce che il rilascio
+     * dopo uno swipe apra per errore il dettaglio della carta sottostante.
+     */
+    function abilitaScorrimentoOrizzontale(striscia) {
+        let partenzaX = 0;
+        let scrollIniziale = 0;
+        let trascina = false;
+        let haTrascinato = false;
+        striscia.addEventListener('pointerdown', (event) => {
+            if (event.pointerType === 'touch' || event.button !== 0) return;
+            partenzaX = event.clientX;
+            scrollIniziale = striscia.scrollLeft;
+            trascina = true;
+            haTrascinato = false;
+            striscia.setPointerCapture(event.pointerId);
+        });
+        striscia.addEventListener('pointermove', (event) => {
+            if (!trascina) return;
+            const delta = event.clientX - partenzaX;
+            if (Math.abs(delta) > 5) {
+                haTrascinato = true;
+                striscia.classList.add('is-dragging');
+            }
+            if (haTrascinato) striscia.scrollLeft = scrollIniziale - delta;
+        });
+        const termina = () => {
+            trascina = false;
+            striscia.classList.remove('is-dragging');
+            setTimeout(() => { haTrascinato = false; }, 0);
+        };
+        striscia.addEventListener('pointerup', termina);
+        striscia.addEventListener('pointercancel', termina);
+        striscia.addEventListener('click', (event) => {
+            if (!haTrascinato) return;
+            event.preventDefault();
+            event.stopPropagation();
+        }, true);
+        striscia.addEventListener('wheel', (event) => {
+            if (Math.abs(event.deltaY) <= Math.abs(event.deltaX) || striscia.scrollWidth <= striscia.clientWidth) return;
+            event.preventDefault();
+            striscia.scrollLeft += event.deltaY;
+        }, { passive: false });
+    }
+
     /** La stessa busta metallizzata esposta nello scaffale del Negozio. */
     function nodoBustina(busta) {
         const bustina = el('div', 'po-bustina');
@@ -241,6 +287,7 @@
         palco.appendChild(mazzetto);
 
         const striscia = el('div', 'po-striscia');
+        abilitaScorrimentoOrizzontale(striscia);
         scena.appendChild(striscia);
 
         const pulsante = el('button', 'po-chiudi', 'Continua ›');
@@ -367,6 +414,7 @@
     function scenaSenzaMovimento(scena, elenco, nuoveSet, chiudi, busta) {
         scena.appendChild(el('div', 'po-titolo', (busta && busta.nome) || 'Bustina'));
         const striscia = el('div', 'po-striscia po-striscia-larga');
+        abilitaScorrimentoOrizzontale(striscia);
         elenco.forEach((id) => {
             const slot = el('div', 'po-slot po-slot-' + rarita(id));
             slot.appendChild(nodoCarta(id, 'clamp(40px, 9vw, 64px)'));
