@@ -1776,7 +1776,7 @@
         // rewards.js serve solo a sapere QUANTI Oggetti del Millennio
         // esistono; senza, la voce mostra il numero senza il totale.
         ensureViewStyles(['js/ui/profile-stats.css']);
-        ensureViewScripts(['js/economy/rewards.js', 'js/ui/profile-stats.js'])
+        ensureViewScripts(['js/economy/card-acquisition.js', 'js/economy/rewards.js', 'js/ui/profile-stats.js'])
             .then(() => { if (window.ProfileStats) ProfileStats.render(document.getElementById('profilo-statsMount')); })
             .catch(() => { /* senza statistiche il resto del Profilo funziona uguale */ });
 
@@ -2809,6 +2809,7 @@
             // L'ordine conta: rewards prima del componente (cosa dà ogni
             // sfida), missions-db e server-date prima di chiedere le missioni.
             ensureViewScripts([
+                'js/economy/card-acquisition.js',
                 'js/economy/rewards.js',
                 'js/data/missions-db.js',
                 'js/data/story-campaigns.js',
@@ -2963,6 +2964,7 @@
                     'js/ui/card-detail.js',
                 'js/cloud/server-date.js',
                 'js/data/card-rarity.js',
+                'js/economy/card-acquisition.js',
                 'js/economy/rewards.js',
                 'js/economy/shop-catalog.js',
                 'js/economy/pack-opening.js',

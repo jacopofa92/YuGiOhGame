@@ -28,20 +28,22 @@ module.exports = {
             await page.evaluate(() => {
                 if (!SaveManager.hasSave()) SaveManager.createNew('Tester');
                 SaveManager.addCurrency('credits', 100000);
+                SaveManager.addCurrency('starChips', 1000);
+                SaveManager.addCurrency('millenniumCards', 100);
             });
             await page.reload();
             await page.waitForFunction(() => !!window.ShopCatalog, null, { timeout: 20000 });
             await page.waitForSelector('.shop-item, .shop-empty-note', { timeout: 15000 });
 
-            // --- Stato iniziale: le 4 carte, nessuna comprata -----------
+            // --- Stato iniziale: le 8 fasce in rotazione, nessuna comprata ---
             const carteFresche = await page.evaluate(() => ShopCatalog.carteDelGiorno());
-            assert(carteFresche.length === 4, `Le carte del giorno devono essere 4 (trovate ${carteFresche.length})`);
+            assert(carteFresche.length === 8, `La rotazione deve esporre 8 carte (trovate ${carteFresche.length})`);
             assert(carteFresche.every((c) => c.acquistataOggi === false),
                 'Un salvataggio nuovo non deve avere nessuna carta del giorno già segnata come comprata');
 
             const contaGrigliaGiorno = () => document.querySelectorAll('.shop-grid:not(.packs):not(.decks) .shop-item').length;
             const primoConteggio = await page.evaluate(contaGrigliaGiorno);
-            assert(primoConteggio === 4, `La griglia "Carte del giorno" deve mostrare 4 carte (mostra ${primoConteggio})`);
+            assert(primoConteggio === 8, `La griglia "Carte del giorno" deve mostrare 8 carte (mostra ${primoConteggio})`);
 
             // --- "Ne possiedi N": già presente, verificato che non regredisca ---
             const primaCartaId = carteFresche[0].cardId;
@@ -61,17 +63,17 @@ module.exports = {
                 acquistataOggi: ShopCatalog.carteDelGiorno().find((c) => c.cardId === cardId).acquistataOggi,
                 credit: SaveManager.getCurrency().credits
             }), primaCartaId);
-            assert(dopoUnAcquisto.itemNellaGriglia === 3,
-                `Dopo 1 acquisto devono restare 3 carte in vetrina (trovate ${dopoUnAcquisto.itemNellaGriglia})`);
+            assert(dopoUnAcquisto.itemNellaGriglia === 7,
+                `Dopo 1 acquisto devono restare 7 carte in vetrina (trovate ${dopoUnAcquisto.itemNellaGriglia})`);
             assert(dopoUnAcquisto.possedute === 1, `La carta comprata deve risultare posseduta 1 volta (risulta ${dopoUnAcquisto.possedute})`);
             assert(dopoUnAcquisto.acquistataOggi === true, 'La carta comprata deve risultare acquistataOggi=true');
-            assert(dopoUnAcquisto.credit === 99900, `I crediti devono scendere di 100 (restano ${dopoUnAcquisto.credit})`);
+            assert(dopoUnAcquisto.credit === 99850, `I crediti devono scendere di 150 (restano ${dopoUnAcquisto.credit})`);
 
             // --- "Ne possiedi 1" ora si vede sulle ALTRE carte comprate ---
             // (verificato di nuovo dopo aver comprato tutto, più sotto)
 
-            // --- Comprando anche le altre 3, la vetrina si svuota -------
-            for (let i = 0; i < 3; i++) {
+            // --- Comprando anche le altre 7, la vetrina si svuota -------
+            for (let i = 0; i < 7; i++) {
                 await page.evaluate(() => {
                     const btn = document.querySelector('.shop-grid:not(.packs):not(.decks) .shop-item .buy-btn:not(.alt)');
                     if (btn) btn.click();
@@ -83,9 +85,9 @@ module.exports = {
                 messaggio: (document.querySelector('.shop-empty-note') || {}).textContent || null,
                 tutteAcquistate: ShopCatalog.carteDelGiorno().every((c) => c.acquistataOggi)
             }));
-            assert(dopoTutte.itemNellaGriglia === 0, 'Dopo aver comprato tutte e 4 la griglia deve restare vuota');
+            assert(dopoTutte.itemNellaGriglia === 0, 'Dopo aver comprato tutte e 8 la griglia deve restare vuota');
             assert(!!dopoTutte.messaggio, 'Deve comparire un messaggio quando la vetrina di oggi è esaurita');
-            assert(dopoTutte.tutteAcquistate, 'Tutte e 4 le carte devono risultare acquistataOggi=true');
+            assert(dopoTutte.tutteAcquistate, 'Tutte e 8 le carte devono risultare acquistataOggi=true');
 
             // --- Persiste dopo un ricaricamento (stesso giorno) ---------
             await page.reload();

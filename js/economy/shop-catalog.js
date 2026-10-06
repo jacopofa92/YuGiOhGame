@@ -28,13 +28,11 @@
     // Prezzi. Tutti qui, in un colpo d'occhio.
     // ================================================================
     const PREZZI = {
-        cartaComune: 100,
-        cartaRara: 800,
-        /** La carta rara del giorno si può prendere anche a colpo sicuro con la valuta del Torneo Kaiba. */
-        cartaRaraInMillennio: 1,
+        cartaComune: 150, cartaRara: 450, cartaSuper: 900,
+        cartaUltra: 1800, cartaLeggendaria: 3500,
         bustaBase: 200,
-        bustaAvanzata: 400,
-        bustaLeggendaria: 800,
+        bustaAvanzata: 450,
+        bustaLeggendaria: 900,
         /** La Leggendaria si può pagare anche con la valuta di Battle City. */
         bustaLeggendariaInLocazione: 2
     };
@@ -158,6 +156,17 @@
      * regola che li ha prodotti.
      */
     function statoSblocco(voce) {
+        const packId = voce && voce.packId;
+        if (packId && window.CardAcquisition) {
+            const evolution = packId === 'starter_sye_yugi_evolution' || packId === 'starter_ske_kaiba_evolution';
+            const structureYgo = /^structure_/.test(packId);
+            if (evolution && !CardAcquisition.isChapterComplete('regno')) {
+                return { sbloccato: false, motivo: 'Si sblocca completando il Regno dei Duellanti a qualsiasi difficoltà.' };
+            }
+            if (structureYgo && !CardAcquisition.isChapterComplete('battlecity1')) {
+                return { sbloccato: false, motivo: 'Si sblocca completando Battle City - Parte I a qualsiasi difficoltà.' };
+            }
+        }
         const r = voce && voce.richiede;
         if (!r) return { sbloccato: true, motivo: '' };
 
@@ -237,10 +246,9 @@
             // `colore` è l'unico valore da dare alla bustina: tutte le sue
             // sfumature sono derivate da lì con color-mix (--pack-base).
             colore: '#1d4f9e',
-            costo: { credits: PREZZI.bustaBase },
+            costo: { credits: PREZZI.bustaBase, starChips: 1 },
             carte: 10,
-            composizione: { rare: 1 },
-            ultraChance: 0.12,
+            composizione: { common: 9, rare: 1 },
             descrizione: '9 carte comuni e 1 rara garantita.'
         },
         {
@@ -249,11 +257,10 @@
             nomeBreve: 'AVANZATA',
             icona: '🎁',
             colore: '#6a2da8',
-            costo: { credits: PREZZI.bustaAvanzata },
+            costo: { credits: PREZZI.bustaAvanzata, starChips: 2 },
             carte: 10,
-            composizione: { rare: 2 },
-            ultraChance: 0.20,
-            descrizione: '8 carte comuni e 2 rare garantite.'
+            composizione: { common: 7, rare: 2, super: 1 },
+            descrizione: '7 comuni, 2 rare e 1 super rara garantita.'
         },
         {
             id: 'leggendaria',
@@ -261,12 +268,22 @@
             nomeBreve: 'LEGGENDARIA',
             icona: '👁️',
             colore: '#b8860b',
-            costo: { credits: PREZZI.bustaLeggendaria, locatorCards: PREZZI.bustaLeggendariaInLocazione },
+            costo: { credits: PREZZI.bustaLeggendaria, starChips: 5, locatorCards: PREZZI.bustaLeggendariaInLocazione },
             carte: 10,
-            composizione: { rare: 2 },
-            ultraChance: 0.82,
-            descrizione: '8 comuni e 2 rare garantite, con la probabilità più alta di trovare un\'ultra rara.'
+            composizione: { common: 5, rare: 2, super: 2, ultra: 1 }, legendaryChance: 0.05,
+            descrizione: '5 comuni, 2 rare, 2 super rare e 1 ultra rara garantita.'
         }
+    ];
+
+    const TEMI = [
+        { id: 'draghi', nome: 'Dominio dei Draghi', colore: '#3467a8', test: (c) => c.race === 'Drago' || /drago/i.test(c.name) },
+        { id: 'maghi', nome: 'Segreti degli Incantatori', colore: '#7046a8', test: (c) => c.race === 'Incantatore' || /mago|magia/i.test(c.name) },
+        { id: 'macchine', nome: 'KaibaCorp: Acciaio', colore: '#607782', test: (c) => c.race === 'Macchina' },
+        { id: 'nonmorti', nome: 'Ombre dal Cimitero', colore: '#57406f', test: (c) => c.race === 'Zombie' || /vampir|cimitero/i.test((c.name || '') + ' ' + (c.effect || '')) },
+        { id: 'guerrieri', nome: 'Leggende dei Guerrieri', colore: '#9a542d', test: (c) => c.race === 'Guerriero' },
+        { id: 'mare', nome: 'Furia dagli Abissi', colore: '#176d88', test: (c) => c.attribute === 'ACQUA' || /mare|oceano|acqua/i.test(c.name) },
+        { id: 'arpie', nome: 'Vento delle Arpie', colore: '#9b477b', test: (c) => /arpia|amazzone/i.test(c.name) },
+        { id: 'toon', nome: 'Mondo Toon', colore: '#b24b80', test: (c) => /toon/i.test((c.name || '') + ' ' + (c.effect || '')) }
     ];
 
     // ================================================================
@@ -329,21 +346,21 @@
      */
     function carteDelGiorno() {
         const giorno = dayKey();
-        const comuni = window.CardRarity ? CardRarity.idsByRarity('common') : [];
-        const rare = window.CardRarity ? CardRarity.idsByRarity('rare') : [];
-        const r1 = rng(hash('carte-comuni-' + giorno));
-        const r2 = rng(hash('carta-rara-' + giorno));
+        const pool = (rarity) => window.CardRarity ? CardRarity.idsByRarity(rarity)
+            .filter((id) => !window.CardAcquisition || CardAcquisition.isSignatureUnlocked(id)) : [];
         const giaComprata = (id) => !!(window.SaveManager && SaveManager.hasBoughtDailyShopCard(giorno, id));
-        const scelteComuni = pesca(comuni, 3, r1).map((id) => ({
-            cardId: id, rarity: 'common', costo: { credits: PREZZI.cartaComune }, acquistataOggi: giaComprata(id)
-        }));
-        const scelteRare = pesca(rare, 1, r2).map((id) => ({
-            cardId: id,
-            rarity: 'rare',
-            costo: { credits: PREZZI.cartaRara, millenniumCards: PREZZI.cartaRaraInMillennio },
-            acquistataOggi: giaComprata(id)
-        }));
-        return scelteComuni.concat(scelteRare);
+        const giorni = Math.floor(Date.parse(giorno + 'T00:00:00Z') / 86400000);
+        const specs = [
+            ['common', 3, giorno, { credits: PREZZI.cartaComune, starChips: 1 }],
+            ['rare', 2, giorno, { credits: PREZZI.cartaRara, starChips: 2 }],
+            ['super', 1, String(Math.floor(giorni / 2)), { credits: PREZZI.cartaSuper, starChips: 4 }],
+            ['ultra', 1, String(Math.floor(giorni / 7)), { credits: PREZZI.cartaUltra, starChips: 8 }],
+            ['legendary', 1, String(Math.floor(giorni / 14)), { credits: PREZZI.cartaLeggendaria, starChips: 15, millenniumCards: 1 }]
+        ];
+        return specs.flatMap(([rarity, count, periodo, costo]) =>
+            pesca(pool(rarity), count, rng(hash(`rotazione-${rarity}-${periodo}`))).map((id) => ({
+                cardId: id, rarity: rarity, costo: costo, acquistataOggi: giaComprata(id)
+            })));
     }
 
     /** Registra che la carta della rotazione giornaliera è stata comprata OGGI — vedi il commento su carteDelGiorno. */
@@ -361,7 +378,20 @@
      */
     function busteDellaSettimana() {
         const settimana = weekKey();
-        return BUSTE.map((b) => Object.assign({}, b, { temaSeed: hash(b.id + '-' + settimana) }));
+        const scelte = pesca(TEMI, 3, rng(hash('temi-' + settimana)));
+        const tematizzate = scelte.slice(0, 2).map((tema) => ({
+            id: 'tema-' + tema.id, nome: tema.nome, nomeBreve: tema.id.toUpperCase(), icona: '✦', colore: tema.colore,
+            costo: { credits: 1050, starChips: 4 }, carte: 10,
+            composizione: { common: 5, rare: 3, super: 1, ultra: 1 }, temaId: tema.id,
+            descrizione: 'Busta tematica: carte coerenti col tema, con una ultra garantita.'
+        }));
+        const premium = scelte[2] ? [{
+            id: 'premium-' + scelte[2].id, nome: scelte[2].nome + ' Premium', nomeBreve: 'PREMIUM', icona: '✦', colore: scelte[2].colore,
+            costo: { credits: 1800, starChips: 8, locatorCards: 1 }, carte: 10,
+            composizione: { common: 3, rare: 3, super: 2, ultra: 1, legendary: 1 }, temaId: scelte[2].id,
+            descrizione: 'Busta tematica premium: include una carta leggendaria.'
+        }] : [];
+        return BUSTE.concat(tematizzate, premium).map((b) => Object.assign({}, b, { temaSeed: hash(b.id + '-' + settimana) }));
     }
 
     /**
@@ -371,19 +401,34 @@
      */
     function apriBusta(busta) {
         if (!window.CardRarity) return [];
-        const comuni = CardRarity.idsByRarity('common');
-        const rare = CardRarity.idsByRarity('rare');
-        const ultra = CardRarity.idsByRarity('ultra');
-        const nRare = (busta.composizione && busta.composizione.rare) || 1;
-        const nComuni = busta.carte - nRare;
+        const db = typeof cardDatabase !== 'undefined' ? cardDatabase : (window.cardDatabase || []);
+        const tema = TEMI.find((t) => t.id === busta.temaId);
         const casuale = () => Math.random();
-
-        const estratte = pesca(comuni, nComuni, casuale)
-            .concat(pesca(rare, nRare, casuale));
-        // La promozione a ultra rara sostituisce UNA delle rare già
-        // estratte, così la busta resta sempre di 10 carte.
-        if (ultra.length > 0 && Math.random() < (busta.ultraChance || 0)) {
-            estratte[estratte.length - 1] = pesca(ultra, 1, casuale)[0];
+        const estratte = [];
+        Object.keys(busta.composizione || {}).forEach((rarity) => {
+            let pool = CardRarity.idsByRarity(rarity)
+                .filter((id) => !window.CardAcquisition || CardAcquisition.isSignatureUnlocked(id));
+            if (tema) {
+                const themed = pool.filter((id) => { const c = db.find((x) => x.id === id); return c && tema.test(c); });
+                // Un tema molto stretto non deve produrre una busta vuota:
+                // ripiega sulla rarità globale soltanto per gli slot mancanti.
+                if (themed.length >= (busta.composizione[rarity] || 0)) pool = themed;
+            }
+            estratte.push(...pesca(pool, busta.composizione[rarity], casuale));
+        });
+        if (busta.legendaryChance && Math.random() < busta.legendaryChance) {
+            const leggendarie = CardRarity.idsByRarity('legendary')
+                .filter((id) => !window.CardAcquisition || CardAcquisition.isSignatureUnlocked(id));
+            if (leggendarie.length && estratte.length) estratte[estratte.length - 1] = pesca(leggendarie, 1, casuale)[0];
+        }
+        // L'Elefante Volante entra nelle sole buste Premium soltanto dopo
+        // che la prima copia è stata meritata contro Pegasus. La chance è
+        // volutamente minuscola: resta una carta da impresa, non da spesa.
+        if (/^premium-/.test(busta.id) && window.SaveManager
+            && SaveManager.getOwnedCount(246) > 0 && SaveManager.getOwnedCount(246) < 3
+            && Math.random() < ((CardAcquisition.RULES && CardAcquisition.RULES.elephantPremiumChance) || 0.002)
+            && estratte.length) {
+            estratte[estratte.length - 1] = 246;
         }
         return estratte;
     }

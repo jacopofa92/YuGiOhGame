@@ -118,6 +118,13 @@
         return out;
     }
 
+    function capitoliCompletati(tappe, quante) {
+        const ids = [...new Set(tappe.map((t) => t.capitoloId))];
+        return ids.filter((id) => tappe
+            .filter((t) => t.capitoloId === id)
+            .every((t) => t.indice < quante));
+    }
+
     // =================================================================
     // LIVELLI DI DIFFICOLTÀ (Facile / Normale / Difficile)
     // =================================================================
@@ -539,6 +546,14 @@
         };
         const appenaFinita = nuovo.finita && !progress.finita;
         setProgress(campaignId, nuovo);
+        // La progressione narrativa è anche la fonte delle ricompense
+        // uniche di capitolo. Un capitolo è concluso quando tutte le sue
+        // tappe esterne sono prima del cursore; le aree interne arrivano
+        // qui soltanto dopo essere state completate per intero.
+        if (window.CardAcquisition) {
+            const capitoli = capitoliCompletati(tappe, nuovo.completate);
+            CardAcquisition.onStoryProgress(campaignId, getLivelloAttivo(campaignId), capitoli, nuovo.finita);
+        }
         // Finire la storia a Facile apre gli altri livelli, per sempre.
         if (nuovo.finita && getLivelloAttivo(campaignId) === 'facile') segnaSblocco(campaignId);
         // Le Sfide delle storie (sezione 'storia' in
@@ -1147,4 +1162,18 @@
         avanzaTorneo: avanzaTorneo,
         azzeraTorneo: azzeraTorneo
     };
+
+    // Migrazione non distruttiva dei salvataggi precedenti al sistema di
+    // acquisizione: entrando nella Storia ricostruiamo i capitoli già
+    // conclusi a ogni difficoltà. Non avanza nulla e i premi hanno chiavi
+    // una-tantum, quindi ricaricare la pagina è sicuro.
+    if (window.CardAcquisition) {
+        ['facile', 'normale', 'difficile'].forEach((livello) => {
+            const p = leggiProgresso('anime', livello);
+            if (!p.completate && !p.finita) return;
+            const tappeAnime = getTappe('anime');
+            const completati = capitoliCompletati(tappeAnime, p.completate);
+            CardAcquisition.onStoryProgress('anime', livello, completati, p.finita);
+        });
+    }
 })();

@@ -15,11 +15,9 @@
  * Tributi è, al confronto, quasi ingiocabile. Nessuna euristica numerica
  * può indovinarlo: quelle carte vanno nominate una per una.
  *
- * QUATTRO LIVELLI:
- *   'common'  — il grosso del dataset: riempimento, vanilla, effetti minori
- *   'rare'    — carte che cambiano davvero una partita
- *   'ultra'   — le poche carte davvero decisive
- *   'locked'  — MAI ottenibili dal Negozio (vedi LOCKED_IDS)
+ * SETTE LIVELLI: common, rare, super, ultra, legendary, secret e mythic.
+ * Secret/Mythic descrivono soprattutto la FONTE (impresa o storia), non
+ * soltanto la potenza. Per questo non entrano nelle buste generiche.
  *
  * Il Negozio (negozio.html) legge SOLO questo file per decidere cosa
  * offrire e a che prezzo: cambiare qui la classificazione di una carta
@@ -39,11 +37,18 @@
      *     collezione in una corsa a chi le pesca per primo.
      *   - l'Elefante Volante, terza vittoria istantanea del motore.
      */
-    const LOCKED_IDS = new Set([
-        30, 31, 472,                 // Obelisk, Slifer, Ra
+    const MYTHIC_IDS = new Set([30, 31, 472]);
+    const SECRET_IDS = new Set([
         11, 41, 42, 43, 44,          // Exodia il Proibito + i 4 arti
         866, 867, 868, 869, 870,     // Destiny Board + Spirit Message I/N/A/L
         246                          // Elefante Volante
+    ]);
+    const LOCKED_IDS = new Set([...MYTHIC_IDS, ...SECRET_IDS]);
+
+    /** Iconiche/boss: possono comparire soltanto nelle fasce più costose. */
+    const LEGENDARY_IDS = new Set([
+        1, 2, 12, 17, 29, 102, 123, 167, 188, 207, 409,
+        291, 382, 656, 886
     ]);
 
     /**
@@ -65,6 +70,8 @@
         130,  // Controllo Mentale — ruba un mostro, in modo permanente
         874   // Confisca — guarda la mano avversaria e ne scarta una carta
     ]);
+
+    const SUPER_IDS = new Set([40, 128, 173, 238, 251, 272, 300, 371, 492, 624, 633, 669, 671, 725, 793, 820]);
 
     /**
      * RARE curate a mano: forti ma non decisive da sole. Anche qui si
@@ -127,8 +134,11 @@
      */
     function classify(card) {
         if (!card) return 'common';
-        if (LOCKED_IDS.has(card.id)) return 'locked';
+        if (MYTHIC_IDS.has(card.id)) return 'mythic';
+        if (SECRET_IDS.has(card.id)) return 'secret';
+        if (LEGENDARY_IDS.has(card.id)) return 'legendary';
         if (ULTRA_IDS.has(card.id)) return 'ultra';
+        if (SUPER_IDS.has(card.id)) return 'super';
         if (RARE_IDS.has(card.id)) return 'rare';
 
         if (card.type === 'monster') {
@@ -139,6 +149,7 @@
             const stat = Math.max(card.attack || 0, card.defense || 0);
             const lv = card.level || 0;
             // Mostro con effetto, grosso E giocabile: raro.
+            if (stat >= 2800 && lv >= 7) return card.vanilla ? 'rare' : 'super';
             if (stat >= 2400 && lv >= 7) return 'rare';
             // Il caso più prezioso del gioco reale: molta potenza a basso
             // costo di Evocazione (nessun Tributo sotto il Livello 5).
@@ -148,7 +159,7 @@
 
         // Magie e Trappole: contano solo le parole del loro effetto.
         const t = textOf(card);
-        if (hasAny(t, STRONG_KEYWORDS)) return 'rare';
+        if (hasAny(t, STRONG_KEYWORDS)) return 'super';
         if (hasAny(t, MILD_KEYWORDS)) return 'common';
         return 'common';
     }
@@ -168,7 +179,7 @@
         return [];
     }
 
-    /** Rarità di una carta per id: 'common' | 'rare' | 'ultra' | 'locked'. */
+    /** Rarità commerciale/narrativa di una carta. */
     function rarityOf(cardId) {
         if (cache[cardId]) return cache[cardId];
         const card = db().find((c) => c.id === cardId);
@@ -188,11 +199,15 @@
 
     /** Vero se la carta può comparire nel Negozio (in vendita diretta o in busta). */
     function isPurchasable(cardId) {
-        return rarityOf(cardId) !== 'locked';
+        const r = rarityOf(cardId);
+        return r !== 'secret' && r !== 'mythic';
     }
 
     /** Etichetta leggibile, usata dal Negozio nelle schede prodotto. */
-    const LABELS = { common: 'Comune', rare: 'Rara', ultra: 'Ultra Rara', locked: 'Non in vendita' };
+    const LABELS = {
+        common: 'Comune', rare: 'Rara', super: 'Super Rara', ultra: 'Ultra Rara',
+        legendary: 'Leggendaria', secret: 'Segreta', mythic: 'Mitica'
+    };
 
     window.CardRarity = {
         of: rarityOf,
@@ -200,6 +215,8 @@
         isPurchasable: isPurchasable,
         label: (r) => LABELS[r] || r,
         LABELS: LABELS,
-        LOCKED_IDS: LOCKED_IDS
+        LOCKED_IDS: LOCKED_IDS,
+        MYTHIC_IDS: MYTHIC_IDS,
+        SECRET_IDS: SECRET_IDS
     };
 })();
