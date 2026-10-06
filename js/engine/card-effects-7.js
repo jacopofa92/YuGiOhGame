@@ -356,20 +356,19 @@
             if (candidati.length === 0) return;
             chooseFieldCardTarget(ctx, candidati, {
                 title: '⚙️ Controllore Nemico',
-                text: 'Scegli quale mostro avversario bersagliare.'
+                text: 'Scegli quale mostro avversario bersagliare.',
+                dichiara: true
             }, (scelto) => {
-                const decl = ctx.declareTarget(scelto.owner, scelto.index, { totalTargetCount: 1 });
-                if (!decl.allowed) return;
                 const ownField = ctx.field(ctx.owner);
                 const sacIndex = ownField.findIndex((s) => s);
                 if (sacIndex !== -1) {
-                    const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                    const targetSlot = ctx.field(scelto.owner)[scelto.index];
                     if (targetSlot) {
                         const sacrificed = ownField[sacIndex].card;
                         ctx.graveyard(ctx.owner).push(sacrificed);
                         ownField[sacIndex] = null;
                         const stolen = targetSlot.card;
-                        if (ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex)) {
+                        if (ctx.takeControl(ctx.owner, scelto.owner, scelto.index)) {
                             ctx.log(`⚙️ Controllore Nemico sacrifica ${sacrificed.name} e prende il controllo di ${stolen.name}!`);
                             return;
                         }
@@ -621,11 +620,10 @@
             if (candidati.length === 0) return;
             chooseFieldCardTarget(ctx, candidati, {
                 title: '🔫 Raggio Micro',
-                text: 'Scegli il mostro scoperto a cui azzerare la DEF.'
+                text: 'Scegli il mostro scoperto a cui azzerare la DEF.',
+                dichiara: true
             }, (scelto) => {
-                const decl = ctx.declareTarget(scelto.owner, scelto.index, { totalTargetCount: 1 });
-                if (!decl.allowed) return;
-                const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                const finalSlot = ctx.field(scelto.owner)[scelto.index];
                 if (!finalSlot) return;
                 ctx.grantTemporaryAtkDefBonus(finalSlot.card, 0, -DuelEngine.getEffectiveDef(finalSlot.card), false);
                 ctx.log(`🔫 Raggio Micro azzera la DEF di ${finalSlot.card.name}!`);
@@ -824,7 +822,7 @@
 
     /** Corpo di Controllo Mentale (id 130), a bersaglio già scelto. */
     function attivaControlloMentale(ctx, scelta) {
-        const decl = ctx.declareTarget(scelta.owner, scelta.index, { totalTargetCount: 1 });
+        ctx.declareTargetWaiting(scelta.owner, scelta.index, { totalTargetCount: 1 }, (decl) => {
         if (!decl.allowed) return;
         const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
         if (!targetSlot) return;
@@ -837,6 +835,7 @@
             gameState.cannotBeTributedUids.add(stolen.uid);
             ctx.log(`🧠 Controllo Mentale prende il controllo permanente di ${stolenName}!`);
         }
+        });
     }
 
     // ------------------------------------------------------------------
@@ -1055,14 +1054,15 @@
                 }, (suaScelta) => {
                     const own = ctx.field(ctx.owner)[miaScelta.index];
                     if (!own) return;
-                    const decl = ctx.declareTarget(suaScelta.owner, suaScelta.index, { totalTargetCount: 1 });
-                    if (!decl.allowed) return;
-                    const opp = ctx.field(decl.targetOwner)[decl.targetIndex];
-                    if (!opp) return;
-                    const ownAtk = own.card.attack, oppAtk = opp.card.attack;
-                    ctx.grantTemporaryAtkDefBonus(own.card, oppAtk - ownAtk, 0, false);
-                    ctx.grantTemporaryAtkDefBonus(opp.card, ownAtk - oppAtk, 0, false);
-                    ctx.log(`⚔️ Amazzone Incantatrice scambia l'ATK di ${own.card.name} e ${opp.card.name}!`);
+                    ctx.declareTargetWaiting(suaScelta.owner, suaScelta.index, { totalTargetCount: 1 }, (decl) => {
+                        if (!decl.allowed) return;
+                        const opp = ctx.field(decl.targetOwner)[decl.targetIndex];
+                        if (!opp) return;
+                        const ownAtk = own.card.attack, oppAtk = opp.card.attack;
+                        ctx.grantTemporaryAtkDefBonus(own.card, oppAtk - ownAtk, 0, false);
+                        ctx.grantTemporaryAtkDefBonus(opp.card, ownAtk - oppAtk, 0, false);
+                        ctx.log(`⚔️ Amazzone Incantatrice scambia l'ATK di ${own.card.name} e ${opp.card.name}!`);
+                    });
                 });
             });
         }
@@ -1348,11 +1348,12 @@
             gameState[lpKey] -= 1000; // costo: si paga prima di scegliere il bersaglio
             // Checkpoint di targeting ("scegli come bersaglio"); l'effetto
             // vale solo per un mostro che controlli.
-            const decl = ctx.declareTarget(ctx.owner, scelto, { totalTargetCount: 1 });
-            if (!decl.allowed || decl.targetOwner !== ctx.owner) return;
-            const targetIndex = decl.targetIndex;
-            grantAttackAllEnemiesOncEach(ctx, targetIndex);
-            ctx.log(`🌊 Movimento d'Onda Diffuso: ${ctx.field(ctx.owner)[targetIndex].card.name} deve attaccare tutti i mostri avversari!`);
+            ctx.declareTargetWaiting(ctx.owner, scelto, { totalTargetCount: 1 }, (decl) => {
+                if (!decl.allowed || decl.targetOwner !== ctx.owner) return;
+                const targetIndex = decl.targetIndex;
+                grantAttackAllEnemiesOncEach(ctx, targetIndex);
+                ctx.log(`🌊 Movimento d'Onda Diffuso: ${ctx.field(ctx.owner)[targetIndex].card.name} deve attaccare tutti i mostri avversari!`);
+            });
         }
     });
 
@@ -1713,15 +1714,14 @@
             if (candidates.length === 0) return;
             chooseFieldCardTarget(ctx, candidates, {
                 title: '💍 Anello della Distruzione',
-                text: 'Scegli il mostro da distruggere: il suo ATK e\' anche il danno che subisci tu, prima di rigirarlo all\'avversario.'
+                text: 'Scegli il mostro da distruggere: il suo ATK e\' anche il danno che subisci tu, prima di rigirarlo all\'avversario.',
+                dichiara: true
             }, (scelto) => {
-                const decl = ctx.declareTarget(scelto.owner, scelto.index, { totalTargetCount: 1 });
-                if (!decl.allowed) return;
-                const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                const targetSlot = ctx.field(scelto.owner)[scelto.index];
                 if (!targetSlot) return;
                 const card = targetSlot.card;
                 const damage = card.attack || 0;
-                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+                ctx.destroyMonster(scelto.owner, scelto.index);
                 ctx.dealDamage(ctx.owner, damage);
                 ctx.dealDamage(ctx.opponent, damage);
                 ctx.log(`💍 Anello della Distruzione distrugge ${card.name} e infligge ${damage} danni ad entrambi!`);
@@ -1939,13 +1939,12 @@
     // altro bersaglio valido; quella Magia ora ha come bersaglio la nuova
     // carta." Trappola Set reattiva, via def.onCardEffectTargetDeclare
     // (candidati zona ST, declareCardEffectTarget in duel-engine.js).
-    // SEMPLIFICAZIONE: nuovo bersaglio scelto automaticamente (priorità al
-    // campo di chi ha attivato la Magia, per ridirigere un effetto
-    // negativo contro sé stesso, come da uso tipico reale della carta) —
-    // nessuna scelta UI, stesso schema di molti altri auto-pick in questo
-    // file.
+    // Il percorso asincrono del checkpoint lascia al controllore della
+    // Trappola la scelta del nuovo bersaglio. Il vecchio handler sincrono
+    // resta come ripiego per integrazioni esterne non ancora attendibili.
     // ------------------------------------------------------------------
     CardEffects.register(235, {
+        targetDeclareRequiresChoice: true,
         canActivate(ctx) {
             if (ctx.zone !== 'st') return false;
             if (ctx.sourceType !== 'spell') return false;
@@ -1965,6 +1964,32 @@
             const preferred = candidates.find((c) => c.owner === ctx.sourceOwner) || candidates[0];
             ctx.redirect(preferred.owner, preferred.index);
             ctx.log(`🪞 ${ctx.card.name} ridirige il bersaglio della Magia!`);
+        },
+        onCardEffectTargetDeclareWaiting(ctx, onDone) {
+            const candidates = [];
+            Tavolo.ordine().forEach((owner) => {
+                ctx.field(owner).forEach((slot, index) => {
+                    if (!slot || slot.isFaceDown) return;
+                    if (owner === ctx.targetOwner && index === ctx.targetIndex) return;
+                    candidates.push({ owner, index, card: slot.card, slot });
+                });
+            });
+            if (candidates.length === 0) { onDone(); return; }
+            Decisioni.chiedi({
+                chi: ctx.owner,
+                candidati: candidates,
+                mostra: (c) => c.card,
+                titolo: '🪞 Specchietto della Fata',
+                testo: 'Scegli il nuovo bersaglio valido della Magia.',
+                automatica: (elenco) => elenco.find((c) => c.owner === ctx.sourceOwner) || elenco[0],
+                automaticaSeUnica: true
+            }, (scelto) => {
+                if (scelto) {
+                    ctx.redirect(scelto.owner, scelto.index);
+                    ctx.log(`🪞 ${ctx.card.name} ridirige la Magia verso ${scelto.card.name}!`);
+                }
+                onDone();
+            });
         }
     });
 
@@ -2293,14 +2318,13 @@
             if (candidati.length === 0) return;
             chooseFieldCardTarget(ctx, candidati, {
                 title: '🌙 Libro della Luna',
-                text: 'Scegli il mostro da girare in Difesa coperta.'
+                text: 'Scegli il mostro da girare in Difesa coperta.',
+                dichiara: true
             }, (scelto) => {
-                const decl = ctx.declareTarget(scelto.owner, scelto.index, { totalTargetCount: 1 });
-                if (!decl.allowed) return;
-                const slot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                const slot = ctx.field(scelto.owner)[scelto.index];
                 if (!slot) return;
                 const name = slot.card.name;
-                ctx.changePosition(decl.targetOwner, decl.targetIndex, 'defense');
+                ctx.changePosition(scelto.owner, scelto.index, 'defense');
                 slot.isFaceDown = true;
                 ctx.log(`🌙 Libro della Luna gira ${name} in Difesa coperta!`);
             });
@@ -2523,12 +2547,13 @@
         },
         onOpponentSummon(ctx) {
             if (ctx.summonedVia !== 'special') return;
-            const decl = ctx.declareTarget(ctx.opponent, ctx.summonedSlotIndex, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const target = ctx.field(decl.targetOwner)[decl.targetIndex];
-            ctx.dealDamage(ctx.owner, 800);
-            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
-            ctx.log(`👑 Oppressione Reale paga 800 Life Points per annullare e distruggere ${target ? target.card.name : ctx.summonedCard.name}, appena Special Summonato!`);
+            ctx.declareTargetWaiting(ctx.opponent, ctx.summonedSlotIndex, { totalTargetCount: 1 }, (decl) => {
+                if (!decl.allowed) return;
+                const target = ctx.field(decl.targetOwner)[decl.targetIndex];
+                ctx.dealDamage(ctx.owner, 800);
+                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+                ctx.log(`👑 Oppressione Reale paga 800 Life Points per annullare e distruggere ${target ? target.card.name : ctx.summonedCard.name}, appena Special Summonato!`);
+            });
         }
     });
 

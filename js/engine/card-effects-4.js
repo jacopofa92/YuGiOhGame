@@ -348,13 +348,14 @@
         onOpponentSummon(ctx) {
             const tributeIndex = ctx.field(ctx.owner).findIndex((s) => s);
             if (tributeIndex === -1) return;
-            const decl = ctx.declareTarget(ctx.opponent, ctx.summonedSlotIndex, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const target = ctx.field(decl.targetOwner)[decl.targetIndex];
-            const tributeName = ctx.field(ctx.owner)[tributeIndex].card.name;
-            ctx.destroyMonster(ctx.owner, tributeIndex);
-            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
-            ctx.log(`📯 Corno del Paradiso sacrifica ${tributeName} per annullare e distruggere ${target ? target.card.name : ctx.summonedCard.name}, appena Evocato!`);
+            ctx.declareTargetWaiting(ctx.opponent, ctx.summonedSlotIndex, { totalTargetCount: 1 }, (decl) => {
+                if (!decl.allowed) return;
+                const target = ctx.field(decl.targetOwner)[decl.targetIndex];
+                const tributeName = ctx.field(ctx.owner)[tributeIndex].card.name;
+                ctx.destroyMonster(ctx.owner, tributeIndex);
+                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+                ctx.log(`📯 Corno del Paradiso sacrifica ${tributeName} per annullare e distruggere ${target ? target.card.name : ctx.summonedCard.name}, appena Evocato!`);
+            });
         }
     });
 
@@ -384,14 +385,15 @@
             return hasSummonToNegate || hasChainToNegate;
         },
         onOpponentSummon(ctx) {
-            const decl = ctx.declareTarget(ctx.opponent, ctx.summonedSlotIndex, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const target = ctx.field(decl.targetOwner)[decl.targetIndex];
-            const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
-            const cost = Math.ceil(ctx.gameState[lpKey] / 2);
-            ctx.dealDamage(ctx.owner, cost);
-            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
-            ctx.log(`⚖️ Giudizio Solenne paga ${cost} Life Points per annullare e distruggere ${target ? target.card.name : ctx.summonedCard.name}, appena Evocato!`);
+            ctx.declareTargetWaiting(ctx.opponent, ctx.summonedSlotIndex, { totalTargetCount: 1 }, (decl) => {
+                if (!decl.allowed) return;
+                const target = ctx.field(decl.targetOwner)[decl.targetIndex];
+                const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+                const cost = Math.ceil(ctx.gameState[lpKey] / 2);
+                ctx.dealDamage(ctx.owner, cost);
+                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+                ctx.log(`⚖️ Giudizio Solenne paga ${cost} Life Points per annullare e distruggere ${target ? target.card.name : ctx.summonedCard.name}, appena Evocato!`);
+            });
         },
         activate(ctx) {
             const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
@@ -1225,13 +1227,14 @@
                         if (!target) return;
                         const slot = ctx.field(target.owner)[target.index];
                         if (slot && slot.card.uid === target.card.uid) {
-                            const decl = ctx.declareTarget(target.owner, target.index, { totalTargetCount: 1 });
-                            if (!decl.allowed) return;
-                            const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
-                            if (!finalSlot) return;
-                            const finalName = finalSlot.card.name;
-                            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
-                            ctx.log(`🔮 Dimensione Magica distrugge anche ${finalName}!`);
+                            ctx.declareTargetWaiting(target.owner, target.index, { totalTargetCount: 1 }, (decl) => {
+                                if (!decl.allowed) return;
+                                const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                                if (!finalSlot) return;
+                                const finalName = finalSlot.card.name;
+                                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+                                ctx.log(`🔮 Dimensione Magica distrugge anche ${finalName}!`);
+                            });
                         }
                     };
                     if (destroyables.length === 0) return;
@@ -1390,12 +1393,13 @@
                 const owner = ctx.field('player').some((s) => s && s.card.uid === card.uid) ? 'player' : 'bot';
                 const index = ctx.field(owner).findIndex((s) => s && s.card.uid === card.uid);
                 if (index === -1) return;
-                const decl = ctx.declareTarget(owner, index, { totalTargetCount: 1 });
-                if (!decl.allowed) return;
-                const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
-                if (!finalSlot) return;
-                ctx.grantTemporaryAtkDefBonus(finalSlot.card, 500, 0, false);
-                ctx.log(`💪 Rinforzi aumenta l'ATK di ${finalSlot.card.name} di 500 punti!`);
+                ctx.declareTargetWaiting(owner, index, { totalTargetCount: 1 }, (decl) => {
+                    if (!decl.allowed) return;
+                    const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                    if (!finalSlot) return;
+                    ctx.grantTemporaryAtkDefBonus(finalSlot.card, 500, 0, false);
+                    ctx.log(`💪 Rinforzi aumenta l'ATK di ${finalSlot.card.name} di 500 punti!`);
+                });
             };
             if (!Decisioni.rispondeUnaPersona(ctx.owner)) {
                 boost(candidates[0]);
@@ -2594,11 +2598,10 @@
             if (candidati.length === 0) return;
             chooseFieldCardTarget(ctx, candidati, {
                 title: '💪 Assalto Sconsiderato',
-                text: 'Scegli il mostro che guadagna 700 ATK fino a fine turno.'
+                text: 'Scegli il mostro che guadagna 700 ATK fino a fine turno.',
+                dichiara: true
             }, (scelto) => {
-                const decl = ctx.declareTarget(scelto.owner, scelto.index, { totalTargetCount: 1 });
-                if (!decl.allowed) return;
-                const slot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                const slot = ctx.field(scelto.owner)[scelto.index];
                 if (!slot) return;
                 ctx.grantTemporaryAtkDefBonus(slot.card, 700, 0, false);
                 ctx.log(`💪 Assalto Sconsiderato aumenta l'ATK di ${slot.card.name} di 700 punti fino alla fine del turno!`);
@@ -2906,14 +2909,13 @@
             });
             chooseFieldMonsterTarget(ctx, candidati, {
                 title: '⭕ Cerchio Ammaliante',
-                text: 'Scegli quale mostro avversario legare (non può attaccare né cambiare Posizione).'
+                text: 'Scegli quale mostro avversario legare (non può attaccare né cambiare Posizione).',
+                dichiara: true
             }, (scelta) => {
-                const decl = ctx.declareTarget(scelta.owner, scelta.index, { totalTargetCount: 1 });
-                if (!decl.allowed) return;
-                const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                const targetSlot = ctx.field(scelta.owner)[scelta.index];
                 if (!targetSlot) return;
-                ctx.card.targetOwner = decl.targetOwner;
-                ctx.card.targetIndex = decl.targetIndex;
+                ctx.card.targetOwner = scelta.owner;
+                ctx.card.targetIndex = scelta.index;
                 ctx.card.targetUid = targetSlot.card.uid;
                 ctx.log(`⭕ Cerchio Ammaliante lega ${targetSlot.card.name}!`);
             });
@@ -2964,24 +2966,19 @@
     });
 
     // ================================================================
-    // 622 — Spostamento / Shift (Trappola Normale) — SOLO la metà
-    // "attacco" implementata (vedi missingEffectNote su id 622 in
-    // cards.json per la metà "Magia/Trappola" mancante). Stesso identico
-    // codice di Spiritello dei Sogni (id 214).
+    // 622 — Spostamento / Shift (Trappola Normale). Le due metà, attacco
+    // ed effetto che bersaglia, riusano lo stesso criterio di scelta.
     // ================================================================
     // CORREZIONE di fedeltà: aggiunta la metà "Magia/Trappola" mancante,
     // tramite lo stesso checkpoint di targeting di Specchietto della
-    // Fata/id 235 (ctx.declareTarget, duel-engine.js) — a differenza di
+    // Fata/id 235 (ctx.declareTargetWaiting, duel-engine.js) — a differenza di
     // quella carta (ridirige verso il campo di chi ha attivato l'effetto,
     // "fuoco amico"), qui ridirige verso un ALTRO proprio mostro (difesa,
     // come la metà "attacco" qui sopra).
-    // La metà "attacco" fa scegliere il nuovo bersaglio al giocatore (la
-    // battaglia aspetta, chooseFieldCardTargetWaiting). La metà "Magia/
-    // Trappola" sceglie ancora da sola: il checkpoint di targeting
-    // (declareCardEffectTarget) è SINCRONO — chi ha attivato l'effetto
-    // legge il bersaglio finale subito dopo — e lì non c'è niente che
-    // possa aspettare una scelta.
+    // Entrambe le metà fanno scegliere il nuovo bersaglio al giocatore:
+    // battaglia ed effetto sospendono la regola finché Decisioni risponde.
     CardEffects.register(622, {
+        targetDeclareRequiresChoice: true,
         onAttackDeclare(ctx) {
             const candidati = collectFieldTargets(ctx, {
                 zone: 'monster', owner: 'self', includiCoperte: true,
@@ -3010,6 +3007,28 @@
             if (newIndex === -1) return;
             ctx.redirect(ctx.owner, newIndex);
             ctx.log(`🔀 Spostamento ridirige l'effetto verso ${field[newIndex].card.name}!`);
+        },
+        onCardEffectTargetDeclareWaiting(ctx, onDone) {
+            const candidates = [];
+            ctx.field(ctx.owner).forEach((slot, index) => {
+                if (!slot || index === ctx.targetIndex) return;
+                candidates.push({ owner: ctx.owner, index, card: slot.card, slot });
+            });
+            if (candidates.length === 0) { onDone(); return; }
+            Decisioni.chiedi({
+                chi: ctx.owner,
+                candidati: candidates,
+                mostra: (c) => c.card,
+                titolo: '🔀 Spostamento',
+                testo: 'Scegli quale altro tuo mostro diventerà il bersaglio.',
+                automaticaSeUnica: true
+            }, (scelto) => {
+                if (scelto) {
+                    ctx.redirect(ctx.owner, scelto.index);
+                    ctx.log(`🔀 Spostamento ridirige l'effetto verso ${scelto.card.name}!`);
+                }
+                onDone();
+            });
         }
     });
 
@@ -3056,13 +3075,14 @@
             }, (discarded) => {
                 const oppMonsterIndex = ctx.field(ctx.opponent).findIndex((s) => s && !s.isFaceDown);
                 if (oppMonsterIndex !== -1) {
-                    const decl = ctx.declareTarget(ctx.opponent, oppMonsterIndex, { totalTargetCount: 1 });
-                    if (!decl.allowed) return;
-                    const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
-                    if (!targetSlot) return;
-                    const name = targetSlot.card.name;
-                    ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
-                    ctx.log(`⚡ Rottura di Raigeki scarta ${discarded.name} e distrugge ${name}!`);
+                    ctx.declareTargetWaiting(ctx.opponent, oppMonsterIndex, { totalTargetCount: 1 }, (decl) => {
+                        if (!decl.allowed) return;
+                        const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                        if (!targetSlot) return;
+                        const name = targetSlot.card.name;
+                        ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+                        ctx.log(`⚡ Rottura di Raigeki scarta ${discarded.name} e distrugge ${name}!`);
+                    });
                     return;
                 }
                 for (const owner of [ctx.opponent, ctx.owner]) {

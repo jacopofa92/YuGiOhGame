@@ -69,7 +69,7 @@
             });
             if (candidates.length === 0) return;
             const choice = candidates[0];
-            const decl = ctx.declareTarget(choice.owner, choice.index, { totalTargetCount: 1 });
+            ctx.declareTargetWaiting(choice.owner, choice.index, { totalTargetCount: 1 }, (decl) => {
             if (!decl.allowed) return;
             const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
             if (!finalSlot) return;
@@ -123,6 +123,7 @@
                     vuota: 'Il tuo Deck è vuoto.'
                 }, showBotDeck);
             }
+            });
         }
     });
 
@@ -579,14 +580,13 @@
             });
             chooseFieldMonsterTarget(ctx, candidati, {
                 title: '🦹 Furto Improvviso',
-                text: 'Scegli quale mostro avversario rubare (controllo permanente).'
+                text: 'Scegli quale mostro avversario rubare (controllo permanente).',
+                dichiara: true
             }, (scelta) => {
-                const decl = ctx.declareTarget(scelta.owner, scelta.index, { totalTargetCount: 1 });
-                if (!decl.allowed) return;
-                const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                const targetSlot = ctx.field(scelta.owner)[scelta.index];
                 if (!targetSlot) return;
                 const stolen = targetSlot.card;
-                if (ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex, true)) {
+                if (ctx.takeControl(ctx.owner, scelta.owner, scelta.index, true)) {
                     ctx.card.snatchStealTargetUid = stolen.uid;
                     ctx.log(`🦹 Furto Improvviso prende il controllo permanente di ${stolen.name}!`);
                 }
@@ -712,21 +712,19 @@
 
             chooseFieldMonsterTarget(ownCtx, ownCandidates, {
                 title: '🔃 Scambio di Creature',
-                text: 'Scegli quale dei TUOI mostri cedere all\'avversario.'
+                text: 'Scegli quale dei TUOI mostri cedere all\'avversario.',
+                dichiara: true
             }, (ownChoice) => {
-                const declOwn = ownCtx.declareTarget(ownChoice.owner, ownChoice.index, { totalTargetCount: 1 });
-                if (!declOwn.allowed) return;
                 chooseFieldMonsterTarget(oppCtx, oppCandidates, {
                     title: '🔃 Scambio di Creature',
-                    text: 'Scegli quale dei TUOI mostri cedere all\'avversario.'
+                    text: 'Scegli quale dei TUOI mostri cedere all\'avversario.',
+                    dichiara: true
                 }, (oppChoice) => {
-                    const declOpp = oppCtx.declareTarget(oppChoice.owner, oppChoice.index, { totalTargetCount: 1 });
-                    if (!declOpp.allowed) return;
                     // Gli indici possono essere cambiati fra le due scelte
                     // (il picker è asincrono): si rileggono per uid invece
                     // di fidarsi di quelli catturati prima.
-                    const ownIndex = ctx.field(declOwn.targetOwner).findIndex((s) => s && s.card.uid === ownChoice.card.uid);
-                    const oppIndex = ctx.field(declOpp.targetOwner).findIndex((s) => s && s.card.uid === oppChoice.card.uid);
+                    const ownIndex = ctx.field(ownChoice.owner).findIndex((s) => s && s.card.uid === ownChoice.card.uid);
+                    const oppIndex = ctx.field(oppChoice.owner).findIndex((s) => s && s.card.uid === oppChoice.card.uid);
                     if (ownIndex === -1 || oppIndex === -1) return;
                     // Lo scambio passa dal choke point condiviso del cambio
                     // di controllo (ACTIONS.swapControl): prima questa carta
@@ -738,7 +736,7 @@
                     // `permanent`: il testo NON dice "fino alla End Phase",
                     // lo scambio è definitivo (a differenza di Cambio di
                     // Cuore), quindi nessun ritorno automatico a fine turno.
-                    if (!ctx.swapControl(declOwn.targetOwner, ownIndex, declOpp.targetOwner, oppIndex, true)) {
+                    if (!ctx.swapControl(ownChoice.owner, ownIndex, oppChoice.owner, oppIndex, true)) {
                         ctx.log('🚫 Lo scambio di controllo non può avvenire.');
                         return;
                     }
@@ -748,8 +746,8 @@
                     // giusto per ogni ALTRO cambio di controllo), qui lo si
                     // richiude subito dopo, come da testo. Si azzera da solo
                     // al prossimo turno del controllore, in changeTurn().
-                    const movedToOpp = ctx.field(declOpp.targetOwner)[oppIndex];
-                    const movedToOwn = ctx.field(declOwn.targetOwner)[ownIndex];
+                    const movedToOpp = ctx.field(oppChoice.owner)[oppIndex];
+                    const movedToOwn = ctx.field(ownChoice.owner)[ownIndex];
                     if (movedToOpp) movedToOpp.canChangePosition = false;
                     if (movedToOwn) movedToOwn.canChangePosition = false;
                     ctx.log(`🔃 Scambio di Creature scambia ${ownChoice.card.name} con ${oppChoice.card.name}!`);
@@ -1429,14 +1427,13 @@
             // mai una vera scelta — vedi chooseFieldMonsterTarget qui sopra.
             chooseFieldMonsterTarget(ctx, candidates, {
                 title: '🚪 Dispositivo di Evacuazione Forzata',
-                text: 'Scegli 1 mostro scoperto sul Terreno da rimandare in mano.'
+                text: 'Scegli 1 mostro scoperto sul Terreno da rimandare in mano.',
+                dichiara: true
             }, (choice) => {
-                const decl = ctx.declareTarget(choice.owner, choice.index, { totalTargetCount: 1 });
-                if (!decl.allowed) return;
-                const finalSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                const finalSlot = ctx.field(choice.owner)[choice.index];
                 if (!finalSlot) return;
                 const name = finalSlot.card.name;
-                ctx.returnMonsterToHand(decl.targetOwner, decl.targetIndex);
+                ctx.returnMonsterToHand(choice.owner, choice.index);
                 ctx.log(`🚪 Dispositivo di Evacuazione Forzata rimanda ${name} in mano!`);
             });
         }
@@ -2286,11 +2283,12 @@
                 });
             });
             if (!best) return;
-            const decl = ctx.declareTarget(best.owner, best.index, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const target = ctx.field(decl.targetOwner)[decl.targetIndex];
-            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
-            ctx.log(`🔨 Colpo di Martello distrugge ${target ? target.card.name : best.card.name}!`);
+            ctx.declareTargetWaiting(best.owner, best.index, { totalTargetCount: 1 }, (decl) => {
+                if (!decl.allowed) return;
+                const target = ctx.field(decl.targetOwner)[decl.targetIndex];
+                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+                ctx.log(`🔨 Colpo di Martello distrugge ${target ? target.card.name : best.card.name}!`);
+            });
         }
     });
 

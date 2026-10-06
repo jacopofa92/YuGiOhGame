@@ -1354,11 +1354,12 @@
             return ctx.summonedVia !== 'special' && ctx.summonedPosition === 'attack' && ctx.summonedCard.attack >= 1000;
         },
         onOpponentSummon(ctx) {
-            const decl = ctx.declareTarget(ctx.opponent, ctx.summonedSlotIndex, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const target = ctx.field(decl.targetOwner)[decl.targetIndex];
-            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
-            ctx.log(`🕳️ Buco Trappola distrugge ${target ? target.card.name : ctx.summonedCard.name}!`);
+            ctx.declareTargetWaiting(ctx.opponent, ctx.summonedSlotIndex, { totalTargetCount: 1 }, (decl) => {
+                if (!decl.allowed) return;
+                const target = ctx.field(decl.targetOwner)[decl.targetIndex];
+                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+                ctx.log(`🕳️ Buco Trappola distrugge ${target ? target.card.name : ctx.summonedCard.name}!`);
+            });
         }
     });
 
@@ -2001,11 +2002,12 @@
                 if (slot && !slot.isFaceDown && (!bestCard || slot.card.attack > bestCard.attack)) { bestCard = slot.card; bestIndex = i; }
             });
             if (bestIndex === -1) return;
-            const decl = ctx.declareTarget(ctx.opponent, bestIndex, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const target = ctx.field(decl.targetOwner)[decl.targetIndex];
-            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
-            ctx.log(`🔄 Scambio di Anime costringe il tuo avversario a cedere ${target ? target.card.name : bestCard.name}!`);
+            ctx.declareTargetWaiting(ctx.opponent, bestIndex, { totalTargetCount: 1 }, (decl) => {
+                if (!decl.allowed) return;
+                const target = ctx.field(decl.targetOwner)[decl.targetIndex];
+                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+                ctx.log(`🔄 Scambio di Anime costringe il tuo avversario a cedere ${target ? target.card.name : bestCard.name}!`);
+            });
         }
     });
 
@@ -2028,13 +2030,14 @@
                 if (slot && slot.position === 'defense' && slot.card.defense < lowestDef) { lowestDef = slot.card.defense; targetIndex = i; }
             });
             if (targetIndex === -1) return;
-            const decl = ctx.declareTarget(ctx.opponent, targetIndex, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const slot = ctx.field(decl.targetOwner)[decl.targetIndex];
-            if (!slot) return;
-            ctx.changePosition(decl.targetOwner, decl.targetIndex, 'attack');
-            slot.isFaceDown = false;
-            ctx.log(`⚔️ Stop Difesa costringe ${slot.card.name} in Posizione di Attacco!`);
+            ctx.declareTargetWaiting(ctx.opponent, targetIndex, { totalTargetCount: 1 }, (decl) => {
+                if (!decl.allowed) return;
+                const slot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!slot) return;
+                ctx.changePosition(decl.targetOwner, decl.targetIndex, 'attack');
+                slot.isFaceDown = false;
+                ctx.log(`⚔️ Stop Difesa costringe ${slot.card.name} in Posizione di Attacco!`);
+            });
         }
     });
 
@@ -2519,11 +2522,12 @@
             const attackerUid = attackerSlot && attackerSlot.card.uid;
             const defenderOwner = ctx.attackerOwner === 'player' ? 'bot' : 'player';
             const distruggi = () => {
-                const decl = ctx.declareTarget(ctx.attackerOwner, ctx.attackerIndex, { totalTargetCount: 1 });
-                if (!decl.allowed) return;
-                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
-                ctx.cancelAttack();
-                ctx.log('🛡️ Armatura Guida d\'Attacco distrugge il mostro attaccante!');
+                ctx.declareTargetWaiting(ctx.attackerOwner, ctx.attackerIndex, { totalTargetCount: 1 }, (decl) => {
+                    if (!decl.allowed) return;
+                    ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+                    ctx.cancelAttack();
+                    ctx.log('🛡️ Armatura Guida d\'Attacco distrugge il mostro attaccante!');
+                });
             };
             // Qualunque mostro dei due Terreni tranne l'attaccante, e tranne
             // il bersaglio attuale: spostare l'attacco dov'era già non
@@ -2556,15 +2560,16 @@
                         // clausole, invece di lasciare la battaglia ferma.
                         onCancel: chiedi
                     }, (scelto) => {
-                        try {
-                            const decl = ctx.declareTarget(scelto.owner, scelto.index, { totalTargetCount: 1 });
+                        ctx.declareTargetWaiting(scelto.owner, scelto.index, { totalTargetCount: 1 }, (decl) => {
+                          try {
                             if (!decl.allowed) return;
                             ctx.redirectAttack(decl.targetIndex, decl.targetOwner);
                             const nuovo = ctx.field(decl.targetOwner)[decl.targetIndex];
                             ctx.log(`🛡️ Armatura Guida d'Attacco sposta l'attacco su ${nuovo && !nuovo.isFaceDown ? nuovo.card.name : 'un mostro coperto'}!`);
-                        } finally {
+                          } finally {
                             fine();
-                        }
+                          }
+                        });
                     });
                 });
             };
@@ -2748,12 +2753,13 @@
                 }
             });
             if (targetIndex === -1) return;
-            const decl = ctx.declareTarget(ctx.opponent, targetIndex, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
-            if (!targetSlot) return;
-            targetSlot.position = 'defense';
-            ctx.log(`🛡️ Blocca Attacco costringe ${targetSlot.card.name} in Posizione di Difesa!`);
+            ctx.declareTargetWaiting(ctx.opponent, targetIndex, { totalTargetCount: 1 }, (decl) => {
+                if (!decl.allowed) return;
+                const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!targetSlot) return;
+                targetSlot.position = 'defense';
+                ctx.log(`🛡️ Blocca Attacco costringe ${targetSlot.card.name} in Posizione di Difesa!`);
+            });
         }
     });
 
@@ -2776,13 +2782,14 @@
             return ctx.summonedCard.attack >= 1500;
         },
         onOpponentSummon(ctx) {
-            const decl = ctx.declareTarget(ctx.opponent, ctx.summonedSlotIndex, { totalTargetCount: 1 });
-            if (!decl.allowed) return;
-            const target = ctx.field(decl.targetOwner)[decl.targetIndex];
-            if (!target) return;
-            target.card.mustBanishOnLeavingField = true;
-            ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
-            ctx.log(`🕳️ Buco Trappola senza Fondo distrugge e bandisce ${target.card.name}!`);
+            ctx.declareTargetWaiting(ctx.opponent, ctx.summonedSlotIndex, { totalTargetCount: 1 }, (decl) => {
+                if (!decl.allowed) return;
+                const target = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (!target) return;
+                target.card.mustBanishOnLeavingField = true;
+                ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+                ctx.log(`🕳️ Buco Trappola senza Fondo distrugge e bandisce ${target.card.name}!`);
+            });
         }
     });
 

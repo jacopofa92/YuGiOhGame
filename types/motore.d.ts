@@ -126,6 +126,8 @@ interface EngineActions {
     endBattlePhase(): void;
     /** Checkpoint di targeting condiviso: floodgate, reazioni al bersaglio, reindirizzamenti. */
     declareTarget(targetOwner: Owner, targetIndex: number, options?: { totalTargetCount?: number; [k: string]: any }): TargetDeclaration;
+    /** Variante con continuazione: attende anche una scelta UI/remota di ridirezione. */
+    declareTargetWaiting(targetOwner: Owner, targetIndex: number, options: { totalTargetCount?: number; [k: string]: any } | undefined, onDeclared: (result: TargetDeclaration) => void): void;
     /** declareTarget + destroyMonster in una chiamata: usarlo per ogni "distruggi 1 mostro bersaglio". */
     destroyTargetedMonster(targetOwner: Owner, targetIndex: number, options?: object): TargetDeclaration;
     grantTemporaryAtkDefBonus(card: Card, atk: number, def: number, destroyAfter?: boolean): void;

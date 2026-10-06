@@ -45,13 +45,14 @@ module.exports = {
         // commento (es. "quindi passa da ctx.declareTarget(...) — vedi").
         const codeLines = effectsSrc.split('\n').filter((line) => !line.trim().startsWith('//'));
         const declareTargetCalls = codeLines.filter((line) => line.includes('.declareTarget(')).length;
+        const declareTargetWaitingCalls = codeLines.filter((line) => line.includes('.declareTargetWaiting(')).length;
         const combinedHelperCalls = codeLines.filter((line) => line.includes('.destroyTargetedMonster(')).length;
         // `dichiara: true` passato a chooseFieldCardTarget (card-effects.js,
         // dichiaraBersaglioScelto): la terza forma del checkpoint, nata
         // dall'audit 1.0.37 che ha portato una trentina di carte a
         // dichiarare il proprio bersaglio. Conta come le altre due.
         const opzioneDichiara = codeLines.filter((line) => /\bdichiara:\s*true\b/.test(line)).length;
-        const total = declareTargetCalls + combinedHelperCalls + opzioneDichiara;
+        const total = declareTargetCalls + declareTargetWaitingCalls + combinedHelperCalls + opzioneDichiara;
         // Soglia rialzata dopo l'audit 1.0.37 (da 60): era 122 al momento
         // dell'audit. Si alza a mano quando si aggiungono chiamate, mai si
         // abbassa senza un motivo scritto.
@@ -59,7 +60,7 @@ module.exports = {
 
         t.assert(
             total >= SOGLIA,
-            `Il numero di chiamate reali al checkpoint di targeting condiviso (ctx.declareTarget, ctx.destroyTargetedMonster o l'opzione dichiara: true) non deve scendere sotto ${SOGLIA} — lette ${total} (${declareTargetCalls} declareTarget + ${combinedHelperCalls} destroyTargetedMonster + ${opzioneDichiara} dichiara). Se sei qui perché hai rimosso/rifattorizzato una chiamata esistente, verifica di aver sostituito la protezione con l'equivalente corretto, non solo cancellato la riga.`
+            `Il numero di chiamate reali al checkpoint di targeting condiviso (ctx.declareTarget/declareTargetWaiting, ctx.destroyTargetedMonster o l'opzione dichiara: true) non deve scendere sotto ${SOGLIA} — lette ${total} (${declareTargetCalls} declareTarget + ${declareTargetWaitingCalls} declareTargetWaiting + ${combinedHelperCalls} destroyTargetedMonster + ${opzioneDichiara} dichiara). Se sei qui perché hai rimosso/rifattorizzato una chiamata esistente, verifica di aver sostituito la protezione con l'equivalente corretto, non solo cancellato la riga.`
         );
         // La forma più comoda deve continuare a funzionare davvero: se
         // dichiaraBersaglioScelto smettesse di chiamare declareTarget,

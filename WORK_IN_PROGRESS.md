@@ -25,12 +25,9 @@ righe, actions.js 3.855, game-flow.js 3.797; 205 accessi al DOM e 85
       riprodotto in 7 giri. Il runner ora registra le prime righe dello
       stack degli errori di pagina: alla prossima occorrenza si vede da dove.
 - [x] Stop alle funzioni nuove sul motore attuale: solo correzioni di bug.
-- [x] Le 3 note restanti (192, 235, 622) si lasciano così. CORREZIONE: avevo
-      scritto che 235 e 622 si sarebbero chiuse con le "decisioni in
-      sospeso"; non è vero. Il loro limite è il checkpoint di targeting
-      (`ctx.declareTarget`), che restituisce il bersaglio finale subito a
-      circa cento chiamanti: per farlo aspettare una scelta servirebbe che
-      tutti lo ricevessero con una richiamata.
+- [x] Chiuse anche le ultime 3 note (192, 235, 622): immunità completa delle
+      Spirit Message e checkpoint attendibile per la scelta del bersaglio
+      ridiretto. `data/cards.json` non contiene più `missingEffectNote`.
 
 **Priorità 1 — preparare il terreno** (branch `refactor/nucleo-senza-testa`)
 - [x] Tipi in `types/motore.d.ts` (contratto delle carte `ctx` con le 39
@@ -243,8 +240,8 @@ Decisioni aperte dell'utente: i 6 PNG di avatar non usati; le regole del
 - [x] Carte che promettono una scelta e scelgono da sole (1.0.40): audit
       testo↔codice, 7 carte chiuse (548, 289, 220, 881, 742, 792, 363),
       helper `chooseFieldTargetsInSequence`.
-- [ ] Note restanti (3): 192 (immunità ai soli effetti mirati); 235 e la
-      metà Magia/Trappola di 622 (checkpoint sincrono, scelgono da sole).
+- [x] Note restanti: zero. Chiuse 192, 235 e 622 sul branch
+      `refactor/chiudi-ultime-carte`, con guardrail dedicati.
 - [ ] 6 PNG in `images/characters/avatarTrasparenza/` (e copie in `pedine/`) senza avatar corrispondente
       (Kaiba in Mantello Viola, soldato Grande Guerra, kaibaV2,
       setoKaiba_duelist Kingdom, setoKaiba_forbiddenMemories, yamiYugiV2):
