@@ -94,16 +94,16 @@ Sul branch `refactor/rimuovi-protocollo-multiplayer-vecchio` il client legacy
 è stato rimosso: nessuna replica di mosse, mano a segnaposto, fotografia di
 stato o coda di scelte per uid. `multiplayer.js` gestisce solo connessione,
 abbandono, rientro e `game-over`; un guardrail impedisce il ritorno delle API
-eliminate. Il relay mantiene temporaneamente l'allowlist precedente per non
-tagliare fuori l'APK beta.21 prima che ne venga distribuito uno nuovo.
+eliminate. Compilata la shell Android di produzione beta.22 (`versionCode 22`)
+e ristretto anche il relay ai soli messaggi del protocollo corrente.
 
 **Cosa resta** (dettagli in `WORK_IN_PROGRESS.md`):
 
 1. Bilanciamento delle difficoltà con dati veri: ora si può, il duello senza
    testa gioca IA contro IA in ~0,1 s a partita (`--giocatore`,
    `--livello-giocatore`).
-2. Completare il rollout del Multiplayer nuovo: APK aggiornata, poi allowlist
-   legacy rimossa dal relay, suite completa e merge del branch dedicato.
+2. Completare il rollout del Multiplayer nuovo: suite completa, merge del
+   branch dedicato e verifica della ridistribuzione automatica su Render.
 3. I circa 400 ternari "player ? … : bot …" del nucleo si possono portare sugli
    accessori di `Tavolo` un file alla volta (non bloccano nulla).
 4. Più grandi: tutorial; Forbidden Memories come secondo set di regole.
@@ -122,8 +122,9 @@ tagliare fuori l'APK beta.21 prima che ne venga distribuito uno nuovo.
 - 3 `missingEffectNote` in `data/cards.json` (192, 235, 622): promemoria su
   limiti del motore, vedi `CLAUDE.md`.
 - PWA tramite `manifest.json`, `sw.js` e `js/pwa-register.js`.
-- App Android/Capacitor: nel repository è presente un vecchio APK beta.21;
-  non coincide con la versione sorgente 1.0.43; la cache WebView/PWA corrente
+- App Android/Capacitor: la shell di produzione beta.22 (`versionCode 22`) è
+  stata compilata il 2026-10-06 e punta a GitHub Pages; gli APK sono ignorati
+  da Git e restano artefatti locali rigenerabili. La cache WebView/PWA corrente
   è `ygo-duel-arena-v161` sul branch di rimozione del protocollo legacy.
 - Cloud tramite Supabase; multiplayer tramite relay WebSocket Node nativo.
 - Le preferenze utente (`save.settings`: dettagli video, ologrammi, aptica,
@@ -414,12 +415,11 @@ e ascoltano gli eventi del canale.
   stato di chi lo manda, confrontato da chi lo riceve. Stato SPECCHIATO: ogni
   client chiama 'player' sé stesso. Costo dichiarato: ogni client ha in
   memoria mazzo e mano dell'altro.
-- **Protocollo vecchio**: rimosso dal client sul branch dedicato. Non esistono
+- **Protocollo vecchio**: rimosso dal client e dal relay sul branch dedicato. Non esistono
   più mosse raccontate, segnaposto, fotografie di stato, resync o dispatcher
   `applyRemote*`; il guardrail `guardrail-protocollo-multiplayer-unico` lo
-  sorveglia. Il relay accetta ancora temporaneamente i vecchi tipi soltanto
-  per la beta.21 già distribuita: dopo una nuova APK si restringe l'allowlist,
-  si esegue la suite completa e si può unire il branch.
+  sorveglia. Anche `GAME_ACTION_KINDS` accetta soltanto lobby, mazzo, passo,
+  ripresa ed esito. La beta.22 è pronta; restano suite completa e merge.
 - La morra cinese: il vincitore sceglie chi comincia, e la scelta viaggia
   ('rps' con `iniziaChiManda`).
 - Il server inoltra le azioni ma non è un motore autorevole: la logica resta

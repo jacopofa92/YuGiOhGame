@@ -134,14 +134,11 @@ righe, actions.js 3.855, game-flow.js 3.797; 205 accessi al DOM e 85
                   end-to-end; gli scenari delle carte restano coperti dagli
                   spec di regola e dal duello gemello. Un nuovo guardrail
                   impedisce di reintrodurre il vecchio client;
-            - [ ] dopo aver distribuito una nuova APK, restringere
-                  `GAME_ACTION_KINDS` del relay a controllo lobby + `mazzo`,
-                  `passo`, `passo-riprendi` e `game-over`, poi riallineare
-                  `server-anti-imbroglio`;
-            - [ ] suite completa e merge in `main`, solo su richiesta
-                  dell'utente. La beta.21 nel repository dipende ancora dal
-                  relay compatibile: per questo l'allowlist server non è
-                  stata ancora ristretta.
+            - [x] compilata l'APK di produzione beta.22 (`versionCode 22`);
+                  `GAME_ACTION_KINDS` del relay ristretto a controllo lobby +
+                  `mazzo`, `passo`, `passo-riprendi` e `game-over`, con
+                  `server-anti-imbroglio` riallineato;
+            - [ ] suite completa e merge in `main`, autorizzati dall'utente.
       Costo dichiarato: ogni client conosce mazzo e mano dell'avversario
       (non mostrati, ma in memoria).
 
@@ -195,14 +192,12 @@ Decisioni aperte dell'utente: i 6 PNG di avatar non usati; le regole del
       `scripts/pre-commit.js`): sintassi dei .js in stage, accenti corrotti
       nelle righe aggiunte, BOM, `cards.json` senza file generato. Su un
       clone nuovo va attivato con `npm run hooks`.
-- [x] Multiplayer: il relay ora rifiuta azioni sconosciute, indici assurdi e
-      mosse da turno (Evocare, attaccare, calare carte, avanzare di fase)
-      fuori dal proprio turno (`validateGameAction` in `server/server.js`).
-      RESTA APERTO: il server non conosce il campo, quindi un client
-      modificato può ancora mentire su ciò che fa nel proprio turno (carte
-      che non ha, danni, pescate). Servirebbe far girare il motore anche lato
-      server: da fare solo se si apre a sconosciuti. Il server va ridistribuito
-      dove gira per avere i nuovi controlli.
+- [x] Multiplayer: `validateGameAction` accetta soltanto i sette tipi del
+      protocollo corrente (lobby, mazzo, passo comune, ripresa, esito) e
+      rifiuta tutte le mosse raccontate del client vecchio. Il server non
+      conosce comunque il campo: per un arbitraggio competitivo servirebbe
+      far girare il motore anche lato server, da valutare solo se si apre a
+      sconosciuti. Render ridistribuisce il relay col push su `main`.
 
 ## Esperienza di gioco
 
