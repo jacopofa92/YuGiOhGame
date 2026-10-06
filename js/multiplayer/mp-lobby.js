@@ -918,22 +918,15 @@
     async function startMultiplayerDuel(youStart, config) {
         window.MULTIPLAYER_MODE = true;
         window.MP_startingRole = youStart ? 'player' : 'bot';
-        // A passo comune (js/multiplayer/mp-passo-comune.js) i due client
-        // eseguono la partita intera e si scambiano solo comandi e decisioni:
-        // i messaggi che RACCONTANO le mosse non servono più. Il motore li
-        // produce ancora (servono al Multiplayer di prima, che resta il
-        // ripiego con un avversario dalla versione vecchia), quindi qui
-        // tacciono — tranne la fine del duello, che resta una rete di
-        // sicurezza sull'esito.
-        // `MP_SENZA_PASSO_COMUNE`: forza il Multiplayer di prima. Lo usano
-        // gli spec che verificano proprio quel protocollo (resta il ripiego
-        // con un avversario dalla versione vecchia del gioco).
-        if (window.MpPassoComune && !window.MP_SENZA_PASSO_COMUNE) {
-            MpPassoComune.configura({ net, sonoHost, iniziaIo: youStart });
-        }
+        // Il passo comune è l'unico protocollo di duello supportato. Il
+        // relay accetta ancora temporaneamente i messaggi precedenti per
+        // non spegnere da remoto l'APK beta.21, ma questo client non li usa.
+        if (window.MpPassoComune) MpPassoComune.configura({ net, sonoHost, iniziaIo: youStart });
         window.MP_broadcast = (action) => {
-            if (window.MP_PASSO_COMUNE && action && action.kind !== 'game-over') return;
-            net.sendAction(action);
+            // Rete di sicurezza sull'esito, fuori dai comandi deterministici.
+            // Le vecchie chiamate rimaste nel motore vengono eliminate nei
+            // passi successivi e intanto non escono sulla rete.
+            if (action && action.kind === 'game-over') net.sendAction(action);
         };
 
         applicaImpostazioniArena(config);

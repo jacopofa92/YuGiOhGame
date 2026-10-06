@@ -615,17 +615,12 @@
 
     net.on('reconnected', () => {
         if (!window.MULTIPLAYER_MODE) return;
-        if (typeof addToLog === 'function') addToLog('✅ Riconnesso! Aggiorno lo stato del duello...');
-        showMpBanner('✅ Riconnesso! Aggiorno lo stato del duello...');
+        if (typeof addToLog === 'function') addToLog('✅ Riconnesso! Recupero le mosse mancanti...');
+        showMpBanner('✅ Riconnesso! Recupero le mosse mancanti...');
         setTimeout(hideMpBanner, 3000);
-        // Potremmo aver perso azioni dell'avversario mentre eravamo
-        // disconnessi: chiediamogli subito il suo stato pubblico attuale
-        // (vedi DuelEngine.serializePublicState in js/engine/duel-engine.js).
-        // A passo comune no: lì si fanno rimandare i messaggi persi, uno per
-        // uno (js/multiplayer/mp-passo-comune.js), e una fotografia di stato
-        // sovrascriverebbe una partita che i due client calcolano già uguale.
-        if (window.MP_PASSO_COMUNE) return;
-        requestStateResync();
+        // MpPassoComune ascolta lo stesso evento e richiede i messaggi
+        // numerati mancanti. Nessuna fotografia può sovrascrivere il duello
+        // deterministico.
     });
 
     net.on('reconnect-failed', () => {
