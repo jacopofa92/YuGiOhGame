@@ -32,6 +32,9 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.1.0 — Rework dell'acquisizione: sette rarità, rotazioni e buste
+ *   tematiche, carte firma, Dei Egizi, Exodia con pity, audit del farming
+ *   e cinematica finto 3D per ogni carta guadagnata.
  * 1.0.43 — Multiplayer: una Carta Equipaggiamento dell'avversario non
  *   sparisce più dal tuo schermo dopo un suo Effetto Veloce. Tolto un
  *   doppione di "M-Guerriero #1" con l'Attributo sbagliato.
@@ -614,4 +617,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.0.43';
+window.GAME_VERSION = '1.1.0';

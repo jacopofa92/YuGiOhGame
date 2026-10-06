@@ -434,7 +434,12 @@
             const qty = Math.max(1, Number(entry.qty) || 1);
             const prima = SaveManager.getOwnedCount(id);
             const dopo = SaveManager.addOwnedCards(id, qty);
-            if (dopo > prima) rewards.push({ cardId: id, amount: dopo - prima, icon: '🃏', nome: entry.nome || `Carta #${id}`, rule: `Sfida completata — ${def.label}` });
+            if (dopo > prima) {
+                const premio = { cardId: id, amount: dopo - prima, icon: '🃏', nome: entry.nome || `Carta #${id}`, rule: `Sfida completata — ${def.label}` };
+                rewards.push(premio);
+                if (window.CardDropAnimation) CardDropAnimation.enqueue(premio);
+                else if (window.CardAcquisition && typeof CardAcquisition.persistAnimation === 'function') CardAcquisition.persistAnimation(premio);
+            }
         });
         (def.reward.unlockPacks || []).forEach((packId) => {
             if (!window.CardAcquisition || !CardAcquisition.unlockPack(packId, def.id)) return;

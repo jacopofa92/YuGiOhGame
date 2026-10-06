@@ -10,6 +10,9 @@ La fonte di verità di requisiti, probabilità e prezzi è
 separati rispettivamente in `card-rarity.js`, `shop-catalog.js` e
 `rewards.js`. Pity e traguardi sono persistiti nel campo `cardAcquisition`
 del salvataggio.
+Il costo in vittorie è misurato in modo riproducibile da
+`tools/simula-farming-carte.js`; risultati e giudizio sono in
+`FARMING_REPORT.md`.
 
 Questo file è la memoria breve e stabile del progetto. Va letto all'inizio di
 una nuova sessione prima di scandire di nuovo l'intero repository. Per la

@@ -426,7 +426,8 @@
         // volutamente minuscola: resta una carta da impresa, non da spesa.
         if (/^premium-/.test(busta.id) && window.SaveManager
             && SaveManager.getOwnedCount(246) > 0 && SaveManager.getOwnedCount(246) < 3
-            && Math.random() < 0.002 && estratte.length) {
+            && Math.random() < ((CardAcquisition.RULES && CardAcquisition.RULES.elephantPremiumChance) || 0.002)
+            && estratte.length) {
             estratte[estratte.length - 1] = 246;
         }
         return estratte;

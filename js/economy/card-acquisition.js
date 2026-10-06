@@ -13,6 +13,15 @@
     const SPIRIT_BY_CHAPTER = { regno: 867, battlecity1: 868, virtuale: 869, battlecity2: 870 };
     const SIGNATURE_GATED = new Set([1, 2, 12, 123, 291]);
     const CARD_CAP = 3;
+    const RULES = Object.freeze({
+        exodiaRates: Object.freeze({ Facile: 0.0005, Medio: 0.0015, Difficile: 0.003 }),
+        exodiaPity: 250,
+        seekerMultiplier: 2,
+        seekerGuaranteeEvery: 10,
+        elephantPremiumChance: 0.002,
+        ra: Object.freeze({ marikHard: 40, controlled: 10, maxLpLost: 2000, tournamentHard: 3 }),
+        slifer: Object.freeze({ stringsHard: 50, healthyWins: 1, minFinalLp: 4000 })
+    });
 
     function state() {
         const s = window.SaveManager && SaveManager.getCardAcquisitionState
@@ -52,6 +61,19 @@
         } catch (e) { /* sessionStorage non disponibile: il premio resta comunque accreditato. */ }
     }
 
+    function animateDrop(entry) {
+        if (window.CardDropAnimation && typeof CardDropAnimation.enqueue === 'function') {
+            CardDropAnimation.enqueue(entry);
+            return;
+        }
+        try {
+            const key = 'duelArenaPendingCardDrops';
+            const pending = JSON.parse(sessionStorage.getItem(key) || '[]');
+            pending.push(entry);
+            sessionStorage.setItem(key, JSON.stringify(pending));
+        } catch (e) { /* L'accredito non dipende mai dalla cinematica. */ }
+    }
+
     function award(id, rule, key, shouldAnnounce) {
         const s = state();
         if (key && s.claimed[key]) return null;
@@ -62,6 +84,7 @@
         SaveManager.addOwnedCards(id, 1);
         if (key) { s.claimed[key] = true; save(s); }
         const entry = { cardId: id, amount: 1, icon: '🃏', nome: cardName(id), rule: rule };
+        animateDrop(entry);
         if (shouldAnnounce) announce(entry);
         return entry;
     }
@@ -83,26 +106,25 @@
 
         if (hard && opponent === 'marik') {
             s.counters.raMarikHard = (s.counters.raMarikHard || 0) + 1;
-            if ((o.lpLost || 0) <= 2000) s.counters.raMarikControlled = (s.counters.raMarikControlled || 0) + 1;
+            if ((o.lpLost || 0) <= RULES.ra.maxLpLost) s.counters.raMarikControlled = (s.counters.raMarikControlled || 0) + 1;
         }
         if (hard && opponent === 'strings') {
             s.counters.sliferStringsHard = (s.counters.sliferStringsHard || 0) + 1;
-            if ((o.playerLP || 0) >= 4000) s.counters.sliferStringsHealthy = (s.counters.sliferStringsHealthy || 0) + 1;
+            if ((o.playerLP || 0) >= RULES.slifer.minFinalLp) s.counters.sliferStringsHealthy = (s.counters.sliferStringsHealthy || 0) + 1;
         }
 
         // Exodia può uscire da qualunque duellante PvE. Seeker raddoppia
         // la probabilità a Difficile e garantisce un pezzo mancante ogni
         // dieci vittorie difficili; il pity globale scatta alla 250ª.
-        const rates = { Facile: 0.0005, Medio: 0.0015, Difficile: 0.003 };
-        let chance = rates[o.difficulty] || 0;
+        let chance = RULES.exodiaRates[o.difficulty] || 0;
         if (hard && opponent === 'seeker') {
-            chance *= 2;
+            chance *= RULES.seekerMultiplier;
             s.counters.seekerHard = (s.counters.seekerHard || 0) + 1;
         }
         s.exodiaPity += 1;
         const pool = missingExodia();
-        const seekerGuarantee = hard && opponent === 'seeker' && s.counters.seekerHard % 10 === 0;
-        if (pool.length && (Math.random() < chance || s.exodiaPity >= 250 || seekerGuarantee)) {
+        const seekerGuarantee = hard && opponent === 'seeker' && s.counters.seekerHard % RULES.seekerGuaranteeEvery === 0;
+        if (pool.length && (Math.random() < chance || s.exodiaPity >= RULES.exodiaPity || seekerGuarantee)) {
             const id = pool[Math.floor(Math.random() * pool.length)];
             const got = award(id, seekerGuarantee
                 ? 'Pezzo di Exodia garantito: 10 vittorie contro Seeker a Difficile'
@@ -150,15 +172,15 @@
         const s = state();
         const out = [];
         if (s.completedChaptersByDifficulty['battlecity1:difficile']
-            && (s.counters.sliferStringsHard || 0) >= 50
-            && (s.counters.sliferStringsHealthy || 0) >= 1) {
+            && (s.counters.sliferStringsHard || 0) >= RULES.slifer.stringsHard
+            && (s.counters.sliferStringsHealthy || 0) >= RULES.slifer.healthyWins) {
             const got = award(31, 'Battle City I a Difficile e 50 vittorie difficili contro Strings, una con almeno 4000 LP', 'slifer');
             if (got) out.push(got);
         }
         if (s.completedChaptersByDifficulty['battlecity2:difficile']
-            && (s.counters.battleCityHardWins || 0) >= 3
-            && (s.counters.raMarikHard || 0) >= 40
-            && (s.counters.raMarikControlled || 0) >= 10) {
+            && (s.counters.battleCityHardWins || 0) >= RULES.ra.tournamentHard
+            && (s.counters.raMarikHard || 0) >= RULES.ra.marikHard
+            && (s.counters.raMarikControlled || 0) >= RULES.ra.controlled) {
             const got = award(472, 'Battle City II e torneo a Difficile; 40 vittorie difficili contro Marik, 10 perdendo al massimo 2000 LP', 'ra');
             if (got) out.push(got);
         }
@@ -197,11 +219,12 @@
     };
 
     window.CardAcquisition = {
-        EXODIA: EXODIA, SIGNATURE_GATED: SIGNATURE_GATED,
+        EXODIA: EXODIA, SIGNATURE_GATED: SIGNATURE_GATED, RULES: RULES,
         onDuelWin: onDuelWin, onStoryProgress: onStoryProgress,
         onTournamentWin: onTournamentWin, checkMilestones: checkMilestones,
         isSignatureUnlocked: isSignatureUnlocked, isChapterComplete: isChapterComplete,
         unlockPack: unlockPack, isPackUnlocked: isPackUnlocked,
+        persistAnimation: animateDrop,
         sourceFor: (id) => {
             const db = typeof cardDatabase !== 'undefined' ? cardDatabase : (window.cardDatabase || []);
             const card = db.find((c) => c.id === id);
