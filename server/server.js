@@ -290,7 +290,15 @@ function isRateLimited(socket) {
 const GAME_ACTION_KINDS = new Set([
     'phase', 'summon', 'tribute', 'position', 'spelltrap', 'fieldspell', 'attack',
     'activate', 'chain-response', 'card-choice', 'state-push', 'game-over',
-    'request-resync', 'state-sync', 'room-config', 'ready', 'rps'
+    'request-resync', 'state-sync', 'room-config', 'ready', 'rps',
+    // Multiplayer "a passo comune" (js/engine/passo-comune.js): 'mazzo' è lo
+    // scambio dei mazzi (e del seme) prima del duello, 'passo' porta i
+    // comandi e le decisioni durante il duello, 'passo-riprendi' chiede di
+    // rimandare quelli persi in una caduta di linea. NON legati al turno qui:
+    // a passo comune ogni client riesegue la partita intera e rifiuta da sé
+    // un comando fuori turno (lo stato di qua non lo permetterebbe), quindi
+    // il relay non ha niente da aggiungere — e non vede dentro il messaggio.
+    'mazzo', 'passo', 'passo-riprendi'
 ]);
 // Le sole mosse che hanno senso nel turno di chi le manda.
 const TURN_BOUND_KINDS = new Set(['summon', 'tribute', 'position', 'spelltrap', 'fieldspell', 'attack']);

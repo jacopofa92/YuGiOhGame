@@ -35,41 +35,52 @@
 (function () {
     'use strict';
 
-    function currentLevelName() {
-        return (typeof gameState !== 'undefined' && gameState.botDifficulty) || 'medium';
+    /**
+     * Il livello dell'IA che gioca dal posto `io` (vedi js/engine/tavolo.js).
+     * Ogni posto può averne uno suo (`gameState.livelloIA[io]`, impostato
+     * per esempio dal duello senza testa per un IA contro IA); se manca vale
+     * `gameState.botDifficulty`, il livello scelto per l'avversario, come
+     * prima che l'IA potesse sedersi anche dall'altra parte.
+     */
+    function currentLevelName(io) {
+        if (typeof gameState === 'undefined') return 'medium';
+        const perPosto = gameState.livelloIA && io && gameState.livelloIA[io];
+        return perPosto || gameState.botDifficulty || 'medium';
     }
 
     /** Il modulo IA del livello attivo, con ripiego su IA_MEDIA se quel livello non è caricato per qualche motivo. */
-    function currentLevel() {
-        const name = currentLevelName();
+    function currentLevel(io) {
+        const name = currentLevelName(io);
         if (name === 'hard' && window.AI_HARD) return window.AI_HARD;
         return window.AI_MEDIUM || window.AI_HARD || null;
     }
 
-    function debugLog(label, data) {
+    function debugLog(label, data, io) {
         if (window.AI_DEBUG) {
-            console.log(`[BotAI:${currentLevelName()}] ${label}`, data);
+            console.log(`[BotAI:${io || 'bot'}:${currentLevelName(io)}] ${label}`, data);
         }
     }
 
-    function chooseSummon(gameStateArg) {
-        const level = currentLevel();
-        const decision = level ? level.chooseSummon(gameStateArg) : null;
-        debugLog('chooseSummon', decision ? { card: decision.card.name, tributi: decision.tributeIndices.length } : null);
+    // `io`, in ogni funzione qui sotto: il posto da cui gioca l'IA ('bot'
+    // se omesso, come sempre). Vedi js/engine/tavolo.js.
+    function chooseSummon(gameStateArg, io = 'bot') {
+        const level = currentLevel(io);
+        const decision = level ? level.chooseSummon(gameStateArg, io) : null;
+        debugLog('chooseSummon', decision ? { card: decision.card.name, tributi: decision.tributeIndices.length } : null, io);
         return decision;
     }
 
-    function chooseAttackTarget(attackerSlot, playerMonsters) {
-        const level = currentLevel();
-        const decision = level ? level.chooseAttackTarget(attackerSlot, playerMonsters) : null;
-        debugLog('chooseAttackTarget', { attaccante: attackerSlot.card.name, scelta: decision });
+    function chooseAttackTarget(attackerSlot, playerMonsters, io = 'bot') {
+        const level = currentLevel(io);
+        const decision = level ? level.chooseAttackTarget(attackerSlot, playerMonsters, io) : null;
+        debugLog('chooseAttackTarget', { attaccante: attackerSlot.card.name, scelta: decision }, io);
         return decision;
     }
 
-    function chooseChainResponse(candidates) {
-        const level = currentLevel();
-        const decision = level ? level.chooseChainResponse(candidates) : (candidates[0] || null);
-        debugLog('chooseChainResponse', { candidati: candidates.map((c) => c.card.name), scelta: decision && decision.card.name });
+    function chooseChainResponse(candidates, io = 'bot') {
+        const level = currentLevel(io);
+        const decision = level ? level.chooseChainResponse(candidates, io) : (candidates[0] || null);
+        debugLog('chooseChainResponse', { candidati: candidates.map((c) => c.card.name), scelta: decision && decision.card.name }, io);
         return decision;
     }
 
@@ -82,20 +93,20 @@
      * tenere il proprio conteggio (es. IA_MEDIA si ferma dopo 1 Set + 1
      * Magia) senza che i livelli si condizionino a vicenda.
      */
-    function chooseNextSpellTrapAction(gameStateArg, usedThisTurn) {
-        const level = currentLevel();
+    function chooseNextSpellTrapAction(gameStateArg, usedThisTurn, io = 'bot') {
+        const level = currentLevel(io);
         const decision = level && typeof level.chooseNextSpellTrapAction === 'function'
-            ? level.chooseNextSpellTrapAction(gameStateArg, usedThisTurn) : null;
-        debugLog('chooseNextSpellTrapAction', decision ? { card: decision.card.name, action: decision.action } : null);
+            ? level.chooseNextSpellTrapAction(gameStateArg, usedThisTurn, io) : null;
+        debugLog('chooseNextSpellTrapAction', decision ? { card: decision.card.name, action: decision.action } : null, io);
         return decision;
     }
 
     /** Vero se conviene attivare ORA una propria carta già Set o l'effetto Ignition di un proprio mostro in campo (decision.zone dice quale), durante la propria Main Phase (non in risposta a un trigger) — solo IA_DIFFICILE lo fa mai. */
-    function chooseSetCardActivation(gameStateArg) {
-        const level = currentLevel();
+    function chooseSetCardActivation(gameStateArg, io = 'bot') {
+        const level = currentLevel(io);
         const decision = level && typeof level.chooseSetCardActivation === 'function'
-            ? level.chooseSetCardActivation(gameStateArg) : null;
-        debugLog('chooseSetCardActivation', decision ? { card: decision.card.name } : null);
+            ? level.chooseSetCardActivation(gameStateArg, io) : null;
+        debugLog('chooseSetCardActivation', decision ? { card: decision.card.name } : null, io);
         return decision;
     }
 

@@ -141,7 +141,7 @@
             ctx.log(`☠️ Virus Distruggi-Carte sacrifica ${tributeCard.name}: l'avversario non subisce danni fino alla fine del turno successivo, ${destroyed} mostr${destroyed === 1 ? 'o' : 'i'} con 1500+ ATK distrutt${destroyed === 1 ? 'o' : 'i'}!`);
             if (Decisioni.rispondeUnaPersona(ctx.owner)) {
                 Decisioni.chiedi({
-                    chi: 'player',
+                    chi: ctx.owner,
                     tipo: 'presa-visione',
                     candidati: ctx.hand(ctx.opponent).slice(),
                     titolo: '☠️ Virus Distruggi-Carte',
@@ -171,11 +171,11 @@
     CardEffects.register(166, {
         canActivate(ctx) {
             if (gameState.phase !== 'standby' || gameState.currentPlayer !== ctx.owner) return false;
-            return ['player', 'bot'].some((owner) => ctx.field(owner).some((slot) => slot && !slot.isFaceDown));
+            return Tavolo.ordine().some((owner) => ctx.field(owner).some((slot) => slot && !slot.isFaceDown));
         },
         activate(ctx) {
             let count = 0;
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
                     if (slot && !slot.isFaceDown) {
                         slot.position = slot.position === 'attack' ? 'defense' : 'attack';
@@ -449,7 +449,7 @@
                 return;
             }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates.map((c) => c.card),
                 titolo: '✨ Rimuovi Magia',
                 testo: 'Scegli 1 Magia scoperta, o 1 carta Set, da colpire.'
@@ -627,7 +627,7 @@
     // ================================================================
     CardEffects.register(206, {
         static(ctx) {
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot, i) => {
                     if (slot && !slot.isFaceDown && slot.card.race === 'Drago' && slot.position !== 'defense') {
                         ctx.changePosition(owner, i, 'defense');
@@ -741,11 +741,11 @@
     // ================================================================
     CardEffects.register(228, {
         canActivate(ctx) {
-            return ['player', 'bot'].some((owner) => ctx.field(owner).some((slot) => slot && !slot.isFaceDown && slot.card.race === 'Insetto'));
+            return Tavolo.ordine().some((owner) => ctx.field(owner).some((slot) => slot && !slot.isFaceDown && slot.card.race === 'Insetto'));
         },
         activate(ctx) {
             let count = 0;
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot, index) => {
                     if (slot && !slot.isFaceDown && slot.card.race === 'Insetto') {
                         ctx.destroyMonster(owner, index);
@@ -765,11 +765,11 @@
     // ================================================================
     CardEffects.register(229, {
         canActivate(ctx) {
-            return ['player', 'bot'].some((owner) => ctx.field(owner).some((slot) => slot && !slot.isFaceDown && slot.card.race === 'Demone'));
+            return Tavolo.ordine().some((owner) => ctx.field(owner).some((slot) => slot && !slot.isFaceDown && slot.card.race === 'Demone'));
         },
         activate(ctx) {
             let count = 0;
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot, index) => {
                     if (slot && !slot.isFaceDown && slot.card.race === 'Demone') {
                         ctx.destroyMonster(owner, index);
@@ -789,7 +789,7 @@
     // ================================================================
     CardEffects.register(240, {
         static(ctx) {
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot, i) => {
                     if (slot && !slot.isFaceDown && slot.position !== 'attack') {
                         ctx.changePosition(owner, i, 'attack');
@@ -947,11 +947,11 @@
     // ================================================================
     CardEffects.register(262, {
         canActivate(ctx) {
-            return ['player', 'bot'].some((owner) => ctx.stField(owner).some((slot) => slot !== null));
+            return Tavolo.ordine().some((owner) => ctx.stField(owner).some((slot) => slot !== null));
         },
         activate(ctx) {
             let count = 0;
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.stField(owner).forEach((slot, index) => {
                     if (slot) {
                         const bouncedCard = slot.card;
@@ -1439,7 +1439,7 @@
                 return;
             }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: stCandidates,
                 titolo: '🃏 Kuribandit',
                 testo: 'Scegli quale Magia/Trappola aggiungere alla mano tra quelle scavate.'
@@ -1617,7 +1617,7 @@
     CardEffects.register(359, {
         static(ctx) {
             let count = 0;
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
                     if (slot && !slot.isFaceDown && slot.card.race === 'Macchina') count++;
                 });

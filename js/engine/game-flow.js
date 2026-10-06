@@ -311,6 +311,38 @@ function initGame() {
         }
     }
     resetGameState();
+    if (!document.getElementById('playerHand') || !document.getElementById('playerFieldBoard') || !document.getElementById('botFieldBoard')) {
+        console.error('Elementi del campo mancanti nella pagina.');
+        return;
+    }
+    // Multiplayer a passo comune (js/engine/passo-comune.js,
+    // js/multiplayer/mp-passo-comune.js): prima di tutto i due client si
+    // scambiano i mazzi (e il seme), poi preparano lo STESSO duello. Se
+    // l'altro non risponde — un client più vecchio — si parte col
+    // Multiplayer di prima.
+    if (window.MULTIPLAYER_MODE && window.MP_PASSO_COMUNE && window.MpPassoComune && typeof PassoComune !== 'undefined') {
+        const mioMazzo = (window.SaveManager && SaveManager.getActiveDeck())
+            || (typeof buildBalancedDemoDeckSpec === 'function' ? buildBalancedDemoDeckSpec() : null);
+        MpPassoComune.prepara(mioMazzo).then((partita) => {
+            Tavolo.imposta({ player: 'persona', bot: 'remoto' });
+            PassoComune.avvia({ invia: MpPassoComune.invia });
+            PassoComune.preparaDuello(partita);
+            MpPassoComune.motoreAvviato();
+            avviaDuelloPreparato();
+        }, (err) => {
+            console.warn('Passo comune non disponibile, si gioca col Multiplayer di prima:', err);
+            MpPassoComune.rinuncia();
+            preparaManiIniziali();
+            avviaDuelloPreparato();
+        });
+        return;
+    }
+    preparaManiIniziali();
+    avviaDuelloPreparato();
+}
+
+/** Chi comincia e le mani iniziali, fuori dal passo comune (vedi initGame). */
+function preparaManiIniziali() {
     if (window.MULTIPLAYER_MODE && typeof window.MP_startingRole === 'string') {
         // In multiplayer "player" significa sempre "io" e "bot" significa
         // sempre "l'avversario": chi inizia per primo lo decide il server
@@ -323,10 +355,6 @@ function initGame() {
         // bisogno di sapere COME si è deciso chi comincia.
         gameState.currentPlayer = window.DUEL_STARTING_ROLE;
     }
-    if (!document.getElementById('playerHand') || !document.getElementById('playerFieldBoard') || !document.getElementById('botFieldBoard')) {
-        console.error('Elementi del campo mancanti nella pagina.');
-        return;
-    }
     drawCardsToHand('player', 5);
     drawCardsToHand('bot', 5);
     if (!window.MULTIPLAYER_MODE) {
@@ -336,6 +364,10 @@ function initGame() {
         // avvantaggiato proprio nel caso in cui ha perso il sorteggio.
         drawCardsToHand(gameState.currentPlayer, 1);
     }
+}
+
+/** Mani già in mano e primo giocatore deciso: timer, telecamera, primo turno. */
+function avviaDuelloPreparato() {
     startDuelTimer();
     updateUI();
     // Ogni carta della mano appena renderizzata resta invisibile (vedi
@@ -351,17 +383,24 @@ function initGame() {
             addToLog(gameState.currentPlayer === 'player'
                 ? '🎮 Duello iniziato! È il tuo turno. Inizia la Draw Phase.'
                 : '🎮 Duello iniziato! Turno dell\'avversario.');
-            if (gameState.currentPlayer === 'player') {
+            // Chi guida il primo turno dipende da chi controlla il posto
+            // (js/engine/tavolo.js), come in changeTurn().
+            const primo = gameState.currentPlayer;
+            const controllore = Tavolo.controllore(primo);
+            // A passo comune anche il primo turno del posto remoto si gioca
+            // di qua (come in changeTurn): le fasi avanzano da sole fino
+            // alla Main Phase 1, poi arrivano i suoi comandi.
+            const remotoAPassoComune = controllore === 'remoto' && typeof PassoComune !== 'undefined' && PassoComune.attivo();
+            if (controllore === 'persona' || remotoAPassoComune) {
                 setTimeout(enterDrawPhase, 500);
-            } else if (!window.MULTIPLAYER_MODE) {
-                // Il bot che comincia va avviato a mano: il suo turno
-                // normalmente parte da changeTurn() (vedi il setTimeout su
-                // botTurn nell'annuncio di cambio turno), che al PRIMO
-                // turno non è ancora mai stato chiamato. Senza questo, dopo
-                // una morra cinese persa la partita restava ferma per
-                // sempre — in Multiplayer no, perché lì a muovere è
-                // l'avversario remoto, non un bot locale.
-                setTimeout(botTurn, 1200);
+            } else if (controllore === 'ia') {
+                // L'IA che comincia va avviata a mano: il suo turno
+                // normalmente parte da changeTurn() (vedi l'annuncio di
+                // cambio turno), che al PRIMO turno non è ancora mai stato
+                // chiamato. Senza questo, dopo una morra cinese persa la
+                // partita restava ferma per sempre — in Multiplayer no,
+                // perché lì a muovere è l'avversario remoto.
+                setTimeout(() => turnoIA(primo), 1200);
             }
         });
     });
@@ -1796,7 +1835,7 @@ function createSlotElement(owner, type, index, options = {}) {
                     onSelect: (card) => {
                         const match = banishOptions.find((o) => o.card.uid === card.uid);
                         if (match) {
-                            DuelEngine.banishFusionSummon('player', match.extraDeckIndex, match.materialFieldIndices);
+                            Comandi.esegui('player', { tipo: 'fusioneBandendo', extraDeck: match.extraDeckIndex, materiali: match.materialFieldIndices });
                         }
                     }
                 });
@@ -2218,7 +2257,7 @@ function handlePhaseStepperClick(targetPhase) {
     // Seconda Battle Phase (Bollettino Meteo id 1035): l'unico passo
     // "all'indietro" ammesso, da Main Phase 2 a Battaglia.
     if (gameState.phase === 'main2' && targetPhase === 'battle' && canConductSecondBattlePhase('player')) {
-        startSecondBattlePhase('player');
+        Comandi.esegui('player', { tipo: 'fase', verso: 'battle2' });
         return;
     }
     const currentPhaseIndex = phaseOrder.indexOf(gameState.phase);
@@ -2251,11 +2290,11 @@ function handlePhaseStepperClick(targetPhase) {
         return;
     }
     if (gameState.phase === 'main1' && targetPhase === 'battle') {
-        enterBattlePhase();
+        Comandi.esegui('player', { tipo: 'fase', verso: 'battle' });
         return;
     }
     if (gameState.phase === 'battle' && targetPhase === 'main2') {
-        enterMainPhase2();
+        Comandi.esegui('player', { tipo: 'fase', verso: 'main2' });
         return;
     }
     if (['main1', 'battle', 'main2'].includes(gameState.phase) && targetPhase === 'end') {

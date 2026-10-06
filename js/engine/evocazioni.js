@@ -28,9 +28,10 @@
 const TRIBUTE_SACRIFICE_ANIM_MS = 700;
 
 /**
- * Esegue il sacrificio: gioca l'animazione su ogni mostro selezionato,
- * poi li rimuove dal Terreno (spostandoli nel Cimitero) e apre il modale
- * per scegliere la posizione del mostro da Evocare.
+ * Esegue il sacrificio scelto dalla persona (i mostri selezionati con i
+ * click, gameState.pendingTributeSummon) e poi apre la scelta di casella e
+ * Posizione del mostro da Evocare. La mossa vera è il comando 'tributa'
+ * (eseguiTributo qui sotto); qui resta la parte di interfaccia.
  */
 function performTributeSacrifice() {
     const pending = gameState.pendingTributeSummon;
@@ -38,89 +39,155 @@ function performTributeSacrifice() {
 
     pending.sacrificing = true;
     const indices = [...pending.selected];
-    if (window.MP_broadcast && !window.MP_applyingRemote) {
+    PortaUI.queryAll('#playerFieldBoard .field-slot.tribute-highlight').forEach(el => {
+        el.classList.remove('tribute-highlight', 'tribute-selected');
+    });
+    EventiDuello.emetti('prompt-tributo-chiuso');
+
+    Comandi.esegui('player', {
+        tipo: 'tributa',
+        indici: indices,
+        perCarta: pending.card.uid,
+        attesaMs: TRIBUTE_SACRIFICE_ANIM_MS
+    }, {
+        dopo: () => {
+            const { card, handIndex, fromRect } = pending;
+            gameState.pendingTributeSummon = null;
+            EventiDuello.emetti('evocazione-tributo-pronta', card, handIndex, fromRect);
+        }
+    });
+}
+
+/**
+ * Comando 'tributa': sacrifica le carte del posto `posto` agli indici
+ * `c.indici` — dalla zona Mostri, o dalla zona Magia/Trappola con
+ * `c.zona === 'st'` (Castello dell'Ingranaggio Antico id 843). Per
+ * un'Evocazione Tributo `c.perCarta` è l'uid del mostro in mano per cui si
+ * sacrifica; per un costo (d'attacco) manca. `c.attesaMs`: quanto dura
+ * l'animazione prima che le carte spariscano davvero (0 = subito).
+ * `extra.dopo`: cosa fa chi ha fatto la mossa a sacrificio concluso.
+ */
+function eseguiTributo(posto, c, extra) {
+    const suMagieTrappole = c.zona === 'st';
+    const campo = suMagieTrappole ? Tavolo.magieTrappole(posto) : Tavolo.mostri(posto);
+    const indices = (c.indici || []).slice();
+    const perCarta = c.perCarta !== undefined && c.perCarta !== null
+        ? (Tavolo.mano(posto).find((x) => x && x.uid === c.perCarta) || null) : null;
+    const attesa = typeof c.attesaMs === 'number' ? c.attesaMs : 0;
+    const MP_vecchio = posto === 'player' && window.MP_broadcast && !window.MP_applyingRemote;
+    if (MP_vecchio && attesa > 0) {
         // `summonedCard` NON è ridondante con il messaggio 'summon' che
         // arriverà fra poco: serve PRIMA, perché una carta sacrificata può
         // reagire al mostro per cui viene sacrificata (Skull Knight #2 id
         // 1128, "se Tributi questa carta per l'Evocazione Tributo di un
         // mostro Tipo Demone") — vedi notifySacrificedForTribute in
         // js/engine/duel-engine.js.
-        window.MP_broadcast({
-            kind: 'tribute',
-            indices,
-            delayMs: TRIBUTE_SACRIFICE_ANIM_MS,
-            summonedCard: pending.card
+        window.MP_broadcast({ kind: 'tribute', indices, delayMs: attesa, summonedCard: perCarta });
+    }
+
+    if (attesa > 0) {
+        addToLog(perChi(posto, '🔻 Sacrificio in corso...', '🔻 L\'avversario sacrifica per un\'Evocazione Tributo...'));
+        if (window.SFX) SFX.tribute();
+        indices.forEach(idx => {
+            const cardEl = PortaUI.query(`#${posto}FieldBoard .field-slot[data-owner="${posto}"][data-type="${suMagieTrappole ? 'st' : 'monster'}"][data-index="${idx}"] .card`);
+            if (cardEl && window.FX) FX.playTributeSacrifice(cardEl);
         });
     }
-    PortaUI.queryAll('#playerFieldBoard .field-slot.tribute-highlight').forEach(el => {
-        el.classList.remove('tribute-highlight', 'tribute-selected');
-    });
-    EventiDuello.emetti('prompt-tributo-chiuso');
 
-    addToLog('🔻 Sacrificio in corso...');
-    if (window.SFX) SFX.tribute();
-    indices.forEach(idx => {
-        const cardEl = PortaUI.query(`#playerFieldBoard .field-slot[data-owner="player"][data-type="monster"][data-index="${idx}"] .card`);
-        if (cardEl && window.FX) FX.playTributeSacrifice(cardEl);
-    });
-
-    setTimeout(() => {
+    const togli = () => {
         // Chimera Gadjiltron Ingranaggio Antico (id 825): "guadagna gli
         // effetti appropriati se la Evochi Normalmente sacrificando
         // questi mostri: Gadget Verde/Rosso/Giallo" — gli id delle carte
-        // sacrificate qui vengono salvati su pending.card._tributedCardIds
-        // PRIMA di svuotare gli slot (stessa carta, stesso riferimento,
-        // che poi finisce su gameState.playerMonsterField[slotIndex].card
-        // dentro summonMonster più sotto): l'unico punto in cui questo
-        // motore sa DAVVERO quali carte sono state sacrificate per
+        // sacrificate vengono salvati sulla carta da Evocare PRIMA di
+        // svuotare gli slot (stessa carta, stesso riferimento, che poi
+        // finisce sul Terreno con l'Evocazione): l'unico punto in cui
+        // questo motore sa DAVVERO quali carte sono state sacrificate per
         // un'Evocazione Tributo, non solo quante.
-        pending.card._tributedCardIds = indices
-            .map((idx) => gameState.playerMonsterField[idx] && gameState.playerMonsterField[idx].card.id)
-            .filter((id) => id !== undefined && id !== null);
+        // Vale anche per il Castello dell'Ingranaggio Antico sacrificato al
+        // posto dei mostri (zona Magia/Trappola): l'id ricordato è il suo.
+        if (perCarta) {
+            perCarta._tributedCardIds = indices
+                .map((idx) => campo[idx] && campo[idx].card.id)
+                .filter((id) => id !== undefined && id !== null);
+        }
+        if (suMagieTrappole && perCarta) {
+            addToLog(perChi(posto,
+                `⚙️ Sacrifichi Castello dell'Ingranaggio Antico (invece dei mostri) per Evocare Tributo ${perCarta.name}!`,
+                '⚙️ L\'avversario sacrifica Castello dell\'Ingranaggio Antico (invece dei mostri) per un\'Evocazione Tributo!'));
+        }
         indices.forEach(idx => {
-            const slot = gameState.playerMonsterField[idx];
-            if (slot) {
-                gameState.playerGraveyard.push(slot.card);
-                gameState.playerMonsterField[idx] = null;
-                if (window.DuelEngine) {
-                    DuelEngine.notifyOwnMonsterSentToGraveyard('player', slot.card);
-                    DuelEngine.notifySacrificedForTribute('player', slot.card, pending.card);
-                }
-            }
+            const slot = campo[idx];
+            if (!slot) return;
+            Tavolo.cimitero(posto).push(slot.card);
+            campo[idx] = null;
+            if (!window.DuelEngine) return;
+            // Solo per la zona Mostro: "un mio mostro è finito al
+            // Cimitero" non riguarda una carta della zona Magia/Trappola.
+            if (!suMagieTrappole) DuelEngine.notifyOwnMonsterSentToGraveyard(posto, slot.card);
+            DuelEngine.notifySacrificedForTribute(posto, slot.card, perCarta);
         });
         updateUI();
-
-        const { card, handIndex, fromRect } = pending;
-        gameState.pendingTributeSummon = null;
-        EventiDuello.emetti('evocazione-tributo-pronta', card, handIndex, fromRect);
-    }, TRIBUTE_SACRIFICE_ANIM_MS);
+        if (MP_vecchio && attesa <= 0) {
+            // Trasmesso DOPO aver applicato: ogni azione porta il checksum
+            // dello stato di chi la manda, e chi la riceve confronta il
+            // proprio a mossa applicata (vedi js/multiplayer/multiplayer.js).
+            const msg = { kind: 'tribute', indices, delayMs: 0 };
+            if (suMagieTrappole) msg.zone = 'st';
+            if (perCarta) msg.summonedCard = perCarta;
+            window.MP_broadcast(msg);
+        }
+        if (typeof extra.dopo === 'function') extra.dopo();
+    };
+    // Un timer delle regole: a passo comune aspetta le scelte aperte
+    // (vedi il tempo delle regole in passo-comune.js).
+    if (attesa > 0) PassoComune.dopo(togli, attesa); else togli();
 }
 
+/**
+ * Lo scarto di fine turno scelto dalla persona (le carte selezionate con i
+ * click, gameState.pendingHandDiscard): diventa il comando
+ * 'scartaFineTurno' (eseguiScartoFineTurno qui sotto), con le carte per uid.
+ */
 function performHandDiscard() {
     const pending = gameState.pendingHandDiscard;
     if (!pending) return;
     EventiDuello.emetti('prompt-scarto-chiuso');
+    const carte = pending.selected.map((i) => gameState.playerHand[i]).filter(Boolean).map((c) => c.uid);
+    gameState.pendingHandDiscard = null;
+    Comandi.esegui('player', { tipo: 'scartaFineTurno', carte: carte }, { dopo: pending.onComplete });
+}
 
+/**
+ * Comando 'scartaFineTurno': il posto `posto` scarta le carte `c.carte`
+ * (uid) per tornare al limite di carte in mano a fine turno.
+ * `extra.dopo`: cosa fa chi ha scelto, a scarto concluso (far ripartire il
+ * cambio turno).
+ */
+function eseguiScartoFineTurno(posto, c, extra) {
+    const mano = Tavolo.mano(posto);
     // Dagli indici più alti ai più bassi: rimuovere prima un indice basso
-    // sposterebbe (di uno) gli indici più alti già raccolti in `selected`,
-    // facendo scartare la carta sbagliata.
-    const indices = [...pending.selected].sort((a, b) => b - a);
+    // sposterebbe (di uno) gli indici più alti, facendo scartare la carta
+    // sbagliata. Gli indici si ricavano dagli uid ADESSO, non prima.
+    // Una carta senza uid (costruita a mano in uno spec) si ritrova per
+    // posizione, da `c.indici` (vedi autoDiscardHandExcess in fasi.js).
+    const indices = (c.carte || [])
+        .map((uid, k) => (uid !== null && uid !== undefined
+            ? mano.findIndex((x) => x && x.uid === uid)
+            : (c.indici && typeof c.indici[k] === 'number' && mano[c.indici[k]] ? c.indici[k] : -1)))
+        .filter((i) => i !== -1).sort((a, b) => b - a);
     const discardedNames = [];
     // ctx.discardChosenFromHand (duel-engine.js) invece di uno splice/push
     // manuale: fa scattare def.onSentToGraveyardFromHand (es. Roc dalla
     // Valle della Foschia id 781, che nel testo reale reagisce a QUALUNQUE
     // scarto diretto dalla mano, incluso questo — non solo quello causato
     // dall'avversario) e notifyOwnMonsterSentToGraveyard, come ogni altro
-    // scarto del motore. discardedByOwner = 'player' (auto-inflitto dal
-    // giocatore stesso, non dall'avversario).
+    // scarto del motore. Auto-inflitto da chi scarta, non dall'avversario.
     indices.forEach((idx) => {
-        const card = DuelEngine.actions.discardChosenFromHand.call({ owner: 'player' }, 'player', idx);
+        const card = DuelEngine.actions.discardChosenFromHand.call({ owner: posto }, posto, idx);
         if (card) discardedNames.push(card.name);
     });
-    addToLog(`🗑️ Hai scartato: ${discardedNames.join(', ')}.`);
+    addToLog(`🗑️ ${perChi(posto, 'Hai scartato', 'L\'avversario ha scartato')}: ${discardedNames.join(', ')}.`);
     if (window.SFX) SFX.place();
-
-    gameState.pendingHandDiscard = null;
     updateUI();
 
     // In Multiplayer questo scarto non viaggiava: l'avversario continuava
@@ -128,16 +195,59 @@ function performHandDiscard() {
     // checksum. Si manda la fotografia a scelta fatta — anche il Cimitero
     // cambia, e queste carte sono comunque pubbliche una volta scartate.
     // Vedi broadcastLocalStatePush in js/engine/duel-engine.js.
-    if (window.DuelEngine && typeof DuelEngine.broadcastLocalStatePush === 'function') {
+    if (posto === 'player' && window.DuelEngine && typeof DuelEngine.broadcastLocalStatePush === 'function') {
         DuelEngine.broadcastLocalStatePush(null);
     }
 
-    if (typeof pending.onComplete === 'function') pending.onComplete();
+    if (extra && typeof extra.dopo === 'function') extra.dopo();
+    // A passo comune, lo scarto del posto remoto fa ripartire il turno che
+    // enterEndPhase (fasi.js) aveva lasciato in attesa.
+    consumaScartoFineTurnoAtteso(posto);
 }
 
+/**
+ * L'Evocazione Normale (o il Set) decisa dalla persona: diventa il comando
+ * 'evoca' (eseguiEvocazioneNormale qui sotto). La firma resta quella di
+ * sempre perché la chiamano l'interfaccia e diversi spec.
+ */
 function summonMonster(card, slotIndex, position, handIndex = gameState.selectedCard.index, fromRect = null) {
+    const comando = { tipo: 'evoca', carta: card && card.uid, mano: handIndex, casella: slotIndex, posizione: position };
+    // Il Drago Alato di Ra (id 472): la scelta "pago i LP?" (maybeAskRaLpChoice,
+    // actions.js) viaggia nel comando, non solo come segno sulla carta.
+    if (card && card._raPayLp !== undefined) comando.pagaLpRa = card._raPayLp;
+    return Comandi.esegui('player', comando, { partenza: fromRect });
+}
+
+/**
+ * Comando 'evoca': Evocazione Normale (o Set, in Difesa coperta) della
+ * carta `c.carta` dalla mano del posto `posto`, nella casella `c.casella`,
+ * in Posizione `c.posizione`. Eventuali Tributi sono già stati pagati
+ * (comando 'tributa'). `extra.partenza`: da dove parte il volo della carta
+ * (il rettangolo di un trascinamento), solo per l'animazione.
+ */
+function eseguiEvocazioneNormale(posto, c, extra) {
+    // `extra.alTermine`: a Evocazione conclusa — finestra di risposta
+    // dell'avversario compresa — o rifiutata. Chi la aspetta (l'IA, che
+    // non passa alla mossa dopo finché questa non è finita) resterebbe
+    // fermo se una strada se ne dimenticasse: si chiama su TUTTE.
+    const fine = () => { if (extra && typeof extra.alTermine === 'function') extra.alTermine(); };
+    const handIndex = Comandi.indiceInMano(posto, c);
+    if (handIndex === -1) { fine(); return; }
+    const card = Tavolo.mano(posto)[handIndex];
+    // Ra (id 472): CardEffects.register(472).onSummon legge la scelta dalla
+    // carta; sul client che riceve il comando, è il comando a portarla.
+    if (c.pagaLpRa !== undefined) card._raPayLp = c.pagaLpRa;
+    const slotIndex = c.casella;
+    const position = c.posizione;
+    const fromRect = extra && extra.partenza ? extra.partenza : null;
+    const dellaPersona = posto === 'player';
+    // Fuori dalle regole del turno, questa via non si percorre: la mano
+    // della persona l'ha già fermata prima (attemptMonsterSummon), e un
+    // comando remoto arriva solo da un client che l'ha già controllato.
+    const chiudi = () => { if (dellaPersona) clearSelection(); else updateUI(); };
     if (gameState.hasNormalSummoned) {
-        addToLog('❌ Hai già effettuato un\'Evocazione Normale in questo turno.');
+        addToLog(perChi(posto, '❌ Hai già effettuato un\'Evocazione Normale in questo turno.', '❌ L\'avversario ha già effettuato un\'Evocazione Normale in questo turno.'));
+        fine();
         return;
     }
     // Luce dell'Intervento (id 634, gameState.monsterSetBlocked): ogni Set
@@ -166,38 +276,46 @@ function summonMonster(card, slotIndex, position, handIndex = gameState.selected
     // cui attivi questa carta (ma puoi Set)" — un'Evocazione scoperta è
     // vietata, un Set coperto no (gameState.noSummonTurn, vedi
     // DuelEngine.isSummonBannedThisTurn).
-    if (!isFaceDown && window.DuelEngine && DuelEngine.isSummonBannedThisTurn('player')) {
+    if (!isFaceDown && window.DuelEngine && DuelEngine.isSummonBannedThisTurn(posto)) {
         addToLog(`🚫 Capro Espiatorio impedisce di Evocare altri mostri in questo turno: ${card.name} si può solo Settare.`);
-        clearSelection();
+        chiudi();
+        fine();
         return;
     }
     // "Puoi controllarne solo 1 scoperto" (id 899): con una copia già
     // scoperta questa si può solo Settare, come per Capro Espiatorio.
-    if (!isFaceDown && window.DuelEngine && DuelEngine.isFaceUpDuplicateBlocked('player', card)) {
-        addToLog(`🚫 ${card.name}: puoi controllarne solo 1 scoperto. Si può solo Settare.`);
-        clearSelection();
+    if (!isFaceDown && window.DuelEngine && DuelEngine.isFaceUpDuplicateBlocked(posto, card)) {
+        addToLog(`🚫 ${card.name}: ${perChi(posto, 'puoi', 'si può')} controllarne solo 1 scoperto. Si può solo Settare.`);
+        chiudi();
+        fine();
         return;
     }
-    const handEl = PortaUI.queryAll('#playerHand .card')[handIndex] || null;
-    const slotEl = PortaUI.query(`.field-slot[data-owner="player"][data-type="monster"][data-index="${slotIndex}"]`);
+    // La mano dell'avversario non è a schermo: il volo parte dalla sua
+    // pila del Deck... cioè da nessun elemento, e l'animazione si salta.
+    const handEl = dellaPersona ? (PortaUI.queryAll('#playerHand .card')[handIndex] || null) : null;
+    const slotEl = PortaUI.query(`.field-slot[data-owner="${posto}"][data-type="monster"][data-index="${slotIndex}"]`);
     EventiDuello.attendi('volo-carta', { carta: card, partenza: fromRect || handEl, casella: slotEl, daNascondere: handEl, coperta: isFaceDown, posizione: position }, () => {
         const usedTribute = getTributesRequired(card) > 0;
-        gameState.playerHand.splice(handIndex, 1);
-        gameState.playerMonsterField[slotIndex] = { card: card, position: position, isFaceDown: isFaceDown, hasAttacked: false, canChangePosition: false, summonedOnTurn: gameState.turn };
-        if (!isFaceDown && window.DuelDialogues) DuelDialogues.summon('player', card);
+        // La carta si ritrova per uid: durante il volo la mano può essere
+        // cambiata (una pescata, uno scarto) e l'indice di prima non vale più.
+        const manoOra = Tavolo.mano(posto);
+        const indiceOra = manoOra.indexOf(card);
+        if (indiceOra !== -1) manoOra.splice(indiceOra, 1);
+        Tavolo.mostri(posto)[slotIndex] = { card: card, position: position, isFaceDown: isFaceDown, hasAttacked: false, canChangePosition: false, summonedOnTurn: gameState.turn };
+        if (!isFaceDown && window.DuelDialogues) DuelDialogues.summon(posto, card);
         gameState.hasNormalSummoned = true;
-        if (window.MP_broadcast && !window.MP_applyingRemote) {
+        if (dellaPersona && window.MP_broadcast && !window.MP_applyingRemote) {
             window.MP_broadcast({ kind: 'summon', card, slotIndex, position });
         }
         addToLog(position === 'attack'
-            ? `${usedTribute ? '🔺 Evocazione Tributo: ' : ''}Hai Evocato ${card.name}!`
-            : `${usedTribute ? '🔺 Evocazione Tributo: ' : ''}Hai Posizionato un mostro.`);
-        clearSelection();
+            ? `${usedTribute ? '🔺 Evocazione Tributo: ' : ''}${perChi(posto, 'Hai Evocato', 'L\'avversario ha Evocato')} ${card.name}!`
+            : `${usedTribute ? '🔺 Evocazione Tributo: ' : ''}${perChi(posto, 'Hai Posizionato un mostro.', 'L\'avversario ha Posizionato un mostro.')}`);
+        chiudi();
         setTimeout(() => {
-            EventiDuello.emetti('impatto-campo', 'player', slotIndex, 'monster');
-            EventiDuello.emetti('cambio-posizione', 'player', slotIndex, position);
+            EventiDuello.emetti('impatto-campo', posto, slotIndex, 'monster');
+            EventiDuello.emetti('cambio-posizione', posto, slotIndex, position);
             if (window.FX) {
-                const cardEl = PortaUI.query(`#playerFieldBoard .field-slot[data-type="monster"][data-index="${slotIndex}"] .card`);
+                const cardEl = PortaUI.query(`#${posto}FieldBoard .field-slot[data-type="monster"][data-index="${slotIndex}"] .card`);
                 FX.playMonsterSummonEffect(card, cardEl);
             }
             // Effetto audio DEDICATO per questa carta (audio/evocazioni/<id>.mp3
@@ -215,13 +333,25 @@ function summonMonster(card, slotIndex, position, handIndex = gameState.selected
         // Trappola) — vedi js/engine/duel-engine.js. È "fire and forget": se la
         // risposta distrugge il mostro appena Evocato, updateUI() nella
         // callback lo riflette subito a schermo.
-        const summonCtx = DuelEngine.makeContext('player', { summonedCard: card, summonedSlotIndex: slotIndex, summonedPosition: position });
-        DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_NORMAL_SUMMON, summonCtx, () => updateUI());
+        const summonCtx = DuelEngine.makeContext(posto, { summonedCard: card, summonedSlotIndex: slotIndex, summonedPosition: position });
+        DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_NORMAL_SUMMON, summonCtx, () => { updateUI(); fine(); });
     });
 }
 
+/** Il cambio di Posizione deciso dalla persona: diventa il comando 'posizione'. */
 function changeMonsterPosition(slotIndex) {
-    const monsterSlot = gameState.playerMonsterField[slotIndex];
+    return Comandi.esegui('player', { tipo: 'posizione', casella: slotIndex });
+}
+
+/**
+ * Comando 'posizione': il mostro del posto `posto` nella casella
+ * `c.casella` passa da Attacco a Difesa o viceversa (da coperto in Difesa
+ * ad Attacco è un Flip Summon).
+ */
+function eseguiCambioPosizione(posto, c) {
+    const slotIndex = c.casella;
+    const dellaPersona = posto === 'player';
+    const monsterSlot = Tavolo.mostri(posto)[slotIndex];
     if (!monsterSlot || !monsterSlot.canChangePosition) return;
     // Divieto di cambio Posizione per QUESTO SOLO mostro — es. Incantesimo
     // Ombra (id 439): vedi gameState.cannotChangePositionUids, stesso
@@ -243,8 +373,8 @@ function changeMonsterPosition(slotIndex) {
     // Divieto per TUTTI i propri mostri fino a un certo turno (es.
     // Controllo Mesmerico, id 814) — gameState.cannotChangePositionFor[owner]
     // è il numero del turno oltre il quale il divieto scade, non un booleano.
-    if (gameState.cannotChangePositionFor && gameState.cannotChangePositionFor.player && gameState.turn <= gameState.cannotChangePositionFor.player) {
-        addToLog('🚫 Non puoi cambiare la Posizione dei tuoi mostri in questo turno (Controllo Mesmerico).');
+    if (gameState.cannotChangePositionFor && gameState.cannotChangePositionFor[posto] && gameState.turn <= gameState.cannotChangePositionFor[posto]) {
+        addToLog(perChi(posto, '🚫 Non puoi cambiare la Posizione dei tuoi mostri in questo turno (Controllo Mesmerico).', '🚫 L\'avversario non può cambiare la Posizione dei suoi mostri in questo turno (Controllo Mesmerico).'));
         return;
     }
     // Un mostro coperto (isFaceDown) che passa in Attacco è un Flip
@@ -255,22 +385,22 @@ function changeMonsterPosition(slotIndex) {
     // aggancio già usato per l'altro caso.
     const isManualFlipSummon = monsterSlot.isFaceDown;
     const newPosition = monsterSlot.position === 'attack' ? 'defense' : 'attack';
-    DuelEngine.actions.changePosition('player', slotIndex, newPosition);
+    DuelEngine.actions.changePosition(posto, slotIndex, newPosition);
     if (monsterSlot.position === 'attack') monsterSlot.isFaceDown = false;
     monsterSlot.canChangePosition = false;
     if (isManualFlipSummon && monsterSlot.position === 'attack') {
         monsterSlot.summonedViaFlip = true;
         if (window.DuelEngine) {
-            const flipCtx = DuelEngine.makeContext('player', { card: monsterSlot.card, slotIndex: slotIndex });
+            const flipCtx = DuelEngine.makeContext(posto, { card: monsterSlot.card, slotIndex: slotIndex });
             DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_FLIP, flipCtx);
         }
     }
-    if (window.MP_broadcast && !window.MP_applyingRemote) {
+    if (dellaPersona && window.MP_broadcast && !window.MP_applyingRemote) {
         window.MP_broadcast({ kind: 'position', slotIndex, position: monsterSlot.position });
     }
-    addToLog(`Hai cambiato ${monsterSlot.card.name} in Posizione di ${monsterSlot.position}.`);
+    addToLog(`${perChi(posto, 'Hai cambiato', 'L\'avversario ha cambiato')} ${monsterSlot.card.name} in Posizione di ${monsterSlot.position}.`);
     if (window.SFX) SFX.place();
-    clearSelection();
+    if (dellaPersona) clearSelection(); else updateUI();
     // Flip Summon: la carta si GIRA davvero in 3D invece di passare da
     // dorso a fronte fra un render e l'altro, che a schermo si legge come
     // una sostituzione istantanea — cioè il momento più teatrale del
@@ -287,72 +417,107 @@ function changeMonsterPosition(slotIndex) {
     // dal render successivo un istante dopo.
     if (isManualFlipSummon && monsterSlot.position === 'attack'
         && window.CardRenderer && typeof CardRenderer.playFlipReveal === 'function') {
-        const slotEl = PortaUI.query(`#playerFieldBoard .field-slot[data-owner="player"][data-type="monster"][data-index="${slotIndex}"]`);
+        const slotEl = PortaUI.query(`#${posto}FieldBoard .field-slot[data-owner="${posto}"][data-type="monster"][data-index="${slotIndex}"]`);
         if (slotEl) CardRenderer.playFlipReveal(slotEl, monsterSlot.card, monsterSlot.position);
     }
-    setTimeout(() => EventiDuello.emetti('cambio-posizione', 'player', slotIndex, monsterSlot.position), 60);
+    setTimeout(() => EventiDuello.emetti('cambio-posizione', posto, slotIndex, monsterSlot.position), 60);
 }
 
+/** Il Set di una Magia/Trappola deciso dalla persona: diventa il comando 'settaMT'. */
 function setSpellTrap(card, slotIndex, handIndex = gameState.selectedCard.index, fromRect = null) {
+    return Comandi.esegui('player', { tipo: 'settaMT', carta: card && card.uid, mano: handIndex, casella: slotIndex }, { partenza: fromRect });
+}
+
+/**
+ * Comando 'settaMT': la carta `c.carta` della mano del posto `posto` va
+ * coperta nella casella Magia/Trappola `c.casella`.
+ */
+function eseguiSetMagiaTrappola(posto, c, extra) {
+    // `extra.alTermine`: a carta posata (o rifiutata), vedi eseguiEvocazioneNormale.
+    const fine = () => { if (extra && typeof extra.alTermine === 'function') extra.alTermine(); };
+    const handIndex = Comandi.indiceInMano(posto, c);
+    if (handIndex === -1) { fine(); return; }
+    const card = Tavolo.mano(posto)[handIndex];
+    const slotIndex = c.casella;
+    const fromRect = extra && extra.partenza ? extra.partenza : null;
+    const dellaPersona = posto === 'player';
+    const chiudi = () => { if (dellaPersona) clearSelection(); else updateUI(); };
     // Onda Sismica (id 818): la Zona bersagliata non può essere usata —
     // vedi DuelEngine.isSTZoneLocked/findFreeSTSlot (duel-engine.js).
-    if (window.DuelEngine && DuelEngine.isSTZoneLocked('player', slotIndex)) {
+    if (window.DuelEngine && DuelEngine.isSTZoneLocked(posto, slotIndex)) {
         addToLog('❌ Quella Zona Magia/Trappola non può essere usata (Onda Sismica).');
-        clearSelection();
+        chiudi();
+        fine();
         return;
     }
-    const handEl = PortaUI.queryAll('#playerHand .card')[handIndex] || null;
-    const slotEl = PortaUI.query(`.field-slot[data-owner="player"][data-type="st"][data-index="${slotIndex}"]`);
+    const handEl = dellaPersona ? (PortaUI.queryAll('#playerHand .card')[handIndex] || null) : null;
+    const slotEl = PortaUI.query(`.field-slot[data-owner="${posto}"][data-type="st"][data-index="${slotIndex}"]`);
     EventiDuello.attendi('volo-carta', { carta: card, partenza: fromRect || handEl, casella: slotEl, daNascondere: handEl, coperta: true }, () => {
-        addToLog(`🪄 ${card.name} è stata piazzata sul Terreno.`);
+        // Il nome di una carta coperta non si annuncia a chi non l'ha messa.
+        addToLog(dellaPersona ? `🪄 ${card.name} è stata piazzata sul Terreno.` : '🧑 L\'avversario ha piazzato una carta coperta sul Terreno.');
         if (window.SFX) SFX.place();
-        gameState.playerHand.splice(handIndex, 1);
+        const manoOra = Tavolo.mano(posto);
+        const indiceOra = manoOra.indexOf(card);
+        if (indiceOra !== -1) manoOra.splice(indiceOra, 1);
         // setOnTurn ricorda in che turno è stata piazzata: serve al motore
         // effetti (js/engine/duel-engine.js) per applicare la regola classica "una
         // Trappola Set non si può attivare nello stesso turno in cui è stata
         // piazzata".
-        gameState.playerSTField[slotIndex] = { card: card, isFaceDown: true, setOnTurn: gameState.turn };
-        if (window.MP_broadcast && !window.MP_applyingRemote) {
+        Tavolo.magieTrappole(posto)[slotIndex] = { card: card, isFaceDown: true, setOnTurn: gameState.turn };
+        if (dellaPersona && window.MP_broadcast && !window.MP_applyingRemote) {
             window.MP_broadcast({ kind: 'spelltrap', card, slotIndex });
         }
-        clearSelection();
+        chiudi();
         // L'ATTERRAGGIO. Il volo dalla mano c'era gia' (flyCardToSlot qui
         // sopra), ma la carta arrivava e si fermava di colpo: nessun
         // tonfo, nessun peso. Stesso trattamento gia' riservato a un
         // mostro Evocato (triggerFieldImpact), piu' un velo di polvere.
         // Dopo clearSelection(), che ridisegna: triggerFieldImpact ha un
         // suo ritentativo per ritrovare la casella appena ricreata.
-        EventiDuello.emetti('impatto-campo', 'player', slotIndex, 'st');
+        EventiDuello.emetti('impatto-campo', posto, slotIndex, 'st');
         if (window.FX && typeof FX.playCardSet === 'function') {
-            const postoEl = PortaUI.query(`#playerFieldBoard .field-slot[data-owner="player"][data-type="st"][data-index="${slotIndex}"]`);
+            const postoEl = PortaUI.query(`#${posto}FieldBoard .field-slot[data-owner="${posto}"][data-type="st"][data-index="${slotIndex}"]`);
             FX.playCardSet(postoEl);
         }
+        fine();
     });
 }
 
-/**
- * Come setSpellTrap qui sopra, ma per una Magia Terreno: va SEMPRE nella
- * sua zona dedicata (gameState.playerFieldSpell, un solo oggetto, non un
- * array di 5 caselle) — mai in una delle 5 caselle Magia/Trappola comuni.
- * Se c'era già una Magia Terreno lì, va al Cimitero: attivarne una nuova
- * sostituisce sempre quella vecchia, come da regola vera.
- */
+/** Il Set di una Magia Terreno deciso dalla persona: diventa il comando 'terreno'. */
 function setFieldSpell(card, handIndex = gameState.selectedCard.index, fromRect = null) {
-    const handEl = PortaUI.queryAll('#playerHand .card')[handIndex] || null;
-    const slotEl = PortaUI.query('.field-slot[data-owner="player"][data-type="field-spell"]');
+    return Comandi.esegui('player', { tipo: 'terreno', carta: card && card.uid, mano: handIndex }, { partenza: fromRect });
+}
+
+/**
+ * Comando 'terreno': come 'settaMT', ma per una Magia Terreno: va SEMPRE
+ * nella sua zona dedicata (un solo oggetto, non un array di 5 caselle) —
+ * mai in una delle 5 caselle Magia/Trappola comuni. Se c'era già una Magia
+ * Terreno lì, va al Cimitero: attivarne una nuova sostituisce sempre
+ * quella vecchia, come da regola vera.
+ */
+function eseguiSetMagiaTerreno(posto, c, extra) {
+    const handIndex = Comandi.indiceInMano(posto, c);
+    if (handIndex === -1) return;
+    const card = Tavolo.mano(posto)[handIndex];
+    const fromRect = extra && extra.partenza ? extra.partenza : null;
+    const dellaPersona = posto === 'player';
+    const handEl = dellaPersona ? (PortaUI.queryAll('#playerHand .card')[handIndex] || null) : null;
+    const slotEl = PortaUI.query(`.field-slot[data-owner="${posto}"][data-type="field-spell"]`);
     EventiDuello.attendi('volo-carta', { carta: card, partenza: fromRect || handEl, casella: slotEl, daNascondere: handEl, coperta: true }, () => {
-        const existing = gameState.playerFieldSpell;
+        const existing = Tavolo.magiaTerreno(posto);
         if (existing) {
-            gameState.playerGraveyard.push(existing.card);
-            addToLog(`🌍 ${existing.card.name} lascia il Terreno, sostituita da ${card.name}.`);
+            Tavolo.cimitero(posto).push(existing.card);
+            addToLog(`🌍 ${existing.card.name} lascia il Terreno, sostituita da ${dellaPersona ? card.name : 'una Magia Terreno coperta'}.`);
         }
-        addToLog(`🌍 ${card.name} è stata piazzata sulla zona Terreno.`);
+        addToLog(dellaPersona ? `🌍 ${card.name} è stata piazzata sulla zona Terreno.` : '🧑 L\'avversario ha piazzato una Magia Terreno coperta.');
         if (window.SFX) SFX.place();
-        gameState.playerHand.splice(handIndex, 1);
-        gameState.playerFieldSpell = { card: card, isFaceDown: true, setOnTurn: gameState.turn };
-        if (window.MP_broadcast && !window.MP_applyingRemote) {
+        const manoOra = Tavolo.mano(posto);
+        const indiceOra = manoOra.indexOf(card);
+        if (indiceOra !== -1) manoOra.splice(indiceOra, 1);
+        gameState[posto + 'FieldSpell'] = { card: card, isFaceDown: true, setOnTurn: gameState.turn };
+        if (dellaPersona && window.MP_broadcast && !window.MP_applyingRemote) {
             window.MP_broadcast({ kind: 'fieldspell', card });
         }
-        clearSelection();
+        if (dellaPersona) clearSelection(); else updateUI();
     });
 }

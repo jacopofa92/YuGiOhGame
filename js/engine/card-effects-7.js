@@ -238,7 +238,7 @@
                 return;
             }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates,
                 titolo: '⚙️ Fabbrica dell\'Ingranaggio Antico',
                 testo: 'Scegli quale mostro "Ingranaggio Antico" rivelare dalla mano.'
@@ -310,7 +310,7 @@
             ctx.log("⚙️ Castello dell'Ingranaggio Antico attivato!");
         },
         static(ctx) {
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
                     if (!slot || slot.isFaceDown || !(slot.card.name && slot.card.name.includes('Ingranaggio Antico'))) return;
                     const e = gameState.atkDefBonus[slot.card.uid] || { atk: 0, def: 0 };
@@ -614,7 +614,7 @@
     // ================================================================
     CardEffects.register(850, {
         canActivate(ctx) {
-            return ['player', 'bot'].some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown));
+            return Tavolo.ordine().some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown));
         },
         activate(ctx) {
             const candidati = collectFieldTargets(ctx, { zone: 'monster' });
@@ -1292,7 +1292,7 @@
             ctx.log('🎲 Prigione dei Dadi aggiunge Dado Dimensionale dal Deck alla mano!');
         },
         onBattlePhaseStart(ctx) {
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 const roll = 1 + Math.floor(ctx.random() * 6);
                 if (window.FX) FX.playDiceRoll(roll);
                 ctx.log(`🎲 Prigione dei Dadi: ${owner === 'player' ? 'tu tiri' : 'il bot tira'} un ${roll}!`);
@@ -1383,7 +1383,7 @@
     }
     CardEffects.register(220, {
         canActivate(ctx) {
-            return ['player', 'bot'].some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown));
+            return Tavolo.ordine().some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown));
         },
         activate(ctx) {
             const fine = attendiScelta(ctx);
@@ -1420,7 +1420,7 @@
                         try {
                             const chosen = scelto || primo;
                             let count = 0;
-                            ['player', 'bot'].forEach((owner) => {
+                            Tavolo.ordine().forEach((owner) => {
                                 ctx.field(owner).forEach((slot, index) => {
                                     if (slot && !slot.isFaceDown && slot.card.attribute === chosen) { ctx.destroyMonster(owner, index); count++; }
                                 });
@@ -1547,7 +1547,7 @@
         },
         onEndPhase(ctx) {
             let count = 0;
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot, index) => {
                     if (!slot || slot.isFaceDown) return;
                     if ((slot.card.level || 0) > 3) return;
@@ -1954,7 +1954,7 @@
         },
         onCardEffectTargetDeclare(ctx) {
             const candidates = [];
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot, index) => {
                     if (!slot || slot.isFaceDown) return;
                     if (owner === ctx.targetOwner && index === ctx.targetIndex) return;
@@ -2141,7 +2141,7 @@
             } else if (Decisioni.rispondeUnaPersona(owner)) {
                 const previewName = handIdx !== -1 ? hand[handIdx].name : deck[deckIdx].name;
                 Decisioni.chiedi({
-                    chi: 'player',
+                    chi: owner,
                     tipo: 'coppia',
                     titolo: '💀 Destiny Board',
                     candidati: [
@@ -2281,7 +2281,7 @@
     // identico motivo.
     CardEffects.register(875, {
         canActivate(ctx) {
-            return ['player', 'bot'].some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown));
+            return Tavolo.ordine().some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown));
         },
         activate(ctx) {
             // Prima sceglieva da sola il mostro scoperto con l'ATK più
@@ -2417,7 +2417,7 @@
         continuous: true,
         activate(ctx) { ctx.log('🕊️ Messaggero della Pace impedisce l\'attacco ai mostri più forti!'); },
         static(ctx) {
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
                     if (slot && !slot.isFaceDown && slot.card.attack >= 1500) {
                         gameState.cannotAttackUids[slot.card.uid] = true;
@@ -2431,7 +2431,7 @@
             if (lp <= 100) { messaggeroLasciaAndare(ctx); return; }
             if (Decisioni.rispondeUnaPersona(ctx.owner)) {
                 Decisioni.chiedi({
-                    chi: 'player',
+                    chi: ctx.owner,
                     tipo: 'coppia',
                     titolo: '🕊️ Messaggero della Pace',
                     candidati: [
@@ -2458,7 +2458,7 @@
     // Trappola, bandisce anche ogni copia rimasta in ENTRAMBI i Deck.
     CardEffects.register(881, {
         canActivate(ctx) {
-            return ['player', 'bot'].some((owner) => ctx.stField(owner).some((s) => s && s.isFaceDown));
+            return Tavolo.ordine().some((owner) => ctx.stField(owner).some((s) => s && s.isFaceDown));
         },
         activate(ctx) {
             // Avversarie prima: il bot prende il primo candidato.
@@ -2770,7 +2770,7 @@
                     return;
                 }
                 Decisioni.chiedi({
-                    chi: 'player',
+                    chi: ctx.owner,
                     candidati: fusionCandidates,
                     titolo: '🌀 Metamorfosi',
                     testo: "Scegli quale Mostro Fusione Special Summonare dall'Extra Deck."
@@ -2787,7 +2787,7 @@
                 return;
             }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: tributeCandidates,
                 titolo: '🌀 Metamorfosi',
                 testo: 'Scegli quale mostro tributare.'
@@ -2820,7 +2820,7 @@
             return;
         }
         Decisioni.chiedi({
-            chi: 'player',
+            chi: owner,
             candidati: options.map((o) => o.card),
             titolo: '🔗 Cancello di Fusione: scegli il Mostro Fusione',
             testo: 'Hai i materiali per più di un Mostro Fusione: scegline uno da Evocare (i materiali vengono banditi).'
@@ -2980,7 +2980,7 @@
             ctx.log('🏺 Necrovalley si scopre sul Terreno: le carte nel Cimitero non possono più essere bandite!');
         },
         static(ctx) {
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
                     if (!slot || slot.isFaceDown) return;
                     if (!slot.card.name || !slot.card.name.includes('Guardiani della Tomba')) return;

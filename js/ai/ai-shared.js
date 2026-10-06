@@ -122,7 +122,7 @@
         if (!card) return { position: 'attack', faceDown: false };
         const atk = card.attack || 0;
         const def = card.defense || 0;
-        const opponentField = owner === 'player' ? gameState.botMonsterField : gameState.playerMonsterField;
+        const opponentField = Tavolo.mostri(Tavolo.avversario(owner), gameState);
         const hasFavorableTarget = (opponentField || []).some((slot) => {
             if (!slot || slot.isFaceDown) return false;
             return statRilevante(slot) < atk;
@@ -143,7 +143,7 @@
         // svantaggio netto rischia di più pur di rientrare in partita"
         // già documentato per gli attacchi.
         if (riskAversion >= 1500) {
-            const opponentHand = owner === 'player' ? gameState.botHand : gameState.playerHand;
+            const opponentHand = Tavolo.mano(Tavolo.avversario(owner), gameState);
             if ((opponentHand || []).length >= 4) {
                 return { position: 'defense', faceDown: true };
             }
@@ -186,7 +186,7 @@
      */
     function isRemovalWorthwhile(card, gameState, owner, threshold) {
         if (!isSingleTargetRemoval(card)) return true;
-        const opponentField = owner === 'bot' ? gameState.playerMonsterField : gameState.botMonsterField;
+        const opponentField = Tavolo.mostri(Tavolo.avversario(owner), gameState);
         let bestStat = 0;
         let hasFaceDown = false;
         (opponentField || []).forEach((slot) => {
@@ -241,8 +241,8 @@
      */
     function isMassDestructionWorthwhile(card, gameState, owner) {
         if (!hasOwnSideCost(card)) return true;
-        const ownField = owner === 'bot' ? gameState.botMonsterField : gameState.playerMonsterField;
-        const opponentField = owner === 'bot' ? gameState.playerMonsterField : gameState.botMonsterField;
+        const ownField = Tavolo.mostri(owner, gameState);
+        const opponentField = Tavolo.mostri(Tavolo.avversario(owner), gameState);
         const valoreCampo = (campo) => (campo || []).reduce((somma, slot) => {
             if (!slot) return somma;
             if (slot.isFaceDown) return somma + 1200;
@@ -277,8 +277,8 @@
         // La carta richiesta può essere un mostro O una Magia/Trappola
         // (es. una Carta Equipaggiamento) — vedi lo stesso controllo su
         // entrambe le zone in attemptMonsterSummon, actions.js.
-        const field = owner === 'player' ? gameState.playerMonsterField : gameState.botMonsterField;
-        const stField = owner === 'player' ? gameState.playerSTField : gameState.botSTField;
+        const field = Tavolo.mostri(owner, gameState);
+        const stField = Tavolo.magieTrappole(owner, gameState);
         return field.some((s) => s && !s.isFaceDown && s.card.id === def.requiresFieldPresenceId)
             || stField.some((s) => s && !s.isFaceDown && s.card.id === def.requiresFieldPresenceId);
     }
@@ -368,7 +368,7 @@
         // vuoto o senza una simile minaccia -> nessun bisogno di questa
         // DEF, il tributo va rifiutato a favore di un candidato più
         // offensivo.
-        const opponentField = owner === 'bot' ? gameState.playerMonsterField : gameState.botMonsterField;
+        const opponentField = Tavolo.mostri(Tavolo.avversario(owner), gameState);
         const strongestOpposingAtk = (opponentField || []).reduce((max, slot) => {
             if (!slot || slot.isFaceDown || slot.position !== 'attack') return max;
             return Math.max(max, effAtk(slot.card));

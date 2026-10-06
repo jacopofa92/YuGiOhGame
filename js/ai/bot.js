@@ -1,13 +1,32 @@
-function botTurn() {
+/**
+ * Il turno completo dell'IA che gioca dal posto `io` ('player' o 'bot', vedi
+ * js/engine/tavolo.js): pescata, Standby, Evocazione, Magie/Trappole,
+ * battaglia, End Phase — con le stesse funzioni di fase che usa la persona.
+ * Parte quando tocca a un posto controllato dall'IA (changeTurn, fasi.js).
+ * Fino alla Priorità 3 del piano l'IA sapeva giocare solo dal posto 'bot':
+ * ogni funzione di questo file riceve ora il posto da cui gioca, e chi non
+ * lo passa ottiene 'bot', come prima.
+ */
+function turnoIA(io = 'bot') {
     clearPhaseTransitionTimeout();
     enterDrawPhase(false, () => {
+        // Una vittoria alla pescata (Exodia: la cinematica parte subito,
+        // gameOver arriva quando finisce) chiude il turno qui. Senza, l'IA
+        // entrava lo stesso in Standby Phase, mentre il turno guidato dalle
+        // fasi automatiche (persona, o posto remoto a passo comune) si
+        // fermava: preso dal duello gemello.
+        if (gameState.gameOver || gameState.instantWinCinematicPlaying) return;
         enterStandbyPhase(false);
+        // Lo stesso dopo la Standby: un costo pagato lì (Scatola delle Fate,
+        // 500 LP) può chiudere il duello, e endDuel ha già cancellato i timer
+        // di fase — quello della Main Phase 1 qui sotto partirebbe dopo.
+        if (gameState.gameOver) return;
         // Finestra di priorità per il giocatore durante la Standby Phase del
         // bot (DuelEngine.openPriorityWindow): se ha un Effetto Veloce
         // utilizzabile glielo offre, altrimenti prosegue subito. Il resto
         // del turno parte solo a finestra chiusa.
         const dopoLaStandby = (fn) => (window.DuelEngine && typeof DuelEngine.openPriorityWindow === 'function')
-            ? DuelEngine.openPriorityWindow('player', 'standby', fn)
+            ? DuelEngine.openPriorityWindow(Tavolo.avversario(io), 'standby', fn)
             : fn();
         dopoLaStandby(() => { phaseTransitionTimeout = setTimeout(() => {
             enterMainPhase1();
@@ -23,7 +42,7 @@ function botTurn() {
             // l'Evocazione (attemptBotSpellTrap poco più sotto): solo un
             // effetto che colpisce anche il proprio Terreno ha un motivo
             // strutturale per passare prima.
-            const summonPromise = attemptBotMassDestructionBeforeSummon().then(() => {
+            const summonPromise = attemptBotMassDestructionBeforeSummon(io).then(() => {
                 // Come per botPerformAttacks() più sotto: aspetta la
                 // RISOLUZIONE PIENA dell'Evocazione (compresa un'eventuale
                 // finestra "vuoi attivare Buco Trappola?" del giocatore, che può
@@ -31,7 +50,7 @@ function botTurn() {
                 // Phase — altrimenti il bot entrerebbe in battaglia dopo un
                 // timer fisso anche se quel modale è ancora aperto in attesa di
                 // una decisione, lasciando l'avversario "scavalcato".
-                return (!gameState.hasNormalSummoned && gameState.botHand.length > 0) ? attemptBotSummon() : Promise.resolve();
+                return (!gameState.hasNormalSummoned && Tavolo.mano(io).length > 0) ? attemptBotSummon(io) : Promise.resolve();
             });
             summonPromise
                 // Se l'Evocazione ha fatto partire un filmato o la
@@ -47,16 +66,16 @@ function botTurn() {
                 // lasciandole morte in mano per l'intera partita. Vedi
                 // attemptBotSpellTrap più sotto e js/ai/ai-medium.js /
                 // js/ai/ai-hard.js per quanto ogni livello ne approfitta.
-                .then(() => attemptBotSpellTrap())
+                .then(() => attemptBotSpellTrap(io))
                 // Poi valuta se attivare PROATTIVAMENTE una propria carta
                 // già Set in un turno precedente (solo IA_DIFFICILE lo fa,
                 // vedi ai-hard.js) — anche questa una novità: prima il
                 // retrocampo del bot restava sempre e solo reattivo.
-                .then(() => attemptBotActivateSetCards())
+                .then(() => attemptBotActivateSetCards(io))
                 // Una Magia Terreno del GIOCATORE che "il giocatore di turno"
                 // può usare (Cancello di Fusione id 887): nel suo turno il
                 // bot la sfrutta come farebbe con la propria.
-                .then(() => attemptBotUseTurnPlayerFieldSpell())
+                .then(() => attemptBotUseTurnPlayerFieldSpell(io))
                 // NON un semplice setTimeout: `attendiPoi` ricontrolla le
                 // cinematiche allo SCADERE dell'attesa, non solo prima di
                 // farla partire. Una cinematica puo' cominciare DOPO il
@@ -72,27 +91,25 @@ function botTurn() {
                     // qui sotto: un'attesa scaduta in ritardo non deve mai far
                     // avanzare la Battle Phase/attaccare fuori dal vero
                     // turno del bot.
-                    if (gameState.currentPlayer !== 'bot' || gameState.gameOver) return;
+                    if (gameState.currentPlayer !== io || gameState.gameOver) return;
                     if (gameState.turn === 1) {
                         addToLog('❌ Il bot non può entrare in Battle Phase nel primo turno.');
-                        enterEndPhase();
-                        return;
+                        return faseIA(io, 'end');
                     }
                     addToLog('🤖 Il bot entra in Battle Phase.');
-                    enterBattlePhase();
                     // Attende che il banner "Battaglia" (stesso stile e stessa
                     // durata delle altre fasi, ~1.3s) finisca prima di far
                     // partire gli attacchi del bot — e, di nuovo, che non ci
                     // sia una cinematica ancora a schermo. Prima ancora,
                     // l'eventuale Effetto Veloce del giocatore all'inizio
                     // della Battle Phase deve essersi risolto.
-                    return waitForPriorityWindow().then(() => attendiPoi(1400))
+                    return faseIA(io, 'battle').then(waitForPriorityWindow).then(() => attendiPoi(1400))
                         .then(() => {
-                            if (gameState.currentPlayer !== 'bot' || gameState.gameOver) return;
+                            if (gameState.currentPlayer !== io || gameState.gameOver) return;
                             // Anche qui: un'Evocazione Speciale durante la
                             // Battle Phase puo' far partire una cinematica,
                             // e la End Phase non deve arrivarle sopra.
-                            return botPerformAttacks()
+                            return botPerformAttacks(0, null, io)
                                 .then(waitForSummonCinematics)
                                 .then(() => attendiPoi(1000))
                                 // Seconda Battle Phase (Bollettino Meteo id
@@ -100,26 +117,58 @@ function botTurn() {
                                 // Battaglia una volta, come farebbe il
                                 // giocatore dallo stepper delle fasi.
                                 .then(() => {
-                                    if (gameState.currentPlayer !== 'bot' || gameState.gameOver) return;
+                                    if (gameState.currentPlayer !== io || gameState.gameOver) return;
                                     const eb = gameState.extraBattlePhase;
-                                    if (!eb || eb.owner !== 'bot' || eb.turn !== gameState.turn || eb.used) return;
-                                    enterMainPhase2();
-                                    return attendiPoi(1200).then(() => {
-                                        if (gameState.currentPlayer !== 'bot' || gameState.gameOver) return;
-                                        if (!startSecondBattlePhase('bot')) return;
+                                    if (!eb || eb.owner !== io || eb.turn !== gameState.turn || eb.used) return;
+                                    return faseIA(io, 'main2').then(() => attendiPoi(1200)).then(() => {
+                                        if (gameState.currentPlayer !== io || gameState.gameOver) return;
+                                        if (!Comandi.esegui(io, { tipo: 'fase', verso: 'battle2' })) return;
                                         return attendiPoi(1400)
-                                            .then(() => botPerformAttacks())
+                                            .then(() => botPerformAttacks(0, null, io))
                                             .then(waitForSummonCinematics)
                                             .then(() => attendiPoi(1000));
                                     });
                                 })
                                 .then(() => {
-                                    if (gameState.currentPlayer !== 'bot' || gameState.gameOver) return;
-                                    enterEndPhase();
+                                    if (gameState.currentPlayer !== io || gameState.gameOver) return;
+                                    return faseIA(io, 'end');
                                 });
                         });
                 });
         }, botMs(500)); });
+    });
+}
+
+/** Il turno dell'IA dal posto 'bot': il nome storico, usato da game-flow.js e dal resto della pagina. */
+function botTurn() {
+    turnoIA('bot');
+}
+
+/**
+ * L'IA passa alla fase `verso` ('battle', 'main2', 'end') con il comando
+ * 'fase', come farebbe la persona dallo stepper. Il comando rifiuta se c'è
+ * ancora una Catena o una finestra di priorità aperta: allora si riprova
+ * poco dopo, invece di saltare la fase (l'IA resterebbe ferma lì). Dopo un
+ * tetto di tentativi si va avanti lo stesso, come faceva l'IA prima dei
+ * comandi, per non bloccare mai il duello.
+ */
+function faseIA(io, verso) {
+    return new Promise((resolve) => {
+        let tentativi = 0;
+        const prova = () => {
+            if (gameState.gameOver || gameState.currentPlayer !== io) { resolve(); return; }
+            if (Comandi.esegui(io, { tipo: 'fase', verso: verso })) { resolve(); return; }
+            if (++tentativi > 100) {
+                console.warn(`IA: la fase "${verso}" resta rifiutata, si forza`);
+                if (verso === 'battle') enterBattlePhase();
+                else if (verso === 'main2') enterMainPhase2();
+                else enterEndPhase();
+                resolve();
+                return;
+            }
+            setTimeout(prova, 150);
+        };
+        prova();
     });
 }
 
@@ -140,6 +189,25 @@ function waitForPriorityWindow() {
         };
         poll();
     });
+}
+
+/**
+ * Multiplayer a passo comune (js/engine/passo-comune.js): una mossa locale
+ * parte solo a duello fermo — niente Catena, nessuna scelta aperta su uno
+ * dei due client, nessun comando a metà — e fuori da lì viene rifiutata.
+ * L'IA quindi aspetta prima di ogni mossa. Fuori dal passo comune (o con il
+ * duello già fermo) `fn` parte SUBITO, nello stesso giro: il ritmo
+ * dell'IA offline non cambia di un millisecondo.
+ */
+function aspettaDuelloFermo(fn) {
+    if (typeof PassoComune === 'undefined' || !PassoComune.attivo() || PassoComune.fermo()) { fn(); return; }
+    setTimeout(() => aspettaDuelloFermo(fn), 50);
+}
+
+/** Come aspettaDuelloFermo, per una mossa che torna una Promise: subito se si può, nello stesso giro. */
+function quandoFermo(fn) {
+    if (typeof PassoComune === 'undefined' || !PassoComune.attivo() || PassoComune.fermo()) return Promise.resolve(fn());
+    return new Promise((fatto) => aspettaDuelloFermo(fatto)).then(fn);
 }
 
 /**
@@ -166,23 +234,23 @@ function botMs(ms) {
  * una nuova risorsa che il bot guadagna — resta indipendente dal budget
  * di attemptBotSpellTrap più sotto.
  */
-function attemptBotMassDestructionBeforeSummon() {
-    return new Promise((resolve) => {
+function attemptBotMassDestructionBeforeSummon(io) {
+    return new Promise((resolve) => aspettaDuelloFermo(() => {
         // Stessa guardia di attemptBotSummon/attemptBotSpellTrap: mai
         // agire fuori dal vero turno del bot.
-        if (gameState.currentPlayer !== 'bot' || gameState.gameOver || !window.AI_SHARED) { resolve(); return; }
-        const hand = gameState.botHand;
+        if (gameState.currentPlayer !== io || gameState.gameOver || !window.AI_SHARED) { resolve(); return; }
+        const hand = Tavolo.mano(io);
         const candidato = hand
             .map((card, handIndex) => ({ card: card, handIndex: handIndex }))
             .find((e) => e.card.type === 'spell'
-                && window.DuelEngine && DuelEngine.canActivate('bot', 'hand', e.handIndex)
+                && window.DuelEngine && DuelEngine.canActivate(io, 'hand', e.handIndex)
                 && AI_SHARED.hasOwnSideCost(e.card)
-                && AI_SHARED.isMassDestructionWorthwhile(e.card, gameState, 'bot'));
+                && AI_SHARED.isMassDestructionWorthwhile(e.card, gameState, io));
         if (!candidato) { resolve(); return; }
-        const started = DuelEngine.activateCard('bot', 'hand', candidato.handIndex);
+        const started = Comandi.esegui(io, { tipo: 'attiva', zona: 'hand', indice: candidato.handIndex, carta: candidato.card.uid });
         if (!started) { resolve(); return; } // difensivo: canActivate era già stato controllato sopra
         waitForBotChainToClear(() => { updateUI(); resolve(); });
-    });
+    }));
 }
 
 /**
@@ -201,21 +269,21 @@ function attemptBotMassDestructionBeforeSummon() {
  * Promise che aspetta un attimo, per lasciar partire l'effetto visivo
  * della Fusione prima della mossa successiva.
  */
-function attemptBotUseTurnPlayerFieldSpell() {
-    if (gameState.currentPlayer !== 'bot' || gameState.gameOver || !window.DuelEngine) return Promise.resolve();
-    const fs = gameState.playerFieldSpell;
-    if (!fs || fs.isFaceDown) return Promise.resolve();
-    const def = DuelEngine.getDefinition(fs.card.id);
-    if (!def || typeof def.activateAsTurnPlayer !== 'function') return Promise.resolve();
-    const ctx = DuelEngine.makeContext('bot', { card: fs.card, zone: 'fieldSpell', borrowedFrom: 'player' });
-    if (typeof def.canActivateAsTurnPlayer === 'function' && !def.canActivateAsTurnPlayer(ctx)) return Promise.resolve();
-    addToLog(`🤖 Il bot usa ${fs.card.name} del tuo Terreno.`);
-    def.activateAsTurnPlayer(ctx);
-    updateUI();
+function attemptBotUseTurnPlayerFieldSpell(io) {
+    return quandoFermo(() => {
+    if (gameState.currentPlayer !== io || gameState.gameOver || !window.DuelEngine) return Promise.resolve();
+    // I controlli (Terreno scoperto, carta che lo concede, condizione)
+    // li fa l'esecutore del comando: se torna false non è successo nulla.
+    if (!Comandi.esegui(io, { tipo: 'usaTerrenoAltrui' })) return Promise.resolve();
     return new Promise((resolve) => setTimeout(resolve, 1200)).then(waitForSummonCinematics);
+    });
 }
 
-function attemptBotSummon() {
+function attemptBotSummon(io) {
+    return quandoFermo(() => evocaSeConviene(io));
+}
+
+function evocaSeConviene(io) {
     // Guardia difensiva: se un setTimeout/Promise di un botTurn() precedente
     // arriva TARDI (es. il duello è stato resettato/ricaricato dal
     // sandbox Duello Demo mentre la catena era ancora in volo, o
@@ -223,149 +291,69 @@ function attemptBotSummon() {
     // altro motivo), questa funzione non deve mai agire fuori dal vero
     // turno del bot — bug reale scoperto: senza questo controllo, il bot
     // poteva Evocare/attivare carte durante il turno del giocatore.
-    if (gameState.currentPlayer !== 'bot' || gameState.gameOver) return Promise.resolve();
-    const decision = window.BotAI ? BotAI.chooseSummon(gameState) : null;
+    if (gameState.currentPlayer !== io || gameState.gameOver) return Promise.resolve();
+    const decision = window.BotAI ? BotAI.chooseSummon(gameState, io) : null;
     if (!decision) return Promise.resolve();
-    return botSummonMonster(decision.card, decision.tributeIndices, decision.emptySlotHint, decision.position, decision.faceDown);
+    return botSummonMonster(decision.card, decision.tributeIndices, decision.emptySlotHint, decision.position, decision.faceDown, io);
 }
 
 /**
- * Evoca (o Setta coperto/scopre in Difesa, a seconda di `position`/
- * `faceDown` — vedi js/ai/ai-shared.js#decideMonsterPosture, usata da
- * entrambi i livelli per decidere quando conviene) un mostro per il bot.
- * `faceDown` è indipendente da `position`: un mostro in Difesa può
- * essere Set coperto (faceDown true, il caso classico) OPPURE Evocato
- * scoperto in Difesa (faceDown false — es. per un mostro di Tributo di
- * 5+ Stelle, dove coprirlo non aggiunge molto essendo già "costoso" e
- * visibile). Se omesso, `faceDown` ricade sul vecchio comportamento
- * (coperto solo se in Difesa), per compatibilità con qualunque chiamante
- * che non lo specifichi ancora esplicitamente. Se tributeIndices non è
- * vuoto, sacrifica prima quei mostri (con animazione) e poi occupa lo
- * slot liberato. Ritorna una Promise che si risolve solo dopo che
- * l'eventuale finestra di risposta del giocatore (es. Buco Trappola) si è
- * chiusa per davvero.
+ * Evoca (o Setta in Difesa coperta) il mostro scelto dall'IA, con gli
+ * stessi comandi della persona: 'tributa' per gli eventuali Sacrifici, poi
+ * 'evoca' (vedi js/engine/comandi.js). Un'unica versione della mossa per
+ * tutti — prima l'IA ne aveva una sua, che fra l'altro poteva Evocare un
+ * mostro SCOPERTO in Difesa, cosa che un'Evocazione Normale non permette
+ * (in Difesa si Setta coperto; scoperto in Difesa resta solo dove una
+ * carta lo impone, Luce dell'Intervento id 634 o un mostro che non si può
+ * Settare: lo decide l'esecutore).
+ *
+ * `position`/`faceDown` arrivano da AI_SHARED.decideMonsterPosture
+ * (js/ai/ai-shared.js): qualunque Difesa diventa un Set. Se tributeIndices
+ * non è vuoto, sacrifica prima quei mostri (con animazione) e poi occupa
+ * la prima casella liberata. Ritorna una Promise che si risolve solo dopo
+ * che l'eventuale finestra di risposta dell'avversario (es. Buco Trappola)
+ * si è chiusa per davvero.
  */
-function botSummonMonster(card, tributeIndices, emptySlotHint, position, faceDown) {
+function botSummonMonster(card, tributeIndices, emptySlotHint, position, faceDown, io = 'bot') {
     position = position === 'defense' ? 'defense' : 'attack';
-    let isFaceDown = faceDown !== undefined ? !!faceDown : position === 'defense';
-    // "Non può essere Posizionato Normalmente" (es. i 3 Dei Egizi id
-    // 30/31/472) — stesso trattamento del lato giocatore in
-    // summonMonster() (actions.js): la Posizione scelta resta valida,
-    // solo non può restare coperta.
-    if (isFaceDown) {
-        const cardDef = window.DuelEngine && DuelEngine.getDefinition(card.id);
-        if (cardDef && cardDef.cannotBeSet) isFaceDown = false;
-    }
-    // Capro Espiatorio (id 434) del bot: in quel turno può solo Settare.
-    // Un'Evocazione scoperta decisa dall'IA diventa un Set in Difesa.
-    if (!isFaceDown && window.DuelEngine && DuelEngine.isSummonBannedThisTurn('bot')) {
-        isFaceDown = true;
+    // Capro Espiatorio (id 434): in quel turno si può solo Settare; "puoi
+    // controllarne solo 1 scoperto" (id 899) con una copia già scoperta:
+    // idem. L'IA ripiega sul Set invece di far rifiutare la mossa.
+    if (position === 'attack' && window.DuelEngine
+        && (DuelEngine.isSummonBannedThisTurn(io) || DuelEngine.isFaceUpDuplicateBlocked(io, card))) {
         position = 'defense';
     }
-    // "Puoi controllarne solo 1 scoperto" (id 899): con una copia già
-    // scoperta il bot la Setta invece di Evocarla (stesso trattamento
-    // del lato giocatore in summonMonster()).
-    if (!isFaceDown && window.DuelEngine && DuelEngine.isFaceUpDuplicateBlocked('bot', card)) {
-        isFaceDown = true;
-        position = 'defense';
-    }
-    gameState.botHand = gameState.botHand.filter(c => c.uid !== card.uid);
-    gameState.hasNormalSummoned = true;
-
+    // Il Drago Alato di Ra (id 472): "puoi pagare Life Points fino a
+    // restarne con 100" è un "puoi" — lato persona lo decide un popover
+    // (maybeAskRaLpChoice, actions.js), qui un'euristica prudente: paga
+    // solo se il campo avversario è vuoto (nessun mostro pronto ad
+    // attaccare al turno successivo). Viaggia nel comando ('pagaLpRa'),
+    // che lo rimette su card._raPayLp per CardEffects.register(472).onSummon.
+    const pagaLpRa = card.id === 472 ? !Tavolo.mostri(Tavolo.avversario(io)).some((s) => s) : undefined;
     return new Promise((resolve) => {
-        const finishSummon = (slotIndex) => {
-            if (slotIndex === -1) { resolve(); return; }
-            // Il Drago Alato di Ra (id 472): "puoi pagare Life Points fino a
-            // restarne con 100" è un "puoi", non un pagamento automatico —
-            // lato giocatore lo decide un popover (maybeAskRaLpChoice,
-            // actions.js), qui l'IA usa un'euristica prudente invece di
-            // scendere sempre a 100 LP (rischioso quanto basta da non poter
-            // essere "sempre sì"): paga solo se il campo del giocatore è
-            // vuoto (nessun mostro pronto ad attaccare al turno successivo)
-            // — card._raPayLp, letto da CardEffects.register(472).onSummon
-            // (card-effects.js) al posto del vecchio pagamento automatico.
-            if (card.id === 472) {
-                card._raPayLp = !gameState.playerMonsterField.some((s) => s);
-            }
-            gameState.botMonsterField[slotIndex] = { card, position, isFaceDown, hasAttacked: false, canChangePosition: false, summonedOnTurn: gameState.turn };
-            if (!isFaceDown && window.DuelDialogues) DuelDialogues.summon('bot', card);
-            // Un Set coperto non rivela MAI il nome della carta nel log —
-            // il giocatore non deve poter dedurre cosa il bot ha appena
-            // piazzato, esattamente come vale per un Set del giocatore
-            // stesso (vedi summonMonster() in actions.js).
-            addToLog(isFaceDown ? '🤖 Il bot ha Set un mostro coperto in Posizione di Difesa.' : `🤖 Il bot ha evocato ${card.name}.`);
-            updateUI();
-            setTimeout(() => {
-                EventiDuello.emetti('cambio-posizione', 'bot', slotIndex, position);
-                if (window.FX) {
-                    const cardEl = PortaUI.query(`#botFieldBoard .field-slot[data-type="monster"][data-index="${slotIndex}"] .card`);
-                    // Stesso trattamento del lato giocatore in summonMonster()
-                    // (actions.js): FX.playMonsterSummonEffect controlla anche
-                    // un eventuale filmato dedicato (video/evocazioni/<id>.mp4)
-                    // o la sequenza "a convergenza elementale" per i mostri di
-                    // Livello 7+ — bug reale segnalato dall'utente: prima il
-                    // bot otteneva SEMPRE il cerchio magico generico
-                    // (playSummonCircle diretto), anche per una carta con un
-                    // filmato dedicato che il giocatore vedeva regolarmente.
-                    FX.playMonsterSummonEffect(card, cardEl);
-                }
-                if (isFaceDown) {
-                    if (window.SFX) SFX.place();
-                } else if ((card.level || 0) < 7 && !(window.AudioLibrary && AudioLibrary.tryPlayCardSound(card, 'evocazioni'))) {
-                    // Effetto audio DEDICATO per questa carta (audio/evocazioni/<id>.mp3
-                    // — vedi js/audio/audio-library.js), se esiste; altrimenti il
-                    // suono di Evocazione standard di sempre.
-                    if (window.SFX) SFX.summon(position);
-                }
-            }, 40);
-
-            // Finestra per un'eventuale risposta del giocatore (es. Buco
-            // Trappola messo dal giocatore contro il bot) — vedi
-            // js/engine/duel-engine.js. Scatta anche per un Set coperto (stesso
-            // comportamento di summonMonster() in actions.js per il
-            // giocatore): è ogni singola carta di risposta a decidere da
-            // sola, tramite ctx.summonedPosition, se un Set le basta o le
-            // serve un'Evocazione scoperta (es. Buco Trappola la esclude).
-            const summonCtx = DuelEngine.makeContext('bot', { summonedCard: card, summonedSlotIndex: slotIndex, summonedPosition: position });
-            DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_NORMAL_SUMMON, summonCtx, () => { updateUI(); resolve(); });
+        const evoca = (casella) => {
+            if (casella === -1 || casella === undefined) { resolve(); return; }
+            // La posizione in mano si legge ADESSO, a Sacrifici fatti: è il
+            // ripiego per una carta senza uid (vedi Comandi.indiceInMano).
+            const comando = { tipo: 'evoca', carta: card.uid, mano: Tavolo.mano(io).indexOf(card), casella: casella, posizione: position };
+            if (pagaLpRa !== undefined) comando.pagaLpRa = pagaLpRa;
+            Comandi.esegui(io, comando, { alTermine: resolve });
         };
-
-        if (tributeIndices.length > 0) {
-            const tributeMsg = isFaceDown
-                ? `🤖 Il bot sacrifica ${tributeIndices.length} mostr${tributeIndices.length > 1 ? 'i' : 'o'} per Settare un mostro coperto.`
-                : `🤖 Il bot sacrifica ${tributeIndices.length} mostr${tributeIndices.length > 1 ? 'i' : 'o'} per evocare ${card.name}.`;
-            addToLog(tributeMsg);
-            if (window.SFX) SFX.tribute();
-            tributeIndices.forEach(idx => {
-                const cardEl = PortaUI.query(`#botFieldBoard .field-slot[data-owner="bot"][data-type="monster"][data-index="${idx}"] .card`);
-                if (cardEl && window.FX) FX.playTributeSacrifice(cardEl);
-            });
-            setTimeout(() => {
-                let freedSlot = -1;
-                tributeIndices.forEach(idx => {
-                    const slot = gameState.botMonsterField[idx];
-                    if (slot) {
-                        gameState.botGraveyard.push(slot.card);
-                        gameState.botMonsterField[idx] = null;
-                        if (window.DuelEngine) {
-                            DuelEngine.notifyOwnMonsterSentToGraveyard('bot', slot.card);
-                            DuelEngine.notifySacrificedForTribute('bot', slot.card, card);
-                        }
-                        if (freedSlot === -1) freedSlot = idx;
-                    }
-                });
-                updateUI();
-                finishSummon(freedSlot);
-            }, botMs(700));
-        } else {
-            finishSummon(emptySlotHint);
+        if (!tributeIndices || tributeIndices.length === 0) {
+            evoca(emptySlotHint);
+            return;
         }
+        // La prima casella che il Sacrificio libera: è lì che va il mostro.
+        const liberata = tributeIndices.find((idx) => Tavolo.mostri(io)[idx]);
+        Comandi.esegui(io, { tipo: 'tributa', indici: tributeIndices, perCarta: card.uid, attesaMs: botMs(700) }, {
+            dopo: () => evoca(liberata === undefined ? -1 : liberata)
+        });
     });
 }
 
-async function botPerformAttacks(giro = 0, soloUids = null) {
+async function botPerformAttacks(giro = 0, soloUids = null, io = 'bot') {
     // Guardia difensiva, stesso motivo di attemptBotSummon qui sopra.
-    if (gameState.currentPlayer !== 'bot' || gameState.gameOver) return;
+    if (gameState.currentPlayer !== io || gameState.gameOver) return;
     // Quanti attacchi sono partiti in questo giro: se almeno uno è partito
     // e qualche mostro può ancora attaccare (attacco extra: Hayabusa,
     // Sacerdote di Asura, Ben Kei...), alla fine si fa un altro giro. Senza,
@@ -374,7 +362,7 @@ async function botPerformAttacks(giro = 0, soloUids = null) {
     // attaccato nel giro prima (`soloUids`): chi aveva rinunciato non deve
     // ripagare un costo d'attacco (LP, Sacrificio) per rinunciare di nuovo.
     const hannoAttaccato = new Set();
-    if (window.DuelEngine && DuelEngine.cannotAttack('bot')) {
+    if (window.DuelEngine && DuelEngine.cannotAttack(io)) {
         addToLog('🚫 I mostri del bot non possono attaccare in questo momento (es. Spada Rivelatrice).');
         return;
     }
@@ -383,7 +371,7 @@ async function botPerformAttacks(giro = 0, soloUids = null) {
     // resta comunque il vero cancello di sicurezza; qui filtrato PRIMA
     // così l'IA non spreca la sua valutazione (chooseAttackTarget) su un
     // candidato che verrebbe comunque respinto.
-    const attackers = gameState.botMonsterField.map((slot, index) => ({ slot, index })).filter(item => item.slot && !item.slot.hasAttacked && item.slot.position === 'attack'
+    const attackers = Tavolo.mostri(io).map((slot, index) => ({ slot, index })).filter(item => item.slot && !item.slot.hasAttacked && item.slot.position === 'attack'
         && (!soloUids || soloUids.has(item.slot.card.uid)));
     for (const attackerItem of attackers) {
         // Se un attacco precedente ha già chiuso il duello, non restiamo
@@ -404,44 +392,31 @@ async function botPerformAttacks(giro = 0, soloUids = null) {
         // scegliere bersagli, così il bot non paga LP o Sacrifici per un
         // attacco che verrebbe poi rifiutato.
         if (attackerDef && typeof attackerDef.canDeclareAttack === 'function'
-            && !attackerDef.canDeclareAttack(DuelEngine.makeContext('bot', { card: attackerItem.slot.card, slotIndex: attackerItem.index }))) continue;
+            && !attackerDef.canDeclareAttack(DuelEngine.makeContext(io, { card: attackerItem.slot.card, slotIndex: attackerItem.index }))) continue;
         // "Paga N Life Points per dichiarare un attacco" (es. Drago Toon
         // Occhi Blu id 123, Manga Ryu-Ran id 606) — stesso principio di
         // requiresTributeToAttack qui sotto, ma senza bisogno di scegliere
         // un bersaglio: il bot salta questo attaccante se non ha
         // abbastanza LP da spendere.
-        if (attackerDef && attackerDef.requiresLifePointsToAttack) {
-            const cost = attackerDef.requiresLifePointsToAttack;
-            if (gameState.botLP <= cost) continue;
-            DuelEngine.actions.dealDamage('bot', cost);
-            addToLog(`💸 Il bot paga ${cost} Life Points per far attaccare ${attackerItem.slot.card.name}.`);
-        }
+        // I costi d'attacco li paga il comando 'attacca' (eseguiAttacco,
+        // battaglia.js) al momento dell'attacco vero: qui solo se sono
+        // pagabili, e per il Sacrificio QUALE mostro (il più debole, mai
+        // l'attaccante). Prima l'IA pagava qui, PRIMA di scegliere il
+        // bersaglio: se poi non trovava un attacco conveniente, il
+        // Sacrificio restava pagato per niente.
+        if (attackerDef && attackerDef.requiresLifePointsToAttack && Tavolo.lp(io) <= attackerDef.requiresLifePointsToAttack) continue;
+        let tributoPerAttaccare;
         if (attackerDef && attackerDef.requiresTributeToAttack) {
             // Maschera della Restrizione (id 371, gameState.tributesBlocked):
             // nessun giocatore può sacrificare carte — stesso controllo
             // lato giocatore in executeAttack (js/engine/actions.js).
             if (gameState.tributesBlocked) continue;
-            const tributeCandidates = gameState.botMonsterField
+            const tributeCandidates = Tavolo.mostri(io)
                 .map((slot, index) => ({ slot, index }))
                 .filter((item) => item.slot && item.index !== attackerItem.index);
             if (tributeCandidates.length === 0) continue;
             tributeCandidates.sort((a, b) => DuelEngine.getEffectiveAtk(a.slot.card) - DuelEngine.getEffectiveAtk(b.slot.card));
-            const toSacrifice = tributeCandidates[0];
-            gameState.botGraveyard.push(toSacrifice.slot.card);
-            gameState.botMonsterField[toSacrifice.index] = null;
-            if (window.DuelEngine) {
-                DuelEngine.notifyOwnMonsterSentToGraveyard('bot', toSacrifice.slot.card);
-                DuelEngine.notifySacrificedForTribute('bot', toSacrifice.slot.card);
-            }
-            if (window.MP_broadcast && !window.MP_applyingRemote) {
-                // `delayMs: 0` e trasmissione DOPO aver applicato: la carta
-                // sparisce subito, senza animazione da aspettare — vedi
-                // performAttackTribute (js/engine/actions.js) per il perché
-                // entrambe le cose contano per il checksum anti-desync.
-                window.MP_broadcast({ kind: 'tribute', indices: [toSacrifice.index], delayMs: 0 });
-            }
-            addToLog(`🔻 Il bot sacrifica ${toSacrifice.slot.card.name} per far attaccare ${attackerItem.slot.card.name}.`);
-            updateUI();
+            tributoPerAttaccare = tributeCandidates[0].index;
         }
         // Esclude i mostri che non possono essere scelti come bersaglio in
         // questo momento (es. Capitano Predone id 714) — stesso filtro
@@ -452,7 +427,7 @@ async function botPerformAttacks(giro = 0, soloUids = null) {
         // (Kaitoptera id 322, Il Sigillo di Orichalcos id 469): va valutata,
         // non letta come vero/falso — una funzione è sempre "vera" e
         // escluderebbe quel mostro anche quando l'attacco è permesso.
-        let playerMonsters = gameState.playerMonsterField.map((slot, index) => ({ slot, index })).filter((item) => {
+        let playerMonsters = Tavolo.mostri(Tavolo.avversario(io)).map((slot, index) => ({ slot, index })).filter((item) => {
             if (!item.slot) return false;
             const voce = gameState.cannotBeAttackTargetUids && gameState.cannotBeAttackTargetUids[item.slot.card.uid];
             return !(typeof voce === 'function' ? voce(attackerItem.slot.card) : voce);
@@ -470,7 +445,7 @@ async function botPerformAttacks(giro = 0, soloUids = null) {
         // Anello Magnetico (id 420) sul Terreno del giocatore: si può
         // attaccare solo il mostro equipaggiato (stessa regola di
         // resolveAttack, letta dallo stesso punto del motore).
-        const obbligati = window.DuelEngine && DuelEngine.forcedAttackTargetIndexes ? DuelEngine.forcedAttackTargetIndexes('player') : [];
+        const obbligati = window.DuelEngine && DuelEngine.forcedAttackTargetIndexes ? DuelEngine.forcedAttackTargetIndexes(Tavolo.avversario(io)) : [];
         if (obbligati.length > 0) {
             playerMonsters = playerMonsters.filter((item) => obbligati.indexOf(item.index) !== -1);
             if (playerMonsters.length === 0) continue;
@@ -497,7 +472,7 @@ async function botPerformAttacks(giro = 0, soloUids = null) {
             const forcedTarget = playerMonsters.find((item) => forcedUids.has(item.slot.card.uid));
             targetIndex = forcedTarget ? forcedTarget.index : null;
         } else {
-            targetIndex = window.BotAI ? BotAI.chooseAttackTarget(attackerItem.slot, playerMonsters) : null;
+            targetIndex = window.BotAI ? BotAI.chooseAttackTarget(attackerItem.slot, playerMonsters, io) : null;
         }
         // Nessun bersaglio conveniente: il bot trattiene questo mostro
         // invece di sacrificarlo in uno scambio sfavorevole.
@@ -513,30 +488,32 @@ async function botPerformAttacks(giro = 0, soloUids = null) {
                 // Se nel frattempo il giocatore ha un modale aperto (es. ha
                 // ancora da rispondere al colpo precedente), l'attacco
                 // successivo aspetta che lo chiuda.
-                waitForNoBlockingModal().then(() => {
-                    if (gameState.currentPlayer !== 'bot' || gameState.gameOver) { resolve(); return; }
-                    botExecuteAttack(attackerItem.index, targetIndex, resolve);
-                });
+                waitForNoBlockingModal().then(() => aspettaDuelloFermo(() => {
+                    if (gameState.currentPlayer !== io || gameState.gameOver) { resolve(); return; }
+                    // Lo stesso comando della persona (eseguiAttacco,
+                    // battaglia.js): paga il costo e attacca.
+                    Comandi.esegui(io, { tipo: 'attacca', attaccante: attackerItem.index, bersaglio: targetIndex, tributo: tributoPerAttaccare }, { alTermine: resolve });
+                }));
             }, botMs(1200));
         });
     }
     // Un altro giro solo se qualcosa è successo (altrimenti chi ha rinunciato
     // rinuncerebbe di nuovo all'infinito) e con un tetto, per sicurezza.
-    const ancoraPronti = gameState.botMonsterField.some((s) => s && !s.hasAttacked && s.position === 'attack' && hannoAttaccato.has(s.card.uid));
-    if (ancoraPronti && giro < 4 && !gameState.gameOver && gameState.currentPlayer === 'bot') {
-        await botPerformAttacks(giro + 1, hannoAttaccato);
+    const ancoraPronti = Tavolo.mostri(io).some((s) => s && !s.hasAttacked && s.position === 'attack' && hannoAttaccato.has(s.card.uid));
+    if (ancoraPronti && giro < 4 && !gameState.gameOver && gameState.currentPlayer === io) {
+        await botPerformAttacks(giro + 1, hannoAttaccato, io);
     }
 }
 
 /**
- * Wrapper storico: l'attacco del bot (sia l'IA locale che la replica di
- * un attacco remoto in multiplayer) passa sempre per resolveAttack(),
- * definita in actions.js — vedi il commento lì per il perché di questa
- * unificazione. `onComplete` viene inoltrato così chi dichiara l'attacco
- * (es. botPerformAttacks) può aspettarne la risoluzione piena.
+ * Wrapper storico, usato ormai solo dalla replica di un attacco remoto in
+ * Multiplayer (applyRemoteAttack, js/multiplayer/multiplayer.js: lì i costi
+ * li ha già pagati l'altro client). L'IA attacca col comando 'attacca'.
+ * `onComplete` viene inoltrato così chi aspetta può attendere la
+ * risoluzione piena.
  */
-function botExecuteAttack(attackerIndex, targetIndex, onComplete) {
-    resolveAttack('bot', attackerIndex, targetIndex, onComplete);
+function botExecuteAttack(attackerIndex, targetIndex, onComplete, io = 'bot') {
+    resolveAttack(io, attackerIndex, targetIndex, onComplete);
 }
 
 /**
@@ -547,28 +524,16 @@ function botExecuteAttack(attackerIndex, targetIndex, onComplete) {
  * non si scopre/attiva). Ritorna una Promise risolta dopo la breve
  * animazione.
  */
-function botSetTrapCard(card, handIndex) {
+function botSetTrapCard(card, handIndex, io = 'bot') {
     return new Promise((resolve) => {
         // Onda Sismica (id 818): il bot deve rispettare anche lui le Zone bloccate.
-        const slotIndex = window.DuelEngine ? DuelEngine.findFreeSTSlot('bot') : gameState.botSTField.findIndex((s) => s === null);
+        const slotIndex = window.DuelEngine ? DuelEngine.findFreeSTSlot(io) : Tavolo.magieTrappole(io).findIndex((s) => s === null);
         if (slotIndex === -1) { resolve(); return; }
-        gameState.botHand.splice(handIndex, 1);
-        gameState.botSTField[slotIndex] = { card: card, isFaceDown: true, setOnTurn: gameState.turn };
-        addToLog('🤖 Il bot piazza una carta coperta sul Terreno.');
-        if (window.SFX) SFX.place();
-        updateUI();
-        // Stesso atterraggio del lato giocatore (vedi setSpellTrap in
-        // actions.js): prima dal lato del bot una carta coperta compariva
-        // e basta, senza alcun segnale — capitava di non accorgersi
-        // nemmeno che ne avesse messa una, che in un gioco dove le
-        // Trappole coperte decidono i turni e' un'informazione che il
-        // giocatore deve vedere.
-        EventiDuello.emetti('impatto-campo', 'bot', slotIndex, 'st');
-        if (window.FX && typeof FX.playCardSet === 'function') {
-            const postoEl = PortaUI.query(`#botFieldBoard .field-slot[data-owner="bot"][data-type="st"][data-index="${slotIndex}"]`);
-            FX.playCardSet(postoEl);
-        }
-        setTimeout(resolve, 400);
+        // Lo stesso comando della persona (eseguiSetMagiaTrappola,
+        // evocazioni.js), atterraggio compreso: il nome non si annuncia.
+        Comandi.esegui(io, { tipo: 'settaMT', carta: card.uid, mano: handIndex, casella: slotIndex }, {
+            alTermine: () => setTimeout(resolve, 400)
+        });
     });
 }
 
@@ -676,24 +641,25 @@ function waitForBotChainToClear(callback) {
  * (usa tutto quello che può) per quanto ogni livello ne approfitta
  * davvero.
  */
-function attemptBotSpellTrap() {
+function attemptBotSpellTrap(io) {
     return new Promise((resolve) => {
         const usedThisTurn = {};
         let iterations = 0;
         const MAX_ITERATIONS = 10; // sicurezza: mai un loop infinito
-        const step = () => {
+        const step = () => aspettaDuelloFermo(passo);
+        const passo = () => {
             iterations++;
             // Guardia difensiva (bug reale scoperto: senza questo
             // controllo, un setTimeout in ritardo poteva far attivare al
             // bot le proprie Magie/Trappole durante il turno del
             // giocatore) — vedi la stessa guardia in attemptBotSummon.
-            if (iterations > MAX_ITERATIONS || gameState.gameOver || gameState.currentPlayer !== 'bot') { resolve(); return; }
-            const decision = window.BotAI ? BotAI.chooseNextSpellTrapAction(gameState, usedThisTurn) : null;
+            if (iterations > MAX_ITERATIONS || gameState.gameOver || gameState.currentPlayer !== io) { resolve(); return; }
+            const decision = window.BotAI ? BotAI.chooseNextSpellTrapAction(gameState, usedThisTurn, io) : null;
             if (!decision) { resolve(); return; }
             if (decision.action === 'set') {
-                botSetTrapCard(decision.card, decision.handIndex).then(() => setTimeout(step, botMs(300)));
+                botSetTrapCard(decision.card, decision.handIndex, io).then(() => setTimeout(step, botMs(300)));
             } else {
-                const started = DuelEngine.activateCard('bot', 'hand', decision.handIndex);
+                const started = Comandi.esegui(io, { tipo: 'attiva', zona: 'hand', indice: decision.handIndex, carta: decision.card && decision.card.uid });
                 if (!started) { resolve(); return; } // difensivo: canActivate era già stato controllato da chi ha deciso
                 waitForBotChainToClear(() => { updateUI(); setTimeout(step, botMs(300)); });
             }
@@ -714,7 +680,7 @@ function attemptBotSpellTrap() {
  * propri mostri): è questa la differenza di comportamento più visibile
  * tra i due livelli, oltre a quanto ciascuno usa la mano.
  */
-function attemptBotActivateSetCards() {
+function attemptBotActivateSetCards(io) {
     return new Promise((resolve) => {
         let iterations = 0;
         // Ridotto da 5 a 2 (richiesta esplicita dell'utente: "non così
@@ -726,13 +692,14 @@ function attemptBotActivateSetCards() {
         // conteggio esatto — coerente con MAX_ACTIVATE_PER_TURN/
         // MAX_SET_PER_TURN in js/ai/ai-hard.js per lo stesso motivo.
         const MAX_ITERATIONS = 2;
-        const step = () => {
+        const step = () => aspettaDuelloFermo(passo);
+        const passo = () => {
             iterations++;
             // Guardia difensiva, stesso motivo di attemptBotSummon/attemptBotSpellTrap.
-            if (iterations > MAX_ITERATIONS || gameState.gameOver || gameState.currentPlayer !== 'bot') { resolve(); return; }
-            const decision = window.BotAI ? BotAI.chooseSetCardActivation(gameState) : null;
+            if (iterations > MAX_ITERATIONS || gameState.gameOver || gameState.currentPlayer !== io) { resolve(); return; }
+            const decision = window.BotAI ? BotAI.chooseSetCardActivation(gameState, io) : null;
             if (!decision) { resolve(); return; }
-            const started = DuelEngine.activateCard('bot', decision.zone || 'st', decision.index);
+            const started = Comandi.esegui(io, { tipo: 'attiva', zona: decision.zone || 'st', indice: decision.index });
             if (!started) { resolve(); return; }
             waitForBotChainToClear(() => { updateUI(); setTimeout(step, botMs(300)); });
         };

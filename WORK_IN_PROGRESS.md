@@ -65,11 +65,69 @@ righe, actions.js 3.855, game-flow.js 3.797; 205 accessi al DOM e 85
       `DuelEngineUI`. Spec `decisioni-in-sospeso`.
 - [ ] Unire il branch in `main` dopo la suite completa (su richiesta).
 
-**Priorità 3 — lato tavolo e Multiplayer**
-- [ ] "Posti al tavolo" al posto di player/bot nel nucleo (il contratto delle
-      carte resta quasi uguale).
-- [ ] Multiplayer "a passo comune": i due client eseguono le stesse azioni
-      sullo stesso stato (niente più fotografie di stato da tradurre).
+**Priorità 3 — lato tavolo e Multiplayer** (branch `refactor/posti-al-tavolo`)
+- [x] Chi controlla un posto è un dato (`js/engine/tavolo.js`: 'persona',
+      'ia', 'remoto'), non più dedotto da "player = persona, bot = IA". I
+      nomi 'player'/'bot' restano: sono solo i nomi dei due posti.
+- [x] L'IA gioca da entrambi i posti (`turnoIA(io)` in bot.js, parametro
+      `io` in tutte le funzioni dell'IA, livello per posto in
+      `gameState.livelloIA`). Guardrail `guardrail-ia-da-ogni-posto`.
+- [x] Duello senza testa = IA contro IA (`--giocatore`, `--livello-giocatore`):
+      prima base per il bilanciamento con dati veri (Priorità 4).
+- [ ] Restano nel nucleo i circa 400 ternari "player ? ... : bot ..." scritti
+      a mano: si possono portare sugli accessori di Tavolo un file alla
+      volta, ma non bloccano nulla (sono corretti per entrambi i posti).
+- [ ] Multiplayer "a passo comune": i due client eseguono l'intera partita e
+      si scambiano solo comandi e decisioni (niente più mosse raccontate né
+      fotografie di stato). Ogni client chiama ancora "player" sé stesso: lo
+      stato è SPECCHIATO. Passi, ciascuno verificabile da solo:
+      - [x] A. Determinismo, senza cambiare nulla offline (impronta di 60
+            partite IA contro IA uguale prima e dopo):
+            `Casuale` (casualità di gioco con seme condiviso in Multiplayer,
+            Math.random offline), `Tavolo.ordine()` al posto dei circa 170
+            cicli "prima player, poi bot" (in Multiplayer: prima l'host),
+            uid delle carte deterministici in Multiplayer.
+      - [x] B. Azioni con il posto: evocare, settare, Magia Terreno, cambio
+            Posizione, attaccare, fasi — una funzione sola per persona, IA e
+            avversario remoto (`js/engine/comandi.js`; l'IA usa gli stessi
+            comandi della persona, anche per lo scarto di fine turno).
+      - [x] C. Duello gemello in Node (`tools/duello-gemello.js`, spec
+            `duello-gemello`): due copie del motore sullo stesso orologio
+            virtuale, latenza variabile, impronta intera confrontata prima di
+            ogni comando. 240 partite su 8 coppie e 3 livelli allineate.
+      - [x] D. Il protocollo (`js/engine/passo-comune.js`): comandi e
+            decisioni (posizione nell'elenco dei candidati) in un'unica coda
+            ordinata; un comando, mio o suo, solo a duello fermo; una scelta
+            presa all'istante si applica a codice in corso finito e i timer
+            delle regole aspettano le scelte aperte (`PassoComune.dopo`,
+            `isBlockingModalOpen`), così cade nello stesso punto sui due
+            client. `Decisioni.rispondeUnaPersona` dipende solo da chi
+            controlla il posto (`Tavolo.giocaUnaPersona`), e le 63 scelte
+            scritte `chi: 'player'` ora dicono il posto vero.
+            Spento finché nessuno chiama `PassoComune.avvia`: offline
+            l'impronta delle 60 partite è identica.
+      - [x] E. Pagina (`js/multiplayer/mp-passo-comune.js`): scambio dei
+            mazzi e del seme all'avvio (initGame aspetta il mazzo dell'altro,
+            poi PassoComune.preparaDuello), invio a lotti (il relay scarta
+            oltre 20 messaggi al secondo), numerazione e ripresa dopo una
+            caduta di linea ('passo-riprendi'). Il server accetta 'mazzo',
+            'passo', 'passo-riprendi'. A passo comune i messaggi vecchi
+            tacciono (resta 'game-over' come rete di sicurezza sull'esito).
+            Spec `multiplayer-passo-comune` (due pagine, relay vero, 6 turni,
+            caduta di linea a metà), verificato al contrario.
+      - [ ] **Il server va ridistribuito dove gira** (Render): senza i tre
+            tipi nuovi il relay li scarta e il duello resta fermo allo
+            scambio dei mazzi per 15 secondi, poi riparte col protocollo
+            vecchio. Da fare a mano.
+      - [ ] Il protocollo vecchio resta come ripiego con un client della
+            versione precedente (gli spec Multiplayer di prima lo forzano
+            con `MP_SENZA_PASSO_COMUNE`). Quando tutti i client e il server
+            saranno aggiornati si può togliere: applyRemote* in
+            multiplayer.js, i broadcast nei comandi e nelle fasi, la mano a
+            segnaposto, le fotografie di stato, `isRemoteResponder`/
+            `awaitRemote*` in duel-engine.js.
+      Costo dichiarato: ogni client conosce mazzo e mano dell'avversario
+      (non mostrati, ma in memoria).
 
 **Priorità 4 — per il giocatore** (in parallelo)
 - [ ] Service worker più leggero (vedi «Peso e velocità» qui sotto).

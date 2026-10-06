@@ -86,7 +86,7 @@
             // trova — mostrare lo stato "prima" è più fedele che
             // mostrare il Deck già ripulito delle copie appena bandite.
             const revealSnapshots = { player: (gameState.playerDeck || []).slice(), bot: (gameState.botDeck || []).slice() };
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 const deck = gameState[owner === 'player' ? 'playerDeck' : 'botDeck'];
                 if (!Array.isArray(deck)) return;
                 const matches = deck.filter((c) => c.name === card.name);
@@ -106,7 +106,7 @@
                 const showBotDeck = () => {
                     if (!Array.isArray(gameState.botDeck)) return;
                     Decisioni.chiedi({
-                        chi: 'player',
+                        chi: ctx.owner,
                         tipo: 'presa-visione',
                         candidati: revealSnapshots.bot,
                         titolo: '⚔️ Nobile del Depistaggio',
@@ -115,7 +115,7 @@
                     }, () => {});
                 };
                 Decisioni.chiedi({
-                    chi: 'player',
+                    chi: ctx.owner,
                     tipo: 'presa-visione',
                     candidati: revealSnapshots.player,
                     titolo: '⚔️ Nobile del Depistaggio',
@@ -511,14 +511,14 @@
     // ================================================================
     CardEffects.register(643, {
         static(ctx) {
-            const hasFire = ['player', 'bot'].some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown && s.card.attribute === 'FUOCO'));
+            const hasFire = Tavolo.ordine().some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown && s.card.attribute === 'FUOCO'));
             if (!hasFire) return;
             const e = gameState.atkDefBonus[ctx.card.uid] || { atk: 0, def: 0 };
             gameState.atkDefBonus[ctx.card.uid] = { atk: e.atk + 500, def: e.def };
         },
         onBattled(ctx) {
             if (ctx.opponentSurvived) return;
-            const hasWind = ['player', 'bot'].some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown && s.card.attribute === 'VENTO'));
+            const hasWind = Tavolo.ordine().some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown && s.card.attribute === 'VENTO'));
             if (!hasWind) return;
             const field = ctx.field(ctx.owner);
             const index = field.findIndex((s) => s && s.card.uid === ctx.card.uid);
@@ -615,11 +615,11 @@
     // ================================================================
     CardEffects.register(646, {
         canActivate(ctx) {
-            return ['player', 'bot'].some((owner) => ctx.stField(owner).some((s) => s));
+            return Tavolo.ordine().some((owner) => ctx.stField(owner).some((s) => s));
         },
         activate(ctx) {
             let count = 0;
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.stField(owner).forEach((slot, index) => {
                     if (!slot) return;
                     ctx.graveyard(owner).push(slot.card);
@@ -643,7 +643,7 @@
         canActivate(ctx) {
             const hasDragon = ctx.field(ctx.owner).some((s) => s && !s.isFaceDown && s.card.race === 'Drago');
             if (!hasDragon) return false;
-            return ['player', 'bot'].some((owner) => ctx.stField(owner).some((s) => s));
+            return Tavolo.ordine().some((owner) => ctx.stField(owner).some((s) => s));
         },
         activate(ctx) {
             // "Scegli come bersaglio 1 Magia/Trappola sul Terreno":
@@ -822,18 +822,18 @@
     // ================================================================
     CardEffects.register(651, {
         canActivate(ctx) {
-            const hasFaceDownDef = ['player', 'bot'].some((owner) => ctx.field(owner).some((s) => s && s.isFaceDown && s.position === 'defense'));
-            const hasEffectMonster = ['player', 'bot'].some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown && !s.card.vanilla));
+            const hasFaceDownDef = Tavolo.ordine().some((owner) => ctx.field(owner).some((s) => s && s.isFaceDown && s.position === 'defense'));
+            const hasEffectMonster = Tavolo.ordine().some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown && !s.card.vanilla));
             return hasFaceDownDef || hasEffectMonster;
         },
         activate(ctx) {
             let flipped = 0;
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
                     if (slot && slot.isFaceDown && slot.position === 'defense') { slot.isFaceDown = false; flipped++; }
                 });
             });
-            const effectMonsterCount = ['player', 'bot'].reduce((sum, owner) => sum + ctx.field(owner).filter((s) => s && !s.isFaceDown && !s.card.vanilla).length, 0);
+            const effectMonsterCount = Tavolo.ordine().reduce((sum, owner) => sum + ctx.field(owner).filter((s) => s && !s.isFaceDown && !s.card.vanilla).length, 0);
             const damage = effectMonsterCount * 500;
             if (damage > 0) ctx.dealDamage(ctx.opponent, damage);
             ctx.log(`🏳️ Cessate il Fuoco rivela ${flipped} most${flipped === 1 ? 'ro' : 'ri'} e infligge ${damage} danni!`);
@@ -950,11 +950,11 @@
     // ================================================================
     CardEffects.register(655, {
         canActivate(ctx) {
-            return ['player', 'bot'].some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown && !s.card.vanilla));
+            return Tavolo.ordine().some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown && !s.card.vanilla));
         },
         activate(ctx) {
             let count = 0;
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
                     if (!slot || slot.isFaceDown || slot.card.vanilla) return;
                     slot.position = 'defense';
@@ -1040,7 +1040,7 @@
                 return;
             }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: validHandCandidates,
                 titolo: '🧛 Genesi del Vampiro',
                 testo: 'Scegli quale mostro Zombie scartare dalla mano.'
@@ -1112,7 +1112,7 @@
     function destroyAllOtherMonsters(ctx) {
         ctx.card._returnToHandTurn = gameState.turn;
         let count = 0;
-        ['player', 'bot'].forEach((owner) => {
+        Tavolo.ordine().forEach((owner) => {
             ctx.field(owner).forEach((slot, index) => {
                 if (!slot || slot.isFaceDown || slot.card.uid === ctx.card.uid) return;
                 ctx.destroyMonster(owner, index);
@@ -1301,11 +1301,11 @@
     // ================================================================
     CardEffects.register(668, {
         canActivate(ctx) {
-            return ['player', 'bot'].some((owner) => ctx.stField(owner).some((s) => s));
+            return Tavolo.ordine().some((owner) => ctx.stField(owner).some((s) => s));
         },
         activate(ctx) {
             let count = 0;
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.stField(owner).forEach((slot, index) => {
                     if (!slot) return;
                     ctx.hand(owner).push(slot.card);
@@ -1416,7 +1416,7 @@
     // ================================================================
     CardEffects.register(671, {
         canActivate(ctx) {
-            return ['player', 'bot'].some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown));
+            return Tavolo.ordine().some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown));
         },
         activate(ctx) {
             const candidates = [];
@@ -1460,7 +1460,7 @@
             if (banished === 0) return;
             let destroyed = 0;
             outer:
-            for (const owner of ['player', 'bot']) {
+            for (const owner of Tavolo.ordine()) {
                 const st = ctx.stField(owner);
                 for (let i = 0; i < st.length && destroyed < banished; i++) {
                     if (!st[i]) continue;
@@ -1503,7 +1503,7 @@
     // ================================================================
     CardEffects.register(676, {
         static(ctx) {
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
                     if (!slot || slot.isFaceDown) return;
                     const e = gameState.atkDefBonus[slot.card.uid] || { atk: 0, def: 0 };
@@ -1573,7 +1573,7 @@
     // ================================================================
     CardEffects.register(680, {
         static(ctx) {
-            const count = ['player', 'bot'].reduce((sum, owner) => sum + ctx.field(owner).filter((s) => s && !s.isFaceDown && s.card.attribute === 'FUOCO' && s.card.uid !== ctx.card.uid).length, 0);
+            const count = Tavolo.ordine().reduce((sum, owner) => sum + ctx.field(owner).filter((s) => s && !s.isFaceDown && s.card.attribute === 'FUOCO' && s.card.uid !== ctx.card.uid).length, 0);
             const e = gameState.atkDefBonus[ctx.card.uid] || { atk: 0, def: 0 };
             gameState.atkDefBonus[ctx.card.uid] = { atk: e.atk + count * 1000, def: e.def };
         },
@@ -1703,7 +1703,7 @@
             ctx.log('🌋 Distruzione Fusa attivata!');
         },
         static(ctx) {
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
                     if (!slot || slot.isFaceDown || slot.card.attribute !== 'FUOCO') return;
                     const e = gameState.atkDefBonus[slot.card.uid] || { atk: 0, def: 0 };
@@ -1741,7 +1741,7 @@
             ctx.log('📉 Limite di Livello - Area B attivato!');
         },
         static(ctx) {
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
                     if (slot && !slot.isFaceDown && (slot.card.level || 0) >= 4) slot.position = 'defense';
                 });
@@ -1821,7 +1821,7 @@
             // pescare, l'opzione piu' sicura.
             if (Decisioni.rispondeUnaPersona(ctx.owner)) {
                 Decisioni.chiedi({
-                    chi: 'player',
+                    chi: ctx.owner,
                     tipo: 'coppia',
                     titolo: '📿 Collana del Comando',
                     candidati: [
@@ -1960,7 +1960,7 @@
             if (ctx.owner === 'player') gameState.playerFieldSpell = null; else gameState.botFieldSpell = null;
 
             let sent = 0;
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot, index) => {
                     if (!slot || slot.card.uid === ctx.card.uid) return;
                     ctx.graveyard(owner).push(slot.card);
@@ -2035,7 +2035,7 @@
     // ================================================================
     CardEffects.register(696, {
         static(ctx) {
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
                     if (!slot || slot.isFaceDown) return;
                     const e = gameState.atkDefBonus[slot.card.uid] || { atk: 0, def: 0 };
@@ -2072,7 +2072,7 @@
                 if (!declaredRace) return;
 
                 let destroyed = 0;
-                ['player', 'bot'].forEach((owner) => {
+                Tavolo.ordine().forEach((owner) => {
                     ctx.field(owner).forEach((slot, index) => {
                         if (slot && !slot.isFaceDown && slot.card.race === declaredRace) {
                             ctx.destroyMonster(owner, index);
@@ -2158,7 +2158,7 @@
             if (ctx.owner === 'player') gameState.playerFieldSpell = null; else gameState.botFieldSpell = null;
 
             let destroyed = 0;
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot, index) => {
                     if (!slot || slot.card.uid === ctx.card.uid) return;
                     ctx.graveyard(owner).push(slot.card);
@@ -2198,7 +2198,7 @@
     // ================================================================
     CardEffects.register(701, {
         getExtraAttackCount(ctx) {
-            const hasUmi = ['player', 'bot'].some((owner) => ctx.stField(owner).some((s) => s && !s.isFaceDown && s.card.id === 497));
+            const hasUmi = Tavolo.ordine().some((owner) => ctx.stField(owner).some((s) => s && !s.isFaceDown && s.card.id === 497));
             return hasUmi ? 1 : 0;
         }
     });
@@ -2211,7 +2211,7 @@
         onSummon(ctx) {
             if (ctx.summonedVia !== 'normal') return;
             const candidates = [];
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.stField(owner).forEach((slot, index) => { if (slot) candidates.push({ owner, index, card: slot.card }); });
             });
             let destroyed = 0;
@@ -2274,11 +2274,11 @@
     CardEffects.register(705, {
         declaredTargeting: { count: 1, cardType: 'monster' },
         canActivate(ctx) {
-            return ['player', 'bot'].some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown && s.position === 'attack'));
+            return Tavolo.ordine().some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown && s.position === 'attack'));
         },
         activate(ctx) {
             let best = null;
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot, index) => {
                     if (!slot || slot.isFaceDown || slot.position !== 'attack') return;
                     const atk = DuelEngine.getEffectiveAtk(slot.card);
@@ -2343,7 +2343,7 @@
             ctx.log('⛓️ Legame di Gravità attivato!');
         },
         static(ctx) {
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
                     if (slot && !slot.isFaceDown && (slot.card.level || 0) >= 4) gameState.cannotAttackUids[slot.card.uid] = true;
                 });
@@ -2483,7 +2483,7 @@
     // ================================================================
     CardEffects.register(715, {
         canActivate(ctx) {
-            return ['player', 'bot'].some((owner) => ctx.field(owner).some((s) => s && s.card.uid !== ctx.card.uid));
+            return Tavolo.ordine().some((owner) => ctx.field(owner).some((s) => s && s.card.uid !== ctx.card.uid));
         },
         activate(ctx) {
             // "Scegli come bersaglio 1 mostro sul Terreno": qualunque,
@@ -2812,7 +2812,7 @@
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
             gameState.atkDefBonus[t.uid] = { atk: e.atk + 800, def: e.def };
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
                     // Guardiano Kay'est (id 285): immune anche a questo malus.
                     if (!slot || slot.isFaceDown || slot.card.attribute !== 'ACQUA' || DuelEngine.getDefinition(slot.card.id)?.unaffectedBySpellEffects) return;
@@ -2906,7 +2906,7 @@
         canActivate(ctx) {
             // Serve un'ALTRA carta da scartare: vedi otherHandCards.
             if (otherHandCards(ctx).length === 0) return false;
-            return ['player', 'bot'].some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown));
+            return Tavolo.ordine().some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown));
         },
         activate(ctx) {
             const candidates = [];

@@ -205,7 +205,7 @@
     CardEffects.register(174, {
         onSummon(ctx) {
             const candidates = [];
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.stField(owner).forEach((slot, index) => {
                     if (slot && !slot.isFaceDown && slot.card.type === 'spell' && slot.card.subtype === 'equip') {
                         candidates.push({ owner, index, card: slot.card });
@@ -235,7 +235,7 @@
                 return;
             }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates.map((c) => c.card),
                 titolo: '🤖 Predone Cyber',
                 testo: 'Scegli 1 Carta Equipaggiamento sul Terreno: poi decidi se distruggerla o rubarla.'
@@ -243,7 +243,7 @@
                 if (card === null) return;
                 const choice = candidates.find((c) => c.card.uid === card.uid);
                 Decisioni.chiedi({
-                    chi: 'player',
+                    chi: ctx.owner,
                     tipo: 'coppia',
                     titolo: choice.card.name,
                     candidati: [
@@ -667,7 +667,7 @@
             });
             if (keepIndex === -1) return;
 
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 const field = ctx.field(owner);
                 field.forEach((slot, i) => {
                     if (!slot) return;
@@ -773,7 +773,7 @@
             const t = equippedTarget(ctx);
             const e = gameState.atkDefBonus[t.uid] || { atk: 0, def: 0 };
             gameState.atkDefBonus[t.uid] = { atk: e.atk + 800, def: e.def };
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
                     // Guardiano Kay'est (id 285): immune anche a questo malus.
                     if (slot && !slot.isFaceDown && slot.card.attribute === 'ACQUA' && !DuelEngine.getDefinition(slot.card.id)?.unaffectedBySpellEffects) {
@@ -1141,7 +1141,7 @@
             // motivo per cui resolveAttack() in js/engine/actions.js cattura i
             // rettangoli PRIMA di mutare lo stato (vedi quel commento).
             const sucked = [];
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
                 ctx.field(owner).forEach((slot, index) => {
                     if (!slot) return;
@@ -1452,7 +1452,7 @@
                 return;
             }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: owner,
                 candidati: candidates.map((c) => c.card),
                 titolo: '🌟 Rinascita del Mostro',
                 testo: 'Scegli quale mostro riportare in campo da uno dei due Cimiteri.'
@@ -1468,7 +1468,7 @@
                 const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
                 const anchorEl = PortaUI.query(`#${boardId} .field-slot[data-owner="${owner}"][data-type="monster"][data-index="${slotIndex}"]`);
                 Decisioni.chiedi({
-                    chi: 'player',
+                    chi: owner,
                     tipo: 'posizione',
                     ancora: anchorEl,
                     titolo: `${choice.card.name}: Attacco o Difesa?`
@@ -1628,7 +1628,7 @@
     // ================================================================
     CardEffects.register(17, {
         static(ctx) {
-            const hasAmplifier = ['player', 'bot'].some((o) =>
+            const hasAmplifier = Tavolo.ordine().some((o) =>
                 ctx.stField(o).some((s) => s && !s.isFaceDown && s.card.id === 92 && s.card.equippedToUid === ctx.card.uid)
             );
             if (hasAmplifier) {
@@ -1932,7 +1932,7 @@
         const eligible = grave.filter((c) => c.type === 'monster' && !DuelEngine.getDefinition(c.id)?.cannotBeSpecialSummoned);
         if (eligible.length === 0 || ctx.findEmptyMonsterSlot(ctx.owner) === -1) { finishSoulCharge(ctx, summonedUids); return; }
         Decisioni.chiedi({
-            chi: 'player',
+            chi: ctx.owner,
             candidati: eligible,
             titolo: '👻 Carica dell\'Anima',
             testo: `Scegli 1 mostro dal Cimitero da Special Summonare, o chiudi per fermarti qui (${summonedUids.length} finora).`,
@@ -2212,7 +2212,7 @@
                 return;
             }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates.map((c) => c.card),
                 titolo: '🐛 Insetto Divoratore',
                 testo: 'Scegli quale mostro scoperto sul Terreno distruggere.'
@@ -2306,7 +2306,7 @@
             if (index === -1) return;
             const returned = field[index].card;
             ctx.returnMonsterToHand(ctx.owner, index);
-            ['player', 'bot'].forEach((fieldOwner) => {
+            Tavolo.ordine().forEach((fieldOwner) => {
                 ctx.stField(fieldOwner).forEach((slot, i) => {
                     if (slot) {
                         ctx.graveyard(fieldOwner).push(slot.card);
@@ -2350,7 +2350,7 @@
 
             if (Decisioni.rispondeUnaPersona(ctx.owner)) {
                 Decisioni.chiedi({
-                    chi: 'player',
+                    chi: ctx.owner,
                     candidati: opponentMonstersInHand,
                     titolo: '⛓️ Amazzone Maestra delle Catene',
                     testo: "Paga 1500 Life Points e scegli 1 mostro dalla mano dell'avversario da aggiungere alla tua mano."
@@ -2629,7 +2629,7 @@
             ctx.log(`🌊 ${ctx.card.name} si scopre sul Terreno.`);
         },
         static(ctx) {
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
                     // Guardiano Kay'est (id 285): "non è influenzata dagli
                     // effetti delle Magie", quindi niente bonus ATK/DEF da
@@ -2713,7 +2713,7 @@
             };
             if (!Decisioni.rispondeUnaPersona(ctx.owner)) { revive(candidates[0]); return; }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates,
                 titolo: '🔥 Spadaccino di Fiamma Blu',
                 testo: 'Scegli 1 mostro Guerriero FUOCO dal Cimitero da Special Summonare (Spadaccino di Fiamma Blu si bandisce).'
@@ -2806,11 +2806,11 @@
     // ================================================================
     CardEffects.register(132, {
         canActivate(ctx) {
-            return ['player', 'bot'].some((owner) => ctx.field(owner).some((slot) => slot && !slot.isFaceDown && slot.card.race === 'Roccia'));
+            return Tavolo.ordine().some((owner) => ctx.field(owner).some((slot) => slot && !slot.isFaceDown && slot.card.race === 'Roccia'));
         },
         activate(ctx) {
             let count = 0;
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot, index) => {
                     if (slot && !slot.isFaceDown && slot.card.race === 'Roccia') {
                         ctx.destroyMonster(owner, index);
@@ -2850,7 +2850,7 @@
             ctx.graveyard(ctx.owner).push(tributeCard);
 
             let count = 0;
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot, index) => {
                     if (slot && !slot.isFaceDown && slot.card.defense <= tributeCard.attack) {
                         ctx.destroyMonster(owner, index);
@@ -2933,7 +2933,7 @@
     // ================================================================
     CardEffects.register(138, {
         activate(ctx) {
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 const hand = ctx.hand(owner);
                 const discarded = hand.length;
                 while (hand.length > 0) {

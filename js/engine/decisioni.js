@@ -91,7 +91,47 @@
      *        un'interfaccia per le scelte ci sia
      */
     function rispondeUnaPersona(chi, tipo) {
-        if (chi !== 'player' || !g.EventiDuello || !g.EventiDuello.ascoltato('decisione')) return false;
+        // Multiplayer a passo comune (js/engine/passo-comune.js): la
+        // risposta deve essere la STESSA sui due client, perché le carte la
+        // usano per scegliere fra "chiedo" e "decido da me" — e se un lato
+        // chiedesse e l'altro no, uno aspetterebbe una decisione che l'altro
+        // non manderà mai. Conta quindi solo chi controlla il posto, non se
+        // un'interfaccia di qua sappia mostrare la scelta: se non sa,
+        // chiedi() ripiega sulla scelta automatica e la comunica comunque.
+        if (passoComune()) return g.Tavolo.giocaUnaPersona(chi);
+        return interfacciaPerLaPersona(chi, tipo);
+    }
+
+    /** Vero mentre il duello è a passo comune. */
+    function passoComune() {
+        return typeof g.PassoComune !== 'undefined' && g.PassoComune.attivo();
+    }
+
+    /**
+     * La posizione della scelta nell'elenco dei candidati, -1 per "nessuna".
+     * Per identità, e in ripiego per uid: un'interfaccia può restituire una
+     * copia della carta (vedi __mostraCoperta in chooseFieldCardTarget).
+     * @param {any[]} candidati
+     * @param {any} valore
+     */
+    function posizioneDi(candidati, valore) {
+        if (valore === null || valore === undefined) return -1;
+        const i = candidati.indexOf(valore);
+        if (i !== -1) return i;
+        const uidDi = (/** @type {any} */ x) => x && (x.uid || (x.card && x.card.uid));
+        const u = uidDi(valore);
+        return u ? candidati.findIndex((/** @type {any} */ c) => uidDi(c) === u) : -1;
+    }
+
+    /**
+     * @param {string} chi
+     * @param {string} [tipo]
+     */
+    function interfacciaPerLaPersona(chi, tipo) {
+        // Chi controlla il posto lo dice js/engine/tavolo.js: di default
+        // 'player' è la persona, ma in un IA contro IA nessuno dei due lo è.
+        if (!g.Tavolo || !g.Tavolo.ePersona(chi)) return false;
+        if (!g.EventiDuello || !g.EventiDuello.ascoltato('decisione')) return false;
         // L'interfaccia può esserci ma non saper mostrare questa scelta
         // adesso (un modale assente): allora decide la scelta automatica.
         // Senza tipo si chiede solo se un'interfaccia per le scelte c'è.
@@ -107,6 +147,18 @@
         if (r.tipo === 'posizione' && (!r.candidati || r.candidati.length === 0)) r.candidati = ['attack', 'defense'];
         const viaggia = typeof r.viaggia === 'function';
         const DuelEngine = g.DuelEngine;
+        const aPassoComune = passoComune();
+
+        // 0. Passo comune: OGNI scelta dell'altro client si aspetta (non
+        // solo quelle con `viaggia`), come posizione nell'elenco — i due
+        // client calcolano gli stessi candidati.
+        if (aPassoComune && g.Tavolo.eRemoto(r.chi)) {
+            g.PassoComune.attendiDecisione((/** @type {number} */ indice) => {
+                const scelta = indice >= 0 ? r.candidati[indice] : null;
+                onDeciso(scelta === undefined ? null : scelta);
+            });
+            return;
+        }
 
         // 1. L'avversario remoto: la sua scelta arriva dalla rete, per uid.
         // awaitRemoteCardChoice (duel-engine.js) accoppia in ordine le
@@ -121,10 +173,26 @@
 
         const id = ++progressivo;
         let chiusa = false;
+        // Vero finché chiedi() non è tornata: una risposta data adesso è
+        // "all'istante" (vedi PassoComune.differisci).
+        let sincrona = true;
         const fine = (/** @type {any} */ valore) => {
             if (chiusa) return;
             chiusa = true;
             if (aperta && aperta.id === id) aperta = null;
+            if (aPassoComune) {
+                // Sempre, anche una scelta obbligata o automatica: l'altro
+                // client la sta aspettando (vedi il punto 0 qui sopra).
+                g.PassoComune.decisioneLocale(posizioneDi(r.candidati, valore));
+                const scelta = valore === undefined ? null : valore;
+                // Presa all'istante, si applica a codice in corso finito: è
+                // lì che la applica anche l'altro client, che la riceve dalla
+                // rete (vedi il commento sul tempo delle regole in
+                // passo-comune.js).
+                if (sincrona) g.PassoComune.differisci(() => onDeciso(scelta));
+                else onDeciso(scelta);
+                return;
+            }
             // In Multiplayer la mia scelta si comunica SEMPRE, anche quando
             // era obbligata o automatica: dall'altra parte qualcuno la sta
             // aspettando, e le due code si accoppiano in ordine — un
@@ -144,13 +212,14 @@
             return;
         }
         // 2. La persona davanti allo schermo, se c'è chi gliela mostra.
-        if (!rispondeUnaPersona(r.chi, r.tipo)) {
+        if (!interfacciaPerLaPersona(r.chi, r.tipo)) {
             // 3. La scelta automatica.
             fine(sceltaAutomatica(r));
             return;
         }
         aperta = { id, richiesta: r, fine };
         g.EventiDuello.emetti('decisione', r, fine);
+        sincrona = false;
     }
 
     const Decisioni = {

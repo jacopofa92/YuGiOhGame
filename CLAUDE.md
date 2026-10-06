@@ -3726,6 +3726,85 @@ priorità o richiedono un refactor ampio):
   checkpoint di targeting, che restituisce il bersaglio subito a circa
   cento chiamanti.
 
+- ✅ **Posti al tavolo (Priorità 3, branch `refactor/posti-al-tavolo`)**:
+  'player' e 'bot' sono solo i NOMI dei due posti; chi li controlla lo
+  dice `Tavolo.controllore(posto)` (`js/engine/tavolo.js`): 'persona',
+  'ia' o 'remoto'. Default di sempre: 'player' persona, 'bot' IA (remoto in
+  Multiplayer); `Tavolo.imposta({ player: 'ia' })` cambia. **Per decidere
+  "chi sceglie / chi guida il turno" si chiede a Tavolo, mai al nome del
+  posto**: `changeTurn` e `initGame` avviano `turnoIA(posto)` per un posto
+  IA, lo scarto di fine turno e la risposta in Catena dell'IA valgono per
+  qualunque posto IA, `Decisioni` mostra una scelta solo a un posto
+  'persona'. L'IA (`js/ai/*`) riceve sempre il posto da cui gioca (`io`,
+  default 'bot') e legge lo stato con gli accessori di Tavolo
+  (`Tavolo.mano(io)`, `Tavolo.mostri(Tavolo.avversario(io))`...); ogni
+  posto può avere il suo livello (`gameState.livelloIA[posto]`, altrimenti
+  `botDifficulty`). Guardrail `guardrail-ia-da-ogni-posto`, che vieta anche
+  `Tavolo.mano(io) = ...`: un'assegnazione a una chiamata, in uno script
+  non stretto, NON è un errore di sintassi (`node --check` la lascia
+  passare) ed esplode solo quando la riga gira — preso davvero convertendo
+  bot.js. Il duello senza testa è ora IA contro IA (`--giocatore <id>`,
+  `--livello-giocatore`). I messaggi del registro di bot.js dicono ancora
+  "Il bot" anche quando l'IA gioca dal posto 'player': succede solo in
+  Node. Il Multiplayer non è stato toccato (`isRemoteResponder`/
+  `isRemoteChooser` guardano ancora il nome del posto): è il passo
+  successivo, "a passo comune".
+
+- ✅ **Multiplayer a passo comune: protocollo e duello gemello (Priorità 3,
+  passi C e D, stesso branch)** — `js/engine/passo-comune.js` +
+  `tools/duello-gemello.js` (spec `duello-gemello`). I due client eseguono
+  TUTTA la partita (stessi mazzi, stesso seme: `PassoComune.preparaDuello`)
+  e si scambiano solo COMANDI (`Comandi.esegui`) e DECISIONI
+  (`Decisioni.chiedi`, come posizione nell'elenco dei candidati). Spento
+  finché nessuno chiama `PassoComune.avvia`: offline l'impronta delle 60
+  partite è identica. **Dalla pagina (passo E)**: `js/multiplayer/mp-passo-comune.js`
+  scambia mazzi e seme dentro initGame (se l'altro non risponde in 15s è un
+  client vecchio e si gioca col protocollo di prima), manda a LOTTI (il
+  relay scarta in silenzio oltre 20 messaggi al secondo, e qui un messaggio
+  perso è una partita separata) e dopo una caduta di linea si fa rimandare i
+  messaggi persi ('passo-riprendi': ogni messaggio ha un `seq`, doppioni
+  scartati, buchi che fermano la coda finché non si riempiono). A passo
+  comune i messaggi del protocollo vecchio tacciono tranne 'game-over'
+  (filtro in `MP_broadcast`, mp-lobby.js). Gli spec Multiplayer di prima
+  forzano il protocollo vecchio con `MP_SENZA_PASSO_COMUNE`; quello nuovo
+  ha `multiplayer-passo-comune`, che gioca turni veri con le funzioni
+  dell'interfaccia e carte VERE della mano (sostituirne una per comodità,
+  come fanno gli spec vecchi, qui separerebbe davvero le due partite).
+  **Il server va ridistribuito** perché accetti 'mazzo'/'passo'/
+  'passo-riprendi'. Regole per il codice nuovo, tutte prese dal duello
+  gemello:
+  - **Una mossa locale parte solo a duello fermo** (`PassoComune.fermo`:
+    niente Catena, finestra di priorità, scelta aperta, comando a metà),
+    altrimenti viene rifiutata: l'IA aspetta con `aspettaDuelloFermo`/
+    `quandoFermo` (bot.js). Un comando che ne lancia un altro DENTRO di sé
+    è un errore di questo tipo (lo scarto di fine turno dell'IA partiva
+    dentro il comando 'fase').
+  - **Una scelta presa all'istante si applica a codice in corso finito**
+    (`PassoComune.differisci`), e così quella ricevuta, anche se era già
+    arrivata: altrimenti cade dentro un ciclo da una parte e dopo
+    dall'altra (Kaiser Glider a metà di Buco Nero, Cerchio Ammaliante).
+  - **Un timer che fa avanzare le REGOLE passa da `PassoComune.dopo`**
+    (`dopoRegola` in duel-engine.js), non da setTimeout: a passo comune
+    aspetta le scelte aperte su entrambi i client. Suoni, vibrazioni ed
+    effetti visivi restano setTimeout.
+  - **`Decisioni.rispondeUnaPersona(chi)` a passo comune dipende solo da chi
+    controlla il posto** (`Tavolo.giocaUnaPersona`, che per un posto
+    'remoto' guarda `Tavolo.impostaNaturaRemoto`): è il bivio "chiedo / decido
+    da me" delle carte, e deve uscire uguale sui due client. Per lo stesso
+    motivo una scelta si chiede a `chi: <il posto vero>`, mai `'player'`
+    scritto a mano (63 corrette).
+  - Uno stato che una mossa porta con sé va nel COMANDO, non su un campo
+    della carta impostato dall'IA prima di eseguirla (Ra id 472:
+    `pagaLpRa`).
+  - Un `const` a livello di script NON è `window.X`: un modulo che altri
+    leggono da `globalThis` va pubblicato anche lì (la prima versione di
+    PassoComune non era vista da `Decisioni`, e nessuna decisione viaggiava).
+  Il duello gemello confronta lo stato a FINE duello nel momento di
+  `fine-duello`: quel che i timer fanno dopo non conta. Per ritrovare un
+  guasto: `node tools/duello-gemello.js --seme N --traccia` mostra ogni
+  scelta chiesta, decisione mandata/attesa e comando, e la prima
+  divergenza dice quale pezzo dello stato si è separato.
+
 ## Carte con limiti noti (da riprendere)
 
 **Fonte di verità: `grep missingEffectNote data/cards.json`, e nient'altro.**

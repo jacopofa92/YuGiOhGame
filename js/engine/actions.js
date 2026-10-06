@@ -265,17 +265,11 @@ function handleCardClickInner(card, sourceType, sourceIndex, sourceOwner, isFace
         // Magia Terreno dell'AVVERSARIO che "il giocatore di turno" può usare
         // (Cancello di Fusione id 887): def.canActivateAsTurnPlayer/
         // activateAsTurnPlayer, con il contesto del giocatore di turno (noi).
-        // Non è l'attivazione di una carta, quindi niente Chain; in
-        // Multiplayer il risultato viaggia come fotografia di stato.
-        const defTurno = DuelEngine.getDefinition(card.id);
-        const ctxTurno = DuelEngine.makeContext('player', { card: card, zone: 'fieldSpell', borrowedFrom: 'bot' });
-        if (typeof defTurno.canActivateAsTurnPlayer === 'function' && !defTurno.canActivateAsTurnPlayer(ctxTurno)) {
+        // Non è l'attivazione di una carta, quindi niente Chain. È il
+        // comando 'usaTerrenoAltrui', lo stesso dell'IA (js/engine/comandi.js).
+        if (!Comandi.esegui('player', { tipo: 'usaTerrenoAltrui' })) {
             addToLog(`❌ Non puoi usare ${card.name} in questo momento.`);
-            return;
         }
-        defTurno.activateAsTurnPlayer(ctxTurno);
-        if (DuelEngine.broadcastLocalStatePush) DuelEngine.broadcastLocalStatePush(null);
-        updateUI();
     } else if (sourceType === 'field-spell' && sourceOwner === 'player' && isMainPhase) {
         // Click sulla propria Magia Terreno già piazzata: stesso principio
         // di sourceType === 'st' qui sopra, ma sulla sua zona dedicata.
@@ -328,7 +322,7 @@ function attemptActivateCard(owner, zone, index) {
     window.DuelEngineUI.openActivateModal(card, {
         title: '✨ Attiva la carta',
         text: `Vuoi attivare ${card.name} adesso?`,
-        onConfirm: () => DuelEngine.activateCard(owner, zone, index)
+        onConfirm: () => Comandi.esegui(owner, { tipo: 'attiva', zona: zone, indice: index, carta: zone === 'hand' && Tavolo.mano(owner)[index] ? Tavolo.mano(owner)[index].uid : undefined })
     });
 }
 
@@ -797,36 +791,19 @@ function attemptMonsterSummon(card, handIndex, slotIndex, fromRect) {
  * Tributo già completato.
  */
 function performGearCastleTributeSacrifice(gearCastleIndex, card, handIndex, fromRect) {
-    const castleSlot = gameState.playerSTField[gearCastleIndex];
-    if (!castleSlot) return;
-    const castleCard = castleSlot.card;
-    // Questo Sacrificio non viaggiava affatto sulla rete: l'avversario
-    // vedeva il Castello restare nella sua zona Magia/Trappola per sempre,
-    // e il conteggio di quella zona entra nel checksum — quindi la Summon
-    // che segue arrivava sempre da uno stato che lui non riconosceva, con
-    // avviso di disallineamento e resync. `zone: 'st'` è l'unica aggiunta
-    // che serviva al messaggio: per tutto il resto un Sacrificio dalla
-    // zona Magia/Trappola si comporta come uno dalla zona Mostro.
-    // Trasmesso DOPO aver applicato tutto, per la stessa ragione spiegata
-    // in performAttackTribute più sotto (il checksum viaggia con l'azione).
-    gameState.playerGraveyard.push(castleCard);
-    gameState.playerSTField[gearCastleIndex] = null;
-    if (window.DuelEngine) {
-        DuelEngine.notifySacrificedForTribute('player', castleCard, card);
-    }
-    if (window.MP_broadcast && !window.MP_applyingRemote) {
-        window.MP_broadcast({ kind: 'tribute', zone: 'st', indices: [gearCastleIndex], delayMs: 0, summonedCard: card });
-    }
-    card._tributedCardIds = [castleCard.id];
-    addToLog(`⚙️ Sacrifichi Castello dell'Ingranaggio Antico (invece dei mostri) per Evocare Tributo ${card.name}!`);
-    updateUI();
-    // Questo Sacrificio alternativo non libera MAI una casella Mostro (va a
-    // scapito di Castello dell'Ingranaggio Antico, sulla zona Magia/
-    // Trappola): `slotIndex` (il punto d'ingresso originale del flusso, vedi
-    // attemptMonsterSummon) potrebbe quindi essere ancora occupato — usa lo
-    // stesso resolveTributeSummonPlacement del Sacrificio normale invece di
-    // aprire il modale direttamente su di lui.
-    resolveTributeSummonPlacement(card, handIndex, fromRect);
+    if (!gameState.playerSTField[gearCastleIndex]) return;
+    // La mossa vera è il comando 'tributa' dalla zona Magia/Trappola (vedi
+    // eseguiTributo in evocazioni.js): per tutto il resto un Sacrificio
+    // dalla zona Magia/Trappola si comporta come uno dalla zona Mostro.
+    Comandi.esegui('player', { tipo: 'tributa', zona: 'st', indici: [gearCastleIndex], perCarta: card.uid, attesaMs: 0 }, {
+        // Questo Sacrificio alternativo non libera MAI una casella Mostro
+        // (va a scapito di Castello dell'Ingranaggio Antico, sulla zona
+        // Magia/Trappola): `slotIndex` (il punto d'ingresso originale del
+        // flusso, vedi attemptMonsterSummon) potrebbe quindi essere ancora
+        // occupato — usa lo stesso resolveTributeSummonPlacement del
+        // Sacrificio normale invece di aprire il modale direttamente su di lui.
+        dopo: () => resolveTributeSummonPlacement(card, handIndex, fromRect)
+    });
 }
 
 /** Prosegue col calcolo standard dei Tributi (mostri sul Terreno) — estratto da attemptMonsterSummon per essere richiamabile anche dopo un "Annulla" sul modale del Castello dell'Ingranaggio Antico qui sopra. */
@@ -1420,7 +1397,7 @@ function promptMonsterFieldAction(slotIndex) {
     if (canActivateEffect) {
         pop.querySelector('#qpMonsterActivate').onclick = () => {
             closeQuickPopover();
-            DuelEngine.activateCard('player', 'monster', slotIndex);
+            Comandi.esegui('player', { tipo: 'attiva', zona: 'monster', indice: slotIndex });
         };
     }
     pop.querySelector('#qpPosCancel').onclick = () => closeQuickPopover();
@@ -1451,7 +1428,7 @@ function promptHandSpellActivation(card, handIndex) {
 
     pop.querySelector('#qpSpellActivate').onclick = () => {
         closeQuickPopover();
-        DuelEngine.activateCard('player', 'hand', handIndex);
+        Comandi.esegui('player', { tipo: 'attiva', zona: 'hand', indice: handIndex, carta: gameState.playerHand[handIndex] && gameState.playerHand[handIndex].uid });
     };
     pop.querySelector('#qpSpellCancel').onclick = () => closeQuickPopover();
 }
@@ -1477,7 +1454,7 @@ function promptHandMonsterActivation(card, handIndex) {
 
     pop.querySelector('#qpMonsterActivateEffect').onclick = () => {
         closeQuickPopover();
-        DuelEngine.activateCard('player', 'hand', handIndex);
+        Comandi.esegui('player', { tipo: 'attiva', zona: 'hand', indice: handIndex, carta: gameState.playerHand[handIndex] && gameState.playerHand[handIndex].uid });
     };
     pop.querySelector('#qpMonsterSelectNormal').onclick = () => {
         closeQuickPopover();
@@ -1536,7 +1513,7 @@ function offerSpecialSummonBanishChoice(card, handIndex, filters) {
             // 698). Il loro testo reale specifica comunque quasi sempre la
             // Posizione fissa (di solito Attacco) per questo tipo di
             // Summon "di rivincita" — resta il comportamento invariato.
-            DuelEngine.trySpecialSummonFromHand('player', handIndex);
+            Comandi.specialeDaManoDellaPersona(handIndex);
             updateUI();
             return;
         }
@@ -1589,7 +1566,7 @@ function offerSpecialSummonTributeChoice(card, handIndex, filters) {
             // Stesso motivo di offerSpecialSummonBanishChoice qui sopra:
             // niente scelta di Posizione impilata su un costo già a scelta
             // multipla già verificato/testato con 'attack' fisso.
-            DuelEngine.trySpecialSummonFromHand('player', handIndex);
+            Comandi.specialeDaManoDellaPersona(handIndex);
             updateUI();
             return;
         }
@@ -1637,7 +1614,7 @@ function finishSpecialSummonFromHand(card, handIndex) {
     const def = DuelEngine.getDefinition(card.id);
     const finish = (position) => {
         gameState.pendingSpecialSummonPosition = position;
-        DuelEngine.trySpecialSummonFromHand('player', handIndex);
+        Comandi.specialeDaManoDellaPersona(handIndex);
         updateUI();
     };
     if (def && def.specialSummonFixedPosition) {
@@ -1695,7 +1672,7 @@ function promptHandMonsterSpecialSummon(card, handIndex) {
                         // Stesso motivo di offerSpecialSummonBanishChoice
                         // qui sopra: niente scelta di Posizione impilata su
                         // un costo già a scelta (quale mostro sacrificare).
-                        DuelEngine.trySpecialSummonFromHand('player', handIndex);
+                        Comandi.specialeDaManoDellaPersona(handIndex);
                         updateUI();
                     }
                 });
@@ -1771,15 +1748,15 @@ function executeAttack(attackerIndex, targetIndex) {
     // costo pagato PRIMA che l'attacco venga anche solo dichiarato,
     // stesso principio di requiresTributeToAttack qui sotto ma senza
     // bisogno di scegliere un bersaglio (basta avere abbastanza LP).
+    // Il costo lo paga il comando 'attacca' (eseguiAttacco, battaglia.js):
+    // qui solo il controllo, per non far partire un attacco impossibile.
     if (attackerDef && attackerDef.requiresLifePointsToAttack) {
         const cost = attackerDef.requiresLifePointsToAttack;
         if (gameState.playerLP <= cost) {
             addToLog(`🚫 ${attackerSlot.card.name} non può attaccare: non hai abbastanza Life Points (servono ${cost}).`);
             return;
         }
-        if (window.DuelEngine) DuelEngine.actions.dealDamage('player', cost);
-        addToLog(`💸 ${attackerSlot.card.name} paga ${cost} Life Points per attaccare!`);
-        resolveAttack('player', attackerIndex, targetIndex);
+        Comandi.esegui('player', { tipo: 'attacca', attaccante: attackerIndex, bersaglio: targetIndex });
         return;
     }
     if (attackerDef && attackerDef.requiresTributeToAttack) {
@@ -1814,52 +1791,12 @@ function executeAttack(attackerIndex, targetIndex) {
         });
         return;
     }
-    resolveAttack('player', attackerIndex, targetIndex);
+    Comandi.esegui('player', { tipo: 'attacca', attaccante: attackerIndex, bersaglio: targetIndex });
 }
 
-/** Sacrifica il mostro in `tributeIndex` (costo pre-attacco, vedi executeAttack sopra) e poi dichiara l'attacco. */
+/** Sacrifica il mostro in `tributeIndex` (costo pre-attacco, vedi executeAttack sopra) e poi dichiara l'attacco: il comando 'attacca' col suo Sacrificio. */
 function performAttackTribute(tributeIndex, attackerIndex, targetIndex) {
-    const slot = gameState.playerMonsterField[tributeIndex];
-    if (!slot) { resolveAttack('player', attackerIndex, targetIndex); return; }
-    // Stesso messaggio 'tribute' già usato da performTributeSacrifice per
-    // un'Evocazione Tributo: applyRemoteTribute (multiplayer.js) è
-    // generico, non gli importa il MOTIVO del sacrificio, solo QUALI
-    // indici sparire dal campo — riusabile qui senza bisogno di un nuovo
-    // tipo di messaggio.
-    //
-    // `delayMs: 0` perché qui la carta sparisce SUBITO, senza animazione:
-    // senza questo campo l'avversario aspettava sempre i 700ms del
-    // Sacrificio per un'Evocazione Tributo, e nel frattempo arrivava già
-    // il messaggio 'attack' di poche righe più sotto — calcolato da noi
-    // con il mostro GIÀ nel Cimitero e da lui con il mostro ANCORA in
-    // campo. Checksum diverso, avviso di disallineamento e resync ad ogni
-    // singolo attacco pagato con un Sacrificio (Guerriero Pantera id 399
-    // e simili).
-    // Nessun `summonedCard`: questo è un costo d'attacco, non
-    // un'Evocazione Tributo — vedi notifySacrificedForTribute
-    // (duel-engine.js), che distingue i due casi proprio da lì.
-    //
-    // Si trasmette DOPO aver applicato tutto, non prima: ogni azione porta
-    // con sé il checksum dello stato di chi la manda (vedi il wrapping di
-    // MP_broadcast in js/multiplayer/multiplayer.js), e chi la riceve
-    // confronta il proprio DOPO averla applicata. Trasmettere prima
-    // significava spedire una fotografia in cui il mostro era ancora in
-    // campo, che l'avversario confrontava con la propria a mostro già
-    // sparito — un finto disallineamento, con resync, ad ogni attacco
-    // pagato con un Sacrificio. Stesso ordine già seguito da
-    // summonMonster/setSpellTrap qui sotto.
-    gameState.playerGraveyard.push(slot.card);
-    gameState.playerMonsterField[tributeIndex] = null;
-    if (window.DuelEngine) {
-        DuelEngine.notifyOwnMonsterSentToGraveyard('player', slot.card);
-        DuelEngine.notifySacrificedForTribute('player', slot.card);
-    }
-    if (window.MP_broadcast && !window.MP_applyingRemote) {
-        window.MP_broadcast({ kind: 'tribute', indices: [tributeIndex], delayMs: 0 });
-    }
-    addToLog(`🔻 Sacrifichi ${slot.card.name} per permettere l'attacco.`);
-    updateUI();
-    resolveAttack('player', attackerIndex, targetIndex);
+    Comandi.esegui('player', { tipo: 'attacca', attaccante: attackerIndex, bersaglio: targetIndex, tributo: tributeIndex });
 }
 
 function triggerDestroyEffect(owner, index, type) {

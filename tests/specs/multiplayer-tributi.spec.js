@@ -51,7 +51,8 @@ module.exports = {
             const openLobby = async (label) => {
                 const page = await context.newPage();
                 page.on('pageerror', (err) => pageErrors.push(`[${label}] ${err.message}`));
-                await page.addInitScript(() => { window.AUTH_GATE_SKIP = true; window.DUEL_RPS_SKIP = true; });
+                // MP_SENZA_PASSO_COMUNE: questo spec verifica il Multiplayer di prima (ripiego con un client vecchio).
+                await page.addInitScript(() => { window.AUTH_GATE_SKIP = true; window.DUEL_RPS_SKIP = true; window.MP_SENZA_PASSO_COMUNE = true; });
                 await page.goto(statics.origin + '/multiplayer.html', { waitUntil: 'load' });
                 await page.waitForSelector('#mpCreateBtn');
                 await page.waitForFunction(() => {
@@ -146,10 +147,21 @@ module.exports = {
             await resetSpie();
             await actor.evaluate(() => {
                 const filler = cardDatabase.find((c) => c.type === 'monster' && !c.extraDeck && (c.level || 4) <= 4);
-                [0, 1].forEach((slot) => {
+                // Due carte DISTINTE in mano, evocate ciascuna per sé.
+                // Prima si sovrascriveva playerHand[0] mentre la prima era
+                // ancora in volo, e il vecchio summonMonster toglieva dalla
+                // mano "la carta all'indice 0" — qualunque fosse — invece di
+                // quella che aveva volato: due carte tolte per una. Ora la
+                // carta si ritrova per uid (comando 'evoca', comandi.js).
+                // Si SOSTITUISCONO due carte già in mano, non se ne
+                // aggiungono: il numero di carte in mano entra nel checksum,
+                // e l'altro client non ha visto arrivare nessuna carta in più.
+                const carte = [0, 1].map((slot) => Object.assign({}, filler, { uid: 'mp_trib_' + slot }));
+                gameState.playerHand[0] = carte[0];
+                gameState.playerHand[1] = carte[1];
+                carte.forEach((carta, slot) => {
                     gameState.hasNormalSummoned = false;
-                    gameState.playerHand[0] = Object.assign({}, filler, { uid: 'mp_trib_' + slot });
-                    summonMonster(gameState.playerHand[0], slot, 'attack', 0);
+                    summonMonster(carta, slot, 'attack', gameState.playerHand.indexOf(carta));
                 });
                 gameState.hasNormalSummoned = false;
             });

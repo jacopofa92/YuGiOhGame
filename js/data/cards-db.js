@@ -351,9 +351,19 @@ function getRandomDrawPool() {
     return _randomDrawPool;
 }
 
+/**
+ * La casualità di GIOCO (mescolare un mazzo, pescare a caso): Casuale
+ * (js/engine/casuale.js) se c'è — in Multiplayer esce da un seme condiviso
+ * coi due client — altrimenti Math.random. Questo file si carica anche in
+ * pagine senza il motore (Cartoteca, Creazione Deck), dove Casuale non c'è.
+ */
+function casualeDiGioco() {
+    return typeof Casuale !== 'undefined' ? Casuale.random() : Math.random();
+}
+
 function createRandomCard() {
     const pool = getRandomDrawPool();
-    const template = pool[Math.floor(Math.random() * pool.length)];
+    const template = pool[Math.floor(casualeDiGioco() * pool.length)];
     return { ...template, uid: Date.now() + Math.random() };
 }
 
@@ -366,21 +376,28 @@ function createRandomCard() {
  * usato da resetGameState() in js/engine/game-flow.js per le partite offline.
  * Ritorna null se lo spec non è valido, così chi chiama può ricadere sul
  * vecchio pool casuale invece di un mazzo vuoto.
+ *
+ * `opzioni.prefissoUid`: uid deterministici (`<prefisso>_<n>`) invece che
+ * fatti di ora e caso. Serve al Multiplayer a passo comune, dove i due
+ * client costruiscono lo stesso mazzo e devono dare alla stessa carta lo
+ * stesso uid (le scelte viaggiano per uid). Senza, nulla cambia.
  */
-function buildDeckFromSpec(deckSpec) {
+function buildDeckFromSpec(deckSpec, opzioni) {
     if (!deckSpec || !Array.isArray(deckSpec.main) || deckSpec.main.length === 0) return null;
+    const prefisso = opzioni && opzioni.prefissoUid;
     const cards = [];
     deckSpec.main.forEach((entry) => {
         const template = cardDatabase.find((c) => c.id === entry.id);
         if (!template) return;
         for (let i = 0; i < entry.qty; i++) {
-            cards.push({ ...template, uid: `${Date.now()}_${Math.random().toString(36).slice(2)}_${cards.length}` });
+            const uid = prefisso ? `${prefisso}_${cards.length}` : `${Date.now()}_${Math.random().toString(36).slice(2)}_${cards.length}`;
+            cards.push({ ...template, uid });
         }
     });
     if (cards.length === 0) return null;
     // Fisher-Yates
     for (let i = cards.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
+        const j = Math.floor(casualeDiGioco() * (i + 1));
         [cards[i], cards[j]] = [cards[j], cards[i]];
     }
     return cards;
@@ -411,7 +428,7 @@ function buildBalancedDemoDeckSpec() {
     function shuffledCopy(arr) {
         const copy = arr.slice();
         for (let i = copy.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
+            const j = Math.floor(casualeDiGioco() * (i + 1));
             [copy[i], copy[j]] = [copy[j], copy[i]];
         }
         return copy;
@@ -467,14 +484,17 @@ function buildBalancedDemoDeckSpec() {
  * in js/engine/duel-engine.js). Ritorna sempre un array (mai null): un deck
  * senza Extra Deck è normalissimo, non un errore.
  */
-function buildExtraDeckFromSpec(deckSpec) {
+function buildExtraDeckFromSpec(deckSpec, opzioni) {
     if (!deckSpec || !Array.isArray(deckSpec.extra) || deckSpec.extra.length === 0) return [];
+    // `opzioni.prefissoUid`: uid deterministici, vedi buildDeckFromSpec.
+    const prefisso = opzioni && opzioni.prefissoUid;
     const cards = [];
     deckSpec.extra.forEach((entry) => {
         const template = cardDatabase.find((c) => c.id === entry.id);
         if (!template) return;
         for (let i = 0; i < entry.qty; i++) {
-            cards.push({ ...template, uid: `${Date.now()}_${Math.random().toString(36).slice(2)}_ed${cards.length}` });
+            const uid = prefisso ? `${prefisso}_ed${cards.length}` : `${Date.now()}_${Math.random().toString(36).slice(2)}_ed${cards.length}`;
+            cards.push({ ...template, uid });
         }
     });
     return cards;

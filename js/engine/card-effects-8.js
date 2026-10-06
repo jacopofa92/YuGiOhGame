@@ -444,7 +444,7 @@
             const [card] = deck.splice(index, 1);
             ctx.specialSummon(ctx.owner, card, slotIndex, 'defense', 'deck');
             for (let i = deck.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
+                const j = Math.floor(Casuale.random() * (i + 1));
                 [deck[i], deck[j]] = [deck[j], deck[i]];
             }
             ctx.log('🐀 Parassita Bubbonico Special Summona una copia di sé dal Deck!');
@@ -768,7 +768,7 @@
             // 2 "candidati" invece di 1 (se stessa + il vero mostro da
             // rianimare), aprendo inutilmente un picker con una scelta
             // fasulla invece di auto-selezionare l'unico vero candidato.
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 if (ctx.findEmptyMonsterSlot(owner) === -1) return;
                 const ownerCtx = owner === ctx.owner ? ctx : DuelEngine.makeContext(owner, {});
                 searchGraveyardWithChoice(ownerCtx, owner, (c) => c.type === 'monster' && c.uid !== ctx.card.uid, {
@@ -789,7 +789,7 @@
                     };
                     if (!Decisioni.rispondeUnaPersona(owner)) { completa('attack'); return; }
                     Decisioni.chiedi({
-                        chi: 'player',
+                        chi: owner,
                         tipo: 'posizione',
                         titolo: `${card.name}: in che Posizione?`
                     }, (scelta) => {
@@ -1371,7 +1371,7 @@
     // Gigante id 262).
     CardEffects.register(1061, {
         onSummon(ctx) {
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 const st = ctx.stField(owner);
                 for (let i = st.length - 1; i >= 0; i--) {
                     if (st[i] && st[i].isFaceDown) returnSpellTrapToHand(ctx, owner, i);
@@ -1398,7 +1398,7 @@
             ctx.graveyard(ctx.owner).push(ctx.card);
             const gatherCandidates = () => {
                 const list = [];
-                ['player', 'bot'].forEach((owner) => {
+                Tavolo.ordine().forEach((owner) => {
                     ctx.field(owner).forEach((s, i) => {
                         if (s && !s.isFaceDown && (s.card.attack || 0) <= 1000) list.push({ owner: owner, index: i, card: s.card });
                     });
@@ -1419,7 +1419,7 @@
                     return;
                 }
                 Decisioni.chiedi({
-                    chi: 'player',
+                    chi: ctx.owner,
                     candidati: candidates.map((c) => c.card),
                     titolo: '💣 Sparajongler Esplosivo',
                     testo: `Scegli ${remaining} mostr${remaining === 1 ? 'o' : 'i'} scoperto con ATK 1000 o meno da distruggere.`
@@ -1468,7 +1468,7 @@
             };
             if (!Decisioni.rispondeUnaPersona(ctx.owner)) { returnToDeck(stillInGrave[0]); return; }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: stillInGrave,
                 titolo: '🔥 Sentinella Cremisi',
                 testo: 'Scegli 1 tuo mostro distrutto in battaglia questo turno da rimandare in fondo al Deck (questa carta si tributa).'
@@ -1580,7 +1580,7 @@
             };
             if (!Decisioni.rispondeUnaPersona(ctx.owner)) { returnToDeck(stillInGrave[0]); return; }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: stillInGrave,
                 titolo: '🧚 Guardiana delle Fate',
                 testo: 'Scegli 1 tua Magia mandata al Cimitero da un effetto avversario questo turno da rimandare in fondo al Deck (questa carta si tributa).'
@@ -1639,7 +1639,7 @@
     // ha uno).
     CardEffects.register(1072, {
         static(ctx) {
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
                     if (slot && !slot.isFaceDown && slot.card.attack >= 1900) {
                         gameState.cannotAttackUids[slot.card.uid] = true;
@@ -1680,7 +1680,7 @@
     // Un Oceano Leggendario/decine di altre carte in questo file.
     CardEffects.register(1074, {
         static(ctx) {
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
                     if (!slot || slot.isFaceDown) return;
                     if (slot.card.attribute === 'LUCE') {
@@ -1707,7 +1707,7 @@
     // appena arrivata per poterla poi distruggere — riusabile da
     // qualunque futura carta con lo stesso bisogno.
     function findCardFieldLocation(targetCard) {
-        for (const owner of ['player', 'bot']) {
+        for (const owner of Tavolo.ordine()) {
             const field = owner === 'player' ? gameState.playerMonsterField : gameState.botMonsterField;
             const index = field.findIndex((s) => s && s.card.uid === targetCard.uid);
             if (index !== -1) return { owner: owner, index: index };
@@ -1733,7 +1733,7 @@
         activate(ctx) {
             ctx.discardRandomFromHand(ctx.owner);
             let destroyedCount = 0;
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 for (let i = ctx.field(owner).length - 1; i >= 0; i--) {
                     const slot = ctx.field(owner)[i];
                     if (slot && !slot.isFaceDown && slot.wasSpecialSummoned) {
@@ -1769,7 +1769,7 @@
                 return;
             }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates,
                 titolo: '😴 Invito al Sonno Oscuro',
                 testo: 'Scegli 1 mostro avversario scoperto che non potrà più attaccare finché questa carta resta scoperta.'
@@ -1819,7 +1819,7 @@
         if (!summonedCard) return;
         const loc = findCardFieldLocation(summonedCard);
         if (!loc) return;
-        const hasDuplicate = ['player', 'bot'].some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown && s.card.uid !== summonedCard.uid && s.card.name === summonedCard.name));
+        const hasDuplicate = Tavolo.ordine().some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown && s.card.uid !== summonedCard.uid && s.card.name === summonedCard.name));
         if (!hasDuplicate) return;
         ctx.destroyMonster(loc.owner, loc.index);
         ctx.log(`📿 Kotodama distrugge ${summonedCard.name}: un'altra copia era già scoperta sul Terreno!`);
@@ -1846,7 +1846,7 @@
             };
             if (!Decisioni.rispondeUnaPersona(ctx.owner)) { destroyChosen(candidates[0]); return; }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates,
                 titolo: '🪙 Kryuel',
                 testo: 'Hai indovinato la moneta! Scegli 1 mostro avversario scoperto da distruggere.'
@@ -1916,7 +1916,7 @@
             };
             if (!Decisioni.rispondeUnaPersona(ctx.owner)) { returnToDeckTop(stillInGrave[0]); return; }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: stillInGrave,
                 titolo: '🐆 Pantera Signora',
                 testo: 'Scegli 1 tuo mostro distrutto in battaglia questo turno da rimandare in cima al Deck (questa carta si tributa).'
@@ -1974,7 +1974,7 @@
                     return;
                 }
                 Decisioni.chiedi({
-                    chi: 'player',
+                    chi: ctx.owner,
                     candidati: candidates.map((c) => c.card),
                     titolo: '🧚 Fata Isterica',
                     testo: `Scegli ${remaining} tu${remaining === 1 ? 'o mostro' : 'oi mostri'} da tributare.`
@@ -2033,7 +2033,7 @@
         onDestroy(ctx) {
             if (!ctx.destroyedByOpponentCard) return;
             const candidates = [];
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((s, i) => { if (s && !s.isFaceDown) candidates.push({ owner: owner, index: i, card: s.card }); });
             });
             if (candidates.length === 0) return;
@@ -2045,7 +2045,7 @@
             };
             if (!Decisioni.rispondeUnaPersona(ctx.owner)) { destroyChosen(candidates[0].card); return; }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates.map((c) => c.card),
                 titolo: '👹 Newdoria',
                 testo: 'Scegli 1 mostro sul Terreno da distruggere.'
@@ -2093,7 +2093,7 @@
             // proprio Deck, che è privato e che l'avversario non simula
             // nemmeno. Vale per ogni altro rimescolo di questo file.
             for (let i = merged.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
+                const j = Math.floor(Casuale.random() * (i + 1));
                 [merged[i], merged[j]] = [merged[j], merged[i]];
             }
             gameState[deckKey] = merged;
@@ -2156,7 +2156,7 @@
     // esistente.
     function ryuKishinClownReact(ctx) {
         const candidates = [];
-        ['player', 'bot'].forEach((owner) => {
+        Tavolo.ordine().forEach((owner) => {
             ctx.field(owner).forEach((s, i) => { if (s && !s.isFaceDown) candidates.push({ owner: owner, index: i, card: s.card, position: s.position }); });
         });
         if (candidates.length === 0) return;
@@ -2176,7 +2176,7 @@
             return;
         }
         Decisioni.chiedi({
-            chi: 'player',
+            chi: ctx.owner,
             candidati: candidates.map((c) => c.card),
             titolo: '🤡 Ryu-Kishin Pagliaccio',
             testo: 'Scegli 1 mostro scoperto di cui cambiare la Posizione di Battaglia.'
@@ -2319,7 +2319,7 @@
             };
             if (!Decisioni.rispondeUnaPersona(ctx.owner)) { destroyChosen(candidates[0].card); return; }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates.map((c) => c.card),
                 titolo: '🦗 Sciame di Locuste',
                 testo: 'Scegli 1 Magia/Trappola avversaria da distruggere.'
@@ -2362,7 +2362,7 @@
             };
             if (!Decisioni.rispondeUnaPersona(ctx.owner)) { destroyChosen(candidates[0].card); return; }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates.map((c) => c.card),
                 titolo: '🪲 Sciame di Scarabei',
                 testo: 'Scegli 1 mostro avversario da distruggere.'
@@ -2384,7 +2384,7 @@
             const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
             const deck = gameState[deckKey];
             for (let i = deck.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
+                const j = Math.floor(Casuale.random() * (i + 1));
                 [deck[i], deck[j]] = [deck[j], deck[i]];
             }
             ctx.log('🧠 Saggezza Corrotta rimescola il Deck!');
@@ -2423,7 +2423,7 @@
             };
             if (!Decisioni.rispondeUnaPersona(ctx.owner)) { tributeChosen(candidates[0].card); return; }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates.map((c) => c.card),
                 titolo: '⚔️ Il Piccolo Spadaccino di Aile',
                 testo: 'Scegli 1 altro tuo mostro da tributare per guadagnare 700 ATK fino a fine turno.'
@@ -2470,7 +2470,7 @@
             const hasWarriorTribute = ctx.field(ctx.owner).some((s) => s && s.card.race === 'Guerriero');
             if (!hasWarriorTribute) return false;
             const ownAtk = ctx.card.attack || 0;
-            return ['player', 'bot'].some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown && (s.card.defense || 0) <= ownAtk));
+            return Tavolo.ordine().some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown && (s.card.defense || 0) <= ownAtk));
         },
         activate(ctx) {
             const warriorCandidates = [];
@@ -2479,7 +2479,7 @@
             const ownAtk = ctx.card.attack || 0;
             const destroyTarget = () => {
                 const destroyCandidates = [];
-                ['player', 'bot'].forEach((owner) => {
+                Tavolo.ordine().forEach((owner) => {
                     ctx.field(owner).forEach((s, i) => { if (s && !s.isFaceDown && (s.card.defense || 0) <= ownAtk) destroyCandidates.push({ owner: owner, index: i, card: s.card }); });
                 });
                 if (destroyCandidates.length === 0) return;
@@ -2491,7 +2491,7 @@
                 };
                 if (!Decisioni.rispondeUnaPersona(ctx.owner)) { destroyChosen(destroyCandidates[0].card); return; }
                 Decisioni.chiedi({
-                    chi: 'player',
+                    chi: ctx.owner,
                     candidati: destroyCandidates.map((c) => c.card),
                     titolo: '🪨 Unità Scagliapietre',
                     testo: 'Scegli 1 mostro scoperto con DEF pari o inferiore all\'ATK di questa carta da distruggere.'
@@ -2510,7 +2510,7 @@
             };
             if (!Decisioni.rispondeUnaPersona(ctx.owner)) { tributeChosen(warriorCandidates[0].card); return; }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: warriorCandidates.map((c) => c.card),
                 titolo: '🪨 Unità Scagliapietre',
                 testo: 'Scegli 1 mostro Tipo Guerriero da tributare.'
@@ -2556,7 +2556,7 @@
             };
             if (!Decisioni.rispondeUnaPersona(ctx.owner)) { changeChosen(candidates[0]); return; }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates.map((c) => c.card),
                 titolo: '🌊 Spirito dell\'Acqua',
                 testo: 'Scegli 1 mostro avversario scoperto di cui cambiare la Posizione di Battaglia (resterà così per il resto del turno).'
@@ -2596,7 +2596,7 @@
             };
             if (!Decisioni.rispondeUnaPersona(ctx.owner)) { changeChosen(candidates[0]); return; }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates.map((c) => c.card),
                 titolo: '🦅 Garuda lo Spirito del Vento',
                 testo: 'Scegli 1 mostro avversario scoperto di cui cambiare la Posizione di Battaglia.'
@@ -2775,7 +2775,7 @@
             const t = slots[i]; slots[i] = slots[j]; slots[j] = t;
         }
         caselle.forEach((indice, k) => { campo[indice] = slots[k]; });
-        ['player', 'bot'].forEach((lato) => {
+        Tavolo.ordine().forEach((lato) => {
             ctx.stField(lato).forEach((st) => {
                 if (!st || !st.card.equippedToUid) return;
                 const nuovo = campo.findIndex((s) => s && s.card.uid === st.card.equippedToUid);
@@ -2809,7 +2809,7 @@
     // (id 1074), Attributi invertiti.
     CardEffects.register(1111, {
         static(ctx) {
-            ['player', 'bot'].forEach((owner) => {
+            Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
                     if (!slot || slot.isFaceDown) return;
                     if (slot.card.attribute === 'OSCURITÀ') {
@@ -2847,7 +2847,7 @@
             };
             if (!Decisioni.rispondeUnaPersona(ctx.owner)) { sendChosen(candidates[0].card); return; }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates.map((c) => c.card),
                 titolo: '🌿 Spirito Silvano',
                 testo: 'Scegli 1 Carta Equipaggiamento agganciata a questa carta da mandare al Cimitero.'
@@ -3219,7 +3219,7 @@
             const [newCopy] = deck.splice(deckIdx, 1);
             ctx.specialSummon(ctx.owner, newCopy, slotIndex, 'attack', 'deck');
             for (let i = deck.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
+                const j = Math.floor(Casuale.random() * (i + 1));
                 [deck[i], deck[j]] = [deck[j], deck[i]];
             }
             ctx.log(`💀 ${ctx.card.name} Special Summona un'altra copia di se stessa dal Deck, poi rimescola il Deck!`);

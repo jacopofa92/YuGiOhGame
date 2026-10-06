@@ -403,6 +403,18 @@
         setTimeout(fn, delay);
     }
 
+    /**
+     * Un timer delle REGOLE (il prossimo passo della Catena, il seguito di
+     * una distruzione): un setTimeout, che a passo comune aspetta anche che
+     * nessuna scelta sia aperta su nessuno dei due client — vedi il tempo
+     * delle regole in js/engine/passo-comune.js. Per suoni, vibrazioni ed
+     * effetti visivi resta setTimeout: non cambiano la partita.
+     */
+    function dopoRegola(fn, delay) {
+        if (typeof PassoComune !== 'undefined') return PassoComune.dopo(fn, delay);
+        return setTimeout(fn, delay);
+    }
+
     function redirectToBanishIfFlagged(owner, card) {
         if (!card.mustBanishOnLeavingField) return;
         const grave = graveyardOf(owner);
@@ -516,7 +528,7 @@
      * regge già.
      */
     function sorteggioCondiviso(chiave, contesto) {
-        if (!window.MULTIPLAYER_MODE) return Math.random();
+        if (!window.MULTIPLAYER_MODE) return Casuale.random();
         if (turnoDelSorteggio !== gameState.turn) {
             turnoDelSorteggio = gameState.turn;
             usiPerCarta.clear();
@@ -539,8 +551,10 @@
      * candidato.
      */
     function uidCondiviso(prefisso, contesto) {
-        if (!window.MULTIPLAYER_MODE) {
-            return `${prefisso}_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+        // Con la casualità di gioco condivisa (passo comune) l'uid esce dal
+        // seme, uguale sui due client; Date.now() no.
+        if (!window.MULTIPLAYER_MODE && !Casuale.condivisa()) {
+            return `${prefisso}_${Date.now()}_${Casuale.random().toString(36).slice(2)}`;
         }
         // Stessa chiave che userebbe ctx.random(): un contesto ha UNA sola
         // sequenza di sorteggi, che i suoi numeri finiscano in un dado o
@@ -1145,7 +1159,7 @@
             if (!store) return;
             Object.keys(store).forEach((uid) => {
                 if (!store[uid].destroyAfter) return;
-                ['player', 'bot'].forEach((owner) => {
+                Tavolo.ordine().forEach((owner) => {
                     fieldOf(owner).forEach((slot, index) => {
                         if (slot && slot.card.uid === uid) ACTIONS.destroyMonster(owner, index);
                     });
@@ -1165,7 +1179,7 @@
          * distruzione di massa, non solo per una singola.
          */
         destroyAllMonsters(owner) {
-            const owners = owner ? [owner] : ['player', 'bot'];
+            const owners = owner ? [owner] : Tavolo.ordine();
             owners.forEach((o) => {
                 fieldOf(o).forEach((slot, index) => {
                     if (slot) this.destroyMonster(o, index);
@@ -1635,7 +1649,7 @@
             cards.forEach((c) => deck.push(c));
             // Fisher-Yates
             for (let i = deck.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
+                const j = Math.floor(Casuale.random() * (i + 1));
                 [deck[i], deck[j]] = [deck[j], deck[i]];
             }
             return true;
@@ -1972,7 +1986,7 @@
         discardRandomFromHand(owner) {
             const hand = handOf(owner);
             if (hand.length === 0) return null;
-            const index = Math.floor(Math.random() * hand.length);
+            const index = Math.floor(Casuale.random() * hand.length);
             const [card] = hand.splice(index, 1);
             const discardedByOwner = (this && this.owner) || null;
             graveyardOf(owner).push(card);
@@ -2098,7 +2112,7 @@
             }
             // returnedOwner = chi l'ha ripreso in mano (es. Criosfinge id
             // 761: "quel proprietario scarta 1 carta").
-            ['player', 'bot'].forEach((reactOwner) => {
+            Tavolo.ordine().forEach((reactOwner) => {
                 fieldOf(reactOwner).forEach((rslot, rindex) => {
                     if (!rslot || rslot.isFaceDown) return;
                     const rdef = getDefinition(rslot.card.id);
@@ -2618,7 +2632,7 @@
     function processTemporaryControlReturns() {
         if (!gameState.temporaryControls || gameState.temporaryControls.length === 0) return;
         gameState.temporaryControls.forEach((entry) => {
-            ['player', 'bot'].forEach((currentOwner) => {
+            Tavolo.ordine().forEach((currentOwner) => {
                 const field = fieldOf(currentOwner);
                 const index = field.findIndex((s) => s && s.card.uid === entry.uid);
                 if (index === -1) return;
@@ -3232,7 +3246,7 @@
             // combaciare undefined === undefined e legherebbero ogni mostro a
             // ogni altro — trovato così, con un Drago Bianco distrutto
             // "insieme" a un mostro avversario qualunque.
-            if (ctx.card.uid) ['player', 'bot'].forEach((lato) => {
+            if (ctx.card.uid) Tavolo.ordine().forEach((lato) => {
                 fieldOf(lato).forEach((slot, index) => {
                     if (slot && slot.card.destroyWhenDestroyedUid && slot.card.destroyWhenDestroyedUid === ctx.card.uid) {
                         addToLog(`🔗 ${slot.card.name} viene distrutto insieme a ${ctx.card.name}.`);
@@ -3276,7 +3290,7 @@
             // Ignition dei mostri) — non dalle Trappole automatiche di
             // risposta qui sotto (es. Buco Trappola), per restare un
             // aggancio semplice invece di un vero stack di Chain.
-            ['player', 'bot'].forEach((fieldOwner) => {
+            Tavolo.ordine().forEach((fieldOwner) => {
                 fieldOf(fieldOwner).forEach((slot, index) => {
                     if (!slot || slot.isFaceDown) return;
                     if (slot.card.uid === ctx.card.uid) return; // "eccetto questa carta"
@@ -3365,7 +3379,12 @@
     // di indovinarla.
     // ============================================================
 
-    function isMultiplayer() { return !!window.MP_broadcast; }
+    // Il Multiplayer che RACCONTA le mosse (messaggi su misura, mano a
+    // segnaposto, decisioni per uid). A passo comune (js/engine/passo-comune.js)
+    // è spento tutto: i due client conoscono le stesse carte e le decisioni
+    // viaggiano da Decisioni.chiedi.
+    function aPassoComune() { return typeof PassoComune !== 'undefined' && PassoComune.attivo(); }
+    function isMultiplayer() { return !!window.MP_broadcast && !aPassoComune(); }
 
     /** In Multiplayer il lato 'bot' non è un bot: è una persona su un altro computer, ed è LEI a dover rispondere. */
     function isRemoteResponder(owner) { return isMultiplayer() && owner === 'bot'; }
@@ -3512,7 +3531,7 @@
 
     /** Vero se a scegliere è la persona dall'altra parte, non io. */
     function isRemoteChooser(owner) {
-        return !!window.MULTIPLAYER_MODE && owner === 'bot';
+        return !!window.MULTIPLAYER_MODE && !aPassoComune() && owner === 'bot';
     }
 
     function flushRemoteChainDecisions() {
@@ -3606,8 +3625,8 @@
             // chieda non risponde: per sicurezza non si attiva nulla,
             // invece di bloccare il duello.
             automatica: (elenco) => {
-                if (responderOwner !== 'bot') return null;
-                return window.BotAI ? BotAI.chooseChainResponse(elenco) : elenco[0];
+                if (!Tavolo.eIA(responderOwner)) return null;
+                return window.BotAI ? BotAI.chooseChainResponse(elenco, responderOwner) : elenco[0];
             }
         }, callback);
     }
@@ -3858,7 +3877,7 @@
         // stessa svista basta a rendere intargettabile una futura carta
         // personalizzata (crea-carta.html è testo libero dell'utente).
         if (raceCheckSlot && !raceCheckSlot.isFaceDown && raceCheckSlot.card.race) {
-            const protectedByRace = ['player', 'bot'].some((protectorOwner) =>
+            const protectedByRace = Tavolo.ordine().some((protectorOwner) =>
                 fieldOf(protectorOwner).some((slot) => slot && !slot.isFaceDown
                     && getDefinition(slot.card.id)?.protectsRaceFromTargeting === raceCheckSlot.card.race));
             if (protectedByRace) {
@@ -4352,10 +4371,13 @@
         // rimozione (Ninja d'Assalto si bandisce) usato senza motivo
         // brucerebbe il costo a vuoto. In risposta a una Catena il bot
         // continua a decidere come sempre.
-        if (responderOwner === 'bot') {
+        // giocaUnaPersona e non eIA: a passo comune il posto dell'altro
+        // client è 'remoto' di qua, ma l'elenco deve uscire uguale a quello
+        // che calcola lui (vedi Tavolo.giocaUnaPersona).
+        if (!Tavolo.giocaUnaPersona(responderOwner)) {
             candidates = candidates.filter((c) => {
                 const regola = c.def && c.def.botInFinestraDiPriorita;
-                if (typeof regola === 'function') return !!regola(makeContext('bot', { card: c.card, zone: c.zone, index: c.index }));
+                if (typeof regola === 'function') return !!regola(makeContext(responderOwner, { card: c.card, zone: c.zone, index: c.index }));
                 return !!regola;
             });
         }
@@ -4588,7 +4610,7 @@
         const duration = (window.FX && FX.ACTIVATE_CENTER_DURATION_MS) || 2000;
         const elapsed = initialLink.activatedAt ? (Date.now() - initialLink.activatedAt) : duration;
         const waitMs = Math.max(0, duration - elapsed);
-        setTimeout(askNextRound, waitMs);
+        dopoRegola(askNextRound, waitMs);
     }
 
     /**
@@ -4781,7 +4803,7 @@
             const duration = (window.FX && FX.ACTIVATE_CENTER_DURATION_MS) || 2000;
             const elapsed = link.activatedAt ? (Date.now() - link.activatedAt) : duration;
             const waitMs = Math.max(0, duration - elapsed);
-            setTimeout(runHandler, waitMs);
+            dopoRegola(runHandler, waitMs);
         };
 
         resolveNext();
@@ -4889,7 +4911,7 @@
         // (game-flow.js) per mostrare le vere carte del bot invece dei
         // dorsi.
         gameState.bothHandsRevealed = false;
-        ['player', 'bot'].forEach((owner) => {
+        Tavolo.ordine().forEach((owner) => {
             if (fieldOf(owner).some((s) => s && !s.isFaceDown && s.card.id === 282)) {
                 gameState.otherMonsterSummonsBlockedFor[owner] = true;
             }
@@ -5030,12 +5052,12 @@
         // di monsterEffectsNegatedUidsFor appena fatto; li re-inietta qui
         // ad ogni render, esattamente come la clausola base fa da sé più
         // sotto per il bersaglio equipaggiato.
-        ['player', 'bot'].forEach((owner) => {
+        Tavolo.ordine().forEach((owner) => {
             const extended = gameState.orichalcosExtendedNegationUidsFor && gameState.orichalcosExtendedNegationUidsFor[owner];
             if (extended && extended.size) extended.forEach((uid) => gameState.monsterEffectsNegatedUidsFor[owner].add(uid));
         });
 
-        ['player', 'bot'].forEach((owner) => {
+        Tavolo.ordine().forEach((owner) => {
             // Mostri scoperti sul campo (es. Jinzo).
             fieldOf(owner).forEach((slot, index) => {
                 if (!slot || slot.isFaceDown) return;
@@ -5130,7 +5152,7 @@
                         // `slot` sarà stato riusato o svuotato quando il
                         // timeout scatta.
                         const equipFinitaAlCimitero = slot.card;
-                        setTimeout(() => {
+                        dopoRegola(() => {
                             notifySpellTrapSentToGraveyardFromField(owner, equipFinitaAlCimitero, { motivo: 'equipOrfana' });
                         }, 0);
                         return;
@@ -5160,7 +5182,7 @@
         // evita anche che una copia attivata in seguito mostri le lame fisse
         // prima della nuova animazione di caduta.
         if (gameState.revealedSwordsLanded) {
-            ['player', 'bot'].forEach((target) => {
+            Tavolo.ordine().forEach((target) => {
                 const controller = opponentOf(target);
                 const ancoraAttiva = stFieldOf(controller).some((slot) => slot && !slot.isFaceDown && slot.card.id === 8);
                 if (!ancoraAttiva) gameState.revealedSwordsLanded[target] = false;
@@ -5188,7 +5210,7 @@
         // differenza di Misterioso Burattinaio id 579, che reagisce a
         // prescindere e non li consulta mai).
         const extra = { summonedCard: summonedCard || null, summonedVia: summonedVia || null };
-        ['player', 'bot'].forEach((owner) => {
+        Tavolo.ordine().forEach((owner) => {
             fieldOf(owner).forEach((slot, index) => {
                 if (!slot || slot.isFaceDown) return;
                 const def = getDefinition(slot.card.id);
@@ -5230,7 +5252,7 @@
      * Cimitero" più sopra in fireTrigger, un caso diverso e più stretto).
      */
     function reactToAnySpecialSummon(summonedCard) {
-        ['player', 'bot'].forEach((owner) => {
+        Tavolo.ordine().forEach((owner) => {
             fieldOf(owner).forEach((slot, index) => {
                 if (!slot || slot.isFaceDown) return;
                 const def = getDefinition(slot.card.id);
@@ -5552,7 +5574,7 @@
         // funzioni di calcolo, vedi Soldati Insetto del Cielo/Soldato
         // Cinetico/Metalmorfosi), ma è un arricchimento generico dello
         // stesso ctx condiviso, non un parametro ad hoc per una sola carta.
-        const owner = ['player', 'bot'].find((o) => fieldOf(o).some((s) => s && s.card.uid === card.uid)) || null;
+        const owner = Tavolo.ordine().find((o) => fieldOf(o).some((s) => s && s.card.uid === card.uid)) || null;
         // Bonus "usa e getta", concesso da un'altra carta (non da un Equip
         // né dalla propria definizione) SOLO per questo Damage Step, es.
         // Fuoco di Copertura (id 852): guadagni una tantum, decisi al
@@ -5576,7 +5598,7 @@
         // sappiamo a priori il proprietario di `card`, quindi la cerchiamo
         // su entrambi gli stField (al massimo 5 caselle a testa, costo
         // trascurabile).
-        ['player', 'bot'].forEach((owner) => {
+        Tavolo.ordine().forEach((owner) => {
             stFieldOf(owner).forEach((slot) => {
                 if (!slot || slot.isFaceDown) return;
                 const eqDef = getDefinition(slot.card.id);
@@ -6179,7 +6201,7 @@
      * risposta: lo stato è già nella fotografia, quel campo non lo tocca.
      */
     function broadcastLocalStatePush(summoned) {
-        if (!window.MP_broadcast || window.MP_applyingRemote) return;
+        if (!window.MP_broadcast || window.MP_applyingRemote || aPassoComune()) return;
         window.MP_broadcast({
             kind: 'state-push',
             state: serializePublicState('player'),

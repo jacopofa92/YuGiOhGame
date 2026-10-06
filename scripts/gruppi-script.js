@@ -29,11 +29,15 @@ module.exports = {
     // (helper condivisi) va prima delle sue 8 parti, duel-engine.js prima
     // di tutto il resto. Un file nuovo del nucleo si aggiunge qui.
     motore: [
-        // Prima di tutto: l'unico punto da cui le regole toccano la pagina.
+        // La casualità di gioco (seme condiviso in Multiplayer a passo comune).
+        'js/engine/casuale.js',
+        // L'unico punto da cui le regole toccano la pagina.
         'js/engine/porta-ui.js',
         // Il canale con cui le regole avvisano l'interfaccia: prima di
         // chiunque emetta o ascolti.
         'js/engine/eventi-duello.js',
+        // I due posti al tavolo e chi li controlla (persona, IA, remoto).
+        'js/engine/tavolo.js',
         'js/engine/duel-engine.js',
         // Ogni scelta del duello (chi risponde: avversario remoto, persona
         // davanti allo schermo o scelta automatica). Prima delle carte.
@@ -64,6 +68,12 @@ module.exports = {
         // addToLog/updateUI/clearSelection/isBlockingModalOpen/endDuel:
         // la parte di regola, prima di game-flow.js che le usa al boot.
         'js/engine/canale-partita.js',
+        // Le mosse dei giocatori come comandi (un esecutore per mossa, col
+        // posto come parametro): base del Multiplayer a passo comune.
+        'js/engine/comandi.js',
+        // Il Multiplayer a passo comune: i comandi e le decisioni che
+        // viaggiano fra i due client. Spento finché nessuno lo avvia.
+        'js/engine/passo-comune.js',
         'js/engine/fasi.js',
         'js/engine/battaglia.js',
         'js/engine/evocazioni.js',

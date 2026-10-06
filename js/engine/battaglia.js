@@ -417,11 +417,28 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
         // Giglio id 889): le scelte di quel momento si fanno QUI, con la
         // battaglia ormai certa, e il danno si calcola solo dopo — vedi
         // runBeforeDamageCalculation in duel-engine.js.
-        setTimeout(() => DuelEngine.runBeforeDamageCalculation(attackerOwner, attackerIndex, effectiveDefenderOwner, effectiveTargetIndex, () => {
+        PassoComune.dopo(() => DuelEngine.runBeforeDamageCalculation(attackerOwner, attackerIndex, effectiveDefenderOwner, effectiveTargetIndex, () => {
             // Una scelta fatta qui sopra non toglie mai l'attaccante dal
             // campo, ma resolveBattleDamage legge la sua carta senza
             // controlli: meglio uscire pulito che rompersi a metà.
             if (attackerField[attackerIndex] !== attackerSlot) {
+                if (attackerOwner === 'player') clearSelection(); else updateUI();
+                done();
+                return;
+            }
+            // Lo stesso per il BERSAGLIO: una risposta in Catena o una
+            // scelta "durante il calcolo dei danni" può toglierlo dal campo
+            // (distrutto, bandito, tornato in mano), e resolveBattleDamage
+            // leggeva la sua casella senza controlli — "Cannot read
+            // properties of null (reading 'card')", e il turno restava
+            // fermo lì. Era l'errore raro uscito una volta nel test del bot
+            // e mai riprodotto: l'IA contro IA del duello senza testa lo
+            // ha reso ripetibile. SEMPLIFICAZIONE: nel gioco vero scatta la
+            // "ripetizione dell'attacco" (l'attaccante può sceglierne un
+            // altro o rinunciare); qui l'attacco si ferma e conta come fatto.
+            if (effectiveTargetIndex !== -1 && !effectiveDefenderField[effectiveTargetIndex]) {
+                addToLog('🌫️ Il bersaglio non è più sul Terreno: l\'attacco si ferma.');
+                attackerSlot.hasAttacked = true;
                 if (attackerOwner === 'player') clearSelection(); else updateUI();
                 done();
                 return;
@@ -544,7 +561,7 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
                 }
             }
 
-            setTimeout(() => {
+            PassoComune.dopo(() => {
                 if (attackerCardEl) attackerCardEl.classList.remove('is-attacking');
                 PortaUI.queryAll('.damage-shake').forEach(el => el.classList.remove('damage-shake'));
                 if (attackerOwner === 'player') clearSelection(); else updateUI();
@@ -1002,7 +1019,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
         // es. Baou equipaggiata a un mostro avversario) — "il tuo
         // avversario" nel testo reale è sempre relativo a QUESTO lato, non
         // al controllore dell'attaccante.
-        ['player', 'bot'].forEach((stOwner) => {
+        Tavolo.ordine().forEach((stOwner) => {
             (stOwner === 'player' ? gameState.playerSTField : gameState.botSTField).forEach((slot) => {
                 if (!slot || slot.isFaceDown) return;
                 const eqDef = DuelEngine.getDefinition(slot.card.id);
@@ -1349,4 +1366,47 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
             if (targetSurvivedThisBattle) fireOwnBattled(target, defenderOwner, attacker, true);
         }
     }
+}
+
+/**
+ * Comando 'attacca': il mostro del posto `posto` nella casella
+ * `c.attaccante` attacca il bersaglio `c.bersaglio` (-1 = attacco diretto).
+ * Paga prima il costo della carta, se ne ha uno:
+ *  - "paga N Life Points per dichiarare un attacco" (def.requiresLifePointsToAttack,
+ *    Drago Toon Occhi Blu id 123, Manga Ryu-Ran id 606): lo calcola
+ *    l'esecutore dalla carta, uguale sui due telefoni;
+ *  - "sacrifica 1 mostro" (def.requiresTributeToAttack, Guerriero Pantera
+ *    id 399): QUALE mostro è una scelta, e arriva nel comando (c.tributo).
+ *    Senza, l'attacco non parte.
+ * `extra.alTermine`: richiamata a battaglia risolta (chi l'aspetta).
+ */
+function eseguiAttacco(posto, c, extra) {
+    const alTermine = extra && typeof extra.alTermine === 'function' ? extra.alTermine : undefined;
+    // Un attacco rifiutato chiama comunque alTermine: chi lo aspetta (l'IA)
+    // resterebbe fermo per sempre.
+    const rifiutato = () => { if (alTermine) alTermine(); };
+    const attackerSlot = Tavolo.mostri(posto)[c.attaccante];
+    if (!attackerSlot) { rifiutato(); return; }
+    const def = window.DuelEngine && DuelEngine.getDefinition(attackerSlot.card.id);
+    if (def && def.requiresLifePointsToAttack) {
+        const cost = def.requiresLifePointsToAttack;
+        if (Tavolo.lp(posto) <= cost) { rifiutato(); return; }
+        DuelEngine.actions.dealDamage(posto, cost);
+        addToLog(`💸 ${attackerSlot.card.name} paga ${cost} Life Points per attaccare!`);
+    }
+    if (def && def.requiresTributeToAttack) {
+        const sacrificato = typeof c.tributo === 'number' ? Tavolo.mostri(posto)[c.tributo] : null;
+        if (!sacrificato || c.tributo === c.attaccante) { rifiutato(); return; }
+        // Un Sacrificio come COSTO, non per un'Evocazione Tributo: nessuna
+        // carta per cui si sacrifica (notifySacrificedForTribute in
+        // duel-engine.js distingue i due casi proprio da lì) e nessuna
+        // animazione da aspettare — attesa 0, la carta sparisce subito.
+        // Prima, in Multiplayer, l'avversario aspettava sempre i 700ms di
+        // un'Evocazione Tributo, e nel frattempo arrivava già l'attacco:
+        // calcolato con il mostro GIÀ nel Cimitero da una parte e ANCORA in
+        // campo dall'altra.
+        eseguiTributo(posto, { indici: [c.tributo], attesaMs: 0 }, {});
+        addToLog(`🔻 ${perChi(posto, 'Sacrifichi', 'L\'avversario sacrifica')} ${sacrificato.card.name} per permettere l'attacco.`);
+    }
+    resolveAttack(posto, c.attaccante, c.bersaglio, alTermine);
 }

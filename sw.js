@@ -399,7 +399,7 @@
 // v149: Necrovalley vede ogni spostamento dal Cimitero; ritorni in mano al proprietario.
 // v150: checkpoint di targeting coperto ovunque (Equip, Union, ~30 carte).
 // v151: carte usabili da entrambi i giocatori (Oppressione Reale).
-const CACHE_NAME = 'ygo-duel-arena-v156';
+const CACHE_NAME = 'ygo-duel-arena-v157';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -457,6 +457,8 @@ const APP_SHELL = [
     'js/engine/duel-sandbox.js',
     'js/engine/stato.js',
     'js/engine/canale-partita.js',
+    'js/engine/comandi.js',
+    'js/engine/passo-comune.js',
     'js/engine/fasi.js',
     'js/engine/battaglia.js',
     'js/engine/evocazioni.js',
@@ -464,8 +466,10 @@ const APP_SHELL = [
     'js/engine/actions.js',
     // /gruppo-script:partita
     // gruppo-script:motore
+    'js/engine/casuale.js',
     'js/engine/porta-ui.js',
     'js/engine/eventi-duello.js',
+    'js/engine/tavolo.js',
     'js/engine/duel-engine.js',
     'js/engine/decisioni.js',
     'js/engine/effect-templates.js',
@@ -520,6 +524,7 @@ const APP_SHELL = [
     'js/ui/profile-stats.css',
     'js/ui/visual-effects-library.js',
     'js/multiplayer/mp-lobby.js',
+    'js/multiplayer/mp-passo-comune.js',
     'js/multiplayer/multiplayer.js',
     'js/multiplayer/network.js',
     'js/cloud/auth-gate.js',
