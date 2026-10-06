@@ -58,5 +58,18 @@ module.exports = {
         });
         assert(assegnazioni.length === 0,
             `Assegnazione a un accessore di Tavolo (esplode solo quando la riga gira; modificare l'array restituito):\n  - ${assegnazioni.join('\n  - ')}`);
+
+        const ternariDiStato = [];
+        const coppiaStato = new RegExp(`(?:gameState|ctx\\.gameState)\\.(player|bot)(${CAMPI}).*\\?.*(?:gameState|ctx\\.gameState)\\.(player|bot)\\2`);
+        tuttiIJs('js/engine').forEach((f) => {
+            if (f.endsWith('/tavolo.js')) return;
+            fs.readFileSync(path.join(RADICE, f), 'utf8').split(/\r?\n/).forEach((riga, i) => {
+                if (/^\s*(\/\/|\*|\/\*)/.test(riga)) return;
+                const match = riga.match(coppiaStato);
+                if (match && match[1] !== match[3]) ternariDiStato.push(`${f}:${i + 1} → ${riga.trim().slice(0, 110)}`);
+            });
+        });
+        assert(ternariDiStato.length === 0,
+            `Ternario di stato player/bot nel nucleo (usare gli accessori di Tavolo):\n  - ${ternariDiStato.join('\n  - ')}`);
     }
 };

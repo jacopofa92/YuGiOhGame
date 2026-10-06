@@ -72,7 +72,7 @@
             const dmg = gameState.directAttackDamageFor && gameState.directAttackDamageFor[ctx.owner];
             if (!dmg || dmg > 1500) return false;
             if (ctx.hasUsedOncePerTurn(`111:${ctx.owner}`)) return false;
-            return Array.isArray(gameState[ctx.owner === 'player' ? 'playerDeck' : 'botDeck']);
+            return Array.isArray(Tavolo.mazzo(ctx.owner));
         },
         activate(ctx) {
             ctx.markUsedOncePerTurn(`111:${ctx.owner}`);
@@ -83,8 +83,8 @@
             // rimescola nel Deck invece di restare nel Cimitero).
             const discarded = [];
             while (hand.length > 0) discarded.push(ctx.discardChosenFromHand(ctx.owner, 0));
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
-            const countKey = ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount';
+            const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
+            const countKey = Tavolo.chiave(ctx.owner, 'DeckCount');
             const deck = gameState[deckKey];
             let monsters = 0;
             for (let i = 0; i < 7 && deck.length > 0; i++) {
@@ -654,7 +654,7 @@
     CardEffects.register(341, {
         canActivate(ctx) {
             if (gameState.currentPlayer === ctx.owner) return false;
-            const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+            const lpKey = Tavolo.chiave(ctx.owner, 'LP');
             if (gameState[lpKey] > 1000) return false;
             return ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown);
         },
@@ -686,8 +686,8 @@
             });
             ctx.log('⏳ Ultimo Turno: il Terreno viene spazzato via, resta solo un mostro per lato!');
 
-            const oppDeckKey = ctx.opponent === 'player' ? 'playerDeck' : 'botDeck';
-            const oppCountKey = ctx.opponent === 'player' ? 'playerDeckCount' : 'botDeckCount';
+            const oppDeckKey = Tavolo.chiave(ctx.opponent, 'Deck');
+            const oppCountKey = Tavolo.chiave(ctx.opponent, 'DeckCount');
             const oppDeck = gameState[oppDeckKey];
             if (Array.isArray(oppDeck)) {
                 let bestIndex = -1;
@@ -916,7 +916,7 @@
         },
         onStandbyPhase(ctx) {
             const t = equippedTarget(ctx);
-            const targetOwnerLpKey = ctx.card.equippedToOwner === 'player' ? 'playerLP' : 'botLP';
+            const targetOwnerLpKey = Tavolo.chiave(ctx.card.equippedToOwner, 'LP');
             gameState[targetOwnerLpKey] -= 500;
             ctx.log(`💀 Maschera del Maledetto infligge 500 danni al controllore di ${t.name}!`);
         }
@@ -961,12 +961,12 @@
         canActivate(ctx) {
             const equippedWithMetalmorph = ctx.stField(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 376 && slot.card.equippedToUid === ctx.card.uid);
             if (!equippedWithMetalmorph) return false;
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
             const deck = gameState[deckKey];
             return Array.isArray(deck) && deck.some((c) => c.id === 377);
         },
         activate(ctx) {
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
             const deck = gameState[deckKey];
             const deckIndex = deck.findIndex((c) => c.id === 377);
             if (deckIndex === -1) return;
@@ -980,7 +980,7 @@
             ctx.stField(ctx.owner)[equipIndex] = null;
             ctx.graveyard(ctx.owner).push(equipCard);
             const [metalzoa] = deck.splice(deckIndex, 1);
-            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+            gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = deck.length;
             ctx.specialSummon(ctx.owner, metalzoa, ownIndex, 'attack', 'deck');
             ctx.log('⚙️ Zoa e Metalmorfosi vanno al Cimitero: Metalzoa Special Summonata dal Deck!');
         }
@@ -1010,12 +1010,12 @@
         canActivate(ctx) {
             const equippedWithMetalmorph = ctx.stField(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 376 && slot.card.equippedToUid === ctx.card.uid);
             if (!equippedWithMetalmorph) return false;
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
             const deck = gameState[deckKey];
             return Array.isArray(deck) && deck.some((c) => c.id === 413);
         },
         activate(ctx) {
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
             const deck = gameState[deckKey];
             const deckIndex = deck.findIndex((c) => c.id === 413);
             if (deckIndex === -1) return;
@@ -1029,7 +1029,7 @@
             ctx.stField(ctx.owner)[equipIndex] = null;
             ctx.graveyard(ctx.owner).push(equipCard);
             const [redEyesMetal] = deck.splice(deckIndex, 1);
-            gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+            gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = deck.length;
             ctx.specialSummon(ctx.owner, redEyesMetal, ownIndex, 'attack', 'deck');
             ctx.log('🐉 Drago Nero Occhi Rossi e Metalmorfosi vanno al Cimitero: Drago Nero Metallico Occhi Rossi Special Summonato dal Deck!');
         }
@@ -1285,7 +1285,7 @@
         onAttackDeclare(ctx) {
             const roll = Math.floor(ctx.random() * 6) + 1;
             ctx.log(`🎲 Ragno della Roulette lancia il dado: ${roll}!`);
-            const ownLpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+            const ownLpKey = Tavolo.chiave(ctx.owner, 'LP');
             switch (roll) {
                 case 1: {
                     const currentLp = ctx.gameState[ownLpKey];
@@ -1776,7 +1776,7 @@
             const ownIndex = hand.indexOf(ctx.card);
             if (ownIndex === -1) return;
             const kuribohIds = [22, 859, 860, 862];
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
             const deck = gameState[deckKey];
             if (!Array.isArray(deck) || !deck.some((c) => kuribohIds.includes(c.id))) return;
             // Il costo (scartare questa carta) va pagato SOLO se esiste
@@ -1854,14 +1854,14 @@
                 }
                 ctx.graveyard(ctx.owner).push(ctx.card);
                 ctx.log('🐿️ Kuribeh sacrifica tutti e 5 i fratelli Kuriboh!');
-                const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+                const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
                 const deck = gameState[deckKey];
                 let kuribandit = null;
                 if (Array.isArray(deck)) {
                     const deckIndex = deck.findIndex((c) => c.id === 334);
                     if (deckIndex !== -1) {
                         [kuribandit] = deck.splice(deckIndex, 1);
-                        gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+                        gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = deck.length;
                     }
                 }
                 if (!kuribandit) {
@@ -2335,7 +2335,7 @@
     // CORREZIONE di fedeltà: il costo reale è 1500 LP, non 1000.
     CardEffects.register(86, {
         onDestroy(ctx) {
-            const lpKey = ctx.owner === 'player' ? 'playerLP' : 'botLP';
+            const lpKey = Tavolo.chiave(ctx.owner, 'LP');
             if (gameState[lpKey] <= 1500) return;
             const opponentMonstersInHand = ctx.hand(ctx.opponent).filter((c) => c.type === 'monster');
             if (opponentMonstersInHand.length === 0) return;
@@ -2520,7 +2520,7 @@
             ctx.markUsedOncePerTurn(`100:${ctx.card.id}`);
             const attackerSlot = ctx.field(ctx.attackerOwner)[ctx.attackerIndex];
             const attackerUid = attackerSlot && attackerSlot.card.uid;
-            const defenderOwner = ctx.attackerOwner === 'player' ? 'bot' : 'player';
+            const defenderOwner = Tavolo.avversario(ctx.attackerOwner);
             const distruggi = () => {
                 ctx.declareTargetWaiting(ctx.attackerOwner, ctx.attackerIndex, { totalTargetCount: 1 }, (decl) => {
                     if (!decl.allowed) return;
@@ -3013,7 +3013,7 @@
     // ================================================================
     CardEffects.register(156, {
         onDestroy(ctx) {
-            const deckKey = ctx.owner === 'player' ? 'playerDeck' : 'botDeck';
+            const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
             const deck = ctx.gameState[deckKey];
             if (!deck) return;
             const grave = ctx.graveyard(ctx.owner);
@@ -3022,7 +3022,7 @@
             if (ctx.graveyardMoveNegated(ctx.owner)) return;
             grave.splice(index, 1);
             deck.push(ctx.card); // drawCardsToHand pesca con .pop(): push = "in cima al Deck"
-            ctx.gameState[ctx.owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+            ctx.gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = deck.length;
             ctx.log('🪳 Cavaliere Scarafaggio torna in cima al Deck!');
         }
     });

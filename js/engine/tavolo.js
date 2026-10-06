@@ -167,6 +167,19 @@
          */
         impostaPrimo(posto) { controllaPosto(posto); primo = posto; },
 
+        /**
+         * Nome della proprietà di stato appartenente a un posto. Serve nei
+         * pochi punti che devono ASSEGNARE il valore (LP, contatore Deck,
+         * Magia Terreno): gli accessori sotto sono invece preferibili per
+         * leggere o modificare array e slot.
+         * @param {string} posto
+         * @param {string} campo
+         */
+        chiave(posto, campo) {
+            controllaPosto(posto);
+            return posto + campo;
+        },
+
         // --- stato di un posto -------------------------------------------
         mano: accessore('Hand'),
         mostri: accessore('MonsterField'),
@@ -176,7 +189,8 @@
         mazzo: accessore('Deck'),
         extraDeck: accessore('ExtraDeck'),
         magiaTerreno: accessore('FieldSpell'),
-        lp: accessore('LP')
+        lp: accessore('LP'),
+        conteggioMazzo: accessore('DeckCount')
     };
 
     g.Tavolo = Tavolo;

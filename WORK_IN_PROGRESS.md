@@ -71,9 +71,11 @@ righe, actions.js 3.855, game-flow.js 3.797; 205 accessi al DOM e 85
       `gameState.livelloIA`). Guardrail `guardrail-ia-da-ogni-posto`.
 - [x] Duello senza testa = IA contro IA (`--giocatore`, `--livello-giocatore`):
       prima base per il bilanciamento con dati veri (Priorità 4).
-- [ ] Restano nel nucleo i circa 400 ternari "player ? ... : bot ..." scritti
-      a mano: si possono portare sugli accessori di Tavolo un file alla
-      volta, ma non bloccano nulla (sono corretti per entrambi i posti).
+- [x] Migrati i ternari di stato `player ? ... : bot ...` sugli accessori di
+      `Tavolo` (branch `refactor/accessori-tavolo-completi`). Restano soltanto
+      i ternari di testo e UI che descrivono volutamente il punto di vista
+      locale. Il guardrail dell'IA impedisce di reintrodurre selezioni di
+      stato scritte a mano.
 - [x] Multiplayer "a passo comune": i due client eseguono l'intera partita e
       si scambiano solo comandi e decisioni (niente più mosse raccontate né
       fotografie di stato). Ogni client chiama ancora "player" sé stesso: lo

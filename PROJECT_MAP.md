@@ -105,8 +105,8 @@ del protocollo corrente.
    `--livello-giocatore`).
 2. Verificare nella scheda *Events* di Render la ridistribuzione automatica
    del relay dopo il push su `main`.
-3. I circa 400 ternari "player ? … : bot …" del nucleo si possono portare sugli
-   accessori di `Tavolo` un file alla volta (non bloccano nulla).
+3. I ternari di stato "player ? … : bot …" sono stati portati sugli accessori
+   di `Tavolo`; rimangono solo quelli di testo/UI legati al punto di vista.
 4. Più grandi: tutorial; Forbidden Memories come secondo set di regole.
 5. Decisioni aperte dell'utente: i 6 avatar PNG non usati; eliminare il branch
    `refactor/posti-al-tavolo` (già unito).

@@ -267,7 +267,7 @@
     // di gameState (nomi dei campi, come loggare, ecc.).
     // ============================================================
     function opponentOf(owner) {
-        return owner === 'player' ? 'bot' : 'player';
+        return Tavolo.avversario(owner);
     }
 
     /**
@@ -351,11 +351,11 @@
     }
 
     function fieldOf(owner) {
-        return owner === 'player' ? gameState.playerMonsterField : gameState.botMonsterField;
+        return Tavolo.mostri(owner);
     }
 
     function stFieldOf(owner) {
-        return owner === 'player' ? gameState.playerSTField : gameState.botSTField;
+        return Tavolo.magieTrappole(owner);
     }
 
     /**
@@ -378,11 +378,11 @@
     }
 
     function handOf(owner) {
-        return owner === 'player' ? gameState.playerHand : gameState.botHand;
+        return Tavolo.mano(owner);
     }
 
     function graveyardOf(owner) {
-        return owner === 'player' ? gameState.playerGraveyard : gameState.botGraveyard;
+        return Tavolo.cimitero(owner);
     }
 
     /**
@@ -417,7 +417,7 @@
 
     /** Zona Bandite di `owner` — informazione pubblica come il Cimitero, vedi ACTIONS.banish. */
     function banishedOf(owner) {
-        return owner === 'player' ? gameState.playerBanished : gameState.botBanished;
+        return Tavolo.banditi(owner);
     }
 
     /**
@@ -508,11 +508,11 @@
      * una Magia Terreno per lato, come da regola vera.
      */
     function fieldSpellOf(owner) {
-        return owner === 'player' ? gameState.playerFieldSpell : gameState.botFieldSpell;
+        return Tavolo.magiaTerreno(owner);
     }
 
     function lpKeyOf(owner) {
-        return owner === 'player' ? 'playerLP' : 'botLP';
+        return Tavolo.chiave(owner, 'LP');
     }
 
     // ============================================================
@@ -1031,7 +1031,7 @@
         /** Distruzione della zona Magia Terreno: stesso effetto non
          *  esplosivo delle M/T, agganciato però allo slot dedicato. */
         destroyFieldSpell(owner) {
-            const key = owner === 'player' ? 'playerFieldSpell' : 'botFieldSpell';
+            const key = Tavolo.chiave(owner, 'FieldSpell');
             const slot = gameState[key];
             if (!slot) return false;
             const card = slot.card;
@@ -1531,7 +1531,7 @@
                 // arrivata in campo. Chi chiama dovrebbe averlo già escluso
                 // prima di pagare i materiali; questa è solo l'ultima rete.
                 addToLog(`🚫 Non puoi Special Summonare dall'Extra Deck in questo momento: ${card.name} torna nell'Extra Deck.`);
-                const extra = owner === 'player' ? gameState.playerExtraDeck : gameState.botExtraDeck;
+                const extra = Tavolo.extraDeck(owner);
                 if (Array.isArray(extra)) extra.push(card);
                 return false;
             }
@@ -1749,7 +1749,7 @@
          * log. Ritorna true se le carte sono state davvero rimescolate.
          */
         shuffleIntoDeck(owner, cards) {
-            const deck = owner === 'player' ? gameState.playerDeck : gameState.botDeck;
+            const deck = Tavolo.mazzo(owner);
             if (!Array.isArray(deck) || !cards || cards.length === 0) {
                 if (Array.isArray(cards) && cards.length > 0) {
                     addToLog('🔀 Nessun Deck reale da cui/in cui rimescolare in questa modalità (serve un mazzo salvato, non il pool casuale del Duello Demo).');
@@ -1777,7 +1777,7 @@
          * Ritorna l'array delle carte trovate (può essere vuoto).
          */
         searchDeckToHand(owner, matchFn, maxCount) {
-            const deck = owner === 'player' ? gameState.playerDeck : gameState.botDeck;
+            const deck = Tavolo.mazzo(owner);
             if (!Array.isArray(deck)) {
                 addToLog('🔍 Nessun Deck reale da cui cercare in questa modalità (serve un mazzo salvato, non il pool casuale del Duello Demo).');
                 return [];
@@ -1818,7 +1818,7 @@
                 if (bandisci && !(dalTerreno && defMat && defMat.cannotBeBanishedWhileOnField)) ACTIONS.banish(owner, card);
                 else graveyardOf(owner).push(card);
             };
-            const extraDeck = owner === 'player' ? gameState.playerExtraDeck : gameState.botExtraDeck;
+            const extraDeck = Tavolo.extraDeck(owner);
             const fusionCard = extraDeck && extraDeck[extraDeckIndex];
             if (!fusionCard) return false;
             const field = fieldOf(owner);
@@ -2146,10 +2146,10 @@
          * nelle due sorelle sopra.
          */
         millCardFromDeck(owner, deckIndex) {
-            const deck = gameState[owner === 'player' ? 'playerDeck' : 'botDeck'];
+            const deck = Tavolo.mazzo(owner);
             if (!Array.isArray(deck) || deckIndex < 0 || deckIndex >= deck.length) return null;
             const [card] = deck.splice(deckIndex, 1);
-            gameState[owner === 'player' ? 'playerDeckCount' : 'botDeckCount'] = deck.length;
+            gameState[Tavolo.chiave(owner, 'DeckCount')] = deck.length;
             const milledByOwner = (this && this.owner) || null;
             graveyardOf(owner).push(card);
             const def = getDefinition(card.id);
@@ -2878,7 +2878,7 @@
     function getBanishFusableExtraDeckMonsters(owner) {
         // Il Sigillo di Orichalcos (id 469): niente Evocazioni dall'Extra Deck.
         if (isExtraDeckSummonBlocked(owner)) return [];
-        const extraDeck = owner === 'player' ? gameState.playerExtraDeck : gameState.botExtraDeck;
+        const extraDeck = Tavolo.extraDeck(owner);
         if (!extraDeck || extraDeck.length === 0) return [];
         const field = fieldOf(owner);
         const results = [];
@@ -2916,7 +2916,7 @@
      * e' valido o nessun materiale puo' liberare una Zona utilizzabile.
      */
     function banishFusionSummon(owner, extraDeckIndex, materialFieldIndices) {
-        const extraDeck = owner === 'player' ? gameState.playerExtraDeck : gameState.botExtraDeck;
+        const extraDeck = Tavolo.extraDeck(owner);
         const fusionCard = extraDeck && extraDeck[extraDeckIndex];
         if (!fusionCard) return false;
         const field = fieldOf(owner);
@@ -4412,7 +4412,7 @@
         if (initialLink.card && initialLink.card.uid) usedUidsBySide[initialLink.owner].add(initialLink.card.uid);
         let consecutivePasses = 0;
         let totalRounds = 0;
-        let turnToRespond = initialLink.owner === 'player' ? 'bot' : 'player';
+        let turnToRespond = Tavolo.avversario(initialLink.owner);
 
         const askNextRound = () => {
             if (consecutivePasses >= 2 || totalRounds >= maxChainRounds()) {
@@ -4447,7 +4447,7 @@
             askResponder(responderOwner, candidates, (choice) => {
                 if (!choice) {
                     consecutivePasses++;
-                    turnToRespond = responderOwner === 'player' ? 'bot' : 'player';
+                    turnToRespond = Tavolo.avversario(responderOwner);
                     askNextRound();
                     return;
                 }
@@ -4470,7 +4470,7 @@
                     linkNumber: chain.links.length + 1
                 });
                 EventiDuello.emetti('catena');
-                turnToRespond = responderOwner === 'player' ? 'bot' : 'player';
+                turnToRespond = Tavolo.avversario(responderOwner);
                 askNextRound();
             }, triggerCard, null, triggerIsOwn);
         };
@@ -4602,7 +4602,7 @@
                         graveyardOf(link.owner).push(link.card);
                     }
                 } else if (link.ctx && link.ctx.zone === 'fieldSpell') {
-                    const fieldKey = link.owner === 'player' ? 'playerFieldSpell' : 'botFieldSpell';
+                    const fieldKey = Tavolo.chiave(link.owner, 'FieldSpell');
                     if (gameState[fieldKey] && gameState[fieldKey].card === link.card) {
                         graveyardOf(link.owner).push(link.card);
                         gameState[fieldKey] = null;
@@ -5547,7 +5547,7 @@
     function getFusableExtraDeckMonsters(owner) {
         // Il Sigillo di Orichalcos (id 469): niente Evocazioni dall'Extra Deck.
         if (isExtraDeckSummonBlocked(owner)) return [];
-        const extraDeck = owner === 'player' ? gameState.playerExtraDeck : gameState.botExtraDeck;
+        const extraDeck = Tavolo.extraDeck(owner);
         if (!extraDeck || extraDeck.length === 0) return [];
         const hand = handOf(owner);
         const field = fieldOf(owner);
@@ -5862,7 +5862,7 @@
             // un array di 5 come stFieldOf) — attivarne una nuova mentre
             // ce n'è già una scoperta manda quella vecchia al Cimitero,
             // come da regola vera, invece di cercare uno slot libero.
-            const fieldKey = owner === 'player' ? 'playerFieldSpell' : 'botFieldSpell';
+            const fieldKey = Tavolo.chiave(owner, 'FieldSpell');
             const existing = gameState[fieldKey];
             if (existing) {
                 graveyardOf(owner).push(existing.card);
@@ -5874,7 +5874,7 @@
             finalIndex = -1;
         } else if (card.subtype === 'field' && zone === 'fieldSpell') {
             // Era già Set coperta sulla sua zona: si scopre sul posto.
-            gameState[owner === 'player' ? 'playerFieldSpell' : 'botFieldSpell'].isFaceDown = false;
+            Tavolo.magiaTerreno(owner).isFaceDown = false;
         } else if (def.continuous && zone === 'st') {
             stFieldOf(owner)[index].isFaceDown = false;
         } else if (def.continuous && zone === 'hand') {
