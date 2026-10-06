@@ -436,6 +436,10 @@
             const dopo = SaveManager.addOwnedCards(id, qty);
             if (dopo > prima) rewards.push({ cardId: id, amount: dopo - prima, icon: '🃏', nome: entry.nome || `Carta #${id}`, rule: `Sfida completata — ${def.label}` });
         });
+        (def.reward.unlockPacks || []).forEach((packId) => {
+            if (!window.CardAcquisition || !CardAcquisition.unlockPack(packId, def.id)) return;
+            rewards.push({ amount: 1, icon: '🔓', nome: 'pacchetto sbloccato', rule: `${packId} — Sfida completata: ${def.label}` });
+        });
         return rewards;
     }
 
@@ -454,6 +458,7 @@
             .filter((currency) => currency !== 'cards' && currency !== 'unlockPacks' && def.reward[currency] > 0)
             .map((currency) => voce(currency, def.reward[currency], `Premio di "${def.label}"`));
         (def.reward.cards || []).forEach((entry) => out.push({ cardId: entry.id || entry.cardId, amount: entry.qty || 1, icon: '🃏', nome: entry.nome || `Carta #${entry.id || entry.cardId}`, rule: `Premio di "${def.label}"` }));
+        (def.reward.unlockPacks || []).forEach((packId) => out.push({ amount: 1, icon: '🔓', nome: 'pacchetto sbloccato', rule: `${packId} — Premio di "${def.label}"` }));
         return out;
     }
 

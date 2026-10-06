@@ -4,6 +4,9 @@ Regole implementate in `js/economy/card-acquisition.js`,
 `js/data/card-rarity.js` e `js/economy/shop-catalog.js`. La Cartoteca mostra
 anche la fonte nella scheda della carta.
 
+Le Sfide accettano premi dati come `cards: [{ id, qty }]` e
+`unlockPacks: ['id-pacchetto']`; entrambi persistono nel salvataggio.
+
 ## Limiti e deck
 
 - Massimo 3 copie per carta.

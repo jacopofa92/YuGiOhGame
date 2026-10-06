@@ -20,6 +20,7 @@
         s.claimed = s.claimed || {};
         s.completedChapters = s.completedChapters || {};
         s.completedChaptersByDifficulty = s.completedChaptersByDifficulty || {};
+        s.unlockedPacks = s.unlockedPacks || {};
         s.counters = s.counters || {};
         s.exodiaPity = Number(s.exodiaPity) || 0;
         return s;
@@ -170,6 +171,15 @@
     }
 
     function isChapterComplete(id) { return !!state().completedChapters[id]; }
+    function unlockPack(id, source) {
+        if (!id) return false;
+        const s = state();
+        if (s.unlockedPacks[id]) return false;
+        s.unlockedPacks[id] = { unlockedAt: new Date().toISOString(), source: source || '' };
+        save(s);
+        return true;
+    }
+    function isPackUnlocked(id) { return !!state().unlockedPacks[id]; }
 
     const SOURCES = {
         30: 'Completa tutta la storia anime a Normale o Difficile.',
@@ -191,6 +201,7 @@
         onDuelWin: onDuelWin, onStoryProgress: onStoryProgress,
         onTournamentWin: onTournamentWin, checkMilestones: checkMilestones,
         isSignatureUnlocked: isSignatureUnlocked, isChapterComplete: isChapterComplete,
+        unlockPack: unlockPack, isPackUnlocked: isPackUnlocked,
         sourceFor: (id) => {
             const db = typeof cardDatabase !== 'undefined' ? cardDatabase : (window.cardDatabase || []);
             const card = db.find((c) => c.id === id);
