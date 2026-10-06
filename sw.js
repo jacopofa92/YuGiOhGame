@@ -458,6 +458,7 @@ const APP_SHELL = [
     'js/engine/stato.js',
     'js/engine/canale-partita.js',
     'js/engine/comandi.js',
+    'js/engine/passo-comune.js',
     'js/engine/fasi.js',
     'js/engine/battaglia.js',
     'js/engine/evocazioni.js',

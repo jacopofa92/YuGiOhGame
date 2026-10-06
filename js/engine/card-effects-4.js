@@ -695,7 +695,7 @@
                 return;
             }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: opponent,
                 candidati: revealed,
                 titolo: '💭 Scelta Dolorosa',
                 testo: `${owner === 'player' ? 'Il bot ha' : 'Hai'} rivelato 5 carte dal Deck: scegli quale finisce nella ${owner === 'player' ? 'sua' : 'tua'} mano (le altre vanno al Cimitero).`
@@ -769,7 +769,7 @@
                     return;
                 }
                 Decisioni.chiedi({
-                    chi: 'player',
+                    chi: pickerOwner,
                     candidati: monsters,
                     titolo: "💀 Demolizione dell'Anima",
                     testo: `Scegli 1 mostro dal Cimitero ${graveyardOwner === 'player' ? 'tuo' : 'del bot'} da bandire.`
@@ -1150,7 +1150,7 @@
                 return;
             }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: targets,
                 titolo: '🎭 Maschera di Dissoluzione',
                 testo: 'Scegli 1 Magia scoperta sul Terreno da colpire.'
@@ -1239,7 +1239,7 @@
                         return; // il bot si ferma qui: il "puoi" opzionale resta non sfruttato, semplificazione sicura
                     }
                     Decisioni.chiedi({
-                        chi: 'player',
+                        chi: owner,
                         candidati: destroyables.map((d) => d.card),
                         titolo: '🔮 Dimensione Magica',
                         testo: 'Puoi distruggere 1 mostro sul Terreno (opzionale).',
@@ -1256,7 +1256,7 @@
                     return;
                 }
                 Decisioni.chiedi({
-                    chi: 'player',
+                    chi: owner,
                     candidati: spellcasters,
                     titolo: '🔮 Dimensione Magica',
                     testo: 'Scegli quale mostro Incantatore Special Summonare dalla mano.'
@@ -1270,7 +1270,7 @@
                 return;
             }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: owner,
                 candidati: tributeCandidates,
                 titolo: '🔮 Dimensione Magica',
                 testo: 'Scegli quale mostro sacrificare.'
@@ -1402,7 +1402,7 @@
                 return;
             }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates,
                 titolo: '💪 Rinforzi',
                 testo: 'Scegli quale mostro rinforzare.'
@@ -1493,7 +1493,7 @@
                 return;
             }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates.map((c) => c.card),
                 titolo: '🪤 Maestro delle Trappole',
                 testo: 'Scegli quale Trappola distruggere.'
@@ -1698,7 +1698,7 @@
             const card = ctx.randomPick(hand);
             if (Decisioni.rispondeUnaPersona(ctx.owner)) {
                 Decisioni.chiedi({
-                    chi: 'player',
+                    chi: ctx.owner,
                     tipo: 'presa-visione',
                     candidati: [card],
                     titolo: '🕵️ La Spia Inesperta',
@@ -1725,7 +1725,7 @@
             const top5 = deck.slice(Math.max(0, deck.length - 5)).slice().reverse();
             if (Decisioni.rispondeUnaPersona(ctx.owner)) {
                 Decisioni.chiedi({
-                    chi: 'player',
+                    chi: ctx.owner,
                     tipo: 'presa-visione',
                     candidati: top5,
                     titolo: '🔭 Telescopio Antico',
@@ -1847,7 +1847,7 @@
                 return;
             }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates.map((c) => c.card),
                 titolo: '🐙 Hane-Hane',
                 testo: 'Scegli quale mostro rimandare in mano al suo proprietario.'
@@ -1926,7 +1926,7 @@
                 return;
             }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates,
                 titolo: '🔮 Maga della Fede',
                 testo: 'Scegli 1 Magia dal Cimitero da aggiungere alla mano.'
@@ -1952,7 +1952,7 @@
             const top5 = deck.slice(Math.max(0, deck.length - 5)).slice().reverse();
             if (Decisioni.rispondeUnaPersona(ctx.owner)) {
                 Decisioni.chiedi({
-                    chi: 'player',
+                    chi: ctx.owner,
                     tipo: 'presa-visione',
                     candidati: top5,
                     titolo: '👁️ Grande Occhio',
@@ -2028,7 +2028,7 @@
                 return;
             }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates.map((c) => c.card),
                 titolo: '🐧 Soldato Pinguino',
                 testo: 'Scegli quale mostro rimandare in mano al suo proprietario.'
@@ -2095,7 +2095,7 @@
                 return;
             }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates,
                 titolo: '🛡️ Il Guardiano Affidabile',
                 testo: 'Scegli quale mostro rinforzare.'
@@ -2483,7 +2483,7 @@
                 return;
             }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates.map((c) => c.card),
                 titolo: '🥷 Ninja Armato',
                 testo: 'Scegli 1 Magia scoperta, o 1 carta Set, da colpire.'
@@ -2560,7 +2560,7 @@
                 return;
             }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates.map((c) => c.card),
                 titolo: '🌪️ Tifone dello Spazio Mistico',
                 testo: 'Scegli 1 Magia/Trappola, scoperta o Set, da distruggere.'

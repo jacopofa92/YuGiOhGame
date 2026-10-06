@@ -81,22 +81,31 @@ righe, actions.js 3.855, game-flow.js 3.797; 205 accessi al DOM e 85
       si scambiano solo comandi e decisioni (niente più mosse raccontate né
       fotografie di stato). Ogni client chiama ancora "player" sé stesso: lo
       stato è SPECCHIATO. Passi, ciascuno verificabile da solo:
-      - [ ] A. Determinismo, senza cambiare nulla offline (impronta di 60
+      - [x] A. Determinismo, senza cambiare nulla offline (impronta di 60
             partite IA contro IA uguale prima e dopo):
             `Casuale` (casualità di gioco con seme condiviso in Multiplayer,
             Math.random offline), `Tavolo.ordine()` al posto dei circa 170
             cicli "prima player, poi bot" (in Multiplayer: prima l'host),
             uid delle carte deterministici in Multiplayer.
-      - [ ] B. Azioni con il posto: evocare, settare, Magia Terreno, cambio
+      - [x] B. Azioni con il posto: evocare, settare, Magia Terreno, cambio
             Posizione, attaccare, fasi — una funzione sola per persona, IA e
-            avversario remoto (oggi persona e IA hanno due versioni).
-      - [ ] C. Duello gemello in Node: due copie del motore che si parlano
-            come due telefoni, IA su ciascun posto locale, stati confrontati
-            dopo ogni messaggio. È lo strumento che verifica tutto il resto.
-      - [ ] D. Comandi in coda: le azioni della persona viaggiano come
-            comandi, chi riceve li applica col posto remoto solo a duello
-            fermo (niente Catena aperta, niente scelta in sospeso).
-            Tutte le scelte di un posto remoto viaggiano.
+            avversario remoto (`js/engine/comandi.js`; l'IA usa gli stessi
+            comandi della persona, anche per lo scarto di fine turno).
+      - [x] C. Duello gemello in Node (`tools/duello-gemello.js`, spec
+            `duello-gemello`): due copie del motore sullo stesso orologio
+            virtuale, latenza variabile, impronta intera confrontata prima di
+            ogni comando. 240 partite su 8 coppie e 3 livelli allineate.
+      - [x] D. Il protocollo (`js/engine/passo-comune.js`): comandi e
+            decisioni (posizione nell'elenco dei candidati) in un'unica coda
+            ordinata; un comando, mio o suo, solo a duello fermo; una scelta
+            presa all'istante si applica a codice in corso finito e i timer
+            delle regole aspettano le scelte aperte (`PassoComune.dopo`,
+            `isBlockingModalOpen`), così cade nello stesso punto sui due
+            client. `Decisioni.rispondeUnaPersona` dipende solo da chi
+            controlla il posto (`Tavolo.giocaUnaPersona`), e le 63 scelte
+            scritte `chi: 'player'` ora dicono il posto vero.
+            Spento finché nessuno chiama `PassoComune.avvia`: offline
+            l'impronta delle 60 partite è identica.
       - [ ] E. Pagina: scambio dei mazzi e del seme all'avvio, via mano a
             segnaposto, fotografie e messaggi vecchi; il server accetta il
             tipo di messaggio nuovo (va ridistribuito dove gira).

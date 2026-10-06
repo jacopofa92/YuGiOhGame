@@ -789,7 +789,7 @@
                     };
                     if (!Decisioni.rispondeUnaPersona(owner)) { completa('attack'); return; }
                     Decisioni.chiedi({
-                        chi: 'player',
+                        chi: owner,
                         tipo: 'posizione',
                         titolo: `${card.name}: in che Posizione?`
                     }, (scelta) => {
@@ -1419,7 +1419,7 @@
                     return;
                 }
                 Decisioni.chiedi({
-                    chi: 'player',
+                    chi: ctx.owner,
                     candidati: candidates.map((c) => c.card),
                     titolo: '💣 Sparajongler Esplosivo',
                     testo: `Scegli ${remaining} mostr${remaining === 1 ? 'o' : 'i'} scoperto con ATK 1000 o meno da distruggere.`
@@ -1468,7 +1468,7 @@
             };
             if (!Decisioni.rispondeUnaPersona(ctx.owner)) { returnToDeck(stillInGrave[0]); return; }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: stillInGrave,
                 titolo: '🔥 Sentinella Cremisi',
                 testo: 'Scegli 1 tuo mostro distrutto in battaglia questo turno da rimandare in fondo al Deck (questa carta si tributa).'
@@ -1580,7 +1580,7 @@
             };
             if (!Decisioni.rispondeUnaPersona(ctx.owner)) { returnToDeck(stillInGrave[0]); return; }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: stillInGrave,
                 titolo: '🧚 Guardiana delle Fate',
                 testo: 'Scegli 1 tua Magia mandata al Cimitero da un effetto avversario questo turno da rimandare in fondo al Deck (questa carta si tributa).'
@@ -1769,7 +1769,7 @@
                 return;
             }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates,
                 titolo: '😴 Invito al Sonno Oscuro',
                 testo: 'Scegli 1 mostro avversario scoperto che non potrà più attaccare finché questa carta resta scoperta.'
@@ -1846,7 +1846,7 @@
             };
             if (!Decisioni.rispondeUnaPersona(ctx.owner)) { destroyChosen(candidates[0]); return; }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates,
                 titolo: '🪙 Kryuel',
                 testo: 'Hai indovinato la moneta! Scegli 1 mostro avversario scoperto da distruggere.'
@@ -1916,7 +1916,7 @@
             };
             if (!Decisioni.rispondeUnaPersona(ctx.owner)) { returnToDeckTop(stillInGrave[0]); return; }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: stillInGrave,
                 titolo: '🐆 Pantera Signora',
                 testo: 'Scegli 1 tuo mostro distrutto in battaglia questo turno da rimandare in cima al Deck (questa carta si tributa).'
@@ -1974,7 +1974,7 @@
                     return;
                 }
                 Decisioni.chiedi({
-                    chi: 'player',
+                    chi: ctx.owner,
                     candidati: candidates.map((c) => c.card),
                     titolo: '🧚 Fata Isterica',
                     testo: `Scegli ${remaining} tu${remaining === 1 ? 'o mostro' : 'oi mostri'} da tributare.`
@@ -2045,7 +2045,7 @@
             };
             if (!Decisioni.rispondeUnaPersona(ctx.owner)) { destroyChosen(candidates[0].card); return; }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates.map((c) => c.card),
                 titolo: '👹 Newdoria',
                 testo: 'Scegli 1 mostro sul Terreno da distruggere.'
@@ -2176,7 +2176,7 @@
             return;
         }
         Decisioni.chiedi({
-            chi: 'player',
+            chi: ctx.owner,
             candidati: candidates.map((c) => c.card),
             titolo: '🤡 Ryu-Kishin Pagliaccio',
             testo: 'Scegli 1 mostro scoperto di cui cambiare la Posizione di Battaglia.'
@@ -2319,7 +2319,7 @@
             };
             if (!Decisioni.rispondeUnaPersona(ctx.owner)) { destroyChosen(candidates[0].card); return; }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates.map((c) => c.card),
                 titolo: '🦗 Sciame di Locuste',
                 testo: 'Scegli 1 Magia/Trappola avversaria da distruggere.'
@@ -2362,7 +2362,7 @@
             };
             if (!Decisioni.rispondeUnaPersona(ctx.owner)) { destroyChosen(candidates[0].card); return; }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates.map((c) => c.card),
                 titolo: '🪲 Sciame di Scarabei',
                 testo: 'Scegli 1 mostro avversario da distruggere.'
@@ -2423,7 +2423,7 @@
             };
             if (!Decisioni.rispondeUnaPersona(ctx.owner)) { tributeChosen(candidates[0].card); return; }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates.map((c) => c.card),
                 titolo: '⚔️ Il Piccolo Spadaccino di Aile',
                 testo: 'Scegli 1 altro tuo mostro da tributare per guadagnare 700 ATK fino a fine turno.'
@@ -2491,7 +2491,7 @@
                 };
                 if (!Decisioni.rispondeUnaPersona(ctx.owner)) { destroyChosen(destroyCandidates[0].card); return; }
                 Decisioni.chiedi({
-                    chi: 'player',
+                    chi: ctx.owner,
                     candidati: destroyCandidates.map((c) => c.card),
                     titolo: '🪨 Unità Scagliapietre',
                     testo: 'Scegli 1 mostro scoperto con DEF pari o inferiore all\'ATK di questa carta da distruggere.'
@@ -2510,7 +2510,7 @@
             };
             if (!Decisioni.rispondeUnaPersona(ctx.owner)) { tributeChosen(warriorCandidates[0].card); return; }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: warriorCandidates.map((c) => c.card),
                 titolo: '🪨 Unità Scagliapietre',
                 testo: 'Scegli 1 mostro Tipo Guerriero da tributare.'
@@ -2556,7 +2556,7 @@
             };
             if (!Decisioni.rispondeUnaPersona(ctx.owner)) { changeChosen(candidates[0]); return; }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates.map((c) => c.card),
                 titolo: '🌊 Spirito dell\'Acqua',
                 testo: 'Scegli 1 mostro avversario scoperto di cui cambiare la Posizione di Battaglia (resterà così per il resto del turno).'
@@ -2596,7 +2596,7 @@
             };
             if (!Decisioni.rispondeUnaPersona(ctx.owner)) { changeChosen(candidates[0]); return; }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates.map((c) => c.card),
                 titolo: '🦅 Garuda lo Spirito del Vento',
                 testo: 'Scegli 1 mostro avversario scoperto di cui cambiare la Posizione di Battaglia.'
@@ -2847,7 +2847,7 @@
             };
             if (!Decisioni.rispondeUnaPersona(ctx.owner)) { sendChosen(candidates[0].card); return; }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates.map((c) => c.card),
                 titolo: '🌿 Spirito Silvano',
                 testo: 'Scegli 1 Carta Equipaggiamento agganciata a questa carta da mandare al Cimitero.'

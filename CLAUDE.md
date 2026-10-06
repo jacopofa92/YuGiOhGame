@@ -3750,6 +3750,47 @@ priorità o richiedono un refactor ampio):
   `isRemoteChooser` guardano ancora il nome del posto): è il passo
   successivo, "a passo comune".
 
+- ✅ **Multiplayer a passo comune: protocollo e duello gemello (Priorità 3,
+  passi C e D, stesso branch)** — `js/engine/passo-comune.js` +
+  `tools/duello-gemello.js` (spec `duello-gemello`). I due client eseguono
+  TUTTA la partita (stessi mazzi, stesso seme: `PassoComune.preparaDuello`)
+  e si scambiano solo COMANDI (`Comandi.esegui`) e DECISIONI
+  (`Decisioni.chiedi`, come posizione nell'elenco dei candidati). Spento
+  finché nessuno chiama `PassoComune.avvia`: offline l'impronta delle 60
+  partite è identica. La pagina non lo usa ancora (passo E). Regole per il
+  codice nuovo, tutte prese dal duello gemello:
+  - **Una mossa locale parte solo a duello fermo** (`PassoComune.fermo`:
+    niente Catena, finestra di priorità, scelta aperta, comando a metà),
+    altrimenti viene rifiutata: l'IA aspetta con `aspettaDuelloFermo`/
+    `quandoFermo` (bot.js). Un comando che ne lancia un altro DENTRO di sé
+    è un errore di questo tipo (lo scarto di fine turno dell'IA partiva
+    dentro il comando 'fase').
+  - **Una scelta presa all'istante si applica a codice in corso finito**
+    (`PassoComune.differisci`), e così quella ricevuta, anche se era già
+    arrivata: altrimenti cade dentro un ciclo da una parte e dopo
+    dall'altra (Kaiser Glider a metà di Buco Nero, Cerchio Ammaliante).
+  - **Un timer che fa avanzare le REGOLE passa da `PassoComune.dopo`**
+    (`dopoRegola` in duel-engine.js), non da setTimeout: a passo comune
+    aspetta le scelte aperte su entrambi i client. Suoni, vibrazioni ed
+    effetti visivi restano setTimeout.
+  - **`Decisioni.rispondeUnaPersona(chi)` a passo comune dipende solo da chi
+    controlla il posto** (`Tavolo.giocaUnaPersona`, che per un posto
+    'remoto' guarda `Tavolo.impostaNaturaRemoto`): è il bivio "chiedo / decido
+    da me" delle carte, e deve uscire uguale sui due client. Per lo stesso
+    motivo una scelta si chiede a `chi: <il posto vero>`, mai `'player'`
+    scritto a mano (63 corrette).
+  - Uno stato che una mossa porta con sé va nel COMANDO, non su un campo
+    della carta impostato dall'IA prima di eseguirla (Ra id 472:
+    `pagaLpRa`).
+  - Un `const` a livello di script NON è `window.X`: un modulo che altri
+    leggono da `globalThis` va pubblicato anche lì (la prima versione di
+    PassoComune non era vista da `Decisioni`, e nessuna decisione viaggiava).
+  Il duello gemello confronta lo stato a FINE duello nel momento di
+  `fine-duello`: quel che i timer fanno dopo non conta. Per ritrovare un
+  guasto: `node tools/duello-gemello.js --seme N --traccia` mostra ogni
+  scelta chiesta, decisione mandata/attesa e comando, e la prima
+  divergenza dice quale pezzo dello stato si è separato.
+
 ## Carte con limiti noti (da riprendere)
 
 **Fonte di verità: `grep missingEffectNote data/cards.json`, e nient'altro.**

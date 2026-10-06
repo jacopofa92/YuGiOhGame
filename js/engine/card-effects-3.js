@@ -208,7 +208,7 @@
                     };
                     if (Decisioni.rispondeUnaPersona(ctx.owner)) {
                         Decisioni.chiedi({
-                            chi: 'player',
+                            chi: ctx.owner,
                             tipo: 'coppia',
                             titolo: '🧙 Hai indovinato! Special Summonare Saggio Oscuro dal Deck?',
                             candidati: [
@@ -426,7 +426,7 @@
                 return;
             }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: owner,
                 candidati: options.map((o) => o.card),
                 titolo: '🔗 Scegli il Mostro Fusione',
                 testo: 'Hai i materiali per più di un Mostro Fusione: scegline uno da Evocare.'
@@ -3084,7 +3084,7 @@
                 return;
             }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates,
                 titolo: '🎭 Copione',
                 testo: 'Scegli il mostro scoperto dell\'avversario da copiare (ATK/DEF originali).'

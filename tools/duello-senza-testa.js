@@ -159,7 +159,10 @@ function creaOrologio() {
 }
 
 function creaContesto(opz) {
-    const orologio = creaOrologio();
+    // Un orologio passato da fuori lo condividono più contesti: il duello
+    // gemello (tools/duello-gemello.js) fa girare due motori sullo stesso
+    // tempo virtuale, come due telefoni.
+    const orologio = opz.orologio || creaOrologio();
     const casuale = prng(opz.seme);
     const MathConSeme = Object.create(Math);
     MathConSeme.random = casuale;
@@ -388,4 +391,4 @@ async function main() {
 }
 
 if (require.main === module) main();
-module.exports = { giocaPartita, creaContesto, SCRIPT };
+module.exports = { giocaPartita, creaContesto, creaOrologio, prng, SCRIPT };

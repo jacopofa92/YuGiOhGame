@@ -74,6 +74,9 @@ function clearSelection() {
 function isBlockingModalOpen() {
     if (gameState.pendingTributeSummon) return true;
     if (gameState.pendingHandDiscard) return true;
+    // A passo comune, anche una scelta aperta sull'altro client (o una mia
+    // appena presa, che sta per applicarsi): vedi PassoComune.inPausa.
+    if (typeof PassoComune !== 'undefined' && PassoComune.inPausa()) return true;
     return EventiDuello.chiedi('interfaccia-occupata', false) === true;
 }
 

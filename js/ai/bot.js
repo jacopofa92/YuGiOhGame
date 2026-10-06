@@ -10,7 +10,17 @@
 function turnoIA(io = 'bot') {
     clearPhaseTransitionTimeout();
     enterDrawPhase(false, () => {
+        // Una vittoria alla pescata (Exodia: la cinematica parte subito,
+        // gameOver arriva quando finisce) chiude il turno qui. Senza, l'IA
+        // entrava lo stesso in Standby Phase, mentre il turno guidato dalle
+        // fasi automatiche (persona, o posto remoto a passo comune) si
+        // fermava: preso dal duello gemello.
+        if (gameState.gameOver || gameState.instantWinCinematicPlaying) return;
         enterStandbyPhase(false);
+        // Lo stesso dopo la Standby: un costo pagato lì (Scatola delle Fate,
+        // 500 LP) può chiudere il duello, e endDuel ha già cancellato i timer
+        // di fase — quello della Main Phase 1 qui sotto partirebbe dopo.
+        if (gameState.gameOver) return;
         // Finestra di priorità per il giocatore durante la Standby Phase del
         // bot (DuelEngine.openPriorityWindow): se ha un Effetto Veloce
         // utilizzabile glielo offre, altrimenti prosegue subito. Il resto
@@ -182,6 +192,25 @@ function waitForPriorityWindow() {
 }
 
 /**
+ * Multiplayer a passo comune (js/engine/passo-comune.js): una mossa locale
+ * parte solo a duello fermo — niente Catena, nessuna scelta aperta su uno
+ * dei due client, nessun comando a metà — e fuori da lì viene rifiutata.
+ * L'IA quindi aspetta prima di ogni mossa. Fuori dal passo comune (o con il
+ * duello già fermo) `fn` parte SUBITO, nello stesso giro: il ritmo
+ * dell'IA offline non cambia di un millisecondo.
+ */
+function aspettaDuelloFermo(fn) {
+    if (typeof PassoComune === 'undefined' || !PassoComune.attivo() || PassoComune.fermo()) { fn(); return; }
+    setTimeout(() => aspettaDuelloFermo(fn), 50);
+}
+
+/** Come aspettaDuelloFermo, per una mossa che torna una Promise: subito se si può, nello stesso giro. */
+function quandoFermo(fn) {
+    if (typeof PassoComune === 'undefined' || !PassoComune.attivo() || PassoComune.fermo()) return Promise.resolve(fn());
+    return new Promise((fatto) => aspettaDuelloFermo(fatto)).then(fn);
+}
+
+/**
  * Pausa di RITMO del bot, scalata dalla preferenza "Velocità del bot"
  * (js/ui/bot-speed.js). Solo per le pause che esistono per farsi seguire:
  * le attese con un motivo (modale aperto, cinematica in corso) non passano
@@ -206,7 +235,7 @@ function botMs(ms) {
  * di attemptBotSpellTrap più sotto.
  */
 function attemptBotMassDestructionBeforeSummon(io) {
-    return new Promise((resolve) => {
+    return new Promise((resolve) => aspettaDuelloFermo(() => {
         // Stessa guardia di attemptBotSummon/attemptBotSpellTrap: mai
         // agire fuori dal vero turno del bot.
         if (gameState.currentPlayer !== io || gameState.gameOver || !window.AI_SHARED) { resolve(); return; }
@@ -221,7 +250,7 @@ function attemptBotMassDestructionBeforeSummon(io) {
         const started = Comandi.esegui(io, { tipo: 'attiva', zona: 'hand', indice: candidato.handIndex, carta: candidato.card.uid });
         if (!started) { resolve(); return; } // difensivo: canActivate era già stato controllato sopra
         waitForBotChainToClear(() => { updateUI(); resolve(); });
-    });
+    }));
 }
 
 /**
@@ -241,14 +270,20 @@ function attemptBotMassDestructionBeforeSummon(io) {
  * della Fusione prima della mossa successiva.
  */
 function attemptBotUseTurnPlayerFieldSpell(io) {
+    return quandoFermo(() => {
     if (gameState.currentPlayer !== io || gameState.gameOver || !window.DuelEngine) return Promise.resolve();
     // I controlli (Terreno scoperto, carta che lo concede, condizione)
     // li fa l'esecutore del comando: se torna false non è successo nulla.
     if (!Comandi.esegui(io, { tipo: 'usaTerrenoAltrui' })) return Promise.resolve();
     return new Promise((resolve) => setTimeout(resolve, 1200)).then(waitForSummonCinematics);
+    });
 }
 
 function attemptBotSummon(io) {
+    return quandoFermo(() => evocaSeConviene(io));
+}
+
+function evocaSeConviene(io) {
     // Guardia difensiva: se un setTimeout/Promise di un botTurn() precedente
     // arriva TARDI (es. il duello è stato resettato/ricaricato dal
     // sandbox Duello Demo mentre la catena era ancora in volo, o
@@ -292,17 +327,17 @@ function botSummonMonster(card, tributeIndices, emptySlotHint, position, faceDow
     // restarne con 100" è un "puoi" — lato persona lo decide un popover
     // (maybeAskRaLpChoice, actions.js), qui un'euristica prudente: paga
     // solo se il campo avversario è vuoto (nessun mostro pronto ad
-    // attaccare al turno successivo). card._raPayLp, letto da
-    // CardEffects.register(472).onSummon.
-    if (card.id === 472) {
-        card._raPayLp = !Tavolo.mostri(Tavolo.avversario(io)).some((s) => s);
-    }
+    // attaccare al turno successivo). Viaggia nel comando ('pagaLpRa'),
+    // che lo rimette su card._raPayLp per CardEffects.register(472).onSummon.
+    const pagaLpRa = card.id === 472 ? !Tavolo.mostri(Tavolo.avversario(io)).some((s) => s) : undefined;
     return new Promise((resolve) => {
         const evoca = (casella) => {
             if (casella === -1 || casella === undefined) { resolve(); return; }
             // La posizione in mano si legge ADESSO, a Sacrifici fatti: è il
             // ripiego per una carta senza uid (vedi Comandi.indiceInMano).
-            Comandi.esegui(io, { tipo: 'evoca', carta: card.uid, mano: Tavolo.mano(io).indexOf(card), casella: casella, posizione: position }, { alTermine: resolve });
+            const comando = { tipo: 'evoca', carta: card.uid, mano: Tavolo.mano(io).indexOf(card), casella: casella, posizione: position };
+            if (pagaLpRa !== undefined) comando.pagaLpRa = pagaLpRa;
+            Comandi.esegui(io, comando, { alTermine: resolve });
         };
         if (!tributeIndices || tributeIndices.length === 0) {
             evoca(emptySlotHint);
@@ -453,12 +488,12 @@ async function botPerformAttacks(giro = 0, soloUids = null, io = 'bot') {
                 // Se nel frattempo il giocatore ha un modale aperto (es. ha
                 // ancora da rispondere al colpo precedente), l'attacco
                 // successivo aspetta che lo chiuda.
-                waitForNoBlockingModal().then(() => {
+                waitForNoBlockingModal().then(() => aspettaDuelloFermo(() => {
                     if (gameState.currentPlayer !== io || gameState.gameOver) { resolve(); return; }
                     // Lo stesso comando della persona (eseguiAttacco,
                     // battaglia.js): paga il costo e attacca.
                     Comandi.esegui(io, { tipo: 'attacca', attaccante: attackerItem.index, bersaglio: targetIndex, tributo: tributoPerAttaccare }, { alTermine: resolve });
-                });
+                }));
             }, botMs(1200));
         });
     }
@@ -611,7 +646,8 @@ function attemptBotSpellTrap(io) {
         const usedThisTurn = {};
         let iterations = 0;
         const MAX_ITERATIONS = 10; // sicurezza: mai un loop infinito
-        const step = () => {
+        const step = () => aspettaDuelloFermo(passo);
+        const passo = () => {
             iterations++;
             // Guardia difensiva (bug reale scoperto: senza questo
             // controllo, un setTimeout in ritardo poteva far attivare al
@@ -656,7 +692,8 @@ function attemptBotActivateSetCards(io) {
         // conteggio esatto — coerente con MAX_ACTIVATE_PER_TURN/
         // MAX_SET_PER_TURN in js/ai/ai-hard.js per lo stesso motivo.
         const MAX_ITERATIONS = 2;
-        const step = () => {
+        const step = () => aspettaDuelloFermo(passo);
+        const passo = () => {
             iterations++;
             // Guardia difensiva, stesso motivo di attemptBotSummon/attemptBotSpellTrap.
             if (iterations > MAX_ITERATIONS || gameState.gameOver || gameState.currentPlayer !== io) { resolve(); return; }

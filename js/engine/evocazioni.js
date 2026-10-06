@@ -138,7 +138,9 @@ function eseguiTributo(posto, c, extra) {
         }
         if (typeof extra.dopo === 'function') extra.dopo();
     };
-    if (attesa > 0) setTimeout(togli, attesa); else togli();
+    // Un timer delle regole: a passo comune aspetta le scelte aperte
+    // (vedi il tempo delle regole in passo-comune.js).
+    if (attesa > 0) PassoComune.dopo(togli, attesa); else togli();
 }
 
 /**
@@ -166,7 +168,13 @@ function eseguiScartoFineTurno(posto, c, extra) {
     // Dagli indici più alti ai più bassi: rimuovere prima un indice basso
     // sposterebbe (di uno) gli indici più alti, facendo scartare la carta
     // sbagliata. Gli indici si ricavano dagli uid ADESSO, non prima.
-    const indices = (c.carte || []).map((uid) => mano.findIndex((x) => x && x.uid === uid)).filter((i) => i !== -1).sort((a, b) => b - a);
+    // Una carta senza uid (costruita a mano in uno spec) si ritrova per
+    // posizione, da `c.indici` (vedi autoDiscardHandExcess in fasi.js).
+    const indices = (c.carte || [])
+        .map((uid, k) => (uid !== null && uid !== undefined
+            ? mano.findIndex((x) => x && x.uid === uid)
+            : (c.indici && typeof c.indici[k] === 'number' && mano[c.indici[k]] ? c.indici[k] : -1)))
+        .filter((i) => i !== -1).sort((a, b) => b - a);
     const discardedNames = [];
     // ctx.discardChosenFromHand (duel-engine.js) invece di uno splice/push
     // manuale: fa scattare def.onSentToGraveyardFromHand (es. Roc dalla
@@ -192,6 +200,9 @@ function eseguiScartoFineTurno(posto, c, extra) {
     }
 
     if (extra && typeof extra.dopo === 'function') extra.dopo();
+    // A passo comune, lo scarto del posto remoto fa ripartire il turno che
+    // enterEndPhase (fasi.js) aveva lasciato in attesa.
+    consumaScartoFineTurnoAtteso(posto);
 }
 
 /**
@@ -200,7 +211,11 @@ function eseguiScartoFineTurno(posto, c, extra) {
  * sempre perché la chiamano l'interfaccia e diversi spec.
  */
 function summonMonster(card, slotIndex, position, handIndex = gameState.selectedCard.index, fromRect = null) {
-    return Comandi.esegui('player', { tipo: 'evoca', carta: card && card.uid, mano: handIndex, casella: slotIndex, posizione: position }, { partenza: fromRect });
+    const comando = { tipo: 'evoca', carta: card && card.uid, mano: handIndex, casella: slotIndex, posizione: position };
+    // Il Drago Alato di Ra (id 472): la scelta "pago i LP?" (maybeAskRaLpChoice,
+    // actions.js) viaggia nel comando, non solo come segno sulla carta.
+    if (card && card._raPayLp !== undefined) comando.pagaLpRa = card._raPayLp;
+    return Comandi.esegui('player', comando, { partenza: fromRect });
 }
 
 /**
@@ -219,6 +234,9 @@ function eseguiEvocazioneNormale(posto, c, extra) {
     const handIndex = Comandi.indiceInMano(posto, c);
     if (handIndex === -1) { fine(); return; }
     const card = Tavolo.mano(posto)[handIndex];
+    // Ra (id 472): CardEffects.register(472).onSummon legge la scelta dalla
+    // carta; sul client che riceve il comando, è il comando a portarla.
+    if (c.pagaLpRa !== undefined) card._raPayLp = c.pagaLpRa;
     const slotIndex = c.casella;
     const position = c.posizione;
     const fromRect = extra && extra.partenza ? extra.partenza : null;

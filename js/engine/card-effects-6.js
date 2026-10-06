@@ -1104,7 +1104,7 @@
         };
         if (remaining.length === 0) { finish(); return; }
         Decisioni.chiedi({
-            chi: 'player',
+            chi: ctx.owner,
             candidati: remaining,
             titolo: '🔨 Maglio Magico',
             testo: `Scegli 1 carta da rimescolare nel Deck, o chiudi per fermarti qui (${selected.length} scelt${selected.length === 1 ? 'a' : 'e'} finora).`,

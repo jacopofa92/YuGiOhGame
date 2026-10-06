@@ -238,7 +238,7 @@
                 return;
             }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates,
                 titolo: '⚙️ Fabbrica dell\'Ingranaggio Antico',
                 testo: 'Scegli quale mostro "Ingranaggio Antico" rivelare dalla mano.'
@@ -2141,7 +2141,7 @@
             } else if (Decisioni.rispondeUnaPersona(owner)) {
                 const previewName = handIdx !== -1 ? hand[handIdx].name : deck[deckIdx].name;
                 Decisioni.chiedi({
-                    chi: 'player',
+                    chi: owner,
                     tipo: 'coppia',
                     titolo: '💀 Destiny Board',
                     candidati: [
@@ -2431,7 +2431,7 @@
             if (lp <= 100) { messaggeroLasciaAndare(ctx); return; }
             if (Decisioni.rispondeUnaPersona(ctx.owner)) {
                 Decisioni.chiedi({
-                    chi: 'player',
+                    chi: ctx.owner,
                     tipo: 'coppia',
                     titolo: '🕊️ Messaggero della Pace',
                     candidati: [
@@ -2770,7 +2770,7 @@
                     return;
                 }
                 Decisioni.chiedi({
-                    chi: 'player',
+                    chi: ctx.owner,
                     candidati: fusionCandidates,
                     titolo: '🌀 Metamorfosi',
                     testo: "Scegli quale Mostro Fusione Special Summonare dall'Extra Deck."
@@ -2787,7 +2787,7 @@
                 return;
             }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: tributeCandidates,
                 titolo: '🌀 Metamorfosi',
                 testo: 'Scegli quale mostro tributare.'
@@ -2820,7 +2820,7 @@
             return;
         }
         Decisioni.chiedi({
-            chi: 'player',
+            chi: owner,
             candidati: options.map((o) => o.card),
             titolo: '🔗 Cancello di Fusione: scegli il Mostro Fusione',
             testo: 'Hai i materiali per più di un Mostro Fusione: scegline uno da Evocare (i materiali vengono banditi).'

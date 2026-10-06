@@ -141,7 +141,7 @@
             ctx.log(`☠️ Virus Distruggi-Carte sacrifica ${tributeCard.name}: l'avversario non subisce danni fino alla fine del turno successivo, ${destroyed} mostr${destroyed === 1 ? 'o' : 'i'} con 1500+ ATK distrutt${destroyed === 1 ? 'o' : 'i'}!`);
             if (Decisioni.rispondeUnaPersona(ctx.owner)) {
                 Decisioni.chiedi({
-                    chi: 'player',
+                    chi: ctx.owner,
                     tipo: 'presa-visione',
                     candidati: ctx.hand(ctx.opponent).slice(),
                     titolo: '☠️ Virus Distruggi-Carte',
@@ -449,7 +449,7 @@
                 return;
             }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates.map((c) => c.card),
                 titolo: '✨ Rimuovi Magia',
                 testo: 'Scegli 1 Magia scoperta, o 1 carta Set, da colpire.'
@@ -1439,7 +1439,7 @@
                 return;
             }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: stCandidates,
                 titolo: '🃏 Kuribandit',
                 testo: 'Scegli quale Magia/Trappola aggiungere alla mano tra quelle scavate.'

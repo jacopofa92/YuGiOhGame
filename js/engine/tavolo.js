@@ -39,6 +39,8 @@
     let impostati = {};
     /** Il posto che viene per primo in Tavolo.ordine() (vedi lì). */
     let primo = 'player';
+    /** Chi c'è davvero dietro un posto 'remoto' (vedi Tavolo.giocaUnaPersona). */
+    let naturaRemoto = 'persona';
 
     /** @param {string} posto */
     function controllaPosto(posto) {
@@ -95,6 +97,33 @@
         eRemoto(posto) { return Tavolo.controllore(posto) === 'remoto'; },
 
         /**
+         * Vero se a giocare quel posto è una persona, su questo schermo o
+         * sull'altro client. Diverso da ePersona: un posto 'remoto' è una
+         * persona vera in un Multiplayer, ma l'IA nel duello gemello (due
+         * motori IA contro IA che si parlano come due telefoni,
+         * tools/duello-gemello.js). Nel passo comune le regole che fanno
+         * qualcosa di diverso per una persona e per l'IA (chiedere o decidere
+         * da sé, quali Effetti Veloci proporre) devono comportarsi allo
+         * stesso modo sui due client: per questo guardano questo, non chi ha
+         * il posto in mano di qua.
+         * @param {string} posto
+         */
+        giocaUnaPersona(posto) {
+            const c = Tavolo.controllore(posto);
+            return c === 'persona' || (c === 'remoto' && naturaRemoto === 'persona');
+        },
+
+        /**
+         * Chi c'è dietro un posto 'remoto': 'persona' (default, il
+         * Multiplayer) o 'ia' (il duello gemello).
+         * @param {string} natura
+         */
+        impostaNaturaRemoto(natura) {
+            if (natura !== 'persona' && natura !== 'ia') throw new Error(`Tavolo: natura del posto remoto sconosciuta "${natura}"`);
+            naturaRemoto = natura;
+        },
+
+        /**
          * Cambia chi controlla uno o entrambi i posti, es.
          * `Tavolo.imposta({ player: 'ia' })`. Vale finché non si chiama
          * `Tavolo.azzera()` (o si ricarica la pagina).
@@ -109,7 +138,7 @@
         },
 
         /** Torna ai controllori di default (e all'ordine di default). */
-        azzera() { impostati = {}; primo = 'player'; },
+        azzera() { impostati = {}; primo = 'player'; naturaRemoto = 'persona'; },
 
         /**
          * I due posti nell'ordine in cui le regole li scorrono quando

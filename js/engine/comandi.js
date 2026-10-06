@@ -168,6 +168,12 @@ const Comandi = (function () {
             console.error(`Comandi: tipo sconosciuto "${comando && comando.tipo}"`);
             return false;
         }
+        // Multiplayer a passo comune (js/engine/passo-comune.js): il comando
+        // di un posto locale parte per l'altro client, e la sua fine si
+        // sorveglia (fino ad allora il duello non è "fermo").
+        if (typeof PassoComune !== 'undefined' && PassoComune.attivo()) {
+            return PassoComune.comando(posto, comando, extra || {}, (sorvegliato) => esecutore(posto, comando, sorvegliato));
+        }
         return esecutore(posto, comando, extra || {});
     }
 

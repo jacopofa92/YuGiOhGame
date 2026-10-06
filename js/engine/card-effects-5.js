@@ -106,7 +106,7 @@
                 const showBotDeck = () => {
                     if (!Array.isArray(gameState.botDeck)) return;
                     Decisioni.chiedi({
-                        chi: 'player',
+                        chi: ctx.owner,
                         tipo: 'presa-visione',
                         candidati: revealSnapshots.bot,
                         titolo: '⚔️ Nobile del Depistaggio',
@@ -115,7 +115,7 @@
                     }, () => {});
                 };
                 Decisioni.chiedi({
-                    chi: 'player',
+                    chi: ctx.owner,
                     tipo: 'presa-visione',
                     candidati: revealSnapshots.player,
                     titolo: '⚔️ Nobile del Depistaggio',
@@ -1040,7 +1040,7 @@
                 return;
             }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: validHandCandidates,
                 titolo: '🧛 Genesi del Vampiro',
                 testo: 'Scegli quale mostro Zombie scartare dalla mano.'
@@ -1821,7 +1821,7 @@
             // pescare, l'opzione piu' sicura.
             if (Decisioni.rispondeUnaPersona(ctx.owner)) {
                 Decisioni.chiedi({
-                    chi: 'player',
+                    chi: ctx.owner,
                     tipo: 'coppia',
                     titolo: '📿 Collana del Comando',
                     candidati: [

@@ -235,7 +235,7 @@
                 return;
             }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates.map((c) => c.card),
                 titolo: '🤖 Predone Cyber',
                 testo: 'Scegli 1 Carta Equipaggiamento sul Terreno: poi decidi se distruggerla o rubarla.'
@@ -243,7 +243,7 @@
                 if (card === null) return;
                 const choice = candidates.find((c) => c.card.uid === card.uid);
                 Decisioni.chiedi({
-                    chi: 'player',
+                    chi: ctx.owner,
                     tipo: 'coppia',
                     titolo: choice.card.name,
                     candidati: [
@@ -1452,7 +1452,7 @@
                 return;
             }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: owner,
                 candidati: candidates.map((c) => c.card),
                 titolo: '🌟 Rinascita del Mostro',
                 testo: 'Scegli quale mostro riportare in campo da uno dei due Cimiteri.'
@@ -1468,7 +1468,7 @@
                 const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
                 const anchorEl = PortaUI.query(`#${boardId} .field-slot[data-owner="${owner}"][data-type="monster"][data-index="${slotIndex}"]`);
                 Decisioni.chiedi({
-                    chi: 'player',
+                    chi: owner,
                     tipo: 'posizione',
                     ancora: anchorEl,
                     titolo: `${choice.card.name}: Attacco o Difesa?`
@@ -1932,7 +1932,7 @@
         const eligible = grave.filter((c) => c.type === 'monster' && !DuelEngine.getDefinition(c.id)?.cannotBeSpecialSummoned);
         if (eligible.length === 0 || ctx.findEmptyMonsterSlot(ctx.owner) === -1) { finishSoulCharge(ctx, summonedUids); return; }
         Decisioni.chiedi({
-            chi: 'player',
+            chi: ctx.owner,
             candidati: eligible,
             titolo: '👻 Carica dell\'Anima',
             testo: `Scegli 1 mostro dal Cimitero da Special Summonare, o chiudi per fermarti qui (${summonedUids.length} finora).`,
@@ -2212,7 +2212,7 @@
                 return;
             }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates.map((c) => c.card),
                 titolo: '🐛 Insetto Divoratore',
                 testo: 'Scegli quale mostro scoperto sul Terreno distruggere.'
@@ -2350,7 +2350,7 @@
 
             if (Decisioni.rispondeUnaPersona(ctx.owner)) {
                 Decisioni.chiedi({
-                    chi: 'player',
+                    chi: ctx.owner,
                     candidati: opponentMonstersInHand,
                     titolo: '⛓️ Amazzone Maestra delle Catene',
                     testo: "Paga 1500 Life Points e scegli 1 mostro dalla mano dell'avversario da aggiungere alla tua mano."
@@ -2713,7 +2713,7 @@
             };
             if (!Decisioni.rispondeUnaPersona(ctx.owner)) { revive(candidates[0]); return; }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: ctx.owner,
                 candidati: candidates,
                 titolo: '🔥 Spadaccino di Fiamma Blu',
                 testo: 'Scegli 1 mostro Guerriero FUOCO dal Cimitero da Special Summonare (Spadaccino di Fiamma Blu si bandisce).'

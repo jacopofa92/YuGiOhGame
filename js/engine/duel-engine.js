@@ -403,6 +403,18 @@
         setTimeout(fn, delay);
     }
 
+    /**
+     * Un timer delle REGOLE (il prossimo passo della Catena, il seguito di
+     * una distruzione): un setTimeout, che a passo comune aspetta anche che
+     * nessuna scelta sia aperta su nessuno dei due client — vedi il tempo
+     * delle regole in js/engine/passo-comune.js. Per suoni, vibrazioni ed
+     * effetti visivi resta setTimeout: non cambiano la partita.
+     */
+    function dopoRegola(fn, delay) {
+        if (typeof PassoComune !== 'undefined') return PassoComune.dopo(fn, delay);
+        return setTimeout(fn, delay);
+    }
+
     function redirectToBanishIfFlagged(owner, card) {
         if (!card.mustBanishOnLeavingField) return;
         const grave = graveyardOf(owner);
@@ -539,7 +551,9 @@
      * candidato.
      */
     function uidCondiviso(prefisso, contesto) {
-        if (!window.MULTIPLAYER_MODE) {
+        // Con la casualità di gioco condivisa (passo comune) l'uid esce dal
+        // seme, uguale sui due client; Date.now() no.
+        if (!window.MULTIPLAYER_MODE && !Casuale.condivisa()) {
             return `${prefisso}_${Date.now()}_${Casuale.random().toString(36).slice(2)}`;
         }
         // Stessa chiave che userebbe ctx.random(): un contesto ha UNA sola
@@ -3365,7 +3379,12 @@
     // di indovinarla.
     // ============================================================
 
-    function isMultiplayer() { return !!window.MP_broadcast; }
+    // Il Multiplayer che RACCONTA le mosse (messaggi su misura, mano a
+    // segnaposto, decisioni per uid). A passo comune (js/engine/passo-comune.js)
+    // è spento tutto: i due client conoscono le stesse carte e le decisioni
+    // viaggiano da Decisioni.chiedi.
+    function aPassoComune() { return typeof PassoComune !== 'undefined' && PassoComune.attivo(); }
+    function isMultiplayer() { return !!window.MP_broadcast && !aPassoComune(); }
 
     /** In Multiplayer il lato 'bot' non è un bot: è una persona su un altro computer, ed è LEI a dover rispondere. */
     function isRemoteResponder(owner) { return isMultiplayer() && owner === 'bot'; }
@@ -3512,7 +3531,7 @@
 
     /** Vero se a scegliere è la persona dall'altra parte, non io. */
     function isRemoteChooser(owner) {
-        return !!window.MULTIPLAYER_MODE && owner === 'bot';
+        return !!window.MULTIPLAYER_MODE && !aPassoComune() && owner === 'bot';
     }
 
     function flushRemoteChainDecisions() {
@@ -4352,7 +4371,10 @@
         // rimozione (Ninja d'Assalto si bandisce) usato senza motivo
         // brucerebbe il costo a vuoto. In risposta a una Catena il bot
         // continua a decidere come sempre.
-        if (Tavolo.eIA(responderOwner)) {
+        // giocaUnaPersona e non eIA: a passo comune il posto dell'altro
+        // client è 'remoto' di qua, ma l'elenco deve uscire uguale a quello
+        // che calcola lui (vedi Tavolo.giocaUnaPersona).
+        if (!Tavolo.giocaUnaPersona(responderOwner)) {
             candidates = candidates.filter((c) => {
                 const regola = c.def && c.def.botInFinestraDiPriorita;
                 if (typeof regola === 'function') return !!regola(makeContext(responderOwner, { card: c.card, zone: c.zone, index: c.index }));
@@ -4588,7 +4610,7 @@
         const duration = (window.FX && FX.ACTIVATE_CENTER_DURATION_MS) || 2000;
         const elapsed = initialLink.activatedAt ? (Date.now() - initialLink.activatedAt) : duration;
         const waitMs = Math.max(0, duration - elapsed);
-        setTimeout(askNextRound, waitMs);
+        dopoRegola(askNextRound, waitMs);
     }
 
     /**
@@ -4781,7 +4803,7 @@
             const duration = (window.FX && FX.ACTIVATE_CENTER_DURATION_MS) || 2000;
             const elapsed = link.activatedAt ? (Date.now() - link.activatedAt) : duration;
             const waitMs = Math.max(0, duration - elapsed);
-            setTimeout(runHandler, waitMs);
+            dopoRegola(runHandler, waitMs);
         };
 
         resolveNext();
@@ -5130,7 +5152,7 @@
                         // `slot` sarà stato riusato o svuotato quando il
                         // timeout scatta.
                         const equipFinitaAlCimitero = slot.card;
-                        setTimeout(() => {
+                        dopoRegola(() => {
                             notifySpellTrapSentToGraveyardFromField(owner, equipFinitaAlCimitero, { motivo: 'equipOrfana' });
                         }, 0);
                         return;
@@ -6179,7 +6201,7 @@
      * risposta: lo stato è già nella fotografia, quel campo non lo tocca.
      */
     function broadcastLocalStatePush(summoned) {
-        if (!window.MP_broadcast || window.MP_applyingRemote) return;
+        if (!window.MP_broadcast || window.MP_applyingRemote || aPassoComune()) return;
         window.MP_broadcast({
             kind: 'state-push',
             state: serializePublicState('player'),

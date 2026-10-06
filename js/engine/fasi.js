@@ -638,9 +638,13 @@ function changeTurn() {
     // l'altro client.
     const diTurno = gameState.currentPlayer;
     const controllore = Tavolo.controllore(diTurno);
+    // A passo comune (js/engine/passo-comune.js) anche il turno del posto
+    // remoto si gioca di qua: pescata, Standby e Main Phase 1 avanzano da
+    // sole come per la persona, e da lì in poi arrivano i suoi comandi.
+    const remotoAPassoComune = controllore === 'remoto' && typeof PassoComune !== 'undefined' && PassoComune.attivo();
     if (controllore === 'ia') {
         setTimeout(() => turnoIA(diTurno), 3000);
-    } else if (controllore === 'persona') {
+    } else if (controllore === 'persona' || remotoAPassoComune) {
         setTimeout(() => enterDrawPhase(true), 3000);
     }
 }
@@ -677,7 +681,7 @@ function enterDrawPhase(autoAdvance = true, onComplete = null) {
         if (Decisioni.rispondeUnaPersona(owner)) {
             addToLog(`🔮 Maharaghi: guardi la prima carta del tuo Deck (${topCard.name})!`);
             Decisioni.chiedi({
-                chi: 'player',
+                chi: owner,
                 tipo: 'coppia',
                 titolo: `🔮 Maharaghi: ${topCard.name} — lasciarla in cima o mandarla in fondo?`,
                 candidati: [
@@ -775,7 +779,7 @@ function enterDrawPhaseInner(autoAdvance = true, onComplete = null) {
                 return;
             }
             Decisioni.chiedi({
-                chi: 'player',
+                chi: freedOwner,
                 tipo: 'coppia',
                 titolo: '⚔️ Freed il Generale: pescare o cercare?',
                 candidati: [
@@ -784,7 +788,7 @@ function enterDrawPhaseInner(autoAdvance = true, onComplete = null) {
                         onSelect: () => {
                             if (candidati.length === 1) { cerca(candidati[0]); return; }
                             Decisioni.chiedi({
-                                chi: 'player',
+                                chi: freedOwner,
                                 candidati: candidati,
                                 titolo: '⚔️ Freed il Generale',
                                 testo: 'Scegli quale Guerriero aggiungere alla mano al posto della pescata.',
@@ -1299,20 +1303,46 @@ function enterEndPhase() {
             });
             return;
         }
-        // Scarta da sola solo l'IA. In Multiplayer il posto avversario è una
-        // persona vera dall'altra parte (controllore 'remoto'): quale carta
-        // scartare lo sceglie lei, e ce lo dirà con la propria fotografia
-        // di stato (vedi performHandDiscard in actions.js). Scartare al
-        // posto suo qui sarebbe un'ipotesi che si scontra con quello che
-        // sta per arrivare — e finché i due numeri non combaciano, ogni
-        // mossa successiva sembra arrivare da uno stato sbagliato.
+        // Scarta da sola solo l'IA, con lo stesso comando della persona
+        // ('scartaFineTurno'): così, a passo comune, lo scarto viaggia.
         if (Tavolo.eIA(gameState.currentPlayer)) {
-            autoDiscardHandExcess(gameState.currentPlayer, excess);
-            updateUI();
+            const diTurno = gameState.currentPlayer;
+            const scarta = () => autoDiscardHandExcess(diTurno, excess, () => passaIlTurnoDopoLaPriorita(1500));
+            // A passo comune ogni comando parte a duello fermo, e qui siamo
+            // ancora DENTRO il comando 'fase' che ha portato alla End Phase:
+            // lo scarto parte appena quello è concluso. L'altro client, nello
+            // stesso punto, lo sta aspettando (scartoFineTurnoAtteso qui sotto).
+            if (typeof PassoComune !== 'undefined' && PassoComune.attivo()) setTimeout(scarta, 0);
+            else scarta();
+            return;
+        }
+        // Il posto remoto, a passo comune (js/engine/passo-comune.js): quali
+        // carte scartare lo decide l'altro client, e il suo comando arriverà.
+        // Il turno passa solo dopo, come per la persona. (Nel Multiplayer di
+        // prima lo scarto arrivava come fotografia di stato e il turno
+        // passava subito: vedi performHandDiscard.)
+        if (Tavolo.eRemoto(gameState.currentPlayer) && typeof PassoComune !== 'undefined' && PassoComune.attivo()) {
+            scartoFineTurnoAtteso = { posto: gameState.currentPlayer, poi: () => passaIlTurnoDopoLaPriorita(700) };
+            return;
         }
     }
 
     passaIlTurnoDopoLaPriorita(1500);
+}
+
+/**
+ * Il seguito di uno scarto di fine turno che il posto remoto deve ancora
+ * fare (vedi enterEndPhase): lo consuma eseguiScartoFineTurno
+ * (evocazioni.js) quando il comando arriva.
+ */
+let scartoFineTurnoAtteso = null;
+
+/** Chiamata a scarto fatto: se quel posto era atteso, il turno riparte. */
+function consumaScartoFineTurnoAtteso(posto) {
+    const atteso = scartoFineTurnoAtteso;
+    if (!atteso || atteso.posto !== posto) return;
+    scartoFineTurnoAtteso = null;
+    atteso.poi();
 }
 
 /**
@@ -1338,21 +1368,22 @@ function passaIlTurnoDopoLaPriorita(delay) {
  * all'array), la stessa semplificazione "nessun criterio di valore"
  * documentata altrove in questo motore per le scelte automatiche del bot.
  */
-function autoDiscardHandExcess(owner, excess) {
+function autoDiscardHandExcess(owner, excess, poi) {
     const mano = Tavolo.mano(owner);
-    // ctx.discardChosenFromHand (duel-engine.js) invece di uno splice/push
-    // manuale, stesso motivo del lato giocatore in performHandDiscard()
-    // (actions.js): fa scattare def.onSentToGraveyardFromHand (es. Roc
-    // dalla Valle della Foschia id 781) invece di ignorarlo silenziosamente.
-    // Le ultime carte in mano restano scartate per prime (nessun criterio
-    // di valore, comportamento invariato) — indici dall'ultimo al primo
-    // per lo stesso motivo del lato giocatore (uno splice sposta gli indici
-    // successivi).
-    const startIndex = mano.length - excess;
-    for (let i = mano.length - 1; i >= startIndex; i--) {
-        DuelEngine.actions.discardChosenFromHand.call({ owner: owner }, owner, i);
-    }
     addToLog(`🗑️ ${owner === 'player' ? 'Hai' : 'Il bot ha'} più di ${MAX_HAND_SIZE} carte in mano: ${owner === 'player' ? 'scarti' : 'scarta'} ${excess} cart${excess > 1 ? 'e' : 'a'}.`);
+    // Le ultime carte in mano (nessun criterio di valore, comportamento
+    // invariato), con lo stesso comando della persona: eseguiScartoFineTurno
+    // (evocazioni.js) passa da ctx.discardChosenFromHand, quindi scattano
+    // def.onSentToGraveyardFromHand (Roc dalla Valle della Foschia id 781)
+    // e gli altri avvisi. Le posizioni accompagnano gli uid per una carta
+    // costruita a mano che non ne ha uno.
+    const indici = [];
+    for (let i = mano.length - excess; i < mano.length; i++) indici.push(i);
+    Comandi.esegui(owner, {
+        tipo: 'scartaFineTurno',
+        carte: indici.map((i) => (mano[i] && mano[i].uid !== undefined ? mano[i].uid : null)),
+        indici: indici
+    }, { dopo: poi });
 }
 
 function hasExodiaAssembled(hand) {

@@ -417,7 +417,7 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
         // Giglio id 889): le scelte di quel momento si fanno QUI, con la
         // battaglia ormai certa, e il danno si calcola solo dopo — vedi
         // runBeforeDamageCalculation in duel-engine.js.
-        setTimeout(() => DuelEngine.runBeforeDamageCalculation(attackerOwner, attackerIndex, effectiveDefenderOwner, effectiveTargetIndex, () => {
+        PassoComune.dopo(() => DuelEngine.runBeforeDamageCalculation(attackerOwner, attackerIndex, effectiveDefenderOwner, effectiveTargetIndex, () => {
             // Una scelta fatta qui sopra non toglie mai l'attaccante dal
             // campo, ma resolveBattleDamage legge la sua carta senza
             // controlli: meglio uscire pulito che rompersi a metà.
@@ -561,7 +561,7 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
                 }
             }
 
-            setTimeout(() => {
+            PassoComune.dopo(() => {
                 if (attackerCardEl) attackerCardEl.classList.remove('is-attacking');
                 PortaUI.queryAll('.damage-shake').forEach(el => el.classList.remove('damage-shake'));
                 if (attackerOwner === 'player') clearSelection(); else updateUI();

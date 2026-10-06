@@ -71,6 +71,9 @@ module.exports = {
         // Le mosse dei giocatori come comandi (un esecutore per mossa, col
         // posto come parametro): base del Multiplayer a passo comune.
         'js/engine/comandi.js',
+        // Il Multiplayer a passo comune: i comandi e le decisioni che
+        // viaggiano fra i due client. Spento finché nessuno lo avvia.
+        'js/engine/passo-comune.js',
         'js/engine/fasi.js',
         'js/engine/battaglia.js',
         'js/engine/evocazioni.js',
