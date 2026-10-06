@@ -2120,11 +2120,11 @@ function chiudiDuelloASchermo(playerWon, opzioni) {
     // Chi arriva per primo alla conclusione la dichiara, e per l'altro
     // l'esito è rovesciato (la mia vittoria è la sua sconfitta; un
     // pareggio resta un pareggio per entrambi).
-    // `MP_applyingRemote` evita il rimbalzo infinito quando è proprio il
+    // `MP_ricezioneEsito` evita il rimbalzo infinito quando è proprio il
     // messaggio dell'avversario ad averci portato qui; `gameState.gameOver`
     // già impostato significa che il duello era finito e non c'è nulla da
     // annunciare.
-    if (window.MP_broadcast && !window.MP_applyingRemote && !gameState.gameOver) {
+    if (window.MP_broadcast && !window.MP_ricezioneEsito && !gameState.gameOver) {
         window.MP_broadcast({
             kind: 'game-over',
             // Dal punto di vista di CHI RICEVE.
