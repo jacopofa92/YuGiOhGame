@@ -63,7 +63,7 @@ righe, actions.js 3.855, game-flow.js 3.797; 205 accessi al DOM e 85
       persona, scelta automatica); `Decisioni.inSospeso`/`rispondi` per
       rispondere senza interfaccia. Le regole non nominano più
       `DuelEngineUI`. Spec `decisioni-in-sospeso`.
-- [ ] Unire il branch in `main` dopo la suite completa (su richiesta).
+- [x] Branch unito in `main` dopo la suite completa (199/199).
 
 **Priorità 3 — lato tavolo e Multiplayer** (branch `refactor/posti-al-tavolo`, unito in `main`)
 - [x] Chi controlla un posto è un dato (`js/engine/tavolo.js`: 'persona',
@@ -77,7 +77,7 @@ righe, actions.js 3.855, game-flow.js 3.797; 205 accessi al DOM e 85
 - [ ] Restano nel nucleo i circa 400 ternari "player ? ... : bot ..." scritti
       a mano: si possono portare sugli accessori di Tavolo un file alla
       volta, ma non bloccano nulla (sono corretti per entrambi i posti).
-- [ ] Multiplayer "a passo comune": i due client eseguono l'intera partita e
+- [x] Multiplayer "a passo comune": i due client eseguono l'intera partita e
       si scambiano solo comandi e decisioni (niente più mosse raccontate né
       fotografie di stato). Ogni client chiama ancora "player" sé stesso: lo
       stato è SPECCHIATO. Passi, ciascuno verificabile da solo:
@@ -231,8 +231,10 @@ Decisioni aperte dell'utente: i 6 PNG di avatar non usati; le regole del
 - [ ] Bilanciamento dei livelli di difficoltà con dati veri. Provato un giro
       (77 partite: giocatore scriptato semplice contro il bot): 0 vittorie
       ovunque, quindi inutile. Servirebbe un giocatore di riferimento più
-      forte, che usi anche Magie e Trappole. Il motore non ha un vero duello
-      bot contro bot: si pilota la pagina con Playwright (~70-150 s a partita).
+      forte, che usi anche Magie e Trappole. AGGIORNAMENTO (Priorità 3): ora
+      il duello senza testa è IA contro IA vera, in Node, circa 0,1 s a
+      partita (`tools/duello-senza-testa.js --giocatore ... --livello-giocatore ...`):
+      il giocatore di riferimento c'è, ed è l'IA stessa.
 
 ## Manutenzione
 
