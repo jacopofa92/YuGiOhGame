@@ -1,20 +1,117 @@
 # YuGiOhGame — mappa tecnica persistente
 
-Ultimo aggiornamento verificato: 2026-10-02.
+Ultimo aggiornamento verificato: 2026-10-06.
 
 Questo file è la memoria breve e stabile del progetto. Va letto all'inizio di
 una nuova sessione prima di scandire di nuovo l'intero repository. Per la
 cronologia dettagliata delle decisioni e delle correzioni precedenti resta
 valido `CLAUDE.md`; per la separazione e il possibile riuso del motore vedere
-`GUIDA_RIUTILIZZO.md`.
+`GUIDA_RIUTILIZZO.md`. Le regole operative per un agente sono in `AGENTS.md`.
+
+## Passaggio di consegne (2026-10-06)
+
+Fra il 4 e il 6 ottobre il motore è stato rifatto in profondità seguendo il
+"piano di attacco" di `WORK_IN_PROGRESS.md` (Priorità 0-3). Tutto è in `main`;
+suite completa 204/204 prima dell'ultima unione (`0a21581`), poi due correzioni
+Multiplayer con spec mirati verdi (`d46d30a`). Il gioco offline si comporta
+come prima: lo prova `tools/impronta-partite.js` (60 partite IA contro IA a seme
+fisso, identiche prima e dopo ogni refactor, a parte le correzioni dichiarate).
+
+**Perché.** Obiettivo dell'utente: un motore scalabile e "plug in", in
+prospettiva Forbidden Memories come secondo set di regole sullo stesso nucleo,
+e un Multiplayer che non diverga. TypeScript solo come tipi (`// @ts-check` +
+JSDoc), niente build, `file://` resta.
+
+**Cosa è cambiato, per priorità** (commit fra parentesi):
+
+- **P0 — messa in sicurezza** (`3e8d145`): suite completa, spec instabile
+  corretto, stack degli errori di pagina nel runner dei test.
+- **P1 — terreno** (`340e03a`, `05b48e3`): una sola lista dei gruppi di
+  `<script>` (`scripts/gruppi-script.js` + `sync-script-groups.js`, pre-commit
+  e guardrail); tipi del motore in `types/motore.d.ts` (`npm run typecheck`).
+- **P2 — nucleo senza testa** (`65dd90c`…`634368a`, unito in `7fe9b5c`):
+  - `game-flow.js` e `actions.js` divisi per competenza con spostamento
+    parola per parola (`tools/sposta-funzioni.js`/`impronta-funzioni.js`):
+    `stato.js` (gameState), `fasi.js` (turno e fasi), `battaglia.js`,
+    `evocazioni.js`;
+  - le regole toccano la pagina solo da `porta-ui.js` e avvisano
+    l'interfaccia dal canale `eventi-duello.js` (`emetti`/`attendi`/`chiedi`,
+    elenco chiuso di eventi); `addToLog`/`updateUI`/`endDuel` & co. vivono in
+    `canale-partita.js` con la sola parte di regola;
+  - ogni scelta passa da `decisioni.js` (`Decisioni.chiedi`): decide chi
+    risponde (avversario remoto, persona, scelta automatica);
+    `Decisioni.inSospeso`/`rispondi` per rispondere senza interfaccia;
+  - risultato: duelli interi in Node, senza browser
+    (`tools/duello-senza-testa.js`, orologio virtuale): hanno trovato 5
+    difetti veri di carte.
+- **P3 — posti al tavolo e Multiplayer a passo comune** (`3364519`…`4f546aa`,
+  unito in `0a21581`):
+  - `tavolo.js`: chi controlla un posto ('persona', 'ia', 'remoto') è un dato;
+    'player'/'bot' sono solo i NOMI dei due posti. L'IA gioca da entrambi
+    (`turnoIA(io)`, parametro `io` in tutta l'IA): il duello senza testa è IA
+    contro IA vera;
+  - `casuale.js`: casualità di gioco con seme condiviso in Multiplayer,
+    `Math.random` offline; `Tavolo.ordine()` al posto dei cicli
+    "prima player poi bot"; uid deterministici;
+  - `comandi.js`: ogni mossa (evoca, tributa, settaMT, terreno, posizione,
+    attacca, attiva, specialeDaMano, fusioneBandendo, fase, scartaFineTurno,
+    usaTerrenoAltrui) è un comando eseguito dalla stessa funzione col posto
+    come parametro, per persona, IA e avversario remoto;
+  - `passo-comune.js`: i due client eseguono TUTTA la partita (stessi mazzi,
+    stesso seme) e si scambiano solo comandi e decisioni; regole di tempo
+    (comandi solo a duello fermo, scelte istantanee differite, timer delle
+    regole in pausa con una scelta aperta) spiegate in cima al file;
+  - `tools/duello-gemello.js`: due motori sullo stesso orologio, JSON fra i
+    due, impronta dello stato confrontata prima di ogni comando. 240 partite
+    allineate su 8 coppie e 3 livelli;
+  - pagina: `js/multiplayer/mp-passo-comune.js` (scambio mazzi e seme dentro
+    `initGame`, invio a lotti, ripresa dopo una caduta di linea); il server
+    accetta 'mazzo', 'passo', 'passo-riprendi'. Con un client o un relay della
+    versione precedente si ripiega da soli sul protocollo vecchio.
+- **Dopo, su segnalazione dell'utente** (`d46d30a`): la morra cinese del
+  Multiplayer fa scegliere al vincitore chi comincia e si chiude su entrambi
+  (messaggio 'rps' con `iniziaChiManda`); il campo del Multiplayer non sborda
+  più (`#arenaMount` colonna flessibile, `multiplayer.html`).
+
+**Difetti veri chiusi lungo la strada** (oltre ai 5 del nucleo senza testa):
+bersaglio sparito prima del calcolo dei danni (`851ffa4`); Gran Scudo Gardna
+(`24ac498`); l'IA che continuava a giocare dopo una vittoria (Exodia alla
+pescata, LP a 0 in Standby); lo stato di Ra (id 472) che non viaggiava; 63
+scelte scritte `chi: 'player'`; un errore JavaScript della sala d'attesa
+quando il relay rifiutava un messaggio a duello avviato.
+
+**Dove guardare per capire il nuovo nucleo**: i commenti in cima a
+`tavolo.js`, `decisioni.js`, `comandi.js`, `passo-comune.js`,
+`eventi-duello.js`; in `CLAUDE.md` i bullet «Nucleo senza testa», «Posti al
+tavolo» e «Multiplayer a passo comune» (con le regole per il codice nuovo).
+
+**Cosa resta** (dettagli in `WORK_IN_PROGRESS.md`):
+
+1. Avviso "l'avversario sta scegliendo…" mentre si aspetta una decisione
+   remota a passo comune (oggi la partita sembra solo ferma).
+2. Bilanciamento delle difficoltà con dati veri: ora si può, il duello senza
+   testa gioca IA contro IA in ~0,1 s a partita (`--giocatore`,
+   `--livello-giocatore`).
+3. Service worker più leggero (immagini pesanti in cache al primo uso).
+4. Togliere il protocollo Multiplayer vecchio quando server e client saranno
+   tutti aggiornati (elenco dei pezzi in `WORK_IN_PROGRESS.md`).
+5. I circa 400 ternari "player ? … : bot …" del nucleo si possono portare sugli
+   accessori di `Tavolo` un file alla volta (non bloccano nulla).
+6. Più grandi: tutorial; Forbidden Memories come secondo set di regole.
+7. Decisioni aperte dell'utente: i 6 avatar PNG non usati; eliminare il branch
+   `refactor/posti-al-tavolo` (già unito).
 
 ## Stato rapido
 
-- Versione dichiarata: `1.0.6` stabile (`package.json` e `js/version.js`).
+- Versione dichiarata: `1.0.43` (`package.json` e `js/version.js`); il
+  lavoro sul motore del 4-6 ottobre non ha cambiato numero di versione.
 - Applicazione HTML/CSS/JavaScript puro: nessun framework, bundler o build del
   frontend. Gli script globali devono essere caricati nell'ordine giusto.
-- 19 pagine HTML, 92 file JS applicativi sotto `js/`, 1.131 carte,
-  116 spec Playwright al momento dell'ultimo inventario.
+- 19 pagine HTML, 104 file JS applicativi sotto `js/` (esclusi i vendor),
+  1.129 carte, 205 spec Playwright (2026-10-06). I numeri invecchiano:
+  contarli quando contano.
+- 3 `missingEffectNote` in `data/cards.json` (192, 235, 622): promemoria su
+  limiti del motore, vedi `CLAUDE.md`.
 - PWA tramite `manifest.json`, `sw.js` e `js/pwa-register.js`.
 - App Android/Capacitor: nel repository è presente un vecchio APK beta.21;
   non coincide con la versione sorgente 1.0.6; la cache WebView/PWA corrente
@@ -98,13 +195,23 @@ Pagine/modalità HTML
         |
         +-- duel-session.js
                 |
-                +-- engine/duel-engine.js  (stato, chain, trigger, regole)
-                +-- engine/actions.js      (azioni di gioco)
-                +-- engine/game-flow.js    (fasi, turni, interazione UI)
-                +-- engine/card-effects.js (helper degli effetti)
-                +-- engine/card-effects-1..8.js (registrazioni per carta)
+                |   gruppo "motore" (scripts/gruppi-script.js)
+                +-- engine/casuale.js        (casualità di gioco, seme condiviso)
+                +-- engine/porta-ui.js       (unico accesso delle regole alla pagina)
+                +-- engine/eventi-duello.js  (le regole avvisano l'interfaccia)
+                +-- engine/tavolo.js         (posti e controllori)
+                +-- engine/duel-engine.js    (chain, trigger, regole, ctx delle carte)
+                +-- engine/decisioni.js      (ogni scelta del duello)
+                +-- engine/card-effects.js + card-effects-1..8.js (carte)
                 |
-                +-- ai/* oppure multiplayer/*
+                |   gruppo "partita"
+                +-- engine/stato.js / canale-partita.js
+                +-- engine/comandi.js        (le mosse come comandi)
+                +-- engine/passo-comune.js   (Multiplayer a passo comune)
+                +-- engine/fasi.js / battaglia.js / evocazioni.js (regole)
+                +-- engine/game-flow.js / actions.js (disegno e click)
+                |
+                +-- ai/* (turnoIA dal posto 'player' o 'bot') oppure multiplayer/*
                 |
                 +-- ui/* + audio/* + native/*
 ```
@@ -113,19 +220,43 @@ Il centro del duello è `gameState`, un grande oggetto globale. Molte funzioni
 leggono e modificano direttamente questo stato. `duel-session.js` prepara il
 contesto della modalità e collega il risultato del duello alle pagine Storia o
 Torneo. Le pagine non usano moduli ES: dipendono dai global creati dagli script
-precedenti.
+precedenti, nell'ordine di `scripts/gruppi-script.js`.
+
+Divisione di fondo dal 2026-10-05: i file di REGOLA (gruppo motore più
+`stato`, `canale-partita`, `comandi`, `passo-comune`, `fasi`, `battaglia`,
+`evocazioni`) girano anche in Node senza DOM (`tools/duello-senza-testa.js`);
+`game-flow.js` e `actions.js` sono la parte di pagina (disegno, click, modali)
+e ascoltano gli eventi del canale.
 
 ## Mappa delle aree
 
 ### Motore di duello
 
-- `js/engine/duel-engine.js`: stato, chain, trigger, battaglia, risoluzioni.
-- `js/engine/actions.js`: evocazioni, set, attacchi e azioni del giocatore.
-- `js/engine/game-flow.js`: fasi, passaggio turno, messaggi e aggiornamenti UI.
+- `js/engine/duel-engine.js`: chain, trigger, risoluzioni, `makeContext`
+  (il `ctx` delle carte), finestre di risposta e di priorità.
+- `js/engine/stato.js`: `gameState` e `resetGameState`.
+- `js/engine/fasi.js`: pescata, fasi, cambio turno, scarto di fine turno,
+  fine duello automatica.
+- `js/engine/battaglia.js`: dichiarazione e risoluzione degli attacchi.
+- `js/engine/evocazioni.js`: Evocazioni, Tributi, Set, cambi di Posizione
+  (gli esecutori dei rispettivi comandi).
+- `js/engine/comandi.js`: `Comandi.esegui(posto, comando, extra)`, un
+  esecutore per mossa; un comando porta la carta per uid.
+- `js/engine/tavolo.js`: `Tavolo.controllore/eIA/ePersona/eRemoto/
+  giocaUnaPersona`, accessori per posto, `Tavolo.ordine()`.
+- `js/engine/decisioni.js`: `Decisioni.chiedi(richiesta, onDeciso)`.
+- `js/engine/eventi-duello.js`, `porta-ui.js`, `canale-partita.js`: confine
+  fra regole e pagina.
+- `js/engine/casuale.js`: `Casuale.random/intero/mescola/semina`.
+- `js/engine/passo-comune.js`: vedi «Multiplayer».
+- `js/engine/actions.js`, `game-flow.js`: interfaccia del duello (click,
+  trascinamenti, modali, disegno del campo).
 - `js/engine/effect-templates.js`: pattern condivisi per gli effetti.
 - `js/engine/card-effects.js`: helper e contratto degli handler.
 - `js/engine/card-effects-1.js` … `card-effects-8.js`: effetti delle carte.
 - `js/engine/duel-sandbox.js`: configurazione particolare della pagina demo.
+- `types/motore.d.ts`: contratto del `ctx` delle carte, `CardDefinition`,
+  `gameState` (letto da `npm run typecheck` per i file con `// @ts-check`).
 
 ### Box delle Catene
 
@@ -256,14 +387,34 @@ precedenti.
 
 ### Multiplayer
 
-- Client: `js/multiplayer/network.js`, `mp-lobby.js`, `multiplayer.js`.
-- Server: `server/server.js`, solo moduli Node nativi.
-- Messaggi: `create-room`, `join-room`, `rejoin-room`, `game-action`,
-  `leave-room`.
+- Client: `js/multiplayer/network.js`, `mp-passo-comune.js`, `mp-lobby.js`,
+  `multiplayer.js`. Il duello si carica dentro `multiplayer.html`
+  (`loadDuelArena` esegue gli script di `duelMonstersCore.html`).
+- Server: `server/server.js`, solo moduli Node nativi, su Render
+  (`render.yaml`, servizio `yugioh-duel-arena-relay`): si ridistribuisce da
+  solo col push su `main`.
+- Messaggi di stanza: `create-room`, `join-room`, `rejoin-room`,
+  `game-action`, `leave-room`. Dentro `game-action` un elenco CHIUSO di tipi
+  (`GAME_ACTION_KINDS`): un tipo nuovo va aggiunto lì, o il relay lo scarta.
 - Stanze da due giocatori, TTL 30 minuti, grazia riconnessione 45 secondi,
-  20 messaggi/s e messaggi massimi da 64 KiB.
+  20 messaggi/s (oltre: scartati in silenzio) e messaggi massimi da 64 KiB.
+- **Passo comune (protocollo attuale, dal 2026-10-06)**: i due client
+  eseguono la stessa partita; viaggiano solo i comandi di chi è di turno e le
+  decisioni (posizione nell'elenco dei candidati), numerati, a lotti, con
+  ripresa dopo una caduta di linea. Ogni comando porta un riassunto dello
+  stato di chi lo manda, confrontato da chi lo riceve. Stato SPECCHIATO: ogni
+  client chiama 'player' sé stesso. Costo dichiarato: ogni client ha in
+  memoria mazzo e mano dell'altro.
+- **Protocollo vecchio** (mosse raccontate, mano a segnaposto, fotografie di
+  stato): resta solo come ripiego con un avversario o un relay della versione
+  precedente; gli spec che lo verificano lo forzano con
+  `MP_SENZA_PASSO_COMUNE`. Da togliere più avanti.
+- La morra cinese: il vincitore sceglie chi comincia, e la scelta viaggia
+  ('rps' con `iniziaChiManda`).
 - Il server inoltra le azioni ma non è un motore autorevole: la logica resta
-  sui client. Questo è il limite principale per anti-cheat/competitivo.
+  sui client. Questo è il limite principale per anti-cheat/competitivo (il
+  passo comune permetterebbe un giorno di far girare il motore anche sul
+  server, perché gira già in Node).
 
 ### UI, asset e piattaforme
 
@@ -316,23 +467,57 @@ precedenti.
 node scripts/check-syntax.js
 node tests/run-all.js <parte-del-nome-spec>
 npm test
+npm run typecheck
+node scripts/sync-script-groups.js
+node tools/duello-senza-testa.js [--avversario kaiba] [--livello hard]
+     [--giocatore yamiYugi] [--livello-giocatore hard] [--seme 42]
+     [--partite 10] [--diagnosi] [--log]
+node tools/duello-gemello.js [--host yamiYugi] [--ospite kaiba]
+     [--livello-host hard] [--livello-ospite hard] [--seme 42]
+     [--partite 10] [--traccia]
+node tools/impronta-partite.js prima.txt   # poi dopo.txt, e confrontare
 ```
 
 `npm test` esegue l'intera suite. Regola esplicita del progetto: non avviarla
 di propria iniziativa; usare gli spec mirati e lasciare all'utente la decisione
 di eseguire tutto. La CI è in `.github/workflows/test.yml`.
 
+Strumenti in Node (nessun browser):
+- `duello-senza-testa`: duelli interi IA contro IA con l'orologio virtuale;
+  `--diagnosi` segnala la carta che rompe un invariante. Spec omonimo.
+- `duello-gemello`: due motori a passo comune; `--traccia` mostra ogni
+  scelta chiesta, decisione e comando, e la prima divergenza dice quale pezzo
+  dello stato si è separato. Spec `duello-gemello`.
+- `impronta-partite`: 60 partite a seme fisso in un file; per i refactor che
+  non devono cambiare il gioco, le due impronte devono coincidere.
+- `impronta-funzioni`/`sposta-funzioni`: spostare funzioni fra file
+  provando che il testo è identico.
+
+Spec Multiplayer: richiedono un server HTTP e il relay veri
+(`tests/helpers/local-servers.js`) e sono `standalone: true`. Quello del
+protocollo attuale è `multiplayer-passo-comune` (turni veri con carte vere
+della mano: sostituirne una per comodità separerebbe davvero le due partite).
+
 ## Rischi e debito tecnico noti
 
-1. `gameState` è un God Object globale, senza schema o validazione centrale.
-2. L'ordine dei tag `<script>` è parte dell'architettura e le liste sono
-   duplicate tra molte pagine. Esiste un test guardrail contro il drift.
+1. `gameState` è un God Object globale, senza schema o validazione centrale
+   (i tipi in `types/motore.d.ts` lo descrivono, non lo proteggono).
+2. L'ordine dei tag `<script>` è parte dell'architettura. Le liste sono
+   generate da `scripts/gruppi-script.js` e controllate da pre-commit e
+   guardrail, ma restano scritte in ogni pagina.
 3. `actions.js` e `game-flow.js` espongono molte funzioni globali.
-4. File molto grandi rendono i refactor trasversali rischiosi.
-5. Nessun lint, formatter, TypeScript o controllo statico dei tipi.
+4. File molto grandi (`duel-engine.js`, `card-effects-*.js`) rendono i
+   refactor trasversali rischiosi: usare `tools/impronta-partite.js`.
+5. Nessun lint o formatter; `@ts-check` acceso solo su pochi file nuovi
+   (accenderlo sulle carte dà ~100 errori per parte).
 6. Il server multiplayer non convalida semanticamente le mosse.
 7. Persistenza locale/cloud e vecchi salvataggi richiedono modifiche additive
    e valori di default; evitare migrazioni distruttive.
+8. A passo comune ogni divergenza fra i due client è definitiva (non c'è più
+   la fotografia di stato a riparare): una regola nuova che usa `setTimeout`,
+   `Math.random`, cicli `['player','bot']` o una scelta fuori da
+   `Decisioni` può separare le due partite. I guardrail ne coprono una parte;
+   il controllo vero è `tools/duello-gemello.js`.
 
 ## Stato lavori: Torneo Kaiba
 

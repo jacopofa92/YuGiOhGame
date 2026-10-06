@@ -132,6 +132,14 @@ righe, actions.js 3.855, game-flow.js 3.797; 205 accessi al DOM e 85
       (non mostrati, ma in memoria).
 
 **Priorità 4 — per il giocatore** (in parallelo)
+- [ ] Multiplayer a passo comune: quando si aspetta una decisione dell'altro
+      client (`PassoComune.attendiDecisione`, chiamato da `Decisioni.chiedi`
+      per un posto 'remoto') non compare nessun avviso, e la partita sembra
+      ferma. Serve un indicatore discreto "L'avversario sta scegliendo…",
+      acceso mentre `PassoComune.stato().decisioniAttese > 0` e spento quando
+      arriva (meglio un evento del canale `EventiDuello` che un polling).
+      Verificato su due dispositivi dall'utente il 2026-10-06: il resto del
+      Multiplayer funziona.
 - [ ] Service worker più leggero (vedi «Peso e velocità» qui sotto).
 - [ ] Tutorial o partita guidata (meglio dopo la Priorità 2).
 - [ ] Bilanciamento delle difficoltà con simulazioni bot contro bot.
