@@ -65,7 +65,7 @@ righe, actions.js 3.855, game-flow.js 3.797; 205 accessi al DOM e 85
       `DuelEngineUI`. Spec `decisioni-in-sospeso`.
 - [ ] Unire il branch in `main` dopo la suite completa (su richiesta).
 
-**Priorità 3 — lato tavolo e Multiplayer** (branch `refactor/posti-al-tavolo`)
+**Priorità 3 — lato tavolo e Multiplayer** (branch `refactor/posti-al-tavolo`, unito in `main`)
 - [x] Chi controlla un posto è un dato (`js/engine/tavolo.js`: 'persona',
       'ia', 'remoto'), non più dedotto da "player = persona, bot = IA". I
       nomi 'player'/'bot' restano: sono solo i nomi dei due posti.
@@ -115,10 +115,12 @@ righe, actions.js 3.855, game-flow.js 3.797; 205 accessi al DOM e 85
             tacciono (resta 'game-over' come rete di sicurezza sull'esito).
             Spec `multiplayer-passo-comune` (due pagine, relay vero, 6 turni,
             caduta di linea a metà), verificato al contrario.
-      - [ ] **Il server va ridistribuito dove gira** (Render): senza i tre
-            tipi nuovi il relay li scarta e il duello resta fermo allo
-            scambio dei mazzi per 15 secondi, poi riparte col protocollo
-            vecchio. Da fare a mano.
+      - [x] Server: Render lo ridistribuisce da solo col push su `main`
+            (render.yaml non fissa un branch). Finché un relay non conosce
+            i tre tipi nuovi li rifiuta, e i client ripiegano subito sul
+            protocollo vecchio. Da controllare una volta nella scheda
+            *Events* del servizio su render.com.
+      - [x] Suite completa 204/204, branch unito in `main` (0a21581).
       - [ ] Il protocollo vecchio resta come ripiego con un client della
             versione precedente (gli spec Multiplayer di prima lo forzano
             con `MP_SENZA_PASSO_COMUNE`). Quando tutti i client e il server

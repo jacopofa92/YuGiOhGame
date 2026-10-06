@@ -3726,7 +3726,9 @@ priorità o richiedono un refactor ampio):
   checkpoint di targeting, che restituisce il bersaglio subito a circa
   cento chiamanti.
 
-- ✅ **Posti al tavolo (Priorità 3, branch `refactor/posti-al-tavolo`)**:
+- ✅ **Posti al tavolo (Priorità 3, branch `refactor/posti-al-tavolo`, poi
+  MERGIATO in `main` su richiesta esplicita dell'utente dopo la suite
+  completa 204/204)**:
   'player' e 'bot' sono solo i NOMI dei due posti; chi li controlla lo
   dice `Tavolo.controllore(posto)` (`js/engine/tavolo.js`): 'persona',
   'ia' o 'remoto'. Default di sempre: 'player' persona, 'bot' IA (remoto in
@@ -3770,8 +3772,9 @@ priorità o richiedono un refactor ampio):
   ha `multiplayer-passo-comune`, che gioca turni veri con le funzioni
   dell'interfaccia e carte VERE della mano (sostituirne una per comodità,
   come fanno gli spec vecchi, qui separerebbe davvero le due partite).
-  **Il server va ridistribuito** perché accetti 'mazzo'/'passo'/
-  'passo-riprendi'. Regole per il codice nuovo, tutte prese dal duello
+  **Il server su Render si ridistribuisce da solo col push su `main`**
+  (render.yaml non fissa un branch): un relay che non conosce ancora
+  'mazzo'/'passo'/'passo-riprendi' li rifiuta e i client ripiegano subito. Regole per il codice nuovo, tutte prese dal duello
   gemello:
   - **Una mossa locale parte solo a duello fermo** (`PassoComune.fermo`:
     niente Catena, finestra di priorità, scelta aperta, comando a metà),
