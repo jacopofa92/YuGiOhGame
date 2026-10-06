@@ -53,7 +53,8 @@ module.exports = {
                 // le stesse ragioni: nessun account Supabase in questa suite,
                 // e nessuna morra cinese da cliccare (in Multiplayer chi
                 // comincia lo decide comunque il server, vedi MP_startingRole).
-                await page.addInitScript(() => { window.AUTH_GATE_SKIP = true; window.DUEL_RPS_SKIP = true; });
+                // MP_SENZA_PASSO_COMUNE: questo spec verifica il Multiplayer di prima (ripiego con un client vecchio).
+                await page.addInitScript(() => { window.AUTH_GATE_SKIP = true; window.DUEL_RPS_SKIP = true; window.MP_SENZA_PASSO_COMUNE = true; });
                 await page.goto(statics.origin + '/multiplayer.html', { waitUntil: 'load' });
                 await page.waitForSelector('#mpCreateBtn');
                 // Il velo di caricamento condiviso (js/ui/page-loader.js) copre

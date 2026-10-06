@@ -621,6 +621,10 @@
         // Potremmo aver perso azioni dell'avversario mentre eravamo
         // disconnessi: chiediamogli subito il suo stato pubblico attuale
         // (vedi DuelEngine.serializePublicState in js/engine/duel-engine.js).
+        // A passo comune no: lì si fanno rimandare i messaggi persi, uno per
+        // uno (js/multiplayer/mp-passo-comune.js), e una fotografia di stato
+        // sovrascriverebbe una partita che i due client calcolano già uguale.
+        if (window.MP_PASSO_COMUNE) return;
         requestStateResync();
     });
 

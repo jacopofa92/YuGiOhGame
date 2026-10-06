@@ -106,9 +106,26 @@ righe, actions.js 3.855, game-flow.js 3.797; 205 accessi al DOM e 85
             scritte `chi: 'player'` ora dicono il posto vero.
             Spento finché nessuno chiama `PassoComune.avvia`: offline
             l'impronta delle 60 partite è identica.
-      - [ ] E. Pagina: scambio dei mazzi e del seme all'avvio, via mano a
-            segnaposto, fotografie e messaggi vecchi; il server accetta il
-            tipo di messaggio nuovo (va ridistribuito dove gira).
+      - [x] E. Pagina (`js/multiplayer/mp-passo-comune.js`): scambio dei
+            mazzi e del seme all'avvio (initGame aspetta il mazzo dell'altro,
+            poi PassoComune.preparaDuello), invio a lotti (il relay scarta
+            oltre 20 messaggi al secondo), numerazione e ripresa dopo una
+            caduta di linea ('passo-riprendi'). Il server accetta 'mazzo',
+            'passo', 'passo-riprendi'. A passo comune i messaggi vecchi
+            tacciono (resta 'game-over' come rete di sicurezza sull'esito).
+            Spec `multiplayer-passo-comune` (due pagine, relay vero, 6 turni,
+            caduta di linea a metà), verificato al contrario.
+      - [ ] **Il server va ridistribuito dove gira** (Render): senza i tre
+            tipi nuovi il relay li scarta e il duello resta fermo allo
+            scambio dei mazzi per 15 secondi, poi riparte col protocollo
+            vecchio. Da fare a mano.
+      - [ ] Il protocollo vecchio resta come ripiego con un client della
+            versione precedente (gli spec Multiplayer di prima lo forzano
+            con `MP_SENZA_PASSO_COMUNE`). Quando tutti i client e il server
+            saranno aggiornati si può togliere: applyRemote* in
+            multiplayer.js, i broadcast nei comandi e nelle fasi, la mano a
+            segnaposto, le fotografie di stato, `isRemoteResponder`/
+            `awaitRemote*` in duel-engine.js.
       Costo dichiarato: ogni client conosce mazzo e mano dell'avversario
       (non mostrati, ma in memoria).
 

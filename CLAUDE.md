@@ -3757,8 +3757,22 @@ priorità o richiedono un refactor ampio):
   e si scambiano solo COMANDI (`Comandi.esegui`) e DECISIONI
   (`Decisioni.chiedi`, come posizione nell'elenco dei candidati). Spento
   finché nessuno chiama `PassoComune.avvia`: offline l'impronta delle 60
-  partite è identica. La pagina non lo usa ancora (passo E). Regole per il
-  codice nuovo, tutte prese dal duello gemello:
+  partite è identica. **Dalla pagina (passo E)**: `js/multiplayer/mp-passo-comune.js`
+  scambia mazzi e seme dentro initGame (se l'altro non risponde in 15s è un
+  client vecchio e si gioca col protocollo di prima), manda a LOTTI (il
+  relay scarta in silenzio oltre 20 messaggi al secondo, e qui un messaggio
+  perso è una partita separata) e dopo una caduta di linea si fa rimandare i
+  messaggi persi ('passo-riprendi': ogni messaggio ha un `seq`, doppioni
+  scartati, buchi che fermano la coda finché non si riempiono). A passo
+  comune i messaggi del protocollo vecchio tacciono tranne 'game-over'
+  (filtro in `MP_broadcast`, mp-lobby.js). Gli spec Multiplayer di prima
+  forzano il protocollo vecchio con `MP_SENZA_PASSO_COMUNE`; quello nuovo
+  ha `multiplayer-passo-comune`, che gioca turni veri con le funzioni
+  dell'interfaccia e carte VERE della mano (sostituirne una per comodità,
+  come fanno gli spec vecchi, qui separerebbe davvero le due partite).
+  **Il server va ridistribuito** perché accetti 'mazzo'/'passo'/
+  'passo-riprendi'. Regole per il codice nuovo, tutte prese dal duello
+  gemello:
   - **Una mossa locale parte solo a duello fermo** (`PassoComune.fermo`:
     niente Catena, finestra di priorità, scelta aperta, comando a metà),
     altrimenti viene rifiutata: l'IA aspetta con `aspettaDuelloFermo`/

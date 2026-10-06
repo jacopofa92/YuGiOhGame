@@ -99,6 +99,9 @@ const PassoComune = (function () {
         inviati = 0;
         ricevuti = 0;
         rifiutati = 0;
+        storico = [];
+        ultimoRicevuto = 0;
+        inAnticipo.clear();
         if (riprova) { clearTimeout(riprova); riprova = null; }
     }
 
@@ -115,7 +118,10 @@ const PassoComune = (function () {
      * ordine, quindi i due mazzi escono mescolati allo stesso modo da
      * entrambe le parti. Gli uid hanno un prefisso per giocatore ('h' host,
      * 'o' ospite) e non per posto, che sui due client è opposto.
-     * @param {{ seme: number, sonoHost: boolean, mazzoHost: any, mazzoOspite: any, manoIniziale?: number }} o
+     * `iniziaHost` (default vero): chi ha il primo turno, deciso prima (la
+     * morra cinese della sala d'attesa). Non cambia l'ordine di Tavolo, che
+     * resta "prima l'host" su entrambi i client.
+     * @param {{ seme: number, sonoHost: boolean, mazzoHost: any, mazzoOspite: any, manoIniziale?: number, iniziaHost?: boolean }} o
      */
     function preparaDuello(o) {
         Casuale.semina(o.seme);
@@ -135,7 +141,7 @@ const PassoComune = (function () {
             Tavolo.ordine().forEach((posto) => drawCardsToHand(posto, 1, { silent: true }));
         }
         gameState.turn = 1;
-        gameState.currentPlayer = host;
+        gameState.currentPlayer = o.iniziaHost === false ? Tavolo.avversario(host) : host;
     }
 
     /** Perché il duello non è fermo, o null se lo è. */
@@ -208,9 +214,33 @@ const PassoComune = (function () {
         return (h >>> 0).toString(36);
     }
 
+    // ------------------------------------------------------------------
+    // Numerazione e ripresa dopo una caduta di linea.
+    //
+    // A passo comune un messaggio perso non si ripara con una fotografia di
+    // stato: la coda deve arrivare intera e in ordine, o i due client
+    // smettono di chiedersi le stesse cose. Ogni messaggio porta quindi un
+    // numero (`seq`, dall'1), chi manda li conserva tutti (`storico`) e chi
+    // riceve sa fin dove è arrivato (`ultimoRicevuto`). Dopo una caduta di
+    // linea chi rientra dice fin dove era arrivato e l'altro gli rimanda il
+    // resto (`daRispedire`): un doppione si scarta, un messaggio arrivato
+    // in anticipo aspetta il suo turno. Una partita intera sono qualche
+    // centinaio di messaggi brevi, quindi lo storico resta piccolo.
+    // ------------------------------------------------------------------
+    let storico = [];
+    let ultimoRicevuto = 0;
+    const inAnticipo = new Map();
+
     function spedisci(messaggio) {
         inviati++;
+        messaggio.seq = inviati;
+        storico.push(messaggio);
         if (invia) invia(messaggio);
+    }
+
+    /** I miei messaggi successivi a `dopoSeq`, da rimandare a chi li ha persi. */
+    function daRispedire(dopoSeq) {
+        return storico.filter((m) => m.seq > (dopoSeq || 0));
     }
 
     /**
@@ -328,8 +358,23 @@ const PassoComune = (function () {
     /** Un messaggio dall'altro client. */
     function ricevi(messaggio) {
         if (!attivo || !messaggio) return;
-        ricevuti++;
-        inArrivo.push(messaggio);
+        // Senza numero (un mittente che non numera): in coda e basta.
+        if (typeof messaggio.seq !== 'number') {
+            ricevuti++;
+            inArrivo.push(messaggio);
+            pompa();
+            return;
+        }
+        if (messaggio.seq <= ultimoRicevuto || inAnticipo.has(messaggio.seq)) return; // doppione di una ripresa
+        inAnticipo.set(messaggio.seq, messaggio);
+        // Entrano in coda solo in fila: un buco (un messaggio perso) ferma
+        // tutto finché la ripresa non lo riempie.
+        while (inAnticipo.has(ultimoRicevuto + 1)) {
+            ultimoRicevuto++;
+            ricevuti++;
+            inArrivo.push(inAnticipo.get(ultimoRicevuto));
+            inAnticipo.delete(ultimoRicevuto);
+        }
         pompa();
     }
 
@@ -388,6 +433,9 @@ const PassoComune = (function () {
         dopo,
         differisci,
         ricevi,
+        daRispedire,
+        /** Il numero dell'ultimo messaggio arrivato in fila (vedi la ripresa). */
+        ultimoRicevuto: () => ultimoRicevuto,
         /** Per i test e la diagnosi. */
         stato: () => ({ inArrivo: inArrivo.length, decisioniAttese: decisioniAttese.length, inCorso, inviati, ricevuti, rifiutati })
     };
