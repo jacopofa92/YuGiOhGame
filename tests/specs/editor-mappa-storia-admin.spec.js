@@ -109,6 +109,16 @@ module.exports = {
             await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
             await page.mouse.down();
             await page.mouse.move(box.x + box.width / 2 + 40, box.y + box.height / 2 + 25, { steps: 5 });
+            // Le coordinate devono essere leggibili PRIMA del rilascio:
+            // controllarle dopo mouse.up proverebbe solo il riepilogo finale,
+            // non l'aggiornamento realmente in tempo reale richiesto.
+            const coordinateDuranteDrag = await page.evaluate(() => {
+                const tappa = storyCampaignsDatabase.find((c) => c.id === 'anime').capitoli[0].tappe[0];
+                return { testo: document.getElementById('smeCoordinate').textContent, x: tappa.x, y: tappa.y };
+            });
+            t.assert(coordinateDuranteDrag.testo.includes(`X ${coordinateDuranteDrag.x}`)
+                && coordinateDuranteDrag.testo.includes(`Y ${coordinateDuranteDrag.y}`),
+            `La barra deve mostrare X/Y aggiornate durante il drag: ${JSON.stringify(coordinateDuranteDrag)}`);
             await page.mouse.up();
             const dopoXY = await page.evaluate(() => {
                 const t2 = storyCampaignsDatabase.find((c) => c.id === 'anime').capitoli[0].tappe[0];

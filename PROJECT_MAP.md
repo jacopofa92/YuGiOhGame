@@ -917,6 +917,15 @@ Rifinitura successiva:
   all'area; vittoria e sconfitta sono coperte dal test
   `storia-continua-fine-duello.spec.js`, che verifica anche `torneo=<area>`.
 
+## Editor delle mappe Storia
+
+`js/dev/story-map-editor.js` è disponibile ai soli amministratori e lavora
+sugli stessi oggetti usati dalla mappa. Quando si trascina un nodo, la barra
+mostra `X` e `Y` aggiornate a ogni `pointermove`: sono coordinate del mondo
+mappa, quindi coincidono con quelle esportate anche se viewport, zoom e
+scorrimento cambiano. Lo spec `editor-mappa-storia-admin` verifica il valore
+prima del rilascio del mouse, non soltanto il riepilogo finale.
+
 ## Come mantenere questa memoria
 
 Aggiornare questo file quando cambia uno dei seguenti elementi:

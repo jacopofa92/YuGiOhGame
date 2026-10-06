@@ -285,6 +285,7 @@
                     nodo.x = tappa.x; nodo.y = tappa.y;
                     bottone.style.left = tappa.x + 'px';
                     bottone.style.top = tappa.y + 'px';
+                    aggiornaCoordinate(tappa);
                     aggiornaLinee(canvas, nodi);
                 };
                 const onUp = () => {
@@ -338,6 +339,7 @@
         const titolo = ctx.livello === 'torneo' ? (ctx.torneo.nome || ctx.torneo.label) : ctx.campagna.nome;
         barra.innerHTML = `
             <span class="sme-etichetta">🛠️ Editor mappa — <strong>${escapeHtml(titolo)}</strong></span>
+            <output class="sme-coordinate" id="smeCoordinate" aria-label="Coordinate del nodo trascinato">X —&nbsp;&nbsp;Y —</output>
             <span class="sme-suggerimento" id="smeSuggerimento"></span>
             <span class="sme-spazio"></span>
             ${(ctx.pagine && ctx.pagine.length > 1) ? ctx.pagine.map((p) => `<button type="button" class="sme-btn${p === ctx.pagina ? ' sme-btn--attivo' : ''}" data-sme-pagina="${p.indice}">🗺️ ${escapeHtml(p.nome || ('Mappa ' + (p.indice + 1)))}</button>`).join('') : ''}
@@ -378,6 +380,17 @@
     function aggiornaSuggerimento(testo) {
         const el = document.getElementById('smeSuggerimento');
         if (el) el.textContent = testo || '';
+    }
+    /**
+     * Scrive le coordinate vere del mondo mappa, non quelle dello schermo:
+     * zoom e scorrimento non devono cambiare i numeri che finiranno nel file.
+     * L'output vive nella barra dell'editor e viene aggiornato a ogni singolo
+     * pointermove, così non occorre rilasciare il nodo per leggere X/Y.
+     */
+    function aggiornaCoordinate(tappa) {
+        const el = document.getElementById('smeCoordinate');
+        if (!el || !tappa) return;
+        el.textContent = `X ${tappa.x}  Y ${tappa.y}`;
     }
 
     /**
@@ -428,6 +441,11 @@
                 padding: 8px 14px; background: rgba(93,45,10,0.95); color: #fff;
                 font: 700 0.78rem/1.3 system-ui, sans-serif; border-bottom: 2px solid rgba(247,215,116,0.6); }
             .sme-suggerimento { font-weight: 400; opacity: 0.85; font-style: italic; }
+            .sme-coordinate { flex: 0 0 auto; min-width: 128px; padding: 4px 9px;
+                border: 1px solid rgba(247,215,116,0.45); border-radius: 5px;
+                background: rgba(0,0,0,0.38); color: #f7d774;
+                font: 700 12px/1.2 'Consolas', monospace; letter-spacing: 0.04em;
+                text-align: center; font-variant-numeric: tabular-nums; }
             .sme-spazio { flex: 1; }
             .sme-btn { padding: 6px 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.5);
                 background: rgba(0,0,0,0.35); color: #fff; font: inherit; font-weight: 700; cursor: pointer; }

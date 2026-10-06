@@ -409,7 +409,8 @@
 // v166: emblemi originali solo sulle generiche; artwork veri sulle tematiche.
 // v167: ricompensa carta rifinita e carosello sbustamento trascinabile.
 // v168: cinematica ricompensa alleggerita e sfondo senza griglia.
-const CACHE_NAME = 'ygo-duel-arena-v168';
+// v170: l'Editor Mappa mostra X/Y in tempo reale durante il trascinamento.
+const CACHE_NAME = 'ygo-duel-arena-v170';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
