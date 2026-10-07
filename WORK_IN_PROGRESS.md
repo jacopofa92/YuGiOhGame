@@ -14,9 +14,12 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
 
 - [x] Simulatore riproducibile deck × difficoltà sul percorso anime
       (`tools/simula-storia-deck.js`), con tentativi, turni e tempi.
-- [ ] Eseguire la matrice completa e valutare dal report quali deck o scontri
-      richiedono troppo farming. Lo strumento è pronto; questa esecuzione è
-      intenzionalmente separata dagli spec rapidi.
+- [x] Eseguita la matrice completa (16 deck × 3 difficoltà, massimo 20
+      tentativi per scontro): risultati grezzi in
+      `STORY_DECK_SIMULATION_REPORT.json`. Completati 40 percorsi su 48;
+      gli 8 blocchi sono concentrati soprattutto su Mako e Kaiba nel Regno
+      dei Duellanti. Il bilanciamento conseguente resta una decisione di game
+      design, non una correzione automatica del simulatore.
 
 ## Audio multipagina
 

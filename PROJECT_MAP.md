@@ -62,6 +62,10 @@ Il report misura completamento, tentativi, turni, tempo virtuale e tempo reale,
 e indica il primo duello che un deck non riesce a superare. La matrice completa
 si lancia con `node tools/simula-storia-deck.js --tentativi 20 --output report.json`;
 lo spec `simulazione-storia-deck` ne esegue soltanto uno smoke test ridotto.
+La matrice completa del 2026-10-07 è conservata in
+`STORY_DECK_SIMULATION_REPORT.json`: 16 deck, 3 difficoltà, 48 percorsi e 26
+duelli principali per percorso, con un tetto di 20 tentativi per scontro.
+Quaranta percorsi hanno concluso la storia; otto hanno raggiunto il tetto.
 
 Il Pannello Admin può segnare al 100% tutte le campagne attualmente giocabili,
 in ogni difficoltà. `js/dev/story-admin-tools.js` scrive solo il progresso:
