@@ -289,6 +289,16 @@ async function giocaPartita(opz, n) {
             gameState.playerDeckCount = gameState.playerDeck.length;
             gameState.playerExtraDeck = buildExtraDeckFromSpec(spec);
         })();` : ''}
+        ${opz.livelloDeckAvversario ? `(function () {
+            // Audit fattoriale: il livello dell'IA passato a parte resta
+            // indipendente dalla versione del deck che le affidiamo.
+            const specBot = getCharacterDeck(${JSON.stringify(opz.avversario)}, ${JSON.stringify(opz.livelloDeckAvversario)});
+            if (!specBot) throw new Error('Nessun mazzo ' + ${JSON.stringify(opz.livelloDeckAvversario)} + ' per ' + ${JSON.stringify(opz.avversario)});
+            gameState.botDeck = buildDeckFromSpec(specBot);
+            gameState.botDeckCount = gameState.botDeck.length;
+            gameState.botExtraDeck = buildExtraDeckFromSpec(specBot);
+        })();` : ''}
+        window.__deckBotIniziale = (gameState.botDeck || []).map((c) => c.id).sort((a, b) => a - b).join(',');
     `);
     // Mano iniziale di 5 carte per lato, poi il primo turno: lo guida l'IA
     // del posto 'player', come farebbe initGame in una pagina.
@@ -341,7 +351,8 @@ async function giocaPartita(opz, n) {
         eventi: Object.assign({}, __eventi),
         catena: DuelEngine.isChainActive(), finestra: DuelEngine.isPriorityWindowOpen && DuelEngine.isPriorityWindowOpen(),
         campoG: gameState.playerMonsterField.map((s) => s && (s.card.name + (s.hasAttacked ? '*' : ''))),
-        campoB: gameState.botMonsterField.map((s) => s && s.card.name)
+        campoB: gameState.botMonsterField.map((s) => s && s.card.name),
+        deckBotIniziale: __deckBotIniziale
     })`);
     // Una partita che arriva al limite di turni non è ferma: è lunga. Si
     // distingue dallo stallo vero (coda vuota senza vincitore).

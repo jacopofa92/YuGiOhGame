@@ -206,4 +206,7 @@ async function main() {
 }
 
 if (require.main === module) main().catch((e) => { console.error(e.stack || e); process.exit(1); });
-module.exports = { argomenti, duelliPrincipali, semeComparabile, analizzaIncontri, simulaMatrice };
+module.exports = {
+    argomenti, caricaGlobale, duelliPrincipali, specificaDeck,
+    semeComparabile, analizzaIncontri, simulaMatrice
+};

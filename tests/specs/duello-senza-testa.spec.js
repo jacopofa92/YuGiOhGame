@@ -61,6 +61,14 @@ module.exports = {
         }
         assert(vittoriePlayer >= 1, `L'IA dal posto 'player' (Yami Yugi) non vince nessuna delle 4 partite contro Kaiba: gioca davvero da quel lato?`);
 
+        // Per l'audit fattoriale IA e deck avversario devono essere due
+        // variabili indipendenti: stessa IA hard, ma liste easy/hard diverse.
+        const deckEasy = await giocaPartita({ avversario: 'kaiba', livello: 'hard', livelloDeckAvversario: 'easy', seme: 812, turni: 10 }, 0);
+        const deckHard = await giocaPartita({ avversario: 'kaiba', livello: 'hard', livelloDeckAvversario: 'hard', seme: 812, turni: 10 }, 0);
+        assert(deckEasy.deckBotIniziale && deckHard.deckBotIniziale
+            && deckEasy.deckBotIniziale !== deckHard.deckBotIniziale,
+        'Il duello senza testa deve poter cambiare il deck avversario senza cambiare il livello della sua IA');
+
         // Il bersaglio di un attacco che lascia il campo prima del calcolo
         // dei danni (battaglia.js, resolveAttack): prima resolveBattleDamage
         // leggeva la sua casella vuota ed esplodeva ("Cannot read properties
