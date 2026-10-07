@@ -62,7 +62,10 @@ function specificaDeck(deck) {
 
 async function simulaMatrice(opzioni) {
     const decks = caricaGlobale('js/data/starter-structure-decks.js', 'starterStructureDeckDatabase')
-        .filter((d) => (d.main || []).length >= 40)
+        // Le righe sono carte DISTINTE: un deck con 25 righe e varie
+        // quantità 2/3 può essere regolarmente da 40 carte. Contare la
+        // lunghezza dell'array escludeva quasi tutti gli Structure Deck.
+        .filter((d) => (d.main || []).reduce((totale, carta) => totale + (Number(carta.qty) || 0), 0) >= 40)
         // La Grande Guerra usa un'origine esclusiva e non è un mazzo
         // ammesso nella storia anime oggetto di questa misurazione.
         .filter((d) => !String(d.packId).includes('ww1'))
