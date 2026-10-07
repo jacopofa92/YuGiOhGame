@@ -132,7 +132,20 @@
             // preferisce impegnare i Tributi su qualcosa di davvero forte
             // piuttosto che no.
             const tributeBonus = tributesNeeded > 0 ? 150 : 0;
-            const score = Math.max(card.attack, card.defense) - sacrificedValue * 0.5 + tributeBonus;
+            const minacciaAvversaria = Tavolo.mostri(Tavolo.avversario(io), gameState)
+                .filter(Boolean)
+                .reduce((massimo, slot) => Math.max(massimo,
+                    slot.isFaceDown ? 0 : AI_SHARED.effAtk(slot.card)), 0);
+            // Una DEF alta non è automaticamente una mossa migliore. La
+            // vecchia max(ATK, DEF) faceva preferire muri passivi anche a
+            // campo avversario vuoto: l'audit fattoriale ha misurato che
+            // così IA_HARD rendeva i deck più facili. La DEF conta davvero
+            // soltanto quando serve a reggere una minaccia già visibile;
+            // altrimenti prevale la pressione offensiva.
+            const valoreCombattimento = minacciaAvversaria > card.attack
+                ? Math.max(card.attack, card.defense)
+                : card.attack + Math.min(card.defense, card.attack) * 0.08;
+            const score = valoreCombattimento - sacrificedValue * 0.5 + tributeBonus;
             if (score > bestScore) {
                 bestScore = score;
                 best = { card: card, tributeIndices: tributeIndices, emptySlotHint: emptySlotHint };
@@ -176,6 +189,14 @@
      * paralizza l'IA.
      */
     function chooseAttackTarget(attackerSlot, playerMonsters, io = 'bot') {
+        // Dominanza sul livello Medio: Difficile può trovare un bersaglio
+        // migliore, ma non deve trasformare un attacco che il livello base
+        // considera valido in pura passività. È esattamente ciò che faceva
+        // il vecchio eccesso di prudenza, rendendo Hard più facile in 14/16
+        // incontri dell'audit fattoriale.
+        const baseline = window.AI_MEDIUM
+            ? AI_MEDIUM.chooseAttackTarget(attackerSlot, playerMonsters, io)
+            : null;
         const isComfortablyAhead = evaluateBoard(gameState, io) >= 8;
         const opponentBackrowCount = (Tavolo.magieTrappole(Tavolo.avversario(io), gameState) || []).filter((s) => s && s.isFaceDown).length;
         const backrowRisky = isComfortablyAhead && opponentBackrowCount >= 2;
@@ -190,7 +211,7 @@
             // comodamente in vantaggio: il rischio di una carta punitiva
             // (es. Cilindro Magico, che riflette il danno su di sé) non
             // vale la pena di qualche punto LP che non serve più a vincere.
-            if (backrowRisky) return null;
+            if (backrowRisky) return baseline;
             return -1;
         }
         // ATK/DEF EFFETTIVI (vedi AI_SHARED.effAtk): la battaglia si risolve
@@ -233,7 +254,7 @@
         // bersaglio-mostro ha superato la soglia qui sopra.
         if (best === null && gameState.directAttackAllowedUids && gameState.directAttackAllowedUids[attackerSlot.card.uid]) return -1;
 
-        return best;
+        return best === null ? baseline : best;
     }
 
     /**
