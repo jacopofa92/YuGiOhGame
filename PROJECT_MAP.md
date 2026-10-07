@@ -64,8 +64,10 @@ si lancia con `node tools/simula-storia-deck.js --tentativi 20 --output report.j
 lo spec `simulazione-storia-deck` ne esegue soltanto uno smoke test ridotto.
 La matrice completa del 2026-10-07 è conservata in
 `STORY_DECK_SIMULATION_REPORT.json`: 16 deck, 3 difficoltà, 48 percorsi e 26
-duelli principali per percorso, con un tetto di 20 tentativi per scontro.
-Quaranta percorsi hanno concluso la storia; otto hanno raggiunto il tetto.
+duelli principali per percorso, con un tetto di 50 tentativi per scontro.
+L'IA del giocatore resta fissa a Difficile; 46 percorsi hanno concluso la
+storia. I due blocchi rimasti sono Pegasus Starter a Normale contro Mako
+(debolezza Toon già nota e rinviata) e Machine Re-Volt a Normale contro Kaiba.
 
 **Criterio di bilanciamento deciso dall'utente.** Starter e Structure Deck
 sono campioni immutabili: non vanno corretti per farli convergere e ci si

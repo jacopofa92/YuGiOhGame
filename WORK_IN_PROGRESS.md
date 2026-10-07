@@ -18,11 +18,11 @@ sempre coerenti con il personaggio. Toon/Pegasus si affronta per ultimo.
 
 - [x] Simulatore riproducibile deck × difficoltà sul percorso anime
       (`tools/simula-storia-deck.js`), con tentativi, turni e tempi.
-- [x] Eseguita la matrice completa (16 deck × 3 difficoltà, massimo 20
-      tentativi per scontro): risultati grezzi in
-      `STORY_DECK_SIMULATION_REPORT.json`. Completati 40 percorsi su 48;
-      gli 8 blocchi sono concentrati soprattutto su Mako e Kaiba nel Regno
-      dei Duellanti. Il bilanciamento conseguente resta una decisione di game
+- [x] Eseguita la matrice isolata (16 deck × 3 difficoltà, IA giocatore
+      sempre Difficile, massimo 50 tentativi per scontro): risultati grezzi
+      in `STORY_DECK_SIMULATION_REPORT.json`. Completati 46 percorsi su 48;
+      restano Pegasus Starter/Normale contro Mako e Machine Re-Volt/Normale
+      contro Kaiba. Il bilanciamento conseguente resta una decisione di game
       design, non una correzione automatica del simulatore.
 
 ## Audio multipagina
