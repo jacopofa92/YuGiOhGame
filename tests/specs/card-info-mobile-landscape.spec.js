@@ -52,13 +52,17 @@ module.exports = {
                     scrollHeight: content.scrollHeight,
                     clientHeight: content.clientHeight,
                     scrollTop: content.scrollTop,
+                    panelWidth: panel.getBoundingClientRect().width,
+                    viewportWidth: innerWidth,
                     panelBottom: panel.getBoundingClientRect().bottom,
                     viewportHeight: innerHeight
                 };
             });
             assert(layout.visible, 'Il tap diretto sulla carta deve aprire il dettaglio');
-            assert(layout.display === 'grid' && layout.touchAction === 'pan-y',
-                `In landscape il pannello deve affiancare carta/testo e consentire pan-y: ${JSON.stringify(layout)}`);
+            assert(layout.display === 'flex' && layout.touchAction === 'pan-y',
+                `In landscape il pannello compatto deve consentire pan-y: ${JSON.stringify(layout)}`);
+            assert(layout.panelWidth <= 150 && layout.panelWidth < layout.viewportWidth * 0.25,
+                `Il dettaglio non deve invadere il terreno in orizzontale: ${JSON.stringify(layout)}`);
             assert(layout.scrollHeight > layout.clientHeight && layout.scrollTop > 0,
                 `Una descrizione lunga deve essere realmente scorribile: ${JSON.stringify(layout)}`);
             assert(layout.panelBottom <= layout.viewportHeight + 1,
