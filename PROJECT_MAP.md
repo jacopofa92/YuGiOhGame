@@ -20,7 +20,7 @@ In entrambe il plugin è `android/app/src/main/java/com/jacopofa92/
 yugiohduelarena/NativeMusicPlugin.java`, registrato da `MainActivity.java`.
 Le build verificate sono dev `1.1.5-dev.4` e prod `1.1.5` (versionCode 23).
 
-Il Service Worker (`sw.js`, cache `v172`) non prova mai a salvare richieste
+Il Service Worker (`sw.js`, cache `v173`) non prova mai a salvare richieste
 con header `Range` o risposte HTTP 206: Cache Storage non supporta risposte
 parziali e il vecchio tentativo faceva fallire soundtrack perfettamente
 valide con `ERR_FAILED`. Anche un errore di `cache.put` non annulla più la
@@ -51,6 +51,25 @@ una nuova sessione prima di scandire di nuovo l'intero repository. Per la
 cronologia dettagliata delle decisioni e delle correzioni precedenti resta
 valido `CLAUDE.md`; per la separazione e il possibile riuso del motore vedere
 `GUIDA_RIUTILIZZO.md`. Le regole operative per un agente sono in `AGENTS.md`.
+
+## Bilanciamento deck nella Storia
+
+`tools/simula-storia-deck.js` esegue con il motore senza testa tutti i duelli
+del percorso principale della campagna anime, per ogni Starter/Structure Deck
+Yu-Gi-Oh e per Facile, Normale e Difficile. I rami paralleli non bloccano il
+percorso; i deck WW1 sono esclusi perché appartengono a un'origine non ammessa.
+Il report misura completamento, tentativi, turni, tempo virtuale e tempo reale,
+e indica il primo duello che un deck non riesce a superare. La matrice completa
+si lancia con `node tools/simula-storia-deck.js --tentativi 20 --output report.json`;
+lo spec `simulazione-storia-deck` ne esegue soltanto uno smoke test ridotto.
+
+Il Pannello Admin può segnare al 100% tutte le campagne attualmente giocabili,
+in ogni difficoltà. `js/dev/story-admin-tools.js` scrive solo il progresso:
+marca i premi finali come già gestiti e non chiama né Rewards né
+CardAcquisition. Le campagne future prive di nodi restano bloccate. I premi
+unici reali restano protetti dalle chiavi persistenti di CardAcquisition anche
+dopo `StoryProgress.ricomincia`; lo spec `storie-admin-premi-unici` copre
+esplicitamente il doppio completamento di Obelisco.
 
 ## Passaggio di consegne (2026-10-06)
 
