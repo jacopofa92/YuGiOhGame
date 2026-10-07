@@ -212,6 +212,20 @@
                     <button class="admin-btn" id="mapEditorToggle" type="button">—</button>
                 </div>
             </div>
+            <div class="admin-row">
+                <div class="admin-row-email">
+                    Completa tutte le Storie
+                    <div class="admin-note">
+                        Segna al 100% ogni campagna e ogni difficoltà nel salvataggio corrente. È uno
+                        strumento di collaudo: non accredita carte, valute o premi finali e non rende
+                        ripetibili le ricompense uniche già ottenute.
+                    </div>
+                </div>
+                <div class="admin-row-actions">
+                    <span class="admin-pill status-pending" id="storyUnlockStato">pronto</span>
+                    <button class="admin-btn" id="storyUnlockButton" type="button">Sblocca 100%</button>
+                </div>
+            </div>
         </div>
 
         <div class="admin-status" id="adminGlobalStatus"></div>
@@ -229,6 +243,11 @@
      per leggere e cambiare l'interruttore. L'editor vero vive su
      storia.html. -->
 <script src="js/dev/story-map-editor.js"></script>
+<!-- Lo strumento seguente opera sul salvataggio locale e sui soli dati delle
+     campagne. Non carica il motore della Storia e non distribuisce premi. -->
+<script src="js/save-manager.js"></script>
+<script src="js/data/story-campaigns.js"></script>
+<script src="js/dev/story-admin-tools.js"></script>
 <script>
     PageTopbar.render('#topbarMount', { icon: 'settings', title: 'Pannello Admin', subtitle: 'Approva o rifiuta le registrazioni' });
     if (window.Icons) Icons.hydrate();
@@ -297,6 +316,32 @@
                       : 'Autowin spento: i duelli di Storie e Tornei tornano a giocarsi davvero.', 'success');
             });
             disegna();
+        })();
+
+        // --- Completamento amministrativo delle Storie -----------------
+        (function () {
+            const statoEl = document.getElementById('storyUnlockStato');
+            const bottone = document.getElementById('storyUnlockButton');
+            if (!statoEl || !bottone) return;
+            if (!window.StoryAdminTools) {
+                statoEl.textContent = 'non disponibile';
+                statoEl.className = 'admin-pill status-rejected';
+                bottone.hidden = true;
+                return;
+            }
+            bottone.addEventListener('click', function () {
+                if (!window.confirm('Completare al 100% tutte le Storie e tutte le difficoltà nel salvataggio corrente? Non verranno assegnati premi.')) return;
+                const esito = StoryAdminTools.completaTutteLeStorie();
+                if (!esito.ok) {
+                    statoEl.textContent = 'errore';
+                    statoEl.className = 'admin-pill status-rejected';
+                    showStatus(esito.motivo || 'Impossibile completare le Storie.', 'error');
+                    return;
+                }
+                statoEl.textContent = '100%';
+                statoEl.className = 'admin-pill status-approved';
+                showStatus(`${esito.campagne} campagne completate in ${esito.stati} stati di difficoltà. Nessun premio è stato accreditato.`, 'success');
+            });
         })();
 
         // --- Editor Mappa nella Storia --------------------------------
