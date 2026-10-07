@@ -79,3 +79,58 @@ la causa senza ipotesi servono due prove fattoriali sugli incontri anomali:
 
 Solo dopo questa separazione ha senso decidere se correggere una scelta
 dell'IA o la consistenza di uno specifico deck, preservandone sempre il tema.
+
+## Audit fattoriale: risultato
+
+Il controllo è stato eseguito e i dati grezzi sono in
+`STORY_DIFFICULTY_FACTORIAL_REPORT.json`. Ha isolato i 16 incontri anomali
+non-Toon lungo due assi, sempre sugli stessi 15 deck campione e con gli stessi
+semi.
+
+### Asse IA — deck avversario Hard fisso
+
+Solo **2 incontri su 16** diventano più difficili passando dall'IA Media
+all'IA Hard: Seeker e Joey controllato. Negli altri 14 l'IA Hard rende lo
+stesso deck meno efficace. Mediamente servono **2,06 tentativi in meno** per
+battere l'IA Hard rispetto all'IA Easy/Media.
+
+Easy e Medium coincidono spesso esattamente perché è una scelta esplicita del
+codice: entrambi usano `AI_MEDIUM`; Facile si differenzia attraverso il deck.
+Il problema misurato non è quindi quella uguaglianza, ma il fatto che
+`AI_HARD`, pur valutando più opzioni, produce risultati peggiori quasi ovunque.
+
+Esempi più netti, sempre con lo stesso deck Hard:
+
+| Incontro | IA Easy/Media | IA Hard |
+|---|---:|---:|
+| Gansley | 10,00 | 4,27 |
+| Mako | 10,87 | 5,67 |
+| Zorc/Bakura | 8,60 | 4,60 |
+| Fratelli Paradox | 9,33 | 5,73 |
+| Joey al Castello | 5,47 / 7,47 | 1,93 |
+| Kaiba nel prologo | 7,07 / 6,13 | 4,27 |
+
+Conclusione: la causa dominante della scala incoerente è **l'IA Hard**, non un
+indebolimento generale dei deck Hard.
+
+### Asse deck — IA Hard fissa
+
+Le liste fanno complessivamente il loro lavoro: il deck Hard richiede in media
+**2,27 tentativi in più** del deck Easy. Otto incontri su sedici sono
+perfettamente monotoni e in undici il deck Hard è almeno più forte del Medio.
+
+Le progressioni migliori delle liste sono Marik, Bakura finale, Mako, Joey
+controllato, Paradox, Zorc/Bakura e Gansley. Restano però alcune liste Medie
+più efficaci delle Hard: soprattutto Kaiba (più versioni), Joey al Castello e
+Noah. Weevil, Seeker e Umbra hanno invece una separazione troppo piccola per
+essere percepibile.
+
+### Ordine di intervento suggerito
+
+1. Correggere `AI_HARD` e ripetere l'audit con le liste immutate.
+2. Solo sul nuovo riferimento, riesaminare Kaiba, Joey al Castello e Noah.
+3. Rafforzare la separazione delle liste di Weevil/Seeker/Umbra solo se resta
+   piatta dopo la correzione dell'IA.
+4. Affrontare Pegasus/Toon per ultimo, separatamente come concordato.
+
+Nessun deck e nessuna euristica sono stati modificati durante questi audit.

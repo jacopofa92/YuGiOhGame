@@ -25,6 +25,12 @@ sempre coerenti con il personaggio. Toon/Pegasus si affronta per ultimo.
       `STORY_DIFFICULTY_AUDIT.md` evidenzia 9 incontri su 26 con progressione
       strettamente coerente. Il bilanciamento conseguente resta una decisione di game
       design, non una correzione automatica del simulatore.
+- [x] Audit fattoriale IA/deck sugli incontri anomali: `AI_HARD` è la causa
+      dominante (migliore della Media solo in 2/16 casi); le liste Hard sono
+      mediamente più forti delle Easy. Dati in
+      `STORY_DIFFICULTY_FACTORIAL_REPORT.json`.
+- [ ] Correggere l'euristica `AI_HARD` mantenendo invariati i deck, quindi
+      rieseguire lo stesso audit prima di valutare singole liste avversarie.
 
 ## Audio multipagina
 

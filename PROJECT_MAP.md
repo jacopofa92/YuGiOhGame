@@ -72,6 +72,13 @@ L'esecuzione successiva, a semi accoppiati e completa anche dopo un eventuale
 blocco, è interpretata in `STORY_DIFFICULTY_AUDIT.md`: soltanto 9 incontri su
 26 hanno una crescita strettamente coerente, con Medio spesso più duro di
 Difficile. Nessun deck o IA è stato modificato sulla sola base dell'audit.
+Il successivo audit fattoriale (`STORY_DIFFICULTY_FACTORIAL_REPORT.json`,
+interpretato in fondo a `STORY_DIFFICULTY_AUDIT.md`) ha separato IA e lista:
+con deck Hard fisso, `AI_HARD` è più efficace di `AI_MEDIUM` soltanto in 2
+incontri anomali su 16 e rende mediamente l'avversario più facile di 2,06
+tentativi; con IA Hard fissa, le liste Hard sono invece mediamente più forti
+delle Easy di 2,27 tentativi. La priorità è quindi correggere l'IA Hard prima
+di ritoccare le liste dei personaggi.
 
 **Criterio di bilanciamento deciso dall'utente.** Starter e Structure Deck
 sono campioni immutabili: non vanno corretti per farli convergere e ci si
