@@ -48,14 +48,18 @@ module.exports = {
         vm.runInNewContext(sorgente, contesto, { filename: 'sw.js' });
         assert(typeof gestori.fetch === 'function', 'sw.js deve registrare il gestore fetch');
 
-        function risposta(ok, etichetta) {
-            return { ok, etichetta, clone: () => ({ copiaDi: etichetta }) };
+        function risposta(ok, etichetta, status) {
+            return { ok, etichetta, status: status || (ok ? 200 : 500), clone: () => ({ copiaDi: etichetta }) };
         }
 
-        function intercetta(percorso) {
+        function intercetta(percorso, range) {
             let promessa;
             gestori.fetch({
-                request: { method: 'GET', url: `https://gioco.test/${percorso}` },
+                request: {
+                    method: 'GET',
+                    url: `https://gioco.test/${percorso}`,
+                    headers: { get: (nome) => nome.toLowerCase() === 'range' ? range || null : null }
+                },
                 respondWith: (p) => { promessa = Promise.resolve(p); }
             });
             return promessa;
@@ -101,5 +105,11 @@ module.exports = {
         risolviScrittura();
         await richiestaMedia;
         assert(mediaConcluso, 'La richiesta media termina dopo la scrittura');
+
+        rispostaDiRete = risposta(true, 'segmento-audio', 206);
+        const primaRange = scritture.length;
+        const segmento = await intercetta('audio/soundtracks/56.%20Battle.mp3', 'bytes=0-65535');
+        assert(segmento === rispostaDiRete, 'La risposta 206 deve essere restituita direttamente');
+        assert(scritture.length === primaRange, 'Una richiesta Range non deve mai entrare in Cache Storage');
     }
 };

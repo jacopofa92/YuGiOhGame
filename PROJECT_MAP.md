@@ -1,6 +1,31 @@
 # YuGiOhGame — mappa tecnica persistente
 
-Ultimo aggiornamento verificato: 2026-10-06.
+Ultimo aggiornamento verificato: 2026-10-07.
+
+## Audio web e APK
+
+`js/audio/audio-manager.js` espone sempre la stessa facciata `DuelMusic`, ma
+usa due backend distinti. Nel browser resta un elemento HTML Audio: traccia e
+posizione vengono salvate in `sessionStorage` a ogni aggiornamento, cambio
+pagina e passaggio in background; se la policy di autoplay blocca la ripresa,
+il primo gesto reale dell'utente la sblocca. Nell'APK la sola soundtrack passa
+invece al plugin Capacitor `NativeMusic`, basato su `MediaPlayer`: vive nel
+Bridge Android e quindi continua senza interruzioni quando la WebView cambia
+documento. Effetti, voci e jingle rimangono nella WebView e non si mescolano al
+player persistente.
+
+Le sorgenti native sono esterne a questo repository, nelle due shell:
+`C:\AndroidDev\YuGiOhGameAndroid` e `C:\AndroidDev\YuGiOhGameAndroidProd`.
+In entrambe il plugin è `android/app/src/main/java/com/jacopofa92/
+yugiohduelarena/NativeMusicPlugin.java`, registrato da `MainActivity.java`.
+Le build verificate sono dev `1.1.5-dev.4` e prod `1.1.5` (versionCode 23).
+
+Il Service Worker (`sw.js`, cache `v172`) non prova mai a salvare richieste
+con header `Range` o risposte HTTP 206: Cache Storage non supporta risposte
+parziali e il vecchio tentativo faceva fallire soundtrack perfettamente
+valide con `ERR_FAILED`. Anche un errore di `cache.put` non annulla più la
+risposta di rete. Guardrail: `service-worker-cache` e
+`audio-nativo-persistente`.
 
 ## Rework acquisizione carte
 
@@ -132,8 +157,7 @@ del protocollo corrente.
 
 ## Stato rapido
 
-- Versione dichiarata: `1.0.43` (`package.json` e `js/version.js`); il
-  lavoro sul motore del 4-6 ottobre non ha cambiato numero di versione.
+- Versione dichiarata: `1.1.5` (`package.json` e `js/version.js`).
 - Applicazione HTML/CSS/JavaScript puro: nessun framework, bundler o build del
   frontend. Gli script globali devono essere caricati nell'ordine giusto.
 - 19 pagine HTML, 104 file JS applicativi sotto `js/` (esclusi i vendor),
@@ -143,10 +167,10 @@ del protocollo corrente.
   motore (192, 235, 622) sono state chiuse sul branch
   `refactor/chiudi-ultime-carte`.
 - PWA tramite `manifest.json`, `sw.js` e `js/pwa-register.js`.
-- App Android/Capacitor: la shell di produzione beta.22 (`versionCode 22`) è
-  stata compilata il 2026-10-06 e punta a GitHub Pages; gli APK sono ignorati
-  da Git e restano artefatti locali rigenerabili. La cache WebView/PWA corrente
-  è `ygo-duel-arena-v162` sul branch di chiusura delle ultime carte.
+- App Android/Capacitor: le shell dev e produzione includono `NativeMusic`;
+  la produzione è `1.1.5` (`versionCode 23`) e punta a GitHub Pages. Gli APK
+  sono ignorati da Git e restano artefatti locali rigenerabili. La cache
+  WebView/PWA corrente è `ygo-duel-arena-v172`.
 - Cloud tramite Supabase; multiplayer tramite relay WebSocket Node nativo.
 - Le preferenze utente (`save.settings`: dettagli video, ologrammi, aptica,
   volume e mute musica/SFX) fanno parte del salvataggio unificato e quindi di

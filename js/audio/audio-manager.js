@@ -13,7 +13,9 @@
  * usato ovunque. In futuro basterà passare un trackSrc diverso a
  * initAudioManager() (es. per una colonna sonora dedicata alle
  * battaglie) perché il resto — continuità, mute, salvataggio — resti
- * invariato.
+ * invariato. Nell'APK la musica usa invece NativeMusic: il MediaPlayer vive
+ * nell'Activity Android e non viene distrutto a ogni navigazione WebView.
+ * Effetti sonori, voci e jingle restano HTML Audio/Howler nella pagina.
  *
  * Volutamente SEMPLICE: nessuna dissolvenza di volume, nessun banner
  * o pulsante di recupero, nessun gating del caricamento della pagina
@@ -130,7 +132,13 @@
      *    browser mette comunque in pausa i tab non attivi), ma un WebView
      *    nativo non lo fa da solo.
      */
-    function ensureCapacitorAppIntegration(audio) {
+    function getNativeMusicPlugin() {
+        if (!window.Capacitor || !Capacitor.isNativePlatform || !Capacitor.isNativePlatform()) return null;
+        const plugin = Capacitor.Plugins && Capacitor.Plugins.NativeMusic;
+        return plugin && typeof plugin.play === 'function' ? plugin : null;
+    }
+
+    function ensureCapacitorAppIntegration(audio, nativeMusic) {
         if (!window.Capacitor || !Capacitor.isNativePlatform || !Capacitor.isNativePlatform()) return;
         const plugins = Capacitor.Plugins || {};
 
@@ -138,7 +146,9 @@
             plugins.ScreenOrientation.unlock().catch(() => {});
         }
 
-        if (plugins.App && typeof plugins.App.addListener === 'function') {
+        // NativeMusic gestisce il ciclo vita direttamente dall'Activity.
+        // Questo listener resta soltanto per il backend web/fallback.
+        if (!nativeMusic && plugins.App && typeof plugins.App.addListener === 'function') {
             plugins.App.addListener('appStateChange', (state) => {
                 if (!state || !state.isActive) {
                     audio.pause();
@@ -165,7 +175,8 @@
             document.body.appendChild(audio);
         }
 
-        ensureCapacitorAppIntegration(audio);
+        const nativeMusic = getNativeMusicPlugin();
+        ensureCapacitorAppIntegration(audio, nativeMusic);
 
         let muted = false;
         try { muted = localStorage.getItem(KEY_MUTED) === 'true'; } catch (e) { /* noop */ }
@@ -184,7 +195,7 @@
         } catch (e) { /* noop */ }
         audio.volume = volume;
         audio.muted = muted;
-        audio.src = trackSrc;
+        if (!nativeMusic) audio.src = trackSrc;
 
         // Riprende dalla posizione salvata SOLO se la pagina precedente
         // stava suonando la stessa traccia (continuità reale, non un salto
@@ -202,7 +213,7 @@
         // 'loadedmetadata': a quel punto il buffer non è ancora
         // sufficiente per un seek affidabile) — un solo listener per
         // entrambi invece di farli gareggiare fra loro.
-        audio.addEventListener('canplay', function onReady() {
+        if (!nativeMusic) audio.addEventListener('canplay', function onReady() {
             audio.removeEventListener('canplay', onReady);
             if (needsResume && savedTime < audio.duration) {
                 audio.currentTime = savedTime;
@@ -212,15 +223,34 @@
             }
         }, { once: true });
 
+        function nativeOptions(position, restart) {
+            return {
+                src: new URL(trackSrc, document.baseURI).href,
+                position: position || 0,
+                volume: volume,
+                muted: muted,
+                restart: !!restart
+            };
+        }
+
+        // Nel backend nativo una nuova pagina richiama play sulla stessa URL:
+        // il plugin riconosce la traccia e continua senza alcun salto.
+        if (nativeMusic && options.autoplay !== false) {
+            nativeMusic.play(nativeOptions(needsResume ? savedTime : 0, false)).catch(() => {});
+        }
+
         function persistState() {
             try {
                 sessionStorage.setItem(KEY_TRACK, trackSrc);
-                sessionStorage.setItem(KEY_TIME, String(audio.currentTime || 0));
+                sessionStorage.setItem(KEY_TIME, String(audio.currentTime || savedTime || 0));
             } catch (e) { /* noop */ }
         }
         audio.addEventListener('timeupdate', persistState);
         window.addEventListener('pagehide', persistState);
         window.addEventListener('beforeunload', persistState);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') persistState();
+        });
 
         // Pulsante "Indietro" (history.back()) o navigazione avanti/indietro
         // del browser: la pagina può tornare dalla bfcache invece di
@@ -317,12 +347,18 @@
              * (vedi trackPositions): andare e tornare fra due schermate non
              * deve suonare come due partenze da zero.
              */
-            setTrack: function (src) {
+            setTrack: function (src, trackOptions) {
+                trackOptions = trackOptions || {};
                 const wanted = src || DEFAULT_TRACK;
-                if (trackSrc === wanted) return;
+                if (trackSrc === wanted && !trackOptions.restart) return;
                 trackPositions[trackSrc] = audio.currentTime || 0;
                 trackSrc = wanted;
-                const resumeAt = trackPositions[wanted] || 0;
+                const resumeAt = trackOptions.restart ? 0 : (trackPositions[wanted] || 0);
+                if (nativeMusic) {
+                    nativeMusic.play(nativeOptions(resumeAt, trackOptions.restart)).catch(() => {});
+                    persistState();
+                    return;
+                }
                 audio.src = wanted;
                 if (resumeAt > 0) {
                     // Stesso motivo per cui il seek iniziale aspetta
@@ -340,23 +376,29 @@
             isMuted: function () { return audio.muted; },
             toggleMute: function () {
                 audio.muted = !audio.muted;
+                muted = audio.muted;
                 try { localStorage.setItem(KEY_MUTED, String(audio.muted)); } catch (e) { /* noop */ }
                 if (window.SaveManager && SaveManager.setSetting) SaveManager.setSetting('musicMuted', audio.muted);
-                if (!audio.muted && audio.paused) tryPlay();
+                if (!nativeMusic && !audio.muted && audio.paused) tryPlay();
+                if (nativeMusic) nativeMusic.setMuted({ muted: audio.muted }).catch(() => {});
                 updateToggleButton();
                 return audio.muted;
             },
             setMuted: function (value) {
                 audio.muted = !!value;
+                muted = audio.muted;
                 try { localStorage.setItem(KEY_MUTED, String(audio.muted)); } catch (e) { /* noop */ }
                 if (window.SaveManager && SaveManager.setSetting) SaveManager.setSetting('musicMuted', audio.muted);
-                if (!audio.muted && audio.paused) tryPlay();
+                if (!nativeMusic && !audio.muted && audio.paused) tryPlay();
+                if (nativeMusic) nativeMusic.setMuted({ muted: audio.muted }).catch(() => {});
                 updateToggleButton();
             },
             getVolume: function () { return audio.volume; },
             /** 0..1. Persiste in localStorage: resta la stessa in ogni pagina e sessione futura. */
             setVolume: function (value) {
                 audio.volume = Math.min(1, Math.max(0, value));
+                volume = audio.volume;
+                if (nativeMusic) nativeMusic.setVolume({ volume: audio.volume }).catch(() => {});
                 try { localStorage.setItem(KEY_VOLUME, String(audio.volume)); } catch (e) { /* noop */ }
                 if (window.SaveManager && SaveManager.setSetting) SaveManager.setSetting('musicVolume', audio.volume);
             },
@@ -377,6 +419,7 @@
                 const baseVolume = audio.volume;
 
                 if (options.pauseMusic !== false) {
+                    if (nativeMusic) nativeMusic.pause().catch(() => {});
                     if (fadeMs > 0 && !audio.paused) {
                         const steps = 12;
                         let step = 0;
