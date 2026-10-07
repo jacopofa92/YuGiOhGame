@@ -410,7 +410,9 @@
 // v167: ricompensa carta rifinita e carosello sbustamento trascinabile.
 // v168: cinematica ricompensa alleggerita e sfondo senza griglia.
 // v170: l'Editor Mappa mostra X/Y in tempo reale durante il trascinamento.
-const CACHE_NAME = 'ygo-duel-arena-v170';
+// v171: coordinate su ogni nodo; dettaglio carta mobile landscape scorribile
+// e apertura touch limitata al tap diretto.
+const CACHE_NAME = 'ygo-duel-arena-v171';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

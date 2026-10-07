@@ -92,6 +92,12 @@ module.exports = {
             const aree = await page.evaluate(() => StoryProgress.getTappe('anime').length);
             t.assert(aree >= 5 && etichette.length === aree,
                 `La mappa dell'anime deve mostrare un nodo per area (${etichette.length} nodi per ${aree} aree)`);
+            const coordinateSempreVisibili = await page.evaluate(() => [...document.querySelectorAll('.sme-node')].every((n) => {
+                const c = n.querySelector('.sme-node-coordinate');
+                return c && /^X -?\d+ · Y -?\d+$/.test(c.textContent.trim());
+            }));
+            t.assert(coordinateSempreVisibili,
+                'Con editor attivo ogni nodo deve mostrare le proprie coordinate senza essere cliccato');
 
             // La mappa fa uno scorrimento "morbido" al primo disegno:
             // aspettare che la contromisura dell'editor lo fissi, o il

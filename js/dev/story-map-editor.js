@@ -263,6 +263,10 @@
             const nodo = nodi[i];
             const tappa = nodo._voce.tappa;
             bottone.classList.add('sme-node');
+            const coordinateNodo = document.createElement('span');
+            coordinateNodo.className = 'sme-node-coordinate';
+            coordinateNodo.textContent = `X ${tappa.x} · Y ${tappa.y}`;
+            bottone.appendChild(coordinateNodo);
             bottone.addEventListener('pointerdown', (e) => {
                 // Un click VERO (senza trascinamento) apre il pannello da
                 // sé tramite il 'click' nativo che segue (vedi onSelect
@@ -285,6 +289,7 @@
                     nodo.x = tappa.x; nodo.y = tappa.y;
                     bottone.style.left = tappa.x + 'px';
                     bottone.style.top = tappa.y + 'px';
+                    coordinateNodo.textContent = `X ${tappa.x} · Y ${tappa.y}`;
                     aggiornaCoordinate(tappa);
                     aggiornaLinee(canvas, nodi);
                 };
@@ -456,6 +461,11 @@
                 background: rgba(93,45,10,0.95); border-color: rgba(247,215,116,0.7); }
             .sme-node { outline: 2px dashed #5dade2 !important; outline-offset: 2px; cursor: grab; }
             .sme-node:active { cursor: grabbing; }
+            .sme-node-coordinate { display: block; padding: 2px 6px; border-radius: 4px;
+                border: 1px solid rgba(93,173,226,0.72); background: rgba(5,12,22,0.88);
+                color: #bde8ff; box-shadow: 0 2px 7px rgba(0,0,0,0.6);
+                font: 700 10px/1.2 'Consolas', monospace; white-space: nowrap;
+                font-variant-numeric: tabular-nums; pointer-events: none; }
             .sme-overlay { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center;
                 justify-content: center; background: rgba(4,5,8,0.75); padding: 16px; }
             .sme-pannello { width: 100%; max-width: 440px; max-height: 88vh; overflow: auto;

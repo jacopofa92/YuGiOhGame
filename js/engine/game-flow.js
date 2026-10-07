@@ -178,6 +178,15 @@ function updateCardInfoPanel(card, options = {}) {
     panel.classList.add('visible');
 }
 
+/**
+ * L'hover è un gesto reale solo con mouse/trackpad. Su touch i browser
+ * possono sintetizzare mouseenter durante uno swipe o dopo un tap: il box
+ * informazioni deve aprirsi esclusivamente dal click/tap diretto sulla carta.
+ */
+function canInspectCardOnHover() {
+    return !window.matchMedia || window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+}
+
 // Click fuori dal pannello descrizione carta -> lo chiude. Esclude i click
 // su una QUALUNQUE carta (.card): quelli sono l'azione che apre/aggiorna il
 // pannello (vedi handleCardClick/onmouseenter sulle carte), non un "click
@@ -917,7 +926,7 @@ function renderFields() {
                 }
             };
             fieldSpellCardEl.onmouseenter = () => {
-                if (dragState) return;
+                if (dragState || !canInspectCardOnHover()) return;
                 updateCardInfoPanel(fieldSpellSlotState.card, { sourceType: 'field-spell', sourceOwner: owner, isFaceDown: visuallyFaceDown });
             };
             firstSpecial.appendChild(fieldSpellCardEl);
@@ -973,7 +982,7 @@ function renderFields() {
                     }
                 };
                 cardEl.onmouseenter = () => {
-                    if (dragState) return;
+                    if (dragState || !canInspectCardOnHover()) return;
                     updateCardInfoPanel(slot.card, { sourceType: slotType, sourceOwner: owner, isFaceDown: visuallyFaceDown });
                 };
                 if (isMonsterRow && owner === 'player' && gameState.phase === 'battle' && !slot.hasAttacked && slot.position === 'attack' && !(window.DuelEngine && DuelEngine.cannotAttack('player'))) {
@@ -1743,7 +1752,7 @@ function renderPlayerHand() {
             startHandCardDrag(event, card, index, 'player');
         };
         cardEl.onmouseenter = () => {
-            if (dragState) return;
+            if (dragState || !canInspectCardOnHover()) return;
             updateCardInfoPanel(card, { sourceType: 'hand', sourceOwner: 'player', isFaceDown: false });
         };
         if (gameState.selectedCard.type === 'hand' && gameState.selectedCard.index === index) {
