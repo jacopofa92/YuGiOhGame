@@ -1,6 +1,6 @@
 // Smoke test dell'audit di bilanciamento: usa una sola tappa per non
 // trasformare la suite mirata nella matrice completa (che si lancia a mano).
-const { simulaMatrice } = require('../../tools/simula-storia-deck.js');
+const { simulaMatrice, semeComparabile } = require('../../tools/simula-storia-deck.js');
 
 module.exports = {
     standalone: true,
@@ -22,6 +22,9 @@ module.exports = {
         assert(r.duelliTotali === 1 && r.tentativi === 1, `Lo smoke test deve simulare esattamente un tentativo: ${JSON.stringify(r)}`);
         assert(Number.isFinite(r.turni) && Number.isFinite(r.tempoVirtualeSecondi) && Number.isFinite(r.tempoRealeMs),
             `Il report deve misurare turni, tempo virtuale e tempo reale: ${JSON.stringify(r)}`);
+        assert(r.dettaglioDuelli.length === 1
+            && r.dettaglioDuelli[0].semeIniziale === semeComparabile(9100, 0, 0, 1),
+        `Ogni nodo deve conservare misure e seme confrontabile: ${JSON.stringify(r.dettaglioDuelli)}`);
 
         // Dragon's Roar ha meno di 40 RIGHE ma 40 copie complessive: è il
         // caso che impedisce di tornare per sbaglio al conteggio distinto.

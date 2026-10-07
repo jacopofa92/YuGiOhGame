@@ -61,6 +61,39 @@ function specificaDeck(deck) {
     return { main: deck.main || [], extra: deck.extra || [] };
 }
 
+/** Stesso blocco di casualità per lo stesso deck/nodo/tentativo a ogni difficoltà. */
+function semeComparabile(base, indiceDeck, indiceDuello, tentativo) {
+    return base + indiceDeck * 100000 + indiceDuello * 1000 + tentativo;
+}
+
+function media(valori) {
+    return valori.length ? Number((valori.reduce((a, b) => a + b, 0) / valori.length).toFixed(2)) : 0;
+}
+
+function analizzaIncontri(risultati, duelli, tentativiMassimi) {
+    // Pegasus Starter resta nei risultati grezzi, ma non deve deformare il
+    // giudizio generale: la debolezza Toon è nota e verrà trattata a parte.
+    const campione = risultati.filter((r) => r.deckId !== 'starter_sdp_pegasus');
+    return duelli.map((duello) => {
+        const riga = { id: duello.id, avversario: duello.avversario, capitolo: duello.capitolo };
+        ['facile', 'normale', 'difficile'].forEach((difficolta) => {
+            const prove = campione
+                .filter((r) => r.difficolta === difficolta)
+                .map((r) => r.dettaglioDuelli.find((d) => d.id === duello.id))
+                .filter(Boolean);
+            riga[difficolta] = {
+                campioni: prove.length,
+                superatoDa: prove.filter((p) => p.vinto).length,
+                tentativiMedi: media(prove.map((p) => p.tentativi)),
+                alTetto: prove.filter((p) => !p.vinto && p.tentativi >= tentativiMassimi).length
+            };
+        });
+        riga.progressioneCoerente = riga.facile.tentativiMedi <= riga.normale.tentativiMedi
+            && riga.normale.tentativiMedi <= riga.difficile.tentativiMedi;
+        return riga;
+    });
+}
+
 async function simulaMatrice(opzioni) {
     const decks = caricaGlobale('js/data/starter-structure-decks.js', 'starterStructureDeckDatabase')
         // Le righe sono carte DISTINTE: un deck con 25 righe e varie
@@ -84,18 +117,24 @@ async function simulaMatrice(opzioni) {
     if (!livelli.length) throw new Error('Difficoltà non valida: usa facile, normale o difficile.');
 
     const risultati = [];
-    let progressivo = 0;
-    for (const deck of decks) {
+    for (let indiceDeck = 0; indiceDeck < decks.length; indiceDeck++) {
+        const deck = decks[indiceDeck];
         for (const livello of livelli) {
             const inizio = Date.now();
             let tentativiTotali = 0;
             let turniTotali = 0;
             let tempoVirtualeMs = 0;
-            let bloccatoA = null;
-            for (const duello of duelli) {
+            const blocchi = [];
+            const dettaglioDuelli = [];
+            for (let indiceDuello = 0; indiceDuello < duelli.length; indiceDuello++) {
+                const duello = duelli[indiceDuello];
                 let vinto = false;
+                let tentativiDuello = 0;
+                let turniDuello = 0;
+                let tempoDuelloMs = 0;
                 for (let tentativo = 1; tentativo <= opzioni.tentativi; tentativo++) {
                     tentativiTotali++;
+                    tentativiDuello++;
                     const esito = await giocaPartita({
                         avversario: duello.avversario,
                         livello: livello.ia,
@@ -105,32 +144,54 @@ async function simulaMatrice(opzioni) {
                         // mascherare proprio la differenza cercata.
                         livelloGiocatore: opzioni.iaGiocatore || 'hard',
                         mazzoGiocatore: specificaDeck(deck),
-                        seme: opzioni.seme + progressivo++,
+                        seme: semeComparabile(opzioni.seme, indiceDeck, indiceDuello, tentativo),
                         turni: opzioni.turni
                     }, 0);
                     turniTotali += esito.turno || 0;
+                    turniDuello += esito.turno || 0;
                     tempoVirtualeMs += esito.oraVirtualeMs || 0;
+                    tempoDuelloMs += esito.oraVirtualeMs || 0;
                     if (esito.esito === true) { vinto = true; break; }
                 }
-                if (!vinto) { bloccatoA = duello; break; }
+                dettaglioDuelli.push({
+                    id: duello.id,
+                    avversario: duello.avversario,
+                    capitolo: duello.capitolo,
+                    vinto: vinto,
+                    tentativi: tentativiDuello,
+                    turni: turniDuello,
+                    tempoVirtualeSecondi: Math.round(tempoDuelloMs / 1000),
+                    semeIniziale: semeComparabile(opzioni.seme, indiceDeck, indiceDuello, 1)
+                });
+                // Si continua con gli incontri successivi anche dopo un
+                // blocco: l'audit deve coprire ogni avversario, non soltanto
+                // quelli raggiunti dal deck più debole.
+                if (!vinto) blocchi.push(duello);
             }
             risultati.push({
                 deckId: deck.packId,
                 deck: deck.name,
                 difficolta: livello.id,
-                completata: !bloccatoA,
-                duelliCompletati: bloccatoA ? duelli.findIndex((d) => d.id === bloccatoA.id) : duelli.length,
+                completata: blocchi.length === 0,
+                duelliCompletati: duelli.length - blocchi.length,
                 duelliTotali: duelli.length,
                 tentativi: tentativiTotali,
-                tentativiMediPerDuello: Number((tentativiTotali / Math.max(1, bloccatoA ? duelli.findIndex((d) => d.id === bloccatoA.id) + 1 : duelli.length)).toFixed(2)),
+                tentativiMediPerDuello: Number((tentativiTotali / Math.max(1, duelli.length)).toFixed(2)),
                 turni: turniTotali,
                 tempoVirtualeSecondi: Math.round(tempoVirtualeMs / 1000),
                 tempoRealeMs: Date.now() - inizio,
-                bloccatoA: bloccatoA ? `${bloccatoA.id} (${bloccatoA.avversario})` : null
+                bloccatoA: blocchi.length ? blocchi.map((b) => `${b.id} (${b.avversario})`).join(', ') : null,
+                dettaglioDuelli: dettaglioDuelli
             });
         }
     }
-    return { generatoIl: new Date().toISOString(), opzioni, risultati };
+    return {
+        generatoIl: new Date().toISOString(),
+        metodo: 'IA giocatore fissa; stessi semi per deck/nodo/tentativo nelle tre difficoltà; Pegasus Starter escluso dalla sola analisi aggregata',
+        opzioni,
+        risultati,
+        analisiIncontri: analizzaIncontri(risultati, duelli, opzioni.tentativi)
+    };
 }
 
 async function main() {
@@ -145,4 +206,4 @@ async function main() {
 }
 
 if (require.main === module) main().catch((e) => { console.error(e.stack || e); process.exit(1); });
-module.exports = { argomenti, duelliPrincipali, simulaMatrice };
+module.exports = { argomenti, duelliPrincipali, semeComparabile, analizzaIncontri, simulaMatrice };
