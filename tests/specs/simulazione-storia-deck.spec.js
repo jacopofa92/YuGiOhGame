@@ -12,6 +12,7 @@ module.exports = {
             tentativi: 1,
             turni: 40,
             seme: 9100,
+            iaGiocatore: 'hard',
             limiteDuelli: 1,
             output: null
         });
@@ -26,7 +27,7 @@ module.exports = {
         // caso che impedisce di tornare per sbaglio al conteggio distinto.
         const structure = await simulaMatrice({
             deck: 'structure_sd1_dragons_roar', difficolta: 'facile',
-            tentativi: 1, turni: 40, seme: 9200, limiteDuelli: 1, output: null
+            tentativi: 1, turni: 40, seme: 9200, iaGiocatore: 'hard', limiteDuelli: 1, output: null
         });
         assert(structure.risultati.length === 1
             && structure.risultati[0].deckId === 'structure_sd1_dragons_roar',

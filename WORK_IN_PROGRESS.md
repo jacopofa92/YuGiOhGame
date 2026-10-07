@@ -12,6 +12,10 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
 
 ## Bilanciamento Storia per deck
 
+Vincolo: non modificare Starter/Structure. Sono il metro fisso; l'oggetto
+del bilanciamento sono IA e deck Facile/Medio/Difficile degli avversari,
+sempre coerenti con il personaggio. Toon/Pegasus si affronta per ultimo.
+
 - [x] Simulatore riproducibile deck × difficoltà sul percorso anime
       (`tools/simula-storia-deck.js`), con tentativi, turni e tempi.
 - [x] Eseguita la matrice completa (16 deck × 3 difficoltà, massimo 20

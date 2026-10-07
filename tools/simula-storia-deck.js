@@ -35,6 +35,7 @@ function argomenti(argv) {
     return {
         deck: valore('deck', null),
         difficolta: valore('difficolta', null),
+        iaGiocatore: valore('ia-giocatore', 'hard'),
         tentativi: Math.max(1, Number(valore('tentativi', '20')) || 20),
         turni: Math.max(10, Number(valore('turni', '80')) || 80),
         limiteDuelli: Math.max(0, Number(valore('limite-duelli', '0')) || 0),
@@ -98,7 +99,11 @@ async function simulaMatrice(opzioni) {
                     const esito = await giocaPartita({
                         avversario: duello.avversario,
                         livello: livello.ia,
-                        livelloGiocatore: livello.ia,
+                        // Per misurare davvero la scala degli AVVERSARI,
+                        // il pilota del deck campione resta identico nelle
+                        // tre prove. Alzare entrambe le IA insieme poteva
+                        // mascherare proprio la differenza cercata.
+                        livelloGiocatore: opzioni.iaGiocatore || 'hard',
                         mazzoGiocatore: specificaDeck(deck),
                         seme: opzioni.seme + progressivo++,
                         turni: opzioni.turni

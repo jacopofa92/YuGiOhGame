@@ -67,6 +67,16 @@ La matrice completa del 2026-10-07 è conservata in
 duelli principali per percorso, con un tetto di 20 tentativi per scontro.
 Quaranta percorsi hanno concluso la storia; otto hanno raggiunto il tetto.
 
+**Criterio di bilanciamento deciso dall'utente.** Starter e Structure Deck
+sono campioni immutabili: non vanno corretti per farli convergere e ci si
+aspetta che gli Starter siano più deboli. L'audit serve a valutare se IA
+Facile/Media/Difficile sono distinguibili e verosimili e se i tre deck di
+ogni avversario hanno una progressione di forza sufficiente, senza perdere
+la coerenza con la lore. Pegasus/Toon è una debolezza già nota e verrà
+valutata per ultima separatamente. Per isolare la variabile, dalla matrice
+con tetto 50 il giocatore è sempre pilotato dall'IA Difficile; cambia solo
+l'IA/deck dell'avversario.
+
 Il Pannello Admin può segnare al 100% tutte le campagne attualmente giocabili,
 in ogni difficoltà. `js/dev/story-admin-tools.js` scrive solo il progresso:
 marca i premi finali come già gestiti e non chiama né Rewards né
