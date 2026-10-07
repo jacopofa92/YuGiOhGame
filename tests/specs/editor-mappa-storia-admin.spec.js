@@ -92,6 +92,12 @@ module.exports = {
             const aree = await page.evaluate(() => StoryProgress.getTappe('anime').length);
             t.assert(aree >= 5 && etichette.length === aree,
                 `La mappa dell'anime deve mostrare un nodo per area (${etichette.length} nodi per ${aree} aree)`);
+            const coordinateSempreVisibili = await page.evaluate(() => [...document.querySelectorAll('.sme-node')].every((n) => {
+                const c = n.querySelector('.sme-node-coordinate');
+                return c && /^X -?\d+ · Y -?\d+$/.test(c.textContent.trim());
+            }));
+            t.assert(coordinateSempreVisibili,
+                'Con editor attivo ogni nodo deve mostrare le proprie coordinate senza essere cliccato');
 
             // La mappa fa uno scorrimento "morbido" al primo disegno:
             // aspettare che la contromisura dell'editor lo fissi, o il
@@ -109,6 +115,16 @@ module.exports = {
             await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
             await page.mouse.down();
             await page.mouse.move(box.x + box.width / 2 + 40, box.y + box.height / 2 + 25, { steps: 5 });
+            // Le coordinate devono essere leggibili PRIMA del rilascio:
+            // controllarle dopo mouse.up proverebbe solo il riepilogo finale,
+            // non l'aggiornamento realmente in tempo reale richiesto.
+            const coordinateDuranteDrag = await page.evaluate(() => {
+                const tappa = storyCampaignsDatabase.find((c) => c.id === 'anime').capitoli[0].tappe[0];
+                return { testo: document.getElementById('smeCoordinate').textContent, x: tappa.x, y: tappa.y };
+            });
+            t.assert(coordinateDuranteDrag.testo.includes(`X ${coordinateDuranteDrag.x}`)
+                && coordinateDuranteDrag.testo.includes(`Y ${coordinateDuranteDrag.y}`),
+            `La barra deve mostrare X/Y aggiornate durante il drag: ${JSON.stringify(coordinateDuranteDrag)}`);
             await page.mouse.up();
             const dopoXY = await page.evaluate(() => {
                 const t2 = storyCampaignsDatabase.find((c) => c.id === 'anime').capitoli[0].tappe[0];

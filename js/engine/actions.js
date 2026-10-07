@@ -551,6 +551,7 @@ function handleDragEnd(event) {
             dragState.sourceEl.classList.remove('dragging-source');
         }
 
+        const touchLike = event.pointerType === 'touch' || event.pointerType === 'pen';
         if (moved && dragState.dragEnabled && dropTarget) {
             const owner = dropTarget.dataset.owner;
             const type = dropTarget.dataset.type;
@@ -562,10 +563,13 @@ function handleDragEnd(event) {
                 (!isFieldSpellCard && (dragState.card.type === 'spell' || dragState.card.type === 'trap') && type === 'st')
             )) {
                 placeDraggedCard(dragState.card, dragState.sourceIndex, owner, type, index, releaseRect);
-            } else {
+            } else if (!touchLike) {
                 handleCardClick(dragState.card, 'hand', dragState.sourceIndex, dragState.sourceOwner);
             }
-        } else {
+        } else if (!moved || !touchLike) {
+            // Su touch uno swipe/trascinamento non è un tap: non deve aprire
+            // il box informazioni solo perché il gesto era iniziato sopra
+            // una carta. Il tap vero (moved=false) continua ad aprirlo.
             handleCardClick(dragState.card, 'hand', dragState.sourceIndex, dragState.sourceOwner);
         }
     }

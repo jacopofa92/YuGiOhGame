@@ -263,6 +263,10 @@
             const nodo = nodi[i];
             const tappa = nodo._voce.tappa;
             bottone.classList.add('sme-node');
+            const coordinateNodo = document.createElement('span');
+            coordinateNodo.className = 'sme-node-coordinate';
+            coordinateNodo.textContent = `X ${tappa.x} · Y ${tappa.y}`;
+            bottone.appendChild(coordinateNodo);
             bottone.addEventListener('pointerdown', (e) => {
                 // Un click VERO (senza trascinamento) apre il pannello da
                 // sé tramite il 'click' nativo che segue (vedi onSelect
@@ -285,6 +289,8 @@
                     nodo.x = tappa.x; nodo.y = tappa.y;
                     bottone.style.left = tappa.x + 'px';
                     bottone.style.top = tappa.y + 'px';
+                    coordinateNodo.textContent = `X ${tappa.x} · Y ${tappa.y}`;
+                    aggiornaCoordinate(tappa);
                     aggiornaLinee(canvas, nodi);
                 };
                 const onUp = () => {
@@ -338,6 +344,7 @@
         const titolo = ctx.livello === 'torneo' ? (ctx.torneo.nome || ctx.torneo.label) : ctx.campagna.nome;
         barra.innerHTML = `
             <span class="sme-etichetta">🛠️ Editor mappa — <strong>${escapeHtml(titolo)}</strong></span>
+            <output class="sme-coordinate" id="smeCoordinate" aria-label="Coordinate del nodo trascinato">X —&nbsp;&nbsp;Y —</output>
             <span class="sme-suggerimento" id="smeSuggerimento"></span>
             <span class="sme-spazio"></span>
             ${(ctx.pagine && ctx.pagine.length > 1) ? ctx.pagine.map((p) => `<button type="button" class="sme-btn${p === ctx.pagina ? ' sme-btn--attivo' : ''}" data-sme-pagina="${p.indice}">🗺️ ${escapeHtml(p.nome || ('Mappa ' + (p.indice + 1)))}</button>`).join('') : ''}
@@ -378,6 +385,17 @@
     function aggiornaSuggerimento(testo) {
         const el = document.getElementById('smeSuggerimento');
         if (el) el.textContent = testo || '';
+    }
+    /**
+     * Scrive le coordinate vere del mondo mappa, non quelle dello schermo:
+     * zoom e scorrimento non devono cambiare i numeri che finiranno nel file.
+     * L'output vive nella barra dell'editor e viene aggiornato a ogni singolo
+     * pointermove, così non occorre rilasciare il nodo per leggere X/Y.
+     */
+    function aggiornaCoordinate(tappa) {
+        const el = document.getElementById('smeCoordinate');
+        if (!el || !tappa) return;
+        el.textContent = `X ${tappa.x}  Y ${tappa.y}`;
     }
 
     /**
@@ -428,6 +446,11 @@
                 padding: 8px 14px; background: rgba(93,45,10,0.95); color: #fff;
                 font: 700 0.78rem/1.3 system-ui, sans-serif; border-bottom: 2px solid rgba(247,215,116,0.6); }
             .sme-suggerimento { font-weight: 400; opacity: 0.85; font-style: italic; }
+            .sme-coordinate { flex: 0 0 auto; min-width: 128px; padding: 4px 9px;
+                border: 1px solid rgba(247,215,116,0.45); border-radius: 5px;
+                background: rgba(0,0,0,0.38); color: #f7d774;
+                font: 700 12px/1.2 'Consolas', monospace; letter-spacing: 0.04em;
+                text-align: center; font-variant-numeric: tabular-nums; }
             .sme-spazio { flex: 1; }
             .sme-btn { padding: 6px 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.5);
                 background: rgba(0,0,0,0.35); color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
@@ -438,6 +461,11 @@
                 background: rgba(93,45,10,0.95); border-color: rgba(247,215,116,0.7); }
             .sme-node { outline: 2px dashed #5dade2 !important; outline-offset: 2px; cursor: grab; }
             .sme-node:active { cursor: grabbing; }
+            .sme-node-coordinate { display: block; padding: 2px 6px; border-radius: 4px;
+                border: 1px solid rgba(93,173,226,0.72); background: rgba(5,12,22,0.88);
+                color: #bde8ff; box-shadow: 0 2px 7px rgba(0,0,0,0.6);
+                font: 700 10px/1.2 'Consolas', monospace; white-space: nowrap;
+                font-variant-numeric: tabular-nums; pointer-events: none; }
             .sme-overlay { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center;
                 justify-content: center; background: rgba(4,5,8,0.75); padding: 16px; }
             .sme-pannello { width: 100%; max-width: 440px; max-height: 88vh; overflow: auto;

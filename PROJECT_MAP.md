@@ -856,6 +856,10 @@ Rifinitura successiva:
   touch: `armHandCompatibilityClick()`/`consumeHandCompatibilityClick()`
   consumano esclusivamente quel click alle stesse coordinate, impedendo che
   body o click-catcher richiudano immediatamente carta e pulsanti flottanti.
+- su dispositivi touch il pannello informazioni si apre soltanto con un tap
+  diretto: gli `mouseenter` sintetici e i trascinamenti non validi non sono
+  più interpretati come ispezioni. In landscape mobile anteprima e testo sono
+  affiancati; `.card-info-content` ha uno scroll `pan-y` indipendente.
 
 ## Cinematica Evocazione Rituale
 
@@ -916,6 +920,17 @@ Rifinitura successiva:
   `history.back()` nell'APK poteva riportare alla mappa generale anziché
   all'area; vittoria e sconfitta sono coperte dal test
   `storia-continua-fine-duello.spec.js`, che verifica anche `torneo=<area>`.
+
+## Editor delle mappe Storia
+
+`js/dev/story-map-editor.js` è disponibile ai soli amministratori e lavora
+sugli stessi oggetti usati dalla mappa. Ogni nodo espone sempre la propria
+etichetta `X/Y`, senza richiedere un click; durante il trascinamento sia questa
+etichetta sia il riepilogo nella barra si aggiornano a ogni `pointermove`.
+Sono coordinate del mondo mappa, quindi coincidono con quelle esportate anche
+se viewport, zoom e scorrimento cambiano. Lo spec
+`editor-mappa-storia-admin` verifica il valore prima del rilascio del mouse,
+non soltanto il riepilogo finale.
 
 ## Come mantenere questa memoria
 
