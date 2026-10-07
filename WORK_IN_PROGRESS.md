@@ -21,8 +21,9 @@ sempre coerenti con il personaggio. Toon/Pegasus si affronta per ultimo.
 - [x] Eseguita la matrice isolata (16 deck × 3 difficoltà, IA giocatore
       sempre Difficile, massimo 50 tentativi per scontro): risultati grezzi
       in `STORY_DECK_SIMULATION_REPORT.json`. Completati 46 percorsi su 48;
-      restano Pegasus Starter/Normale contro Mako e Machine Re-Volt/Normale
-      contro Kaiba. Il bilanciamento conseguente resta una decisione di game
+      i soli due incompleti sono Pegasus Starter a Normale e Difficile.
+      `STORY_DIFFICULTY_AUDIT.md` evidenzia 9 incontri su 26 con progressione
+      strettamente coerente. Il bilanciamento conseguente resta una decisione di game
       design, non una correzione automatica del simulatore.
 
 ## Audio multipagina

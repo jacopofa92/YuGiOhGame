@@ -59,15 +59,19 @@ del percorso principale della campagna anime, per ogni Starter/Structure Deck
 Yu-Gi-Oh e per Facile, Normale e Difficile. I rami paralleli non bloccano il
 percorso; i deck WW1 sono esclusi perché appartengono a un'origine non ammessa.
 Il report misura completamento, tentativi, turni, tempo virtuale e tempo reale,
-e indica il primo duello che un deck non riesce a superare. La matrice completa
-si lancia con `node tools/simula-storia-deck.js --tentativi 20 --output report.json`;
+e conserva il dettaglio di ogni nodo non superato. La matrice completa
+si lancia con `node tools/simula-storia-deck.js --tentativi 50 --output report.json`;
 lo spec `simulazione-storia-deck` ne esegue soltanto uno smoke test ridotto.
 La matrice completa del 2026-10-07 è conservata in
 `STORY_DECK_SIMULATION_REPORT.json`: 16 deck, 3 difficoltà, 48 percorsi e 26
 duelli principali per percorso, con un tetto di 50 tentativi per scontro.
 L'IA del giocatore resta fissa a Difficile; 46 percorsi hanno concluso la
-storia. I due blocchi rimasti sono Pegasus Starter a Normale contro Mako
-(debolezza Toon già nota e rinviata) e Machine Re-Volt a Normale contro Kaiba.
+storia. I soli due percorsi incompleti appartengono a Pegasus Starter
+(debolezza Toon già nota e rinviata), a Normale e Difficile.
+L'esecuzione successiva, a semi accoppiati e completa anche dopo un eventuale
+blocco, è interpretata in `STORY_DIFFICULTY_AUDIT.md`: soltanto 9 incontri su
+26 hanno una crescita strettamente coerente, con Medio spesso più duro di
+Difficile. Nessun deck o IA è stato modificato sulla sola base dell'audit.
 
 **Criterio di bilanciamento deciso dall'utente.** Starter e Structure Deck
 sono campioni immutabili: non vanno corretti per farli convergere e ci si
