@@ -274,14 +274,16 @@ async function giocaPartita(opz, n) {
     esegui('resetGameState();');
     const livelloGiocatore = opz.livelloGiocatore || opz.livello;
     // L'IA su entrambi i posti, ciascuna col suo livello. Il mazzo del
-    // posto 'player': quello di un personaggio, se indicato (deve
-    // esistere in character-decks.js), altrimenti quello dimostrativo che
-    // resetGameState ha già costruito.
+    // posto 'player' può essere una specifica esplicita (`mazzoGiocatore`,
+    // usata dall'audit dei deck della Storia), quello di un personaggio o
+    // infine il dimostrativo costruito da resetGameState.
     esegui(`
         Tavolo.imposta({ player: 'ia', bot: 'ia' });
         gameState.livelloIA = { player: ${JSON.stringify(livelloGiocatore)}, bot: ${JSON.stringify(opz.livello)} };
-        ${opz.giocatore ? `(function () {
-            const spec = getCharacterDeck(${JSON.stringify(opz.giocatore)}, ${JSON.stringify(livelloGiocatore)});
+        ${(opz.mazzoGiocatore || opz.giocatore) ? `(function () {
+            const spec = ${opz.mazzoGiocatore
+                ? JSON.stringify(opz.mazzoGiocatore)
+                : `getCharacterDeck(${JSON.stringify(opz.giocatore)}, ${JSON.stringify(livelloGiocatore)})`};
             if (!spec) throw new Error('Nessun mazzo per il personaggio ' + ${JSON.stringify(opz.giocatore)});
             gameState.playerDeck = buildDeckFromSpec(spec);
             gameState.playerDeckCount = gameState.playerDeck.length;

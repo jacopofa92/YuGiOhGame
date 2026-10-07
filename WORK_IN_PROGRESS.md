@@ -10,6 +10,14 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
 - [x] Simulare il farming necessario (`FARMING_REPORT.md`, 50.000 profili).
 - [x] Animazione epica finto 3D per l'ottenimento di una carta speciale.
 
+## Bilanciamento Storia per deck
+
+- [x] Simulatore riproducibile deck × difficoltà sul percorso anime
+      (`tools/simula-storia-deck.js`), con tentativi, turni e tempi.
+- [ ] Eseguire la matrice completa e valutare dal report quali deck o scontri
+      richiedono troppo farming. Lo strumento è pronto; questa esecuzione è
+      intenzionalmente separata dagli spec rapidi.
+
 ## Audio multipagina
 
 - [x] Escludere stream Range/HTTP 206 dalla Cache Storage senza interrompere
