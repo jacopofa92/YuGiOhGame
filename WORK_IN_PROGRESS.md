@@ -36,6 +36,12 @@ sempre coerenti con il personaggio. Toon/Pegasus si affronta per ultimo.
       della Media e in più evita gli schianti certi sui mostri coperti. Il
       seguito è valutare le singole liste, iniziando dagli scostamenti ancora
       evidenti (Mako e Noah); Pegasus/Toon resta per ultimo.
+- [x] Secondo affinamento tattico di Hard, senza toccare i deck: pescata/
+      ricerca prima dell'Evocazione, ordine efficiente degli attaccanti,
+      riconoscimento del letale e cambio legale Difesa→Attacco. Audit a 50:
+      13/16 incontri pari o superiori alla Media, delta medio +0,75. Restano
+      Kaiba prologo, Joey Castello e Noah; gli Ignition generici sono stati
+      esclusi dopo una prova peggiorativa.
 
 ## Audio multipagina
 

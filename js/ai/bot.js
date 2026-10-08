@@ -42,7 +42,9 @@ function turnoIA(io = 'bot') {
             // l'Evocazione (attemptBotSpellTrap poco più sotto): solo un
             // effetto che colpisce anche il proprio Terreno ha un motivo
             // strutturale per passare prima.
-            const summonPromise = attemptBotMassDestructionBeforeSummon(io).then(() => {
+            const summonPromise = attemptBotMassDestructionBeforeSummon(io)
+                .then(() => attemptBotTacticalSpellBeforeSummon(io))
+                .then(() => {
                 // Come per botPerformAttacks() più sotto: aspetta la
                 // RISOLUZIONE PIENA dell'Evocazione (compresa un'eventuale
                 // finestra "vuoi attivare Buco Trappola?" del giocatore, che può
@@ -76,6 +78,10 @@ function turnoIA(io = 'bot') {
                 // può usare (Cancello di Fusione id 887): nel suo turno il
                 // bot la sfrutta come farebbe con la propria.
                 .then(() => attemptBotUseTurnPlayerFieldSpell(io))
+                // Hard rimette in Attacco i mostri difensivi dei turni
+                // precedenti quando hanno un bersaglio utile o via libera
+                // agli LP. La Media conserva il comportamento storico.
+                .then(() => attemptBotPositionChanges(io))
                 // NON un semplice setTimeout: `attendiPoi` ricontrolla le
                 // cinematiche allo SCADERE dell'attesa, non solo prima di
                 // farla partire. Una cinematica puo' cominciare DOPO il
@@ -254,6 +260,26 @@ function attemptBotMassDestructionBeforeSummon(io) {
 }
 
 /**
+ * Solo il livello che espone la decisione tattica (oggi Hard) può usare una
+ * Magia di pescata/ricerca prima dell'Evocazione Normale. Si aspetta la Chain
+ * completa: il mostro appena ottenuto deve essere davvero in mano prima che
+ * chooseSummon valuti le opzioni del turno.
+ */
+function attemptBotTacticalSpellBeforeSummon(io) {
+    return new Promise((resolve) => aspettaDuelloFermo(() => {
+        if (gameState.currentPlayer !== io || gameState.gameOver || !window.BotAI) { resolve(); return; }
+        const decision = BotAI.choosePreSummonSpellAction(gameState, io);
+        if (!decision) { resolve(); return; }
+        const started = Comandi.esegui(io, {
+            tipo: 'attiva', zona: 'hand', indice: decision.handIndex,
+            carta: decision.card && decision.card.uid
+        });
+        if (!started) { resolve(); return; }
+        waitForBotChainToClear(() => { updateUI(); resolve(); });
+    }));
+}
+
+/**
  * Chiede a BotAI (js/ai/ai-controller.js — il livello di difficoltà
  * attivo in gameState.botDifficulty) quale mostro evocare, poi esegue
  * DAVVERO quella decisione (animazioni, stato). Ritorna una Promise che
@@ -276,6 +302,21 @@ function attemptBotUseTurnPlayerFieldSpell(io) {
     // li fa l'esecutore del comando: se torna false non è successo nulla.
     if (!Comandi.esegui(io, { tipo: 'usaTerrenoAltrui' })) return Promise.resolve();
     return new Promise((resolve) => setTimeout(resolve, 1200)).then(waitForSummonCinematics);
+    });
+}
+
+function attemptBotPositionChanges(io) {
+    return new Promise((resolve) => {
+        if (gameState.currentPlayer !== io || gameState.gameOver || !window.BotAI) { resolve(); return; }
+        const indici = BotAI.choosePositionChanges(gameState, io);
+        let posizione = 0;
+        const prossimo = () => aspettaDuelloFermo(() => {
+            if (gameState.currentPlayer !== io || gameState.gameOver || posizione >= indici.length) { resolve(); return; }
+            const indice = indici[posizione++];
+            Comandi.esegui(io, { tipo: 'posizione', casella: indice });
+            waitForBotChainToClear(() => setTimeout(prossimo, botMs(250)));
+        });
+        prossimo();
     });
 }
 
@@ -371,8 +412,15 @@ async function botPerformAttacks(giro = 0, soloUids = null, io = 'bot') {
     // resta comunque il vero cancello di sicurezza; qui filtrato PRIMA
     // così l'IA non spreca la sua valutazione (chooseAttackTarget) su un
     // candidato che verrebbe comunque respinto.
-    const attackers = Tavolo.mostri(io).map((slot, index) => ({ slot, index })).filter(item => item.slot && !item.slot.hasAttacked && item.slot.position === 'attack'
+    let attackers = Tavolo.mostri(io).map((slot, index) => ({ slot, index })).filter(item => item.slot && !item.slot.hasAttacked && item.slot.position === 'attack'
         && (!soloUids || soloUids.has(item.slot.card.uid)));
+    if (window.BotAI) {
+        attackers = BotAI.orderAttackers(attackers, io);
+        const difensori = Tavolo.mostri(Tavolo.avversario(io))
+            .map((slot, index) => ({ slot, index })).filter((item) => item.slot);
+        const letale = BotAI.estimateLethal(attackers, difensori, Tavolo.lp(Tavolo.avversario(io)), io);
+        if (letale.possible) BotAI.explainDecision('linea-letale', { dannoStimato: letale.damage, attaccanti: attackers.length });
+    }
     for (const attackerItem of attackers) {
         // Se un attacco precedente ha già chiuso il duello, non restiamo
         // ad aspettare gli attacchi rimanenti sotto la schermata finale.

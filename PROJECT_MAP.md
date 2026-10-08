@@ -89,6 +89,16 @@ evitare scontri certamente persi. A parità di deck Hard passa da 2/16 a
 −2,48 a −0,25 tentativi. Non è ancora monotonia perfetta: Mako e Noah sono i
 primi casi da studiare nelle liste avversarie; Pegasus/Toon resta rinviato.
 
+Sul branch `feature/ia-hard-tattica` il passo successivo è misurato in
+`STORY_DIFFICULTY_FACTORIAL_REPORT_HARD_TACTICS.json`. Hard usa le pescate e
+ricerche pure prima dell'Evocazione Normale, ordina gli attaccanti conservando
+il più forte, riconosce le linee letali e soprattutto rimette legalmente in
+Attacco i mostri difensivi dei turni precedenti quando possono colpire. Con
+deck invariati arriva a **13/16** incontri pari o più difficili della Media e
+a **+0,75 tentativi medi**. Restano sotto il riferimento Kaiba del prologo,
+Joey al Castello (−0,13) e Noah; gli Ignition generici sono stati provati e
+scartati perché peggioravano i dati anche con un filtro prudente.
+
 **Criterio di bilanciamento deciso dall'utente.** Starter e Structure Deck
 sono campioni immutabili: non vanno corretti per farli convergere e ci si
 aspetta che gli Starter siano più deboli. L'audit serve a valutare se IA
