@@ -317,7 +317,7 @@ del protocollo corrente.
 
 ## Stato rapido
 
-- Versione dichiarata: `1.1.5` (`package.json` e `js/version.js`).
+- Versione dichiarata: `1.2.0` (`package.json` e `js/version.js`).
 - Applicazione HTML/CSS/JavaScript puro: nessun framework, bundler o build del
   frontend. Gli script globali devono essere caricati nell'ordine giusto.
 - 19 pagine HTML, 104 file JS applicativi sotto `js/` (esclusi i vendor),
@@ -328,9 +328,10 @@ del protocollo corrente.
   `refactor/chiudi-ultime-carte`.
 - PWA tramite `manifest.json`, `sw.js` e `js/pwa-register.js`.
 - App Android/Capacitor: le shell dev e produzione includono `NativeMusic`;
-  la produzione è `1.1.5` (`versionCode 23`) e punta a GitHub Pages. Gli APK
+  la produzione nativa resta `1.1.5` (`versionCode 23`) e punta a GitHub Pages;
+  il contenuto web caricato dall'APK espone invece `GAME_VERSION` `1.2.0`. Gli APK
   sono ignorati da Git e restano artefatti locali rigenerabili. La cache
-  WebView/PWA corrente è `ygo-duel-arena-v172`.
+  WebView/PWA corrente è `ygo-duel-arena-v174`.
 - Cloud tramite Supabase; multiplayer tramite relay WebSocket Node nativo.
 - Le preferenze utente (`save.settings`: dettagli video, ologrammi, aptica,
   volume e mute musica/SFX) fanno parte del salvataggio unificato e quindi di

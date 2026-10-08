@@ -32,6 +32,10 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.2.0 — rework anime controllato dell'archetipo Toon: Starter Pegasus
+ *   invariato, nuovi effetti, IA per Abbandonato/Mille Occhi e deck
+ *   avversari Pegasus ribilanciati sulle tre difficoltà.
+ *
  * 1.1.5 — streaming delle soundtrack compatibile con le risposte HTTP 206;
  *   continuità web più robusta e player musicale nativo persistente nell'APK.
  *
@@ -632,4 +636,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.1.5';
+window.GAME_VERSION = '1.2.0';
