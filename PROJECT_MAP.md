@@ -121,6 +121,26 @@ prologo, Joey al Castello, Seeker, Gansley e Noah. Un playbook che forzava i
 personaggi aggressivi contro i coperti non modificava alcun risultato ed è
 stato scartato.
 
+Il passaggio successivo è conservato in
+`STORY_DIFFICULTY_FACTORIAL_REPORT_BALANCED.json`. Hard rimuove il freno extra
+della Media nella scelta pesata di Magie/Trappole, prepara prima
+dell'Evocazione le Magie Terreno e quelle utilizzabili solo a inizio Main
+Phase, e dà a Seeker un playbook semantico per i mostri che cercano dal Deck.
+Gansley e Noah seguono le informazioni visibili del proprio piano di campo.
+Nessuna di queste regole richiede metadati per WW1 o carte custom. Con 50
+tentativi per incontro Hard arriva a **+0,82 tentativi medi** sulla Media e
+a **12/16** incontri pari o superiori; Joey è recuperato, mentre Seeker,
+Gansley e Noah restano sotto soltanto di 0,13–0,53 tentativi nei singoli
+campioni.
+
+Nell'asse deck l'unica anomalia sistematica era Kaiba Hard, appesantito da
+troppi mostri da Tributo/Rituale. Senza cambiare tema o boss, una copia di
+Kaiser Glider e Uomo Giudice sono state sostituite da Saggi il Pagliaccio
+Oscuro e Carità Aggraziata, tutte carte del repertorio anime di Kaiba. Le
+liste Hard salgono a **+0,81 tentativi medi** sulle Medium e **13/16**
+incontri pari o superiori. Starter e Structure Deck restano invariati;
+Pegasus/Toon è escluso da questo ciclo per richiesta dell'utente.
+
 **Criterio di bilanciamento deciso dall'utente.** Starter e Structure Deck
 sono campioni immutabili: non vanno corretti per farli convergere e ci si
 aspetta che gli Starter siano più deboli. L'audit serve a valutare se IA

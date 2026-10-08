@@ -210,3 +210,25 @@ sotto Kaiba nel prologo, Joey al Castello, Seeker, Gansley e Noah. È stata
 provata e rimossa una regola aggressiva contro i mostri coperti: non cambiava
 nessun risultato. Restano sospesi i metadati obbligatori carta-per-carta,
 perché renderebbero WW1 e carte custom dipendenti da lavoro manuale.
+
+## Playbook Hard e primo bilanciamento lore-safe
+
+Il report conclusivo è `STORY_DIFFICULTY_FACTORIAL_REPORT_BALANCED.json`
+(50 tentativi per incontro, 15 deck campione, Pegasus escluso). Le strategie
+tenute dopo le prove sono: scelta Magie/Trappole più incisiva di Media;
+Terreni e finestre di inizio Main Phase prima dell'Evocazione; Seeker dà
+priorità, riconoscendoli dal testo, ai mostri che cercano dal Deck; Gansley e
+Noah seguono il piano visibile sui coperti. Un diverso ordine degli attacchi
+e la rimozione globale della conoscenza dei coperti sono stati scartati
+perché peggioravano la matrice.
+
+L'asse IA chiude a 4,48 tentativi medi contro 3,66 della Media (**+0,82**) e
+12/16 incontri pari o superiori. Joey è recuperato; gli scarti residui di
+Seeker, Gansley e Noah sono rispettivamente −0,27, −0,53 e −0,13.
+
+Nell'asse deck, Kaiba Hard era l'unica anomalia ripetuta: conservando Draghi
+Bianchi, Union, Paladino e Obelisco, sono stati sostituiti un Kaiser Glider e
+Uomo Giudice con Saggi il Pagliaccio Oscuro e Carità Aggraziata. Sono tutte
+carte già attribuite a Kaiba nell'anime e nelle sue liste del gioco. I deck
+Hard chiudono a 4,48 contro 3,67 dei Medium (**+0,81**) e 13/16 incontri pari
+o superiori. Nessuno Starter/Structure è stato modificato.

@@ -9,10 +9,9 @@
  * su 16.
  *
  * Hard usa quindi la Media come base affidabile e aggiunge una sola forma
- * di informazione superiore, facile da verificare: prima di attaccare una
- * carta coperta ne valuta la statistica reale e non manda volontariamente
- * il proprio mostro in uno scontro certamente perso. Il vantaggio è piccolo
- * ma concreto; soprattutto, non cambia l'identità dei deck dei personaggi.
+ * di pianificazione superiore: preparazione prima dell'Evocazione, scelta
+ * più incisiva di Magie/Trappole e piccoli playbook opzionali. Il vantaggio
+ * resta misurato; soprattutto, non cambia l'identità dei deck dei personaggi.
  */
 (function () {
     'use strict';
@@ -31,6 +30,20 @@
     }
 
     function chooseSummon(gameState, io = 'bot') {
+        const personaggio = gameState.personaggioPerPosto && gameState.personaggioPerPosto[io];
+        if (personaggio === 'seeker') {
+            return AI_MEDIUM.chooseSummon(gameState, io, {
+                // Il Cacciatore di Exodia non cerca pressione immediata:
+                // mette prima in gioco i mostri che, andando al Cimitero,
+                // aggiungono un pezzo dal Deck alla mano. Il riconoscimento
+                // è semantico, non una lista di id: nuove carte custom con
+                // la stessa funzione entrano naturalmente nel piano.
+                scoreMonster(card) {
+                    const cercaDalDeck = /aggiung(?:i|ere).*alla (?:tua )?mano.*dal Deck/i.test(card.effect || '');
+                    return (cercaDalDeck ? 10000 : 0) + (card.attack || 0);
+                }
+            });
+        }
         return AI_MEDIUM.chooseSummon(gameState, io);
     }
 
@@ -52,8 +65,10 @@
                 if (!card || card.type !== 'spell') return false;
                 const testo = card.effect || '';
                 const generaOpzioni = /(?:^|[.;]\s*)pesca \d+ carte?\b|aggiungi .* dal tuo Deck alla (?:tua )?mano/i.test(testo);
+                const preparaCampo = card.subtype === 'field';
+                const finestraIniziale = /solo all'inizio della Main Phase 1/i.test(testo);
                 const costoRischioso = /scarta|salta|non subisce danni|rimescola.*tua mano|paga \d+ Life Points/i.test(testo);
-                return generaOpzioni && !costoRischioso
+                return (generaOpzioni || preparaCampo || finestraIniziale) && !costoRischioso
                     && window.DuelEngine && DuelEngine.canActivate(io, 'hand', handIndex);
             })
             .sort((a, b) => AI_SHARED.scoreCardImpact(b.card) - AI_SHARED.scoreCardImpact(a.card));
@@ -106,18 +121,23 @@
      * effettuato; l'esecutore del comando resta l'ultima autorità.
      */
     function choosePositionChanges(gameState, io = 'bot') {
-        return AI_SHARED.choosePositionChanges(gameState, io, true);
+        const personaggio = gameState.personaggioPerPosto && gameState.personaggioPerPosto[io];
+        // Gansley e Noah rendono meglio seguendo il proprio piano di campo
+        // senza reagire a statistiche nascoste. Gli altri mantengono la
+        // prudenza Hard già misurata nell'audit precedente.
+        const seguePianoVisibile = personaggio === 'gansley' || personaggio === 'noah';
+        return AI_SHARED.choosePositionChanges(gameState, io, !seguePianoVisibile);
     }
 
     function chooseAttackTarget(attackerSlot, opponentMonsters, io = 'bot') {
         const sceltaMedia = AI_MEDIUM.chooseAttackTarget(attackerSlot, opponentMonsters, io);
         if (sceltaMedia === null || sceltaMedia === -1) return sceltaMedia;
+        const personaggio = gameState.personaggioPerPosto && gameState.personaggioPerPosto[io];
+        if (personaggio === 'gansley' || personaggio === 'noah') return sceltaMedia;
 
         const bersaglio = opponentMonsters.find((item) => item.index === sceltaMedia);
         if (bersaglio && bersaglio.slot.isFaceDown) {
             const attacco = AI_SHARED.effAtk(attackerSlot.card);
-            // In Difesa coperta statRilevante legge la DEF effettiva; il
-            // controllo resta corretto anche per rare carte coperte in ATK.
             if (attacco <= AI_SHARED.statRilevante(bersaglio.slot)) return null;
         }
         return sceltaMedia;
@@ -133,7 +153,10 @@
             activateDone: (usedThisTurn.activateCount || 0) > 0,
             setDone: (usedThisTurn.setCount || 0) > 0
         };
-        const scelta = AI_MEDIUM.chooseNextSpellTrapAction(gameState, statoMedia, io);
+        // Hard conserva la personalità del duellante ma non il +0,15 di
+        // prudenza proprio della Media: a parità di candidate tende quindi
+        // più nettamente verso la carta dall'impatto maggiore.
+        const scelta = AI_MEDIUM.chooseNextSpellTrapAction(gameState, statoMedia, io, { restraintBonus: 0 });
         if (scelta && scelta.action === 'activate') usedThisTurn.activateCount = (usedThisTurn.activateCount || 0) + 1;
         if (scelta && scelta.action === 'set') usedThisTurn.setCount = (usedThisTurn.setCount || 0) + 1;
         return scelta;

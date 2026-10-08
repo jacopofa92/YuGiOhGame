@@ -27,12 +27,16 @@
      * accettabile, anche se è l'unico Tributo disponibile in mano: meglio
      * non evocare nulla questo turno che indebolirsi da soli.
      */
-    function chooseSummon(gameState, io = 'bot') {
+    function chooseSummon(gameState, io = 'bot', options) {
+        options = options || {};
+        const scoreMonster = typeof options.scoreMonster === 'function'
+            ? options.scoreMonster
+            : (card) => card.attack || 0;
         const candidates = [...Tavolo.mano(io, gameState)]
             .filter((card) => card.type === 'monster'
                 && (!window.AI_SHARED || AI_SHARED.canNormalSummonNow(card, gameState, io))
                 && !(window.AI_SHARED && AI_SHARED.shouldHoldForExodia(card)))
-            .sort((a, b) => b.attack - a.attack);
+            .sort((a, b) => scoreMonster(b) - scoreMonster(a));
 
         for (const card of candidates) {
             const tributesNeeded = getTributesRequired(card);
@@ -176,7 +180,8 @@
      * sempre) — è proprio questa differenza di "quanto usa il proprio
      * retrocampo" a rendere Difficile percepibilmente più aggressivo.
      */
-    function chooseNextSpellTrapAction(gameState, usedThisTurn, io = 'bot') {
+    function chooseNextSpellTrapAction(gameState, usedThisTurn, io = 'bot', options) {
+        options = options || {};
         const hand = Tavolo.mano(io, gameState);
         const emptySlot = Tavolo.magieTrappole(io, gameState).some((s) => s === null);
         const worthwhile = (card) => !window.AI_SHARED || (
@@ -193,7 +198,8 @@
         // dell'utente: "non tutte subito", "meno punitivo specialmente
         // per IA Normale" — qui applicata con un restraint di base più
         // alto, vedi pickWeighted qui sotto).
-        const restraint = Math.min(1, (window.AI_SHARED ? AI_SHARED.getSpellTrapRestraint(gameState, io) : 0) + 0.15);
+        const restraintBonus = options.restraintBonus === undefined ? 0.15 : options.restraintBonus;
+        const restraint = Math.min(1, (window.AI_SHARED ? AI_SHARED.getSpellTrapRestraint(gameState, io) : 0) + restraintBonus);
         const pickWeighted = (list) => (window.AI_SHARED ? AI_SHARED.pickWeightedByImpact(list, restraint) : list[0]);
 
         if (!usedThisTurn.activateDone) {
