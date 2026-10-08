@@ -151,6 +151,41 @@
         return { position: 'attack', faceDown: false };
     }
 
+    /**
+     * Cambi di Posizione per un mostro presente da un turno precedente.
+     * Media legge soltanto i mostri avversari scoperti; Hard può passare
+     * `conosceCoperti=true` e valutare anche la statistica reale dei coperti.
+     *
+     * - Difesa→Attacco: campo libero o bersaglio immediatamente battibile.
+     * - Attacco→Difesa: nessun bersaglio favorevole e una minaccia scoperta
+     *   più forte pronta a distruggerlo; anche se la DEF non basta a salvarlo,
+     *   la posizione evita almeno il danno da combattimento agli LP.
+     */
+    function choosePositionChanges(gameState, owner, conosceCoperti) {
+        const avversario = Tavolo.avversario(owner);
+        const campoAvversario = Tavolo.mostri(avversario, gameState).filter(Boolean);
+        const bersagliValutabili = campoAvversario.filter((slot) => conosceCoperti || !slot.isFaceDown);
+        const minacceScoperte = campoAvversario.filter((slot) => !slot.isFaceDown && slot.position === 'attack');
+
+        return Tavolo.mostri(owner, gameState)
+            .map((slot, index) => ({ slot, index }))
+            .filter(({ slot }) => {
+                if (!slot || !slot.canChangePosition) return false;
+                const atk = effAtk(slot.card);
+                if (slot.position === 'defense') {
+                    if (atk <= 0) return false;
+                    if (campoAvversario.length === 0) return true;
+                    return bersagliValutabili.some((bersaglio) => atk > statRilevante(bersaglio));
+                }
+
+                const haBersaglioFavorevole = bersagliValutabili.some((bersaglio) => atk > statRilevante(bersaglio));
+                if (haBersaglioFavorevole || minacceScoperte.length === 0) return false;
+                const minacciaMassima = minacceScoperte.reduce((massimo, slot) => Math.max(massimo, effAtk(slot.card)), 0);
+                return minacciaMassima > atk;
+            })
+            .map(({ index }) => index);
+    }
+
     // Parole chiave che segnalano un effetto di RIMOZIONE mirata (distrugge/
     // bandisce/ruba UN mostro) — vedi isSingleTargetRemoval più sotto. "tutti
     // i mostri"/"ogni mostro" fa eccezione: un effetto di massa non va mai
@@ -463,6 +498,7 @@
         statRilevante: statRilevante,
         scoreCardImpact: scoreCardImpact,
         decideMonsterPosture: decideMonsterPosture,
+        choosePositionChanges: choosePositionChanges,
         canNormalSummonNow: canNormalSummonNow,
         isSingleTargetRemoval: isSingleTargetRemoval,
         isRemovalWorthwhile: isRemovalWorthwhile,

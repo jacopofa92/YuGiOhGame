@@ -99,6 +99,16 @@ a **+0,75 tentativi medi**. Restano sotto il riferimento Kaiba del prologo,
 Joey al Castello (−0,13) e Noah; gli Ignition generici sono stati provati e
 scartati perché peggioravano i dati anche con un filtro prudente.
 
+Sul branch `feature/ia-posizioni-strategie` anche Media gestisce i cambi di
+Posizione in entrambi i versi: torna in Attacco con campo libero/bersaglio
+battibile e si ripara in Difesa sotto una minaccia superiore. Hard applica
+la stessa regola conoscendo anche le statistiche dei coperti. Il nuovo
+riferimento è `STORY_DIFFICULTY_FACTORIAL_REPORT_POSITIONS.json`: avendo
+potenziato anche Media, Hard resta mediamente più difficile di **+0,54
+tentativi**, ma è pari o superiore in 10/16 incontri. Questo comportamento
+di Media è un requisito esplicito e non va rimosso per gonfiare il divario;
+la separazione successiva dovrà arrivare dalle strategie Hard specifiche.
+
 **Criterio di bilanciamento deciso dall'utente.** Starter e Structure Deck
 sono campioni immutabili: non vanno corretti per farli convergere e ci si
 aspetta che gli Starter siano più deboli. L'audit serve a valutare se IA

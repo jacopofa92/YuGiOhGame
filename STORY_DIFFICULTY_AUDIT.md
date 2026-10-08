@@ -180,3 +180,17 @@ media passa da 3,32 tentativi contro Media a 4,07 contro Hard, quindi
 attivava automaticamente gli effetti Ignition apparentemente vantaggiosi è
 stata rimossa: costi e timing non sono deducibili in modo affidabile dal solo
 testo e il report peggiorava.
+
+## Cambio Posizione anche per Media
+
+Come richiesto dall'utente, anche IA Media gestisce ora Attacco↔Difesa: usa
+solo informazioni visibili, mentre Hard può valutare anche i mostri coperti.
+Il report `STORY_DIFFICULTY_FACTORIAL_REPORT_POSITIONS.json` non va letto come
+una regressione da correggere indebolendo Media: entrambi i livelli sono più
+competenti.
+
+Hard richiede mediamente 4,09 tentativi contro i 3,55 di Media (**+0,54**),
+ed è pari o superiore in 10/16 incontri. I casi sotto Media sono Kaiba nel
+prologo e sull'isola, Joey al Castello, Seeker, Gansley e Noah. Il prossimo
+intervento corretto è dare al motore l'identità del personaggio per posto e
+costruire playbook Hard mirati; Pegasus/Toon resta deliberatamente ultimo.

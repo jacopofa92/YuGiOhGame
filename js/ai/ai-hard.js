@@ -106,18 +106,7 @@
      * effettuato; l'esecutore del comando resta l'ultima autorità.
      */
     function choosePositionChanges(gameState, io = 'bot') {
-        const avversari = Tavolo.mostri(Tavolo.avversario(io), gameState)
-            .filter(Boolean);
-        return Tavolo.mostri(io, gameState)
-            .map((slot, index) => ({ slot, index }))
-            .filter(({ slot }) => {
-                if (!slot || !slot.canChangePosition || slot.position !== 'defense') return false;
-                const atk = AI_SHARED.effAtk(slot.card);
-                if (atk <= 0) return false;
-                if (avversari.length === 0) return true;
-                return avversari.some((bersaglio) => atk > AI_SHARED.statRilevante(bersaglio));
-            })
-            .map(({ index }) => index);
+        return AI_SHARED.choosePositionChanges(gameState, io, true);
     }
 
     function chooseAttackTarget(attackerSlot, opponentMonsters, io = 'bot') {
