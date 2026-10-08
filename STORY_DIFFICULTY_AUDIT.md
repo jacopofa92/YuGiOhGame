@@ -134,3 +134,28 @@ essere percepibile.
 4. Affrontare Pegasus/Toon per ultimo, separatamente come concordato.
 
 Nessun deck e nessuna euristica sono stati modificati durante questi audit.
+
+## Verifica dopo la correzione di IA Hard
+
+Il secondo report completo è
+`STORY_DIFFICULTY_FACTORIAL_REPORT_AFTER_AI_FIX_V2.json` (stessi semi, 15
+deck campione, massimo 50 tentativi). Nessuno Starter, Structure o deck
+avversario è stato modificato.
+
+La vecchia IA Hard tentava di sostituire quasi ogni scelta della Media con
+uno scoring indipendente. Le simulazioni hanno mostrato che questo rompeva
+sequenze e sinergie specifiche dei personaggi. La nuova gerarchia conserva
+la linea affidabile della Media e aggiunge un vantaggio circoscritto: legge
+la statistica effettiva di un mostro coperto e non dichiara uno scontro che
+perderebbe certamente.
+
+Il miglioramento è netto ma non viene presentato come perfetto:
+
+- gli incontri in cui Hard è pari o più difficile della Media passano da
+  **2/16 a 10/16**;
+- lo scarto medio Hard − Media passa da **−2,48 a −0,25 tentativi**;
+- Paradox, Joey del Castello e Umbra sono ora identici tra Media e Hard;
+- Hard supera Media su Kaiba dell'isola, Seeker, Gansley, Marik e Bakura;
+- Mako e Noah restano gli scostamenti negativi più evidenti da esaminare
+  quando si passerà alle singole liste, senza alterare i deck del giocatore;
+- Pegasus/Toon resta escluso e verrà affrontato per ultimo come concordato.

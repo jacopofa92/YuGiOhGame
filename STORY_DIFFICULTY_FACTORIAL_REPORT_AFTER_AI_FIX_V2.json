@@ -1,0 +1,1054 @@
+{
+  "generatoIl": "2026-10-08T15:10:40.682Z",
+  "metodo": "IA hard del giocatore; stessi semi; Pegasus escluso; asse IA con deck hard fisso, asse deck con IA hard fissa",
+  "opzioni": {
+    "tentativi": 50,
+    "turni": 80,
+    "seme": 7000
+  },
+  "deckCampione": [
+    "starter_sdy_yugi",
+    "starter_sdk_kaiba",
+    "starter_sdj_joey",
+    "starter_sye_yugi_evolution",
+    "starter_ske_kaiba_evolution",
+    "structure_sd1_dragons_roar",
+    "structure_sd2_zombie_madness",
+    "structure_sd3_blaze_of_destruction",
+    "structure_sd4_fury_from_the_deep",
+    "structure_sd5_warriors_triumph",
+    "structure_sd6_spellcasters_judgment",
+    "structure_sd7_invincible_fortress",
+    "structure_sd8_lord_of_the_storm",
+    "structure_sd9_dinosaurs_rage",
+    "structure_sd10_machine_revolt"
+  ],
+  "incontri": [
+    {
+      "id": "anime-1-kaiba",
+      "avversario": "kaiba"
+    },
+    {
+      "id": "anime-2-weevil",
+      "avversario": "weevil"
+    },
+    {
+      "id": "anime-2-mako",
+      "avversario": "mako"
+    },
+    {
+      "id": "anime-2-falso-kaiba",
+      "avversario": "kaiba"
+    },
+    {
+      "id": "anime-2-paradox",
+      "avversario": "paradoxBrothers"
+    },
+    {
+      "id": "anime-2-kaiba",
+      "avversario": "kaiba"
+    },
+    {
+      "id": "anime-2c-joey",
+      "avversario": "joey"
+    },
+    {
+      "id": "anime-3-seeker",
+      "avversario": "seeker"
+    },
+    {
+      "id": "anime-3-umbra",
+      "avversario": "umbra"
+    },
+    {
+      "id": "anime-3-joey-controllato",
+      "avversario": "joey"
+    },
+    {
+      "id": "anime-6-gansley",
+      "avversario": "gansley"
+    },
+    {
+      "id": "anime-6-noah",
+      "avversario": "noah"
+    },
+    {
+      "id": "anime-4-kaiba",
+      "avversario": "kaiba"
+    },
+    {
+      "id": "anime-4-marik",
+      "avversario": "marik"
+    },
+    {
+      "id": "anime-9-bakura",
+      "avversario": "bakura"
+    },
+    {
+      "id": "anime-9-zorc",
+      "avversario": "bakura"
+    }
+  ],
+  "risultati": [
+    {
+      "id": "anime-1-kaiba",
+      "avversario": "kaiba",
+      "asse": "ia",
+      "livello": "easy",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 5.07,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-1-kaiba",
+      "avversario": "kaiba",
+      "asse": "ia",
+      "livello": "medium",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 3.8,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-1-kaiba",
+      "avversario": "kaiba",
+      "asse": "ia",
+      "livello": "hard",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 3.93,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-1-kaiba",
+      "avversario": "kaiba",
+      "asse": "deck",
+      "livello": "easy",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 3.27,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-1-kaiba",
+      "avversario": "kaiba",
+      "asse": "deck",
+      "livello": "medium",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 5.2,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-1-kaiba",
+      "avversario": "kaiba",
+      "asse": "deck",
+      "livello": "hard",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 3.93,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-2-weevil",
+      "avversario": "weevil",
+      "asse": "ia",
+      "livello": "easy",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 1.67,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-2-weevil",
+      "avversario": "weevil",
+      "asse": "ia",
+      "livello": "medium",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 1.67,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-2-weevil",
+      "avversario": "weevil",
+      "asse": "ia",
+      "livello": "hard",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 1.6,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-2-weevil",
+      "avversario": "weevil",
+      "asse": "deck",
+      "livello": "easy",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 1,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-2-weevil",
+      "avversario": "weevil",
+      "asse": "deck",
+      "livello": "medium",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 1.13,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-2-weevil",
+      "avversario": "weevil",
+      "asse": "deck",
+      "livello": "hard",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 1.6,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-2-mako",
+      "avversario": "mako",
+      "asse": "ia",
+      "livello": "easy",
+      "campioni": 15,
+      "superatoDa": 14,
+      "tentativiMedi": 9.6,
+      "alTetto": 1
+    },
+    {
+      "id": "anime-2-mako",
+      "avversario": "mako",
+      "asse": "ia",
+      "livello": "medium",
+      "campioni": 15,
+      "superatoDa": 14,
+      "tentativiMedi": 9.6,
+      "alTetto": 1
+    },
+    {
+      "id": "anime-2-mako",
+      "avversario": "mako",
+      "asse": "ia",
+      "livello": "hard",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 6.93,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-2-mako",
+      "avversario": "mako",
+      "asse": "deck",
+      "livello": "easy",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 1.87,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-2-mako",
+      "avversario": "mako",
+      "asse": "deck",
+      "livello": "medium",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 6,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-2-mako",
+      "avversario": "mako",
+      "asse": "deck",
+      "livello": "hard",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 6.93,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-2-falso-kaiba",
+      "avversario": "kaiba",
+      "asse": "ia",
+      "livello": "easy",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 4.2,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-2-falso-kaiba",
+      "avversario": "kaiba",
+      "asse": "ia",
+      "livello": "medium",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 2.67,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-2-falso-kaiba",
+      "avversario": "kaiba",
+      "asse": "ia",
+      "livello": "hard",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 2.67,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-2-falso-kaiba",
+      "avversario": "kaiba",
+      "asse": "deck",
+      "livello": "easy",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 1.87,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-2-falso-kaiba",
+      "avversario": "kaiba",
+      "asse": "deck",
+      "livello": "medium",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 2.67,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-2-falso-kaiba",
+      "avversario": "kaiba",
+      "asse": "deck",
+      "livello": "hard",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 2.67,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-2-paradox",
+      "avversario": "paradoxBrothers",
+      "asse": "ia",
+      "livello": "easy",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 5.87,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-2-paradox",
+      "avversario": "paradoxBrothers",
+      "asse": "ia",
+      "livello": "medium",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 5.87,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-2-paradox",
+      "avversario": "paradoxBrothers",
+      "asse": "ia",
+      "livello": "hard",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 5.87,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-2-paradox",
+      "avversario": "paradoxBrothers",
+      "asse": "deck",
+      "livello": "easy",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 1.67,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-2-paradox",
+      "avversario": "paradoxBrothers",
+      "asse": "deck",
+      "livello": "medium",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 4.8,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-2-paradox",
+      "avversario": "paradoxBrothers",
+      "asse": "deck",
+      "livello": "hard",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 5.87,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-2-kaiba",
+      "avversario": "kaiba",
+      "asse": "ia",
+      "livello": "easy",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 3.67,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-2-kaiba",
+      "avversario": "kaiba",
+      "asse": "ia",
+      "livello": "medium",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 4.53,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-2-kaiba",
+      "avversario": "kaiba",
+      "asse": "ia",
+      "livello": "hard",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 4.6,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-2-kaiba",
+      "avversario": "kaiba",
+      "asse": "deck",
+      "livello": "easy",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 2.67,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-2-kaiba",
+      "avversario": "kaiba",
+      "asse": "deck",
+      "livello": "medium",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 4.67,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-2-kaiba",
+      "avversario": "kaiba",
+      "asse": "deck",
+      "livello": "hard",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 4.6,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-2c-joey",
+      "avversario": "joey",
+      "asse": "ia",
+      "livello": "easy",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 2.4,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-2c-joey",
+      "avversario": "joey",
+      "asse": "ia",
+      "livello": "medium",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 3.87,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-2c-joey",
+      "avversario": "joey",
+      "asse": "ia",
+      "livello": "hard",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 3.87,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-2c-joey",
+      "avversario": "joey",
+      "asse": "deck",
+      "livello": "easy",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 1.47,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-2c-joey",
+      "avversario": "joey",
+      "asse": "deck",
+      "livello": "medium",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 2.73,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-2c-joey",
+      "avversario": "joey",
+      "asse": "deck",
+      "livello": "hard",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 3.87,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-3-seeker",
+      "avversario": "seeker",
+      "asse": "ia",
+      "livello": "easy",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 1.53,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-3-seeker",
+      "avversario": "seeker",
+      "asse": "ia",
+      "livello": "medium",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 1.53,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-3-seeker",
+      "avversario": "seeker",
+      "asse": "ia",
+      "livello": "hard",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 1.67,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-3-seeker",
+      "avversario": "seeker",
+      "asse": "deck",
+      "livello": "easy",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 1.07,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-3-seeker",
+      "avversario": "seeker",
+      "asse": "deck",
+      "livello": "medium",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 1.33,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-3-seeker",
+      "avversario": "seeker",
+      "asse": "deck",
+      "livello": "hard",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 1.67,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-3-umbra",
+      "avversario": "umbra",
+      "asse": "ia",
+      "livello": "easy",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 1.53,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-3-umbra",
+      "avversario": "umbra",
+      "asse": "ia",
+      "livello": "medium",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 1.53,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-3-umbra",
+      "avversario": "umbra",
+      "asse": "ia",
+      "livello": "hard",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 1.53,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-3-umbra",
+      "avversario": "umbra",
+      "asse": "deck",
+      "livello": "easy",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 1.27,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-3-umbra",
+      "avversario": "umbra",
+      "asse": "deck",
+      "livello": "medium",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 1.47,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-3-umbra",
+      "avversario": "umbra",
+      "asse": "deck",
+      "livello": "hard",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 1.53,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-3-joey-controllato",
+      "avversario": "joey",
+      "asse": "ia",
+      "livello": "easy",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 4,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-3-joey-controllato",
+      "avversario": "joey",
+      "asse": "ia",
+      "livello": "medium",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 4,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-3-joey-controllato",
+      "avversario": "joey",
+      "asse": "ia",
+      "livello": "hard",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 3.8,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-3-joey-controllato",
+      "avversario": "joey",
+      "asse": "deck",
+      "livello": "easy",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 1.73,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-3-joey-controllato",
+      "avversario": "joey",
+      "asse": "deck",
+      "livello": "medium",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 3.93,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-3-joey-controllato",
+      "avversario": "joey",
+      "asse": "deck",
+      "livello": "hard",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 3.8,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-6-gansley",
+      "avversario": "gansley",
+      "asse": "ia",
+      "livello": "easy",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 3.47,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-6-gansley",
+      "avversario": "gansley",
+      "asse": "ia",
+      "livello": "medium",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 3.47,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-6-gansley",
+      "avversario": "gansley",
+      "asse": "ia",
+      "livello": "hard",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 4,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-6-gansley",
+      "avversario": "gansley",
+      "asse": "deck",
+      "livello": "easy",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 1.07,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-6-gansley",
+      "avversario": "gansley",
+      "asse": "deck",
+      "livello": "medium",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 2.93,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-6-gansley",
+      "avversario": "gansley",
+      "asse": "deck",
+      "livello": "hard",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 4,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-6-noah",
+      "avversario": "noah",
+      "asse": "ia",
+      "livello": "easy",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 5.13,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-6-noah",
+      "avversario": "noah",
+      "asse": "ia",
+      "livello": "medium",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 5.13,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-6-noah",
+      "avversario": "noah",
+      "asse": "ia",
+      "livello": "hard",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 3.47,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-6-noah",
+      "avversario": "noah",
+      "asse": "deck",
+      "livello": "easy",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 1.13,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-6-noah",
+      "avversario": "noah",
+      "asse": "deck",
+      "livello": "medium",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 2.2,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-6-noah",
+      "avversario": "noah",
+      "asse": "deck",
+      "livello": "hard",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 3.47,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-4-kaiba",
+      "avversario": "kaiba",
+      "asse": "ia",
+      "livello": "easy",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 3.2,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-4-kaiba",
+      "avversario": "kaiba",
+      "asse": "ia",
+      "livello": "medium",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 3.87,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-4-kaiba",
+      "avversario": "kaiba",
+      "asse": "ia",
+      "livello": "hard",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 3.67,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-4-kaiba",
+      "avversario": "kaiba",
+      "asse": "deck",
+      "livello": "easy",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 1.73,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-4-kaiba",
+      "avversario": "kaiba",
+      "asse": "deck",
+      "livello": "medium",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 4.8,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-4-kaiba",
+      "avversario": "kaiba",
+      "asse": "deck",
+      "livello": "hard",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 3.67,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-4-marik",
+      "avversario": "marik",
+      "asse": "ia",
+      "livello": "easy",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 8.4,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-4-marik",
+      "avversario": "marik",
+      "asse": "ia",
+      "livello": "medium",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 8.4,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-4-marik",
+      "avversario": "marik",
+      "asse": "ia",
+      "livello": "hard",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 8.67,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-4-marik",
+      "avversario": "marik",
+      "asse": "deck",
+      "livello": "easy",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 1.27,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-4-marik",
+      "avversario": "marik",
+      "asse": "deck",
+      "livello": "medium",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 4.8,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-4-marik",
+      "avversario": "marik",
+      "asse": "deck",
+      "livello": "hard",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 8.67,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-9-bakura",
+      "avversario": "bakura",
+      "asse": "ia",
+      "livello": "easy",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 4,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-9-bakura",
+      "avversario": "bakura",
+      "asse": "ia",
+      "livello": "medium",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 4,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-9-bakura",
+      "avversario": "bakura",
+      "asse": "ia",
+      "livello": "hard",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 4.07,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-9-bakura",
+      "avversario": "bakura",
+      "asse": "deck",
+      "livello": "easy",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 1.07,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-9-bakura",
+      "avversario": "bakura",
+      "asse": "deck",
+      "livello": "medium",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 3.07,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-9-bakura",
+      "avversario": "bakura",
+      "asse": "deck",
+      "livello": "hard",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 4.07,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-9-zorc",
+      "avversario": "bakura",
+      "asse": "ia",
+      "livello": "easy",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 6.53,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-9-zorc",
+      "avversario": "bakura",
+      "asse": "ia",
+      "livello": "medium",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 6.53,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-9-zorc",
+      "avversario": "bakura",
+      "asse": "ia",
+      "livello": "hard",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 6.2,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-9-zorc",
+      "avversario": "bakura",
+      "asse": "deck",
+      "livello": "easy",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 1.13,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-9-zorc",
+      "avversario": "bakura",
+      "asse": "deck",
+      "livello": "medium",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 3.67,
+      "alTetto": 0
+    },
+    {
+      "id": "anime-9-zorc",
+      "avversario": "bakura",
+      "asse": "deck",
+      "livello": "hard",
+      "campioni": 15,
+      "superatoDa": 15,
+      "tentativiMedi": 6.2,
+      "alTetto": 0
+    }
+  ]
+}
