@@ -193,7 +193,7 @@
         // dell'utente: "non tutte subito", "meno punitivo specialmente
         // per IA Normale" — qui applicata con un restraint di base più
         // alto, vedi pickWeighted qui sotto).
-        const restraint = Math.min(1, (window.AI_SHARED ? AI_SHARED.getSpellTrapRestraint(gameState) : 0) + 0.15);
+        const restraint = Math.min(1, (window.AI_SHARED ? AI_SHARED.getSpellTrapRestraint(gameState, io) : 0) + 0.15);
         const pickWeighted = (list) => (window.AI_SHARED ? AI_SHARED.pickWeightedByImpact(list, restraint) : list[0]);
 
         if (!usedThisTurn.activateDone) {
@@ -236,11 +236,17 @@
         return null;
     }
 
+    /** Media gestisce i cambi di Posizione usando solo informazioni visibili. */
+    function choosePositionChanges(gameState, io = 'bot') {
+        return window.AI_SHARED ? AI_SHARED.choosePositionChanges(gameState, io, false) : [];
+    }
+
     window.AI_MEDIUM = {
         chooseSummon: chooseSummon,
         chooseAttackTarget: chooseAttackTarget,
         chooseChainResponse: chooseChainResponse,
         chooseNextSpellTrapAction: chooseNextSpellTrapAction,
-        chooseSetCardActivation: chooseSetCardActivation
+        chooseSetCardActivation: chooseSetCardActivation,
+        choosePositionChanges: choosePositionChanges
     };
 })();

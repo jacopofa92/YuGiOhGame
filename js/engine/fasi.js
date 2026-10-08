@@ -159,6 +159,10 @@ function resetGameState() {
         currentPlayer: 'player',
         phase: 'draw',
         turn: 1,
+        // Identità opzionale del duellante seduto in ciascun posto. Serve
+        // soltanto ai playbook IA: null mantiene il comportamento generale
+        // per Multiplayer, WW1, sandbox e carte/personaggi custom.
+        personaggioPerPosto: { player: null, bot: null },
         playerLP: 8000,
         botLP: 8000,
         playerHand: [],

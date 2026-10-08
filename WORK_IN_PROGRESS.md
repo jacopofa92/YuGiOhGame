@@ -42,6 +42,21 @@ sempre coerenti con il personaggio. Toon/Pegasus si affronta per ultimo.
       13/16 incontri pari o superiori alla Media, delta medio +0,75. Restano
       Kaiba prologo, Joey Castello e Noah; gli Ignition generici sono stati
       esclusi dopo una prova peggiorativa.
+- [x] Requisito utente: anche IA Media cambia Posizione Attacco↔Difesa. Usa
+      soltanto informazioni visibili; Hard può valutare anche i coperti.
+      Nuovo audit: Hard +0,54 tentativi medi ma 10/16 incontri pari o sopra,
+      perché Media è stata correttamente potenziata. Non indebolire Media:
+      il prossimo divario va creato con strategie Hard specifiche.
+- [x] Identità del personaggio per ciascun posto IA, anche nel motore senza
+      testa. La personalità Magie/Trappole viene ora letta dal posto che sta
+      decidendo e non dalla sessione globale; WW1, sandbox e personaggi custom
+      senza profilo usano automaticamente il comportamento neutro.
+- [ ] Playbook Hard ulteriori: solo regole generiche o profili opzionali e
+      misurati. Sospeso il vecchio punto basato su metadati obbligatori per
+      ogni carta: renderebbe WW1/custom dipendenti da compilazione manuale.
+      Prima priorità residua: Joey, Seeker, Gansley e Noah; Pegasus/Toon per
+      ultimo. Una prova di aggressività sui coperti non ha mosso alcun dato
+      ed è stata rimossa.
 
 ## Audio multipagina
 

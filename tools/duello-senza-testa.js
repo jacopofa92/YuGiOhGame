@@ -280,6 +280,10 @@ async function giocaPartita(opz, n) {
     esegui(`
         Tavolo.imposta({ player: 'ia', bot: 'ia' });
         gameState.livelloIA = { player: ${JSON.stringify(livelloGiocatore)}, bot: ${JSON.stringify(opz.livello)} };
+        gameState.personaggioPerPosto = {
+            player: ${JSON.stringify(opz.giocatore || null)},
+            bot: ${JSON.stringify(opz.avversario || null)}
+        };
         ${(opz.mazzoGiocatore || opz.giocatore) ? `(function () {
             const spec = ${opz.mazzoGiocatore
                 ? JSON.stringify(opz.mazzoGiocatore)

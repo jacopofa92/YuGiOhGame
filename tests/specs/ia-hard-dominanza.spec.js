@@ -33,6 +33,9 @@ module.exports = {
                 coperto.card.defense = 2200;
                 const bersaglioMedioSuMuro = AI_MEDIUM.chooseAttackTarget(attaccante, [{ slot: coperto, index: 2 }]);
                 const bersaglioHardSuMuro = AI_HARD.chooseAttackTarget(attaccante, [{ slot: coperto, index: 2 }]);
+                gameState.personaggioPerPosto = { player: 'joey', bot: 'kaiba' };
+                const restraintKaiba = AI_SHARED.getSpellTrapRestraint(gameState, 'bot');
+                const restraintJoey = AI_SHARED.getSpellTrapRestraint(gameState, 'player');
 
                 // A campo libero, un 1800/1000 deve creare pressione invece
                 // di perdere contro un muro 900/2200 per il solo max DEF.
@@ -89,8 +92,20 @@ module.exports = {
                     position: 'defense', isFaceDown: false, canChangePosition: true
                 };
                 const cambiPosizione = AI_HARD.choosePositionChanges(gameState, 'bot');
+                const cambiPosizioneMedia = AI_MEDIUM.choosePositionChanges(gameState, 'bot');
+
+                gameState.botMonsterField[3] = {
+                    card: carta('attaccante-minacciato', 1000, 2000),
+                    position: 'attack', isFaceDown: false, canChangePosition: true
+                };
+                gameState.playerMonsterField[0] = {
+                    card: carta('minaccia', 1800, 1000),
+                    position: 'attack', isFaceDown: false
+                };
+                const riparoMedia = AI_MEDIUM.choosePositionChanges(gameState, 'bot');
                 return {
                     bersaglioMedio, bersaglioHard, bersaglioMedioSuMuro, bersaglioHardSuMuro,
+                    restraintKaiba, restraintJoey,
                     evocato: evocazione && evocazione.card.uid,
                     attaccoScelto: !!(evocazione && evocazione.card.uid === 'attacco'),
                     magiaBaseline: decisioneMagia && decisioneMagia.card.uid,
@@ -99,7 +114,9 @@ module.exports = {
                     preparazione: preparazione && preparazione.card.uid,
                     ordineAttacchi: ordinati.map((item) => item.slot.card.uid),
                     letale,
-                    cambiPosizione
+                    cambiPosizione,
+                    cambiPosizioneMedia,
+                    riparoMedia
                 };
             } finally {
                 DuelEngine.canActivate = canActivateOriginale;
@@ -111,6 +128,8 @@ module.exports = {
             `Hard non deve rinunciare a un attacco valido della Media: ${JSON.stringify(r)}`);
         assert(r.bersaglioMedioSuMuro === 2 && r.bersaglioHardSuMuro === null,
             `Hard deve evitare uno schianto certo contro un coperto: ${JSON.stringify(r)}`);
+        assert(r.restraintKaiba < r.restraintJoey,
+            `La personalità deve appartenere al posto IA che sta decidendo: ${JSON.stringify(r)}`);
         assert(r.attaccoScelto === true,
             `A campo libero Hard deve privilegiare la pressione offensiva: ${JSON.stringify(r)}`);
         assert(r.magiaBaseline === 'magia-media' && r.conteggioMagie === 1,
@@ -125,5 +144,9 @@ module.exports = {
             `Hard deve riconoscere la linea letale disponibile: ${JSON.stringify(r)}`);
         assert(r.cambiPosizione.length === 1 && r.cambiPosizione[0] === 3,
             `Hard deve rimettere in Attacco un mostro libero di colpire: ${JSON.stringify(r)}`);
+        assert(r.cambiPosizioneMedia.length === 1 && r.cambiPosizioneMedia[0] === 3,
+            `Media deve rimettere in Attacco un mostro libero di colpire: ${JSON.stringify(r)}`);
+        assert(r.riparoMedia.length === 1 && r.riparoMedia[0] === 3,
+            `Media deve passare in Difesa sotto una minaccia superiore: ${JSON.stringify(r)}`);
     }
 };
