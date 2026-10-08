@@ -162,10 +162,23 @@
         return scelta;
     }
 
-    // Le carte coperte restano nella loro finestra di Chain. Anche gli
-    // Ignition richiedono una strategia specifica per la carta: il solo
-    // testo non basta a valutarne costi e timing senza rischiare sprechi.
-    function chooseSetCardActivation() {
+    // Le carte coperte restano nella loro finestra di Chain. Gli Ignition
+    // generici continuano a richiedere una strategia specifica; fa eccezione
+    // il ciclo auto-coprente dei mostri Flip (Sfingi/Golem/Statue/Medusa):
+    // rimettersi coperti è precisamente la preparazione del loro prossimo
+    // effetto e non consuma altre risorse. Il riconoscimento dal testo rende
+    // la regola disponibile anche a future carte custom equivalenti.
+    function chooseSetCardActivation(gameState, io = 'bot') {
+        const campo = Tavolo.mostri(io, gameState);
+        for (let index = 0; index < campo.length; index++) {
+            const slot = campo[index];
+            if (!slot || slot.isFaceDown) continue;
+            const testo = slot.card.effect || '';
+            if (!/puoi girare questa carta coperta in Posizione di Difesa/i.test(testo)) continue;
+            if (window.DuelEngine && DuelEngine.canActivate(io, 'monster', index)) {
+                return { zone: 'monster', index, card: slot.card };
+            }
+        }
         return null;
     }
 

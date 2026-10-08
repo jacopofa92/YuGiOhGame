@@ -491,7 +491,11 @@
             return impact * impact * (1 - restraint) + restraint;
         });
         const total = weights.reduce((sum, w) => sum + w, 0);
-        let roll = Math.random() * total;
+        // Le decisioni IA fanno parte delle regole condivise: devono usare
+        // lo stesso generatore seminabile del duello. Math.random rendeva
+        // due audit con identici semi discordanti (Invincible Fortress
+        // poteva vincere 5/50 oppure 0/50 contro Mako).
+        let roll = Casuale.random() * total;
         for (let i = 0; i < candidates.length; i++) {
             roll -= weights[i];
             if (roll <= 0) return candidates[i];

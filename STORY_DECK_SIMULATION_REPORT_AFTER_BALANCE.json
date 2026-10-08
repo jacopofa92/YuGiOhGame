@@ -1,5 +1,5 @@
 {
-  "generatoIl": "2026-10-08T18:27:22.469Z",
+  "generatoIl": "2026-10-08T18:47:14.087Z",
   "metodo": "IA giocatore fissa; stessi semi per deck/nodo/tentativo nelle tre difficoltà; Pegasus Starter escluso dalla sola analisi aggregata",
   "opzioni": {
     "deck": null,
@@ -23,7 +23,7 @@
       "tentativiMediPerDuello": 1.15,
       "turni": 634,
       "tempoVirtualeSecondi": 8164,
-      "tempoRealeMs": 2526,
+      "tempoRealeMs": 2511,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -299,7 +299,7 @@
       "tentativiMediPerDuello": 2.81,
       "turni": 1300,
       "tempoVirtualeSecondi": 16874,
-      "tempoRealeMs": 5199,
+      "tempoRealeMs": 5298,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -575,7 +575,7 @@
       "tentativiMediPerDuello": 2.65,
       "turni": 1197,
       "tempoVirtualeSecondi": 15332,
-      "tempoRealeMs": 4786,
+      "tempoRealeMs": 4924,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -851,7 +851,7 @@
       "tentativiMediPerDuello": 1.38,
       "turni": 829,
       "tempoVirtualeSecondi": 10540,
-      "tempoRealeMs": 2827,
+      "tempoRealeMs": 2888,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -1127,7 +1127,7 @@
       "tentativiMediPerDuello": 2.38,
       "turni": 1037,
       "tempoVirtualeSecondi": 13262,
-      "tempoRealeMs": 4142,
+      "tempoRealeMs": 4193,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -1403,7 +1403,7 @@
       "tentativiMediPerDuello": 2.04,
       "turni": 806,
       "tempoVirtualeSecondi": 10416,
-      "tempoRealeMs": 3426,
+      "tempoRealeMs": 3434,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -1679,7 +1679,7 @@
       "tentativiMediPerDuello": 2.08,
       "turni": 1434,
       "tempoVirtualeSecondi": 18994,
-      "tempoRealeMs": 5017,
+      "tempoRealeMs": 5064,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -1955,7 +1955,7 @@
       "tentativiMediPerDuello": 2.73,
       "turni": 1240,
       "tempoVirtualeSecondi": 16398,
-      "tempoRealeMs": 5119,
+      "tempoRealeMs": 5207,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -2230,8 +2230,8 @@
       "tentativi": 104,
       "tentativiMediPerDuello": 4,
       "turni": 1910,
-      "tempoVirtualeSecondi": 25108,
-      "tempoRealeMs": 7637,
+      "tempoVirtualeSecondi": 25111,
+      "tempoRealeMs": 7823,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -2401,7 +2401,7 @@
           "vinto": true,
           "tentativi": 1,
           "turni": 34,
-          "tempoVirtualeSecondi": 502,
+          "tempoVirtualeSecondi": 505,
           "semeIniziale": 223001
         },
         {
@@ -2507,7 +2507,7 @@
       "tentativiMediPerDuello": 4.08,
       "turni": 2149,
       "tempoVirtualeSecondi": 28528,
-      "tempoRealeMs": 8413,
+      "tempoRealeMs": 8455,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -2783,7 +2783,7 @@
       "tentativiMediPerDuello": 15.23,
       "turni": 5383,
       "tempoVirtualeSecondi": 71036,
-      "tempoRealeMs": 25638,
+      "tempoRealeMs": 26272,
       "bloccatoA": "anime-2-falso-kaiba (kaiba), anime-3-joey-controllato (joey)",
       "dettaglioDuelli": [
         {
@@ -3055,11 +3055,11 @@
       "completata": false,
       "duelliCompletati": 23,
       "duelliTotali": 26,
-      "tentativi": 404,
-      "tentativiMediPerDuello": 15.54,
-      "turni": 5507,
-      "tempoVirtualeSecondi": 71888,
-      "tempoRealeMs": 25897,
+      "tentativi": 402,
+      "tentativiMediPerDuello": 15.46,
+      "turni": 5439,
+      "tempoVirtualeSecondi": 71049,
+      "tempoRealeMs": 25517,
       "bloccatoA": "anime-2-mako (mako), anime-6-gansley (gansley), anime-4-marik (marik)",
       "dettaglioDuelli": [
         {
@@ -3137,9 +3137,9 @@
           "avversario": "paradoxBrothers",
           "capitolo": "regno",
           "vinto": true,
-          "tentativi": 12,
-          "turni": 220,
-          "tempoVirtualeSecondi": 2736,
+          "tentativi": 10,
+          "turni": 152,
+          "tempoVirtualeSecondi": 1897,
           "semeIniziale": 314001
         },
         {
@@ -3335,7 +3335,7 @@
       "tentativiMediPerDuello": 1.19,
       "turni": 675,
       "tempoVirtualeSecondi": 9026,
-      "tempoRealeMs": 2665,
+      "tempoRealeMs": 2637,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -3611,7 +3611,7 @@
       "tentativiMediPerDuello": 1.62,
       "turni": 946,
       "tempoVirtualeSecondi": 12433,
-      "tempoRealeMs": 3670,
+      "tempoRealeMs": 3564,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -3887,7 +3887,7 @@
       "tentativiMediPerDuello": 2.46,
       "turni": 1226,
       "tempoVirtualeSecondi": 16091,
-      "tempoRealeMs": 5163,
+      "tempoRealeMs": 4994,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -4163,7 +4163,7 @@
       "tentativiMediPerDuello": 1.08,
       "turni": 829,
       "tempoVirtualeSecondi": 10445,
-      "tempoRealeMs": 2798,
+      "tempoRealeMs": 2687,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -4439,7 +4439,7 @@
       "tentativiMediPerDuello": 2.65,
       "turni": 1120,
       "tempoVirtualeSecondi": 14527,
-      "tempoRealeMs": 5147,
+      "tempoRealeMs": 4723,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -4715,7 +4715,7 @@
       "tentativiMediPerDuello": 2.85,
       "turni": 1245,
       "tempoVirtualeSecondi": 16212,
-      "tempoRealeMs": 5731,
+      "tempoRealeMs": 5158,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -4991,7 +4991,7 @@
       "tentativiMediPerDuello": 1.81,
       "turni": 870,
       "tempoVirtualeSecondi": 11683,
-      "tempoRealeMs": 3927,
+      "tempoRealeMs": 3575,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -5267,7 +5267,7 @@
       "tentativiMediPerDuello": 2.77,
       "turni": 1122,
       "tempoVirtualeSecondi": 14907,
-      "tempoRealeMs": 5400,
+      "tempoRealeMs": 4953,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -5542,8 +5542,8 @@
       "tentativi": 82,
       "tentativiMediPerDuello": 3.15,
       "turni": 1193,
-      "tempoVirtualeSecondi": 15637,
-      "tempoRealeMs": 5318,
+      "tempoVirtualeSecondi": 15640,
+      "tempoRealeMs": 5474,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -5683,7 +5683,7 @@
           "vinto": true,
           "tentativi": 1,
           "turni": 27,
-          "tempoVirtualeSecondi": 356,
+          "tempoVirtualeSecondi": 360,
           "semeIniziale": 620001
         },
         {
@@ -5817,9 +5817,9 @@
       "duelliTotali": 26,
       "tentativi": 52,
       "tentativiMediPerDuello": 2,
-      "turni": 1356,
-      "tempoVirtualeSecondi": 17760,
-      "tempoRealeMs": 4579,
+      "turni": 1360,
+      "tempoVirtualeSecondi": 17812,
+      "tempoRealeMs": 4665,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -5988,8 +5988,8 @@
           "capitolo": "battlecity1",
           "vinto": true,
           "tentativi": 2,
-          "turni": 47,
-          "tempoVirtualeSecondi": 611,
+          "turni": 51,
+          "tempoVirtualeSecondi": 663,
           "semeIniziale": 723001
         },
         {
@@ -6095,7 +6095,7 @@
       "tentativiMediPerDuello": 3.27,
       "turni": 1549,
       "tempoVirtualeSecondi": 20350,
-      "tempoRealeMs": 6194,
+      "tempoRealeMs": 6305,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -6370,8 +6370,8 @@
       "tentativi": 90,
       "tentativiMediPerDuello": 3.46,
       "turni": 1641,
-      "tempoVirtualeSecondi": 21347,
-      "tempoRealeMs": 6597,
+      "tempoVirtualeSecondi": 21352,
+      "tempoRealeMs": 6880,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -6511,7 +6511,7 @@
           "vinto": true,
           "tentativi": 1,
           "turni": 41,
-          "tempoVirtualeSecondi": 516,
+          "tempoVirtualeSecondi": 519,
           "semeIniziale": 720001
         },
         {
@@ -6541,7 +6541,7 @@
           "vinto": true,
           "tentativi": 6,
           "turni": 151,
-          "tempoVirtualeSecondi": 1920,
+          "tempoVirtualeSecondi": 1923,
           "semeIniziale": 723001
         },
         {
@@ -6647,7 +6647,7 @@
       "tentativiMediPerDuello": 1.27,
       "turni": 590,
       "tempoVirtualeSecondi": 7841,
-      "tempoRealeMs": 2608,
+      "tempoRealeMs": 2999,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -6923,7 +6923,7 @@
       "tentativiMediPerDuello": 1.69,
       "turni": 844,
       "tempoVirtualeSecondi": 11010,
-      "tempoRealeMs": 3561,
+      "tempoRealeMs": 3969,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -7199,7 +7199,7 @@
       "tentativiMediPerDuello": 2.15,
       "turni": 1083,
       "tempoVirtualeSecondi": 14143,
-      "tempoRealeMs": 4584,
+      "tempoRealeMs": 4970,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -7475,7 +7475,7 @@
       "tentativiMediPerDuello": 1.42,
       "turni": 991,
       "tempoVirtualeSecondi": 13502,
-      "tempoRealeMs": 3495,
+      "tempoRealeMs": 3820,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -7751,7 +7751,7 @@
       "tentativiMediPerDuello": 2.12,
       "turni": 1119,
       "tempoVirtualeSecondi": 15972,
-      "tempoRealeMs": 4453,
+      "tempoRealeMs": 5334,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -8027,7 +8027,7 @@
       "tentativiMediPerDuello": 2.96,
       "turni": 1513,
       "tempoVirtualeSecondi": 21504,
-      "tempoRealeMs": 6284,
+      "tempoRealeMs": 7015,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -8303,7 +8303,7 @@
       "tentativiMediPerDuello": 1.19,
       "turni": 604,
       "tempoVirtualeSecondi": 8127,
-      "tempoRealeMs": 2549,
+      "tempoRealeMs": 3024,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -8579,7 +8579,7 @@
       "tentativiMediPerDuello": 1.46,
       "turni": 627,
       "tempoVirtualeSecondi": 8334,
-      "tempoRealeMs": 2801,
+      "tempoRealeMs": 3405,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -8854,8 +8854,8 @@
       "tentativi": 67,
       "tentativiMediPerDuello": 2.58,
       "turni": 1059,
-      "tempoVirtualeSecondi": 13902,
-      "tempoRealeMs": 4800,
+      "tempoVirtualeSecondi": 13912,
+      "tempoRealeMs": 6070,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -8935,7 +8935,7 @@
           "vinto": true,
           "tentativi": 14,
           "turni": 193,
-          "tempoVirtualeSecondi": 2512,
+          "tempoVirtualeSecondi": 2523,
           "semeIniziale": 1014001
         },
         {
@@ -9131,7 +9131,7 @@
       "tentativiMediPerDuello": 1.23,
       "turni": 712,
       "tempoVirtualeSecondi": 9205,
-      "tempoRealeMs": 2907,
+      "tempoRealeMs": 3473,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -9407,7 +9407,7 @@
       "tentativiMediPerDuello": 2.15,
       "turni": 1249,
       "tempoVirtualeSecondi": 15899,
-      "tempoRealeMs": 4873,
+      "tempoRealeMs": 5699,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -9681,9 +9681,9 @@
       "duelliTotali": 26,
       "tentativi": 83,
       "tentativiMediPerDuello": 3.19,
-      "turni": 1647,
-      "tempoVirtualeSecondi": 20859,
-      "tempoRealeMs": 6795,
+      "turni": 1651,
+      "tempoVirtualeSecondi": 20930,
+      "tempoRealeMs": 8146,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -9762,8 +9762,8 @@
           "capitolo": "regno",
           "vinto": true,
           "tentativi": 17,
-          "turni": 323,
-          "tempoVirtualeSecondi": 4152,
+          "turni": 327,
+          "tempoVirtualeSecondi": 4223,
           "semeIniziale": 1114001
         },
         {
@@ -9955,11 +9955,11 @@
       "completata": true,
       "duelliCompletati": 26,
       "duelliTotali": 26,
-      "tentativi": 59,
-      "tentativiMediPerDuello": 2.27,
-      "turni": 1627,
-      "tempoVirtualeSecondi": 22021,
-      "tempoRealeMs": 5952,
+      "tentativi": 42,
+      "tentativiMediPerDuello": 1.62,
+      "turni": 939,
+      "tempoVirtualeSecondi": 12970,
+      "tempoRealeMs": 4507,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -9969,7 +9969,7 @@
           "vinto": true,
           "tentativi": 1,
           "turni": 17,
-          "tempoVirtualeSecondi": 239,
+          "tempoVirtualeSecondi": 254,
           "semeIniziale": 1207001
         },
         {
@@ -9978,8 +9978,8 @@
           "capitolo": "prologo",
           "vinto": true,
           "tentativi": 1,
-          "turni": 62,
-          "tempoVirtualeSecondi": 858,
+          "turni": 17,
+          "tempoVirtualeSecondi": 231,
           "semeIniziale": 1208001
         },
         {
@@ -9998,8 +9998,8 @@
           "capitolo": "regno",
           "vinto": true,
           "tentativi": 3,
-          "turni": 91,
-          "tempoVirtualeSecondi": 1319,
+          "turni": 49,
+          "tempoVirtualeSecondi": 652,
           "semeIniziale": 1210001
         },
         {
@@ -10008,8 +10008,8 @@
           "capitolo": "regno",
           "vinto": true,
           "tentativi": 2,
-          "turni": 66,
-          "tempoVirtualeSecondi": 876,
+          "turni": 47,
+          "tempoVirtualeSecondi": 664,
           "semeIniziale": 1211001
         },
         {
@@ -10029,7 +10029,7 @@
           "vinto": true,
           "tentativi": 1,
           "turni": 19,
-          "tempoVirtualeSecondi": 269,
+          "tempoVirtualeSecondi": 272,
           "semeIniziale": 1213001
         },
         {
@@ -10037,9 +10037,9 @@
           "avversario": "paradoxBrothers",
           "capitolo": "regno",
           "vinto": true,
-          "tentativi": 2,
-          "turni": 41,
-          "tempoVirtualeSecondi": 541,
+          "tentativi": 1,
+          "turni": 19,
+          "tempoVirtualeSecondi": 263,
           "semeIniziale": 1214001
         },
         {
@@ -10047,9 +10047,9 @@
           "avversario": "kaiba",
           "capitolo": "regno",
           "vinto": true,
-          "tentativi": 11,
-          "turni": 245,
-          "tempoVirtualeSecondi": 3390,
+          "tentativi": 1,
+          "turni": 9,
+          "tempoVirtualeSecondi": 130,
           "semeIniziale": 1215001
         },
         {
@@ -10057,9 +10057,9 @@
           "avversario": "mai",
           "capitolo": "regno",
           "vinto": true,
-          "tentativi": 2,
-          "turni": 85,
-          "tempoVirtualeSecondi": 1186,
+          "tentativi": 1,
+          "turni": 32,
+          "tempoVirtualeSecondi": 430,
           "semeIniziale": 1216001
         },
         {
@@ -10068,8 +10068,8 @@
           "capitolo": "regno",
           "vinto": true,
           "tentativi": 2,
-          "turni": 46,
-          "tempoVirtualeSecondi": 610,
+          "turni": 67,
+          "tempoVirtualeSecondi": 917,
           "semeIniziale": 1217001
         },
         {
@@ -10078,8 +10078,8 @@
           "capitolo": "regno",
           "vinto": true,
           "tentativi": 1,
-          "turni": 55,
-          "tempoVirtualeSecondi": 716,
+          "turni": 65,
+          "tempoVirtualeSecondi": 825,
           "semeIniziale": 1218001
         },
         {
@@ -10087,9 +10087,9 @@
           "avversario": "seeker",
           "capitolo": "battlecity1",
           "vinto": true,
-          "tentativi": 2,
-          "turni": 92,
-          "tempoVirtualeSecondi": 1118,
+          "tentativi": 1,
+          "turni": 31,
+          "tempoVirtualeSecondi": 377,
           "semeIniziale": 1219001
         },
         {
@@ -10097,9 +10097,9 @@
           "avversario": "strings",
           "capitolo": "battlecity1",
           "vinto": true,
-          "tentativi": 1,
-          "turni": 37,
-          "tempoVirtualeSecondi": 493,
+          "tentativi": 2,
+          "turni": 41,
+          "tempoVirtualeSecondi": 608,
           "semeIniziale": 1220001
         },
         {
@@ -10118,8 +10118,8 @@
           "capitolo": "battlecity1",
           "vinto": true,
           "tentativi": 1,
-          "turni": 21,
-          "tempoVirtualeSecondi": 268,
+          "turni": 19,
+          "tempoVirtualeSecondi": 254,
           "semeIniziale": 1222001
         },
         {
@@ -10128,8 +10128,8 @@
           "capitolo": "battlecity1",
           "vinto": true,
           "tentativi": 2,
-          "turni": 98,
-          "tempoVirtualeSecondi": 1174,
+          "turni": 51,
+          "tempoVirtualeSecondi": 691,
           "semeIniziale": 1223001
         },
         {
@@ -10137,9 +10137,9 @@
           "avversario": "joey",
           "capitolo": "battlecity1",
           "vinto": true,
-          "tentativi": 5,
-          "turni": 109,
-          "tempoVirtualeSecondi": 1540,
+          "tentativi": 2,
+          "turni": 31,
+          "tempoVirtualeSecondi": 427,
           "semeIniziale": 1224001
         },
         {
@@ -10148,8 +10148,8 @@
           "capitolo": "battlecity1",
           "vinto": true,
           "tentativi": 1,
-          "turni": 53,
-          "tempoVirtualeSecondi": 704,
+          "turni": 19,
+          "tempoVirtualeSecondi": 277,
           "semeIniziale": 1225001
         },
         {
@@ -10158,8 +10158,8 @@
           "capitolo": "virtuale",
           "vinto": true,
           "tentativi": 2,
-          "turni": 65,
-          "tempoVirtualeSecondi": 907,
+          "turni": 67,
+          "tempoVirtualeSecondi": 951,
           "semeIniziale": 1226001
         },
         {
@@ -10167,9 +10167,9 @@
           "avversario": "noah",
           "capitolo": "virtuale",
           "vinto": true,
-          "tentativi": 1,
-          "turni": 33,
-          "tempoVirtualeSecondi": 445,
+          "tentativi": 2,
+          "turni": 35,
+          "tempoVirtualeSecondi": 484,
           "semeIniziale": 1227001
         },
         {
@@ -10177,9 +10177,9 @@
           "avversario": "kaiba",
           "capitolo": "battlecity2",
           "vinto": true,
-          "tentativi": 2,
-          "turni": 59,
-          "tempoVirtualeSecondi": 771,
+          "tentativi": 4,
+          "turni": 80,
+          "tempoVirtualeSecondi": 1086,
           "semeIniziale": 1228001
         },
         {
@@ -10187,9 +10187,9 @@
           "avversario": "marik",
           "capitolo": "battlecity2",
           "vinto": true,
-          "tentativi": 7,
-          "turni": 151,
-          "tempoVirtualeSecondi": 2161,
+          "tentativi": 3,
+          "turni": 55,
+          "tempoVirtualeSecondi": 813,
           "semeIniziale": 1229001
         },
         {
@@ -10198,8 +10198,8 @@
           "capitolo": "cerimoniale",
           "vinto": true,
           "tentativi": 3,
-          "turni": 53,
-          "tempoVirtualeSecondi": 722,
+          "turni": 77,
+          "tempoVirtualeSecondi": 1072,
           "semeIniziale": 1230001
         },
         {
@@ -10207,9 +10207,9 @@
           "avversario": "bakura",
           "capitolo": "cerimoniale",
           "vinto": true,
-          "tentativi": 2,
-          "turni": 71,
-          "tempoVirtualeSecondi": 961,
+          "tentativi": 1,
+          "turni": 32,
+          "tempoVirtualeSecondi": 482,
           "semeIniziale": 1231001
         },
         {
@@ -10218,8 +10218,8 @@
           "capitolo": "cerimoniale",
           "vinto": true,
           "tentativi": 1,
-          "turni": 11,
-          "tempoVirtualeSecondi": 145,
+          "turni": 13,
+          "tempoVirtualeSecondi": 200,
           "semeIniziale": 1232001
         }
       ]
@@ -10231,11 +10231,11 @@
       "completata": true,
       "duelliCompletati": 26,
       "duelliTotali": 26,
-      "tentativi": 104,
-      "tentativiMediPerDuello": 4,
-      "turni": 2304,
-      "tempoVirtualeSecondi": 30767,
-      "tempoRealeMs": 9342,
+      "tentativi": 73,
+      "tentativiMediPerDuello": 2.81,
+      "turni": 1616,
+      "tempoVirtualeSecondi": 21956,
+      "tempoRealeMs": 7981,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -10254,8 +10254,8 @@
           "capitolo": "prologo",
           "vinto": true,
           "tentativi": 1,
-          "turni": 23,
-          "tempoVirtualeSecondi": 298,
+          "turni": 62,
+          "tempoVirtualeSecondi": 769,
           "semeIniziale": 1208001
         },
         {
@@ -10264,8 +10264,8 @@
           "capitolo": "regno",
           "vinto": true,
           "tentativi": 1,
-          "turni": 27,
-          "tempoVirtualeSecondi": 364,
+          "turni": 25,
+          "tempoVirtualeSecondi": 341,
           "semeIniziale": 1209001
         },
         {
@@ -10274,8 +10274,8 @@
           "capitolo": "regno",
           "vinto": true,
           "tentativi": 3,
-          "turni": 49,
-          "tempoVirtualeSecondi": 650,
+          "turni": 51,
+          "tempoVirtualeSecondi": 703,
           "semeIniziale": 1210001
         },
         {
@@ -10283,9 +10283,9 @@
           "avversario": "panik",
           "capitolo": "regno",
           "vinto": true,
-          "tentativi": 10,
-          "turni": 199,
-          "tempoVirtualeSecondi": 2743,
+          "tentativi": 8,
+          "turni": 156,
+          "tempoVirtualeSecondi": 2241,
           "semeIniziale": 1211001
         },
         {
@@ -10293,9 +10293,9 @@
           "avversario": "bakura",
           "capitolo": "regno",
           "vinto": true,
-          "tentativi": 2,
-          "turni": 49,
-          "tempoVirtualeSecondi": 630,
+          "tentativi": 9,
+          "turni": 180,
+          "tempoVirtualeSecondi": 2444,
           "semeIniziale": 1212001
         },
         {
@@ -10303,9 +10303,9 @@
           "avversario": "kaiba",
           "capitolo": "regno",
           "vinto": true,
-          "tentativi": 1,
-          "turni": 19,
-          "tempoVirtualeSecondi": 251,
+          "tentativi": 2,
+          "turni": 97,
+          "tempoVirtualeSecondi": 1299,
           "semeIniziale": 1213001
         },
         {
@@ -10314,8 +10314,8 @@
           "capitolo": "regno",
           "vinto": true,
           "tentativi": 1,
-          "turni": 25,
-          "tempoVirtualeSecondi": 315,
+          "turni": 17,
+          "tempoVirtualeSecondi": 219,
           "semeIniziale": 1214001
         },
         {
@@ -10324,8 +10324,8 @@
           "capitolo": "regno",
           "vinto": true,
           "tentativi": 4,
-          "turni": 77,
-          "tempoVirtualeSecondi": 1043,
+          "turni": 57,
+          "tempoVirtualeSecondi": 806,
           "semeIniziale": 1215001
         },
         {
@@ -10333,9 +10333,9 @@
           "avversario": "mai",
           "capitolo": "regno",
           "vinto": true,
-          "tentativi": 5,
-          "turni": 126,
-          "tempoVirtualeSecondi": 1635,
+          "tentativi": 3,
+          "turni": 38,
+          "tempoVirtualeSecondi": 550,
           "semeIniziale": 1216001
         },
         {
@@ -10345,7 +10345,7 @@
           "vinto": true,
           "tentativi": 3,
           "turni": 77,
-          "tempoVirtualeSecondi": 1050,
+          "tempoVirtualeSecondi": 1056,
           "semeIniziale": 1217001
         },
         {
@@ -10354,8 +10354,8 @@
           "capitolo": "regno",
           "vinto": true,
           "tentativi": 1,
-          "turni": 47,
-          "tempoVirtualeSecondi": 587,
+          "turni": 51,
+          "tempoVirtualeSecondi": 660,
           "semeIniziale": 1218001
         },
         {
@@ -10363,9 +10363,9 @@
           "avversario": "seeker",
           "capitolo": "battlecity1",
           "vinto": true,
-          "tentativi": 4,
-          "turni": 162,
-          "tempoVirtualeSecondi": 1913,
+          "tentativi": 3,
+          "turni": 87,
+          "tempoVirtualeSecondi": 1062,
           "semeIniziale": 1219001
         },
         {
@@ -10374,8 +10374,8 @@
           "capitolo": "battlecity1",
           "vinto": true,
           "tentativi": 1,
-          "turni": 29,
-          "tempoVirtualeSecondi": 375,
+          "turni": 27,
+          "tempoVirtualeSecondi": 350,
           "semeIniziale": 1220001
         },
         {
@@ -10383,9 +10383,9 @@
           "avversario": "arkana",
           "capitolo": "battlecity1",
           "vinto": true,
-          "tentativi": 2,
-          "turni": 38,
-          "tempoVirtualeSecondi": 536,
+          "tentativi": 4,
+          "turni": 69,
+          "tempoVirtualeSecondi": 986,
           "semeIniziale": 1221001
         },
         {
@@ -10395,7 +10395,7 @@
           "vinto": true,
           "tentativi": 1,
           "turni": 19,
-          "tempoVirtualeSecondi": 264,
+          "tempoVirtualeSecondi": 270,
           "semeIniziale": 1222001
         },
         {
@@ -10403,9 +10403,9 @@
           "avversario": "umbra",
           "capitolo": "battlecity1",
           "vinto": true,
-          "tentativi": 1,
-          "turni": 48,
-          "tempoVirtualeSecondi": 615,
+          "tentativi": 2,
+          "turni": 47,
+          "tempoVirtualeSecondi": 613,
           "semeIniziale": 1223001
         },
         {
@@ -10414,8 +10414,8 @@
           "capitolo": "battlecity1",
           "vinto": true,
           "tentativi": 2,
-          "turni": 25,
-          "tempoVirtualeSecondi": 338,
+          "turni": 37,
+          "tempoVirtualeSecondi": 497,
           "semeIniziale": 1224001
         },
         {
@@ -10423,9 +10423,9 @@
           "avversario": "bakura",
           "capitolo": "battlecity1",
           "vinto": true,
-          "tentativi": 16,
-          "turni": 413,
-          "tempoVirtualeSecondi": 5553,
+          "tentativi": 1,
+          "turni": 9,
+          "tempoVirtualeSecondi": 124,
           "semeIniziale": 1225001
         },
         {
@@ -10433,9 +10433,9 @@
           "avversario": "gansley",
           "capitolo": "virtuale",
           "vinto": true,
-          "tentativi": 21,
-          "turni": 391,
-          "tempoVirtualeSecondi": 5345,
+          "tentativi": 3,
+          "turni": 86,
+          "tempoVirtualeSecondi": 1203,
           "semeIniziale": 1226001
         },
         {
@@ -10444,8 +10444,8 @@
           "capitolo": "virtuale",
           "vinto": true,
           "tentativi": 5,
-          "turni": 93,
-          "tempoVirtualeSecondi": 1223,
+          "turni": 97,
+          "tempoVirtualeSecondi": 1278,
           "semeIniziale": 1227001
         },
         {
@@ -10453,9 +10453,9 @@
           "avversario": "kaiba",
           "capitolo": "battlecity2",
           "vinto": true,
-          "tentativi": 9,
-          "turni": 173,
-          "tempoVirtualeSecondi": 2381,
+          "tentativi": 3,
+          "turni": 81,
+          "tempoVirtualeSecondi": 1111,
           "semeIniziale": 1228001
         },
         {
@@ -10465,7 +10465,7 @@
           "vinto": true,
           "tentativi": 2,
           "turni": 50,
-          "tempoVirtualeSecondi": 672,
+          "tempoVirtualeSecondi": 676,
           "semeIniziale": 1229001
         },
         {
@@ -10475,7 +10475,7 @@
           "vinto": true,
           "tentativi": 3,
           "turni": 49,
-          "tempoVirtualeSecondi": 641,
+          "tempoVirtualeSecondi": 645,
           "semeIniziale": 1230001
         },
         {
@@ -10484,8 +10484,8 @@
           "capitolo": "cerimoniale",
           "vinto": true,
           "tentativi": 3,
-          "turni": 77,
-          "tempoVirtualeSecondi": 1079,
+          "turni": 71,
+          "tempoVirtualeSecondi": 1034,
           "semeIniziale": 1231001
         },
         {
@@ -10493,9 +10493,9 @@
           "avversario": "yamiYugi",
           "capitolo": "cerimoniale",
           "vinto": true,
-          "tentativi": 1,
-          "turni": 4,
-          "tempoVirtualeSecondi": 55,
+          "tentativi": 3,
+          "turni": 61,
+          "tempoVirtualeSecondi": 811,
           "semeIniziale": 1232001
         }
       ]
@@ -10505,14 +10505,14 @@
       "deck": "Structure Deck: Invincible Fortress (SD7)",
       "difficolta": "difficile",
       "completata": false,
-      "duelliCompletati": 24,
+      "duelliCompletati": 25,
       "duelliTotali": 26,
-      "tentativi": 194,
-      "tentativiMediPerDuello": 7.46,
-      "turni": 3905,
-      "tempoVirtualeSecondi": 51059,
-      "tempoRealeMs": 16568,
-      "bloccatoA": "anime-2-mako (mako), anime-4-marik (marik)",
+      "tentativi": 155,
+      "tentativiMediPerDuello": 5.96,
+      "turni": 3233,
+      "tempoVirtualeSecondi": 43058,
+      "tempoRealeMs": 13494,
+      "bloccatoA": "anime-2-mako (mako)",
       "dettaglioDuelli": [
         {
           "id": "anime-1-kaiba",
@@ -10530,8 +10530,8 @@
           "capitolo": "prologo",
           "vinto": true,
           "tentativi": 1,
-          "turni": 62,
-          "tempoVirtualeSecondi": 756,
+          "turni": 13,
+          "tempoVirtualeSecondi": 202,
           "semeIniziale": 1208001
         },
         {
@@ -10541,7 +10541,7 @@
           "vinto": true,
           "tentativi": 1,
           "turni": 21,
-          "tempoVirtualeSecondi": 259,
+          "tempoVirtualeSecondi": 269,
           "semeIniziale": 1209001
         },
         {
@@ -10550,8 +10550,8 @@
           "capitolo": "regno",
           "vinto": false,
           "tentativi": 50,
-          "turni": 790,
-          "tempoVirtualeSecondi": 10680,
+          "turni": 890,
+          "tempoVirtualeSecondi": 12064,
           "semeIniziale": 1210001
         },
         {
@@ -10559,9 +10559,9 @@
           "avversario": "panik",
           "capitolo": "regno",
           "vinto": true,
-          "tentativi": 14,
-          "turni": 320,
-          "tempoVirtualeSecondi": 4196,
+          "tentativi": 5,
+          "turni": 109,
+          "tempoVirtualeSecondi": 1413,
           "semeIniziale": 1211001
         },
         {
@@ -10569,9 +10569,9 @@
           "avversario": "bakura",
           "capitolo": "regno",
           "vinto": true,
-          "tentativi": 2,
-          "turni": 41,
-          "tempoVirtualeSecondi": 502,
+          "tentativi": 21,
+          "turni": 435,
+          "tempoVirtualeSecondi": 5608,
           "semeIniziale": 1212001
         },
         {
@@ -10579,9 +10579,9 @@
           "avversario": "kaiba",
           "capitolo": "regno",
           "vinto": true,
-          "tentativi": 1,
-          "turni": 17,
-          "tempoVirtualeSecondi": 210,
+          "tentativi": 5,
+          "turni": 121,
+          "tempoVirtualeSecondi": 1572,
           "semeIniziale": 1213001
         },
         {
@@ -10590,8 +10590,8 @@
           "capitolo": "regno",
           "vinto": true,
           "tentativi": 8,
-          "turni": 167,
-          "tempoVirtualeSecondi": 2204,
+          "turni": 157,
+          "tempoVirtualeSecondi": 2123,
           "semeIniziale": 1214001
         },
         {
@@ -10600,8 +10600,8 @@
           "capitolo": "regno",
           "vinto": true,
           "tentativi": 4,
-          "turni": 97,
-          "tempoVirtualeSecondi": 1223,
+          "turni": 105,
+          "tempoVirtualeSecondi": 1338,
           "semeIniziale": 1215001
         },
         {
@@ -10609,9 +10609,9 @@
           "avversario": "mai",
           "capitolo": "regno",
           "vinto": true,
-          "tentativi": 6,
-          "turni": 213,
-          "tempoVirtualeSecondi": 2578,
+          "tentativi": 3,
+          "turni": 96,
+          "tempoVirtualeSecondi": 1270,
           "semeIniziale": 1216001
         },
         {
@@ -10620,8 +10620,8 @@
           "capitolo": "regno",
           "vinto": true,
           "tentativi": 2,
-          "turni": 57,
-          "tempoVirtualeSecondi": 762,
+          "turni": 71,
+          "tempoVirtualeSecondi": 949,
           "semeIniziale": 1217001
         },
         {
@@ -10630,8 +10630,8 @@
           "capitolo": "regno",
           "vinto": true,
           "tentativi": 1,
-          "turni": 35,
-          "tempoVirtualeSecondi": 430,
+          "turni": 58,
+          "tempoVirtualeSecondi": 753,
           "semeIniziale": 1218001
         },
         {
@@ -10640,8 +10640,8 @@
           "capitolo": "battlecity1",
           "vinto": true,
           "tentativi": 1,
-          "turni": 46,
-          "tempoVirtualeSecondi": 570,
+          "turni": 33,
+          "tempoVirtualeSecondi": 443,
           "semeIniziale": 1219001
         },
         {
@@ -10649,9 +10649,9 @@
           "avversario": "strings",
           "capitolo": "battlecity1",
           "vinto": true,
-          "tentativi": 4,
-          "turni": 73,
-          "tempoVirtualeSecondi": 986,
+          "tentativi": 2,
+          "turni": 47,
+          "tempoVirtualeSecondi": 641,
           "semeIniziale": 1220001
         },
         {
@@ -10660,8 +10660,8 @@
           "capitolo": "battlecity1",
           "vinto": true,
           "tentativi": 4,
-          "turni": 144,
-          "tempoVirtualeSecondi": 1912,
+          "turni": 123,
+          "tempoVirtualeSecondi": 1649,
           "semeIniziale": 1221001
         },
         {
@@ -10670,8 +10670,8 @@
           "capitolo": "battlecity1",
           "vinto": true,
           "tentativi": 2,
-          "turni": 84,
-          "tempoVirtualeSecondi": 1017,
+          "turni": 70,
+          "tempoVirtualeSecondi": 876,
           "semeIniziale": 1222001
         },
         {
@@ -10680,8 +10680,8 @@
           "capitolo": "battlecity1",
           "vinto": true,
           "tentativi": 2,
-          "turni": 73,
-          "tempoVirtualeSecondi": 950,
+          "turni": 41,
+          "tempoVirtualeSecondi": 557,
           "semeIniziale": 1223001
         },
         {
@@ -10690,8 +10690,8 @@
           "capitolo": "battlecity1",
           "vinto": true,
           "tentativi": 2,
-          "turni": 31,
-          "tempoVirtualeSecondi": 393,
+          "turni": 29,
+          "tempoVirtualeSecondi": 369,
           "semeIniziale": 1224001
         },
         {
@@ -10710,8 +10710,8 @@
           "capitolo": "virtuale",
           "vinto": true,
           "tentativi": 5,
-          "turni": 126,
-          "tempoVirtualeSecondi": 1642,
+          "turni": 162,
+          "tempoVirtualeSecondi": 2183,
           "semeIniziale": 1226001
         },
         {
@@ -10720,8 +10720,8 @@
           "capitolo": "virtuale",
           "vinto": true,
           "tentativi": 12,
-          "turni": 214,
-          "tempoVirtualeSecondi": 2817,
+          "turni": 229,
+          "tempoVirtualeSecondi": 3052,
           "semeIniziale": 1227001
         },
         {
@@ -10731,17 +10731,17 @@
           "vinto": true,
           "tentativi": 3,
           "turni": 65,
-          "tempoVirtualeSecondi": 901,
+          "tempoVirtualeSecondi": 928,
           "semeIniziale": 1228001
         },
         {
           "id": "anime-4-marik",
           "avversario": "marik",
           "capitolo": "battlecity2",
-          "vinto": false,
-          "tentativi": 50,
-          "turni": 938,
-          "tempoVirtualeSecondi": 12223,
+          "vinto": true,
+          "tentativi": 2,
+          "turni": 67,
+          "tempoVirtualeSecondi": 931,
           "semeIniziale": 1229001
         },
         {
@@ -10760,8 +10760,8 @@
           "capitolo": "cerimoniale",
           "vinto": true,
           "tentativi": 8,
-          "turni": 151,
-          "tempoVirtualeSecondi": 1987,
+          "turni": 147,
+          "tempoVirtualeSecondi": 1945,
           "semeIniziale": 1231001
         },
         {
@@ -10770,8 +10770,8 @@
           "capitolo": "cerimoniale",
           "vinto": true,
           "tentativi": 5,
-          "turni": 63,
-          "tempoVirtualeSecondi": 839,
+          "turni": 67,
+          "tempoVirtualeSecondi": 907,
           "semeIniziale": 1232001
         }
       ]
@@ -10787,7 +10787,7 @@
       "tentativiMediPerDuello": 1.27,
       "turni": 595,
       "tempoVirtualeSecondi": 7753,
-      "tempoRealeMs": 2437,
+      "tempoRealeMs": 2643,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -11063,7 +11063,7 @@
       "tentativiMediPerDuello": 3.35,
       "turni": 1226,
       "tempoVirtualeSecondi": 15883,
-      "tempoRealeMs": 5564,
+      "tempoRealeMs": 5759,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -11339,7 +11339,7 @@
       "tentativiMediPerDuello": 4.12,
       "turni": 1461,
       "tempoVirtualeSecondi": 18868,
-      "tempoRealeMs": 6885,
+      "tempoRealeMs": 7059,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -11615,7 +11615,7 @@
       "tentativiMediPerDuello": 1.27,
       "turni": 512,
       "tempoVirtualeSecondi": 6741,
-      "tempoRealeMs": 2315,
+      "tempoRealeMs": 2267,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -11891,7 +11891,7 @@
       "tentativiMediPerDuello": 2.5,
       "turni": 1129,
       "tempoVirtualeSecondi": 14604,
-      "tempoRealeMs": 4708,
+      "tempoRealeMs": 4687,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -12167,7 +12167,7 @@
       "tentativiMediPerDuello": 2.5,
       "turni": 1071,
       "tempoVirtualeSecondi": 13726,
-      "tempoRealeMs": 4378,
+      "tempoRealeMs": 4486,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -12443,7 +12443,7 @@
       "tentativiMediPerDuello": 1.62,
       "turni": 926,
       "tempoVirtualeSecondi": 12128,
-      "tempoRealeMs": 3532,
+      "tempoRealeMs": 3563,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -12719,7 +12719,7 @@
       "tentativiMediPerDuello": 4.5,
       "turni": 1600,
       "tempoVirtualeSecondi": 21030,
-      "tempoRealeMs": 7559,
+      "tempoRealeMs": 8627,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -12994,8 +12994,8 @@
       "tentativi": 127,
       "tentativiMediPerDuello": 4.88,
       "turni": 1736,
-      "tempoVirtualeSecondi": 22464,
-      "tempoRealeMs": 8241,
+      "tempoVirtualeSecondi": 22467,
+      "tempoRealeMs": 8785,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -13075,7 +13075,7 @@
           "vinto": true,
           "tentativi": 6,
           "turni": 98,
-          "tempoVirtualeSecondi": 1279,
+          "tempoVirtualeSecondi": 1282,
           "semeIniziale": 1514001
         },
         {
@@ -13371,13 +13371,13 @@
       "normale": {
         "campioni": 15,
         "superatoDa": 15,
-        "tentativiMedi": 3.27,
+        "tentativiMedi": 3.13,
         "alTetto": 0
       },
       "difficile": {
         "campioni": 15,
         "superatoDa": 15,
-        "tentativiMedi": 4.33,
+        "tentativiMedi": 3.73,
         "alTetto": 0
       },
       "progressioneCoerente": true
@@ -13395,13 +13395,13 @@
       "normale": {
         "campioni": 15,
         "superatoDa": 15,
-        "tentativiMedi": 2.8,
+        "tentativiMedi": 3.27,
         "alTetto": 0
       },
       "difficile": {
         "campioni": 15,
         "superatoDa": 15,
-        "tentativiMedi": 2.8,
+        "tentativiMedi": 4.07,
         "alTetto": 0
       },
       "progressioneCoerente": true
@@ -13419,13 +13419,13 @@
       "normale": {
         "campioni": 15,
         "superatoDa": 15,
-        "tentativiMedi": 3.67,
+        "tentativiMedi": 3.73,
         "alTetto": 0
       },
       "difficile": {
         "campioni": 15,
         "superatoDa": 15,
-        "tentativiMedi": 4,
+        "tentativiMedi": 4.27,
         "alTetto": 0
       },
       "progressioneCoerente": true
@@ -13437,7 +13437,7 @@
       "facile": {
         "campioni": 15,
         "superatoDa": 15,
-        "tentativiMedi": 1.73,
+        "tentativiMedi": 1.67,
         "alTetto": 0
       },
       "normale": {
@@ -13461,7 +13461,7 @@
       "facile": {
         "campioni": 15,
         "superatoDa": 15,
-        "tentativiMedi": 1.8,
+        "tentativiMedi": 1.13,
         "alTetto": 0
       },
       "normale": {
@@ -13485,19 +13485,19 @@
       "facile": {
         "campioni": 15,
         "superatoDa": 15,
-        "tentativiMedi": 2.07,
+        "tentativiMedi": 2,
         "alTetto": 0
       },
       "normale": {
         "campioni": 15,
         "superatoDa": 15,
-        "tentativiMedi": 2.87,
+        "tentativiMedi": 2.73,
         "alTetto": 0
       },
       "difficile": {
         "campioni": 15,
         "superatoDa": 15,
-        "tentativiMedi": 4.6,
+        "tentativiMedi": 4.4,
         "alTetto": 0
       },
       "progressioneCoerente": true
@@ -13557,13 +13557,13 @@
       "facile": {
         "campioni": 15,
         "superatoDa": 15,
-        "tentativiMedi": 1.6,
+        "tentativiMedi": 1.53,
         "alTetto": 0
       },
       "normale": {
         "campioni": 15,
         "superatoDa": 15,
-        "tentativiMedi": 2.13,
+        "tentativiMedi": 2.07,
         "alTetto": 0
       },
       "difficile": {
@@ -13581,7 +13581,7 @@
       "facile": {
         "campioni": 15,
         "superatoDa": 15,
-        "tentativiMedi": 1.07,
+        "tentativiMedi": 1.13,
         "alTetto": 0
       },
       "normale": {
@@ -13593,7 +13593,7 @@
       "difficile": {
         "campioni": 15,
         "superatoDa": 15,
-        "tentativiMedi": 1.67,
+        "tentativiMedi": 1.53,
         "alTetto": 0
       },
       "progressioneCoerente": true
@@ -13611,7 +13611,7 @@
       "normale": {
         "campioni": 15,
         "superatoDa": 15,
-        "tentativiMedi": 2,
+        "tentativiMedi": 2.13,
         "alTetto": 0
       },
       "difficile": {
@@ -13659,7 +13659,7 @@
       "normale": {
         "campioni": 15,
         "superatoDa": 15,
-        "tentativiMedi": 1.33,
+        "tentativiMedi": 1.4,
         "alTetto": 0
       },
       "difficile": {
@@ -13677,7 +13677,7 @@
       "facile": {
         "campioni": 15,
         "superatoDa": 15,
-        "tentativiMedi": 1.67,
+        "tentativiMedi": 1.47,
         "alTetto": 0
       },
       "normale": {
@@ -13707,7 +13707,7 @@
       "normale": {
         "campioni": 15,
         "superatoDa": 15,
-        "tentativiMedi": 3.07,
+        "tentativiMedi": 2.07,
         "alTetto": 0
       },
       "difficile": {
@@ -13716,7 +13716,7 @@
         "tentativiMedi": 2.2,
         "alTetto": 0
       },
-      "progressioneCoerente": false
+      "progressioneCoerente": true
     },
     {
       "id": "anime-6-gansley",
@@ -13731,7 +13731,7 @@
       "normale": {
         "campioni": 15,
         "superatoDa": 15,
-        "tentativiMedi": 4.6,
+        "tentativiMedi": 3.4,
         "alTetto": 0
       },
       "difficile": {
@@ -13749,7 +13749,7 @@
       "facile": {
         "campioni": 15,
         "superatoDa": 15,
-        "tentativiMedi": 1.33,
+        "tentativiMedi": 1.4,
         "alTetto": 0
       },
       "normale": {
@@ -13773,13 +13773,13 @@
       "facile": {
         "campioni": 15,
         "superatoDa": 15,
-        "tentativiMedi": 1.8,
+        "tentativiMedi": 1.93,
         "alTetto": 0
       },
       "normale": {
         "campioni": 15,
         "superatoDa": 15,
-        "tentativiMedi": 4.13,
+        "tentativiMedi": 3.73,
         "alTetto": 0
       },
       "difficile": {
@@ -13797,7 +13797,7 @@
       "facile": {
         "campioni": 15,
         "superatoDa": 15,
-        "tentativiMedi": 2.73,
+        "tentativiMedi": 2.47,
         "alTetto": 0
       },
       "normale": {
@@ -13808,9 +13808,9 @@
       },
       "difficile": {
         "campioni": 15,
-        "superatoDa": 14,
-        "tentativiMedi": 8.93,
-        "alTetto": 1
+        "superatoDa": 15,
+        "tentativiMedi": 5.73,
+        "alTetto": 0
       },
       "progressioneCoerente": true
     },
@@ -13845,7 +13845,7 @@
       "facile": {
         "campioni": 15,
         "superatoDa": 15,
-        "tentativiMedi": 1.07,
+        "tentativiMedi": 1,
         "alTetto": 0
       },
       "normale": {
@@ -13875,7 +13875,7 @@
       "normale": {
         "campioni": 15,
         "superatoDa": 15,
-        "tentativiMedi": 3.07,
+        "tentativiMedi": 3.2,
         "alTetto": 0
       },
       "difficile": {

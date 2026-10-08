@@ -63,6 +63,15 @@ sempre coerenti con il personaggio. Toon/Pegasus si affronta per ultimo.
       un Kaiser Glider e Uomo Giudice, reinseriti Saggi il Pagliaccio Oscuro
       e Carità Aggraziata, tutte carte del suo repertorio anime. Deck Hard
       +0,81 tentativi medi sui Medium e 13/16 incontri pari o superiori.
+- [x] Audit mirato di Invincible Fortress a Difficile, senza modificare il
+      deck: Marik è superato al secondo tentativo; Mako resta l'unico blocco
+      reale (0/50 nei semi della matrice), per KO e non per stallo. Corretti
+      due difetti generali emersi durante la misura: Hard sa ricoprire i
+      mostri che lo prevedono nel testo per riusarne il Flip, e la scelta
+      pesata M/T usa `Casuale`, rendendo gli audit riproducibili.
+- [ ] Mediazione Pegasus/Toon: mantenere identità e forza percepita dell'anime
+      senza trasformare i Toon reali in carte generiche fuori tema. Da
+      affrontare separatamente, per ultimo, come richiesto.
 
 ## Audio multipagina
 

@@ -141,15 +141,27 @@ liste Hard salgono a **+0,81 tentativi medi** sulle Medium e **13/16**
 incontri pari o superiori. Starter e Structure Deck restano invariati;
 Pegasus/Toon è escluso da questo ciclo per richiesta dell'utente.
 
-La verifica end-to-end successiva è in
+La verifica end-to-end successiva, ripetuta dopo l'audit mirato di Invincible
+Fortress, è in
 `STORY_DECK_SIMULATION_REPORT_AFTER_BALANCE.json`: 16 Starter/Structure × 3
 difficoltà × 26 duelli, con tetto di 50 tentativi. La scala aggregata passa
-da **1,64** tentativi medi a Facile a **3,45** a Normale e **4,12** a
-Difficile; 19/26 incontri sono monotoni (erano 9/26). Completano 45 percorsi
+da **1,60** tentativi medi a Facile a **3,38** a Normale e **4,03** a
+Difficile; 20/26 incontri sono monotoni (erano 9/26). Completano 45 percorsi
 su 48: i due Pegasus già noti e Invincible Fortress a Difficile restano
-incompleti. Quest'ultimo arriva a 24/26 e si blocca su Mako e Marik; è un dato
-da studiare, non un'autorizzazione a modificare lo Structure Deck, che resta
-un campione immutabile per decisione dell'utente.
+incompleti. L'audit mirato ha però separato i due vecchi sospetti: Marik viene
+superato al secondo tentativo, mentre Mako resta l'unico blocco (0 vittorie
+nei 50 semi reali della matrice). Le sconfitte arrivano per azzeramento LP,
+non per stallo o limite turni: è un matchup estremamente sfavorevole fra il
+deck Roccia lento e il campo ACQUA aggressivo, non un'autorizzazione a
+modificare lo Structure Deck, che resta un campione immutabile per decisione
+dell'utente.
+
+Durante l'audit sono emersi due difetti generali dell'IA, corretti senza
+ritoccare alcuna lista: Hard ora riattiva i mostri scoperti che, per testo,
+possono rimettersi coperti (Guardian Sphinx, Golem Sentry e carte equivalenti),
+così i loro Flip possono essere preparati di nuovo; la scelta pesata di
+Magie/Trappole usa `Casuale` anziché `Math.random`, quindi semi uguali danno
+risultati riproducibili e restano compatibili con il passo comune Multiplayer.
 
 **Criterio di bilanciamento deciso dall'utente.** Starter e Structure Deck
 sono campioni immutabili: non vanno corretti per farli convergere e ci si
@@ -157,7 +169,8 @@ aspetta che gli Starter siano più deboli. L'audit serve a valutare se IA
 Facile/Media/Difficile sono distinguibili e verosimili e se i tre deck di
 ogni avversario hanno una progressione di forza sufficiente, senza perdere
 la coerenza con la lore. Pegasus/Toon è una debolezza già nota e verrà
-valutata per ultima separatamente. Per isolare la variabile, dalla matrice
+valutata per ultima separatamente, cercando una mediazione tra la forza
+mostrata nell'anime e la debolezza concreta delle meccaniche Toon. Per isolare la variabile, dalla matrice
 con tetto 50 il giocatore è sempre pilotato dall'IA Difficile; cambia solo
 l'IA/deck dell'avversario.
 

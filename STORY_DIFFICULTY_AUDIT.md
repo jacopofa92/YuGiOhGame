@@ -243,8 +243,26 @@ Difficile. Gli incontri con progressione strettamente coerente salgono da
 9/26 nel vecchio report a **19/26**.
 
 Sono completati 45 percorsi su 48. Pegasus Starter resta bloccato a Normale
-e Difficile, caso già escluso e rinviato. La nuova anomalia da valutare è
-Structure Deck: Invincible Fortress a Difficile, che raggiunge 24/26 duelli
-e si arresta su Mako e Marik. Non è stato modificato automaticamente: serve
-prima distinguere la debolezza intenzionale del deck Roccia da un problema
-dei due avversari.
+e Difficile, caso già escluso e rinviato. L'audit mirato successivo ha
+chiarito l'anomalia di Structure Deck: Invincible Fortress a Difficile:
+
+- con gli stessi semi realmente usati dalla matrice, Marik viene superato al
+  secondo tentativo e non è più un blocco;
+- Mako rimane a 0 vittorie su 50; le partite terminano per azzeramento LP,
+  quindi non c'è uno stallo del motore o un limite turni troppo basso;
+- un test che ricostruiva esplicitamente il deck di Mako una seconda volta
+  dava 5/50, ma consumava un secondo mescolamento e non riproduceva il flusso
+  reale della Storia: quel numero non va usato per il bilanciamento.
+
+Il deck campione non è stato modificato. È un matchup molto sfavorevole: la
+pressione ACQUA di Mako supera prima che il piano lento dei Roccia possa
+stabilizzarsi. Sono stati corretti soltanto due difetti generali emersi
+dall'audit: Hard usa l'effetto dei mostri che possono rimettersi coperti per
+preparare un altro Flip; la selezione pesata di Magie/Trappole usa ora
+`Casuale` e non `Math.random`, rendendo ripetibili i risultati a seme fisso.
+
+La matrice aggiornata misura **1,60 / 3,38 / 4,03** tentativi medi a
+Facile/Normale/Difficile e **20/26** incontri monotoni. Restano incompleti i
+due percorsi Pegasus e Invincible Fortress Hard, quest'ultimo soltanto su
+Mako. Pegasus/Toon sarà trattato a parte cercando una mediazione fra la forza
+mostrata nell'anime e la debolezza reale della meccanica.

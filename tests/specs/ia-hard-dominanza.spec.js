@@ -74,6 +74,11 @@ module.exports = {
                 DuelEngine.canActivate = (_io, zona, indice) => zona === 'st' ? indice === 0 : zona === 'monster' && indice === 0;
                 const attivazioneSet = AI_HARD.chooseSetCardActivation(gameState, 'bot');
 
+                const autoCoperta = carta('sentinella-auto-coperta', 800, 1800);
+                autoCoperta.effect = 'Una volta per turno, puoi girare questa carta coperta in Posizione di Difesa.';
+                gameState.botMonsterField[0] = { card: autoCoperta, isFaceDown: false, position: 'attack' };
+                const attivazioneFlip = AI_HARD.chooseSetCardActivation(gameState, 'bot');
+
                 // Una pescata pura deve precedere l'Evocazione: il nuovo
                 // mostro ottenuto potrà così essere scelto nello stesso turno.
                 const pescata = { id: 9803, uid: 'pescata', name: 'Pescata', type: 'spell', effect: 'Pesca 2 carte.' };
@@ -116,6 +121,20 @@ module.exports = {
                     position: 'attack', isFaceDown: false
                 };
                 const riparoMedia = AI_MEDIUM.choosePositionChanges(gameState, 'bot');
+
+                // Anche la varietà nella scelta M/T è una decisione di
+                // gioco: con lo stesso seme deve produrre la stessa
+                // sequenza, altrimenti audit e Multiplayer divergono.
+                const alternative = [
+                    { card: { id: 9810, uid: 'alternativa-a', name: 'Alternativa A', type: 'spell', effect: 'Pesca 1 carta.' } },
+                    { card: { id: 9811, uid: 'alternativa-b', name: 'Alternativa B', type: 'spell', effect: 'Distruggi 1 carta.' } },
+                    { card: { id: 9812, uid: 'alternativa-c', name: 'Alternativa C', type: 'spell', effect: 'Guadagni 1000 LP.' } }
+                ];
+                Casuale.semina(424242);
+                const sequenzaPesataA = Array.from({ length: 8 }, () => AI_SHARED.pickWeightedByImpact(alternative, 0.5).card.uid);
+                Casuale.semina(424242);
+                const sequenzaPesataB = Array.from({ length: 8 }, () => AI_SHARED.pickWeightedByImpact(alternative, 0.5).card.uid);
+                Casuale.libera();
                 return {
                     bersaglioMedio, bersaglioHard, bersaglioMedioSuMuro, bersaglioHardSuMuro, bersaglioGansleySuMuro,
                     restraintKaiba, restraintJoey,
@@ -125,13 +144,16 @@ module.exports = {
                     magiaBaseline: decisioneMagia && decisioneMagia.card.uid,
                     conteggioMagie: usate.activateCount,
                     zonaAttivata: attivazioneSet && attivazioneSet.zone,
+                    zonaFlip: attivazioneFlip && attivazioneFlip.zone,
                     preparazione: preparazione && preparazione.card.uid,
                     preparazioneTerreno: preparazioneTerreno && preparazioneTerreno.card.uid,
                     ordineAttacchi: ordinati.map((item) => item.slot.card.uid),
                     letale,
                     cambiPosizione,
                     cambiPosizioneMedia,
-                    riparoMedia
+                    riparoMedia,
+                    sequenzaPesataA,
+                    sequenzaPesataB
                 };
             } finally {
                 DuelEngine.canActivate = canActivateOriginale;
@@ -155,6 +177,8 @@ module.exports = {
             `Hard deve partire dalla decisione valida della Media: ${JSON.stringify(r)}`);
         assert(r.zonaAttivata === null,
             `Hard non deve consumare attivazioni proattive fuori contesto: ${JSON.stringify(r)}`);
+        assert(r.zonaFlip === 'monster',
+            `Hard deve preparare il prossimo ciclo dei mostri auto-coprenti: ${JSON.stringify(r)}`);
         assert(r.preparazione === 'pescata',
             `Hard deve pescare/cercare prima di scegliere l'Evocazione: ${JSON.stringify(r)}`);
         assert(r.preparazioneTerreno === 'terreno',
@@ -169,5 +193,7 @@ module.exports = {
             `Media deve rimettere in Attacco un mostro libero di colpire: ${JSON.stringify(r)}`);
         assert(r.riparoMedia.length === 1 && r.riparoMedia[0] === 3,
             `Media deve passare in Difesa sotto una minaccia superiore: ${JSON.stringify(r)}`);
+        assert(r.sequenzaPesataA.join(',') === r.sequenzaPesataB.join(','),
+            `La scelta pesata dell'IA deve rispettare il seme di gioco: ${JSON.stringify(r)}`);
     }
 };
