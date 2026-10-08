@@ -123,11 +123,11 @@ module.exports = {
         t.assert(JSON.stringify(afterChaos.banishedUids) === JSON.stringify(['dark-a', 'light-b']), `Deve bandire esattamente le 2 carte scelte (una per Attributo richiesto), rilevato ${JSON.stringify(afterChaos.banishedUids)}`);
         t.assert(afterChaos.onField, 'Stregone del Caos deve essere Special Summonato dopo le 2 scelte');
 
-        // Drago Toon Occhi Blu (123): costo sul TERRENO, non sul Cimitero
-        // (offerSpecialSummonTributeChoice) — tributa 2 mostri QUALSIASI,
-        // il Terreno ne ha 3 -> vera scelta in sequenza.
+        // Drago Toon Occhi Blu (123), deroga anime controllata: tributa
+        // 1 mostro Toon. Tre Toon sul Terreno devono produrre una vera
+        // scelta singola, senza coinvolgere mostri non Toon.
         const dragonOpen = await t.evaluate(() => {
-            const filler = cardDatabase.find((c) => c.type === 'monster' && !c.extraDeck);
+            const filler = cardDatabase.find((c) => c.id === 481);
             const dragon = { ...cardDatabase.find((c) => c.id === 123), uid: 'dragon-1' };
             const toonWorld = { ...cardDatabase.find((c) => c.id === 487), uid: 'toonworld-1' };
             gameState.playerHand = [dragon];
@@ -142,21 +142,17 @@ module.exports = {
             const def = DuelEngine.getDefinition(123);
             return { opened: offerSpecialSummonTributeChoice(dragon, 0, def.getSpecialSummonTributeFilters()) };
         });
-        t.assert(dragonOpen.opened, 'Drago Toon Occhi Blu con 3 mostri sul Terreno (2 tributi richiesti) deve aprire una scelta');
+        t.assert(dragonOpen.opened, 'Drago Toon Occhi Blu con 3 Toon sul Terreno deve aprire una scelta');
         count = await t.page.locator('#cardListPickerRow .card-list-item').count();
         t.assert(count === 3, `Primo picker del Drago Toon Occhi Blu deve mostrare 3 candidati (rilevati ${count})`);
         await t.page.locator('#cardListPickerRow .card-list-item').nth(2).click();
-        await t.page.waitForTimeout(150);
-        count = await t.page.locator('#cardListPickerRow .card-list-item').count();
-        t.assert(count === 2, `Secondo picker deve mostrare i 2 candidati rimasti (rilevati ${count})`);
-        await t.page.locator('#cardListPickerRow .card-list-item').nth(0).click();
         await t.page.waitForTimeout(150);
         const afterDragon = await t.evaluate(() => ({
             graveUids: gameState.playerGraveyard.map((c) => c.uid).sort(),
             onField: gameState.playerMonsterField.some((s) => s && s.card.uid === 'dragon-1')
         }));
-        t.assert(JSON.stringify(afterDragon.graveUids) === JSON.stringify(['trib-a', 'trib-c']), `Deve tributare ESATTAMENTE le 2 carte scelte in sequenza, rilevato ${JSON.stringify(afterDragon.graveUids)}`);
-        t.assert(afterDragon.onField, 'Drago Toon Occhi Blu deve essere Special Summonato dopo le 2 scelte');
+        t.assert(JSON.stringify(afterDragon.graveUids) === JSON.stringify(['trib-c']), `Deve tributare ESATTAMENTE il Toon scelto, rilevato ${JSON.stringify(afterDragon.graveUids)}`);
+        t.assert(afterDragon.onField, 'Drago Toon Occhi Blu deve essere Special Summonato dopo la scelta');
 
         // Gigantes (757): un solo candidato TERRA disponibile -> nessuna
         // scelta reale, il fallback deterministico dentro

@@ -1,0 +1,1470 @@
+{
+  "generatoIl": "2026-10-08T22:40:45.669Z",
+  "metodo": "IA giocatore fissa; stessi semi per deck/nodo/tentativo nelle tre difficoltà; Pegasus Starter escluso dalla sola analisi aggregata",
+  "opzioni": {
+    "deck": "starter_sdp_pegasus",
+    "difficolta": null,
+    "iaGiocatore": "hard",
+    "tentativi": 50,
+    "turni": 80,
+    "limiteDuelli": 0,
+    "seme": 7000,
+    "output": "STORY_PEGASUS_TOON_REWORK_REPORT.json"
+  },
+  "risultati": [
+    {
+      "deckId": "starter_sdp_pegasus",
+      "deck": "Starter Deck: Pegasus (SDP)",
+      "difficolta": "facile",
+      "completata": true,
+      "duelliCompletati": 26,
+      "duelliTotali": 26,
+      "tentativi": 55,
+      "tentativiMediPerDuello": 2.12,
+      "turni": 1238,
+      "tempoVirtualeSecondi": 16479,
+      "tempoRealeMs": 4749,
+      "bloccatoA": null,
+      "dettaglioDuelli": [
+        {
+          "id": "anime-1-kaiba",
+          "avversario": "kaiba",
+          "capitolo": "prologo",
+          "vinto": true,
+          "tentativi": 2,
+          "turni": 41,
+          "tempoVirtualeSecondi": 536,
+          "semeIniziale": 7001
+        },
+        {
+          "id": "anime-1-pegasus-video",
+          "avversario": "pegasus",
+          "capitolo": "prologo",
+          "vinto": true,
+          "tentativi": 1,
+          "turni": 43,
+          "tempoVirtualeSecondi": 550,
+          "semeIniziale": 8001
+        },
+        {
+          "id": "anime-2-weevil",
+          "avversario": "weevil",
+          "capitolo": "regno",
+          "vinto": true,
+          "tentativi": 1,
+          "turni": 21,
+          "tempoVirtualeSecondi": 272,
+          "semeIniziale": 9001
+        },
+        {
+          "id": "anime-2-mako",
+          "avversario": "mako",
+          "capitolo": "regno",
+          "vinto": true,
+          "tentativi": 1,
+          "turni": 13,
+          "tempoVirtualeSecondi": 164,
+          "semeIniziale": 10001
+        },
+        {
+          "id": "anime-2-panik",
+          "avversario": "panik",
+          "capitolo": "regno",
+          "vinto": true,
+          "tentativi": 1,
+          "turni": 57,
+          "tempoVirtualeSecondi": 806,
+          "semeIniziale": 11001
+        },
+        {
+          "id": "anime-2-bakura-isola",
+          "avversario": "bakura",
+          "capitolo": "regno",
+          "vinto": true,
+          "tentativi": 1,
+          "turni": 9,
+          "tempoVirtualeSecondi": 131,
+          "semeIniziale": 12001
+        },
+        {
+          "id": "anime-2-falso-kaiba",
+          "avversario": "kaiba",
+          "capitolo": "regno",
+          "vinto": true,
+          "tentativi": 2,
+          "turni": 23,
+          "tempoVirtualeSecondi": 301,
+          "semeIniziale": 13001
+        },
+        {
+          "id": "anime-2-paradox",
+          "avversario": "paradoxBrothers",
+          "capitolo": "regno",
+          "vinto": true,
+          "tentativi": 2,
+          "turni": 65,
+          "tempoVirtualeSecondi": 890,
+          "semeIniziale": 14001
+        },
+        {
+          "id": "anime-2-kaiba",
+          "avversario": "kaiba",
+          "capitolo": "regno",
+          "vinto": true,
+          "tentativi": 2,
+          "turni": 41,
+          "tempoVirtualeSecondi": 531,
+          "semeIniziale": 15001
+        },
+        {
+          "id": "anime-2c-mai",
+          "avversario": "mai",
+          "capitolo": "regno",
+          "vinto": true,
+          "tentativi": 1,
+          "turni": 13,
+          "tempoVirtualeSecondi": 153,
+          "semeIniziale": 16001
+        },
+        {
+          "id": "anime-2c-joey",
+          "avversario": "joey",
+          "capitolo": "regno",
+          "vinto": true,
+          "tentativi": 3,
+          "turni": 85,
+          "tempoVirtualeSecondi": 1124,
+          "semeIniziale": 17001
+        },
+        {
+          "id": "anime-2-pegasus",
+          "avversario": "pegasus",
+          "capitolo": "regno",
+          "vinto": true,
+          "tentativi": 1,
+          "turni": 17,
+          "tempoVirtualeSecondi": 217,
+          "semeIniziale": 18001
+        },
+        {
+          "id": "anime-3-seeker",
+          "avversario": "seeker",
+          "capitolo": "battlecity1",
+          "vinto": true,
+          "tentativi": 1,
+          "turni": 23,
+          "tempoVirtualeSecondi": 279,
+          "semeIniziale": 19001
+        },
+        {
+          "id": "anime-3-strings",
+          "avversario": "strings",
+          "capitolo": "battlecity1",
+          "vinto": true,
+          "tentativi": 1,
+          "turni": 17,
+          "tempoVirtualeSecondi": 205,
+          "semeIniziale": 20001
+        },
+        {
+          "id": "anime-3-arkana",
+          "avversario": "arkana",
+          "capitolo": "battlecity1",
+          "vinto": true,
+          "tentativi": 4,
+          "turni": 83,
+          "tempoVirtualeSecondi": 1157,
+          "semeIniziale": 21001
+        },
+        {
+          "id": "anime-3-lumis",
+          "avversario": "lumis",
+          "capitolo": "battlecity1",
+          "vinto": true,
+          "tentativi": 1,
+          "turni": 17,
+          "tempoVirtualeSecondi": 221,
+          "semeIniziale": 22001
+        },
+        {
+          "id": "anime-3-umbra",
+          "avversario": "umbra",
+          "capitolo": "battlecity1",
+          "vinto": true,
+          "tentativi": 3,
+          "turni": 97,
+          "tempoVirtualeSecondi": 1233,
+          "semeIniziale": 23001
+        },
+        {
+          "id": "anime-3-joey-controllato",
+          "avversario": "joey",
+          "capitolo": "battlecity1",
+          "vinto": true,
+          "tentativi": 4,
+          "turni": 67,
+          "tempoVirtualeSecondi": 873,
+          "semeIniziale": 24001
+        },
+        {
+          "id": "anime-3-bakura",
+          "avversario": "bakura",
+          "capitolo": "battlecity1",
+          "vinto": true,
+          "tentativi": 5,
+          "turni": 109,
+          "tempoVirtualeSecondi": 1432,
+          "semeIniziale": 25001
+        },
+        {
+          "id": "anime-6-gansley",
+          "avversario": "gansley",
+          "capitolo": "virtuale",
+          "vinto": true,
+          "tentativi": 1,
+          "turni": 33,
+          "tempoVirtualeSecondi": 446,
+          "semeIniziale": 26001
+        },
+        {
+          "id": "anime-6-noah",
+          "avversario": "noah",
+          "capitolo": "virtuale",
+          "vinto": true,
+          "tentativi": 1,
+          "turni": 23,
+          "tempoVirtualeSecondi": 308,
+          "semeIniziale": 27001
+        },
+        {
+          "id": "anime-4-kaiba",
+          "avversario": "kaiba",
+          "capitolo": "battlecity2",
+          "vinto": true,
+          "tentativi": 1,
+          "turni": 13,
+          "tempoVirtualeSecondi": 163,
+          "semeIniziale": 28001
+        },
+        {
+          "id": "anime-4-marik",
+          "avversario": "marik",
+          "capitolo": "battlecity2",
+          "vinto": true,
+          "tentativi": 6,
+          "turni": 125,
+          "tempoVirtualeSecondi": 1764,
+          "semeIniziale": 29001
+        },
+        {
+          "id": "anime-9-bakura",
+          "avversario": "bakura",
+          "capitolo": "cerimoniale",
+          "vinto": true,
+          "tentativi": 1,
+          "turni": 33,
+          "tempoVirtualeSecondi": 453,
+          "semeIniziale": 30001
+        },
+        {
+          "id": "anime-9-zorc",
+          "avversario": "bakura",
+          "capitolo": "cerimoniale",
+          "vinto": true,
+          "tentativi": 4,
+          "turni": 73,
+          "tempoVirtualeSecondi": 1022,
+          "semeIniziale": 31001
+        },
+        {
+          "id": "anime-5-yamiyugi",
+          "avversario": "yamiYugi",
+          "capitolo": "cerimoniale",
+          "vinto": true,
+          "tentativi": 4,
+          "turni": 97,
+          "tempoVirtualeSecondi": 1250,
+          "semeIniziale": 32001
+        }
+      ]
+    },
+    {
+      "deckId": "starter_sdp_pegasus",
+      "deck": "Starter Deck: Pegasus (SDP)",
+      "difficolta": "normale",
+      "completata": true,
+      "duelliCompletati": 26,
+      "duelliTotali": 26,
+      "tentativi": 186,
+      "tentativiMediPerDuello": 7.15,
+      "turni": 2819,
+      "tempoVirtualeSecondi": 37277,
+      "tempoRealeMs": 12394,
+      "bloccatoA": null,
+      "dettaglioDuelli": [
+        {
+          "id": "anime-1-kaiba",
+          "avversario": "kaiba",
+          "capitolo": "prologo",
+          "vinto": true,
+          "tentativi": 3,
+          "turni": 27,
+          "tempoVirtualeSecondi": 352,
+          "semeIniziale": 7001
+        },
+        {
+          "id": "anime-1-pegasus-video",
+          "avversario": "pegasus",
+          "capitolo": "prologo",
+          "vinto": true,
+          "tentativi": 5,
+          "turni": 75,
+          "tempoVirtualeSecondi": 982,
+          "semeIniziale": 8001
+        },
+        {
+          "id": "anime-2-weevil",
+          "avversario": "weevil",
+          "capitolo": "regno",
+          "vinto": true,
+          "tentativi": 1,
+          "turni": 17,
+          "tempoVirtualeSecondi": 223,
+          "semeIniziale": 9001
+        },
+        {
+          "id": "anime-2-mako",
+          "avversario": "mako",
+          "capitolo": "regno",
+          "vinto": true,
+          "tentativi": 40,
+          "turni": 612,
+          "tempoVirtualeSecondi": 8329,
+          "semeIniziale": 10001
+        },
+        {
+          "id": "anime-2-panik",
+          "avversario": "panik",
+          "capitolo": "regno",
+          "vinto": true,
+          "tentativi": 2,
+          "turni": 39,
+          "tempoVirtualeSecondi": 510,
+          "semeIniziale": 11001
+        },
+        {
+          "id": "anime-2-bakura-isola",
+          "avversario": "bakura",
+          "capitolo": "regno",
+          "vinto": true,
+          "tentativi": 3,
+          "turni": 43,
+          "tempoVirtualeSecondi": 558,
+          "semeIniziale": 12001
+        },
+        {
+          "id": "anime-2-falso-kaiba",
+          "avversario": "kaiba",
+          "capitolo": "regno",
+          "vinto": true,
+          "tentativi": 8,
+          "turni": 91,
+          "tempoVirtualeSecondi": 1190,
+          "semeIniziale": 13001
+        },
+        {
+          "id": "anime-2-paradox",
+          "avversario": "paradoxBrothers",
+          "capitolo": "regno",
+          "vinto": true,
+          "tentativi": 6,
+          "turni": 101,
+          "tempoVirtualeSecondi": 1363,
+          "semeIniziale": 14001
+        },
+        {
+          "id": "anime-2-kaiba",
+          "avversario": "kaiba",
+          "capitolo": "regno",
+          "vinto": true,
+          "tentativi": 2,
+          "turni": 31,
+          "tempoVirtualeSecondi": 404,
+          "semeIniziale": 15001
+        },
+        {
+          "id": "anime-2c-mai",
+          "avversario": "mai",
+          "capitolo": "regno",
+          "vinto": true,
+          "tentativi": 1,
+          "turni": 15,
+          "tempoVirtualeSecondi": 182,
+          "semeIniziale": 16001
+        },
+        {
+          "id": "anime-2c-joey",
+          "avversario": "joey",
+          "capitolo": "regno",
+          "vinto": true,
+          "tentativi": 27,
+          "turni": 406,
+          "tempoVirtualeSecondi": 5355,
+          "semeIniziale": 17001
+        },
+        {
+          "id": "anime-2-pegasus",
+          "avversario": "pegasus",
+          "capitolo": "regno",
+          "vinto": true,
+          "tentativi": 13,
+          "turni": 219,
+          "tempoVirtualeSecondi": 2800,
+          "semeIniziale": 18001
+        },
+        {
+          "id": "anime-3-seeker",
+          "avversario": "seeker",
+          "capitolo": "battlecity1",
+          "vinto": true,
+          "tentativi": 1,
+          "turni": 23,
+          "tempoVirtualeSecondi": 286,
+          "semeIniziale": 19001
+        },
+        {
+          "id": "anime-3-strings",
+          "avversario": "strings",
+          "capitolo": "battlecity1",
+          "vinto": true,
+          "tentativi": 1,
+          "turni": 9,
+          "tempoVirtualeSecondi": 130,
+          "semeIniziale": 20001
+        },
+        {
+          "id": "anime-3-arkana",
+          "avversario": "arkana",
+          "capitolo": "battlecity1",
+          "vinto": true,
+          "tentativi": 2,
+          "turni": 41,
+          "tempoVirtualeSecondi": 546,
+          "semeIniziale": 21001
+        },
+        {
+          "id": "anime-3-lumis",
+          "avversario": "lumis",
+          "capitolo": "battlecity1",
+          "vinto": true,
+          "tentativi": 1,
+          "turni": 27,
+          "tempoVirtualeSecondi": 380,
+          "semeIniziale": 22001
+        },
+        {
+          "id": "anime-3-umbra",
+          "avversario": "umbra",
+          "capitolo": "battlecity1",
+          "vinto": true,
+          "tentativi": 4,
+          "turni": 59,
+          "tempoVirtualeSecondi": 802,
+          "semeIniziale": 23001
+        },
+        {
+          "id": "anime-3-joey-controllato",
+          "avversario": "joey",
+          "capitolo": "battlecity1",
+          "vinto": true,
+          "tentativi": 18,
+          "turni": 223,
+          "tempoVirtualeSecondi": 2944,
+          "semeIniziale": 24001
+        },
+        {
+          "id": "anime-3-bakura",
+          "avversario": "bakura",
+          "capitolo": "battlecity1",
+          "vinto": true,
+          "tentativi": 4,
+          "turni": 57,
+          "tempoVirtualeSecondi": 739,
+          "semeIniziale": 25001
+        },
+        {
+          "id": "anime-6-gansley",
+          "avversario": "gansley",
+          "capitolo": "virtuale",
+          "vinto": true,
+          "tentativi": 17,
+          "turni": 293,
+          "tempoVirtualeSecondi": 3858,
+          "semeIniziale": 26001
+        },
+        {
+          "id": "anime-6-noah",
+          "avversario": "noah",
+          "capitolo": "virtuale",
+          "vinto": true,
+          "tentativi": 6,
+          "turni": 107,
+          "tempoVirtualeSecondi": 1413,
+          "semeIniziale": 27001
+        },
+        {
+          "id": "anime-4-kaiba",
+          "avversario": "kaiba",
+          "capitolo": "battlecity2",
+          "vinto": true,
+          "tentativi": 6,
+          "turni": 55,
+          "tempoVirtualeSecondi": 720,
+          "semeIniziale": 28001
+        },
+        {
+          "id": "anime-4-marik",
+          "avversario": "marik",
+          "capitolo": "battlecity2",
+          "vinto": true,
+          "tentativi": 2,
+          "turni": 34,
+          "tempoVirtualeSecondi": 438,
+          "semeIniziale": 29001
+        },
+        {
+          "id": "anime-9-bakura",
+          "avversario": "bakura",
+          "capitolo": "cerimoniale",
+          "vinto": true,
+          "tentativi": 4,
+          "turni": 93,
+          "tempoVirtualeSecondi": 1206,
+          "semeIniziale": 30001
+        },
+        {
+          "id": "anime-9-zorc",
+          "avversario": "bakura",
+          "capitolo": "cerimoniale",
+          "vinto": true,
+          "tentativi": 4,
+          "turni": 47,
+          "tempoVirtualeSecondi": 613,
+          "semeIniziale": 31001
+        },
+        {
+          "id": "anime-5-yamiyugi",
+          "avversario": "yamiYugi",
+          "capitolo": "cerimoniale",
+          "vinto": true,
+          "tentativi": 5,
+          "turni": 75,
+          "tempoVirtualeSecondi": 954,
+          "semeIniziale": 32001
+        }
+      ]
+    },
+    {
+      "deckId": "starter_sdp_pegasus",
+      "deck": "Starter Deck: Pegasus (SDP)",
+      "difficolta": "difficile",
+      "completata": true,
+      "duelliCompletati": 26,
+      "duelliTotali": 26,
+      "tentativi": 242,
+      "tentativiMediPerDuello": 9.31,
+      "turni": 3715,
+      "tempoVirtualeSecondi": 48564,
+      "tempoRealeMs": 16330,
+      "bloccatoA": null,
+      "dettaglioDuelli": [
+        {
+          "id": "anime-1-kaiba",
+          "avversario": "kaiba",
+          "capitolo": "prologo",
+          "vinto": true,
+          "tentativi": 1,
+          "turni": 19,
+          "tempoVirtualeSecondi": 237,
+          "semeIniziale": 7001
+        },
+        {
+          "id": "anime-1-pegasus-video",
+          "avversario": "pegasus",
+          "capitolo": "prologo",
+          "vinto": true,
+          "tentativi": 7,
+          "turni": 171,
+          "tempoVirtualeSecondi": 2164,
+          "semeIniziale": 8001
+        },
+        {
+          "id": "anime-2-weevil",
+          "avversario": "weevil",
+          "capitolo": "regno",
+          "vinto": true,
+          "tentativi": 7,
+          "turni": 153,
+          "tempoVirtualeSecondi": 2085,
+          "semeIniziale": 9001
+        },
+        {
+          "id": "anime-2-mako",
+          "avversario": "mako",
+          "capitolo": "regno",
+          "vinto": true,
+          "tentativi": 26,
+          "turni": 326,
+          "tempoVirtualeSecondi": 4356,
+          "semeIniziale": 10001
+        },
+        {
+          "id": "anime-2-panik",
+          "avversario": "panik",
+          "capitolo": "regno",
+          "vinto": true,
+          "tentativi": 1,
+          "turni": 15,
+          "tempoVirtualeSecondi": 197,
+          "semeIniziale": 11001
+        },
+        {
+          "id": "anime-2-bakura-isola",
+          "avversario": "bakura",
+          "capitolo": "regno",
+          "vinto": true,
+          "tentativi": 8,
+          "turni": 119,
+          "tempoVirtualeSecondi": 1592,
+          "semeIniziale": 12001
+        },
+        {
+          "id": "anime-2-falso-kaiba",
+          "avversario": "kaiba",
+          "capitolo": "regno",
+          "vinto": true,
+          "tentativi": 20,
+          "turni": 259,
+          "tempoVirtualeSecondi": 3318,
+          "semeIniziale": 13001
+        },
+        {
+          "id": "anime-2-paradox",
+          "avversario": "paradoxBrothers",
+          "capitolo": "regno",
+          "vinto": true,
+          "tentativi": 8,
+          "turni": 127,
+          "tempoVirtualeSecondi": 1793,
+          "semeIniziale": 14001
+        },
+        {
+          "id": "anime-2-kaiba",
+          "avversario": "kaiba",
+          "capitolo": "regno",
+          "vinto": true,
+          "tentativi": 1,
+          "turni": 23,
+          "tempoVirtualeSecondi": 309,
+          "semeIniziale": 15001
+        },
+        {
+          "id": "anime-2c-mai",
+          "avversario": "mai",
+          "capitolo": "regno",
+          "vinto": true,
+          "tentativi": 8,
+          "turni": 129,
+          "tempoVirtualeSecondi": 1650,
+          "semeIniziale": 16001
+        },
+        {
+          "id": "anime-2c-joey",
+          "avversario": "joey",
+          "capitolo": "regno",
+          "vinto": true,
+          "tentativi": 1,
+          "turni": 49,
+          "tempoVirtualeSecondi": 613,
+          "semeIniziale": 17001
+        },
+        {
+          "id": "anime-2-pegasus",
+          "avversario": "pegasus",
+          "capitolo": "regno",
+          "vinto": true,
+          "tentativi": 1,
+          "turni": 11,
+          "tempoVirtualeSecondi": 150,
+          "semeIniziale": 18001
+        },
+        {
+          "id": "anime-3-seeker",
+          "avversario": "seeker",
+          "capitolo": "battlecity1",
+          "vinto": true,
+          "tentativi": 3,
+          "turni": 61,
+          "tempoVirtualeSecondi": 778,
+          "semeIniziale": 19001
+        },
+        {
+          "id": "anime-3-strings",
+          "avversario": "strings",
+          "capitolo": "battlecity1",
+          "vinto": true,
+          "tentativi": 1,
+          "turni": 9,
+          "tempoVirtualeSecondi": 114,
+          "semeIniziale": 20001
+        },
+        {
+          "id": "anime-3-arkana",
+          "avversario": "arkana",
+          "capitolo": "battlecity1",
+          "vinto": true,
+          "tentativi": 16,
+          "turni": 245,
+          "tempoVirtualeSecondi": 3245,
+          "semeIniziale": 21001
+        },
+        {
+          "id": "anime-3-lumis",
+          "avversario": "lumis",
+          "capitolo": "battlecity1",
+          "vinto": true,
+          "tentativi": 1,
+          "turni": 27,
+          "tempoVirtualeSecondi": 346,
+          "semeIniziale": 22001
+        },
+        {
+          "id": "anime-3-umbra",
+          "avversario": "umbra",
+          "capitolo": "battlecity1",
+          "vinto": true,
+          "tentativi": 5,
+          "turni": 93,
+          "tempoVirtualeSecondi": 1246,
+          "semeIniziale": 23001
+        },
+        {
+          "id": "anime-3-joey-controllato",
+          "avversario": "joey",
+          "capitolo": "battlecity1",
+          "vinto": true,
+          "tentativi": 18,
+          "turni": 241,
+          "tempoVirtualeSecondi": 3142,
+          "semeIniziale": 24001
+        },
+        {
+          "id": "anime-3-bakura",
+          "avversario": "bakura",
+          "capitolo": "battlecity1",
+          "vinto": true,
+          "tentativi": 6,
+          "turni": 97,
+          "tempoVirtualeSecondi": 1211,
+          "semeIniziale": 25001
+        },
+        {
+          "id": "anime-6-gansley",
+          "avversario": "gansley",
+          "capitolo": "virtuale",
+          "vinto": true,
+          "tentativi": 25,
+          "turni": 368,
+          "tempoVirtualeSecondi": 4800,
+          "semeIniziale": 26001
+        },
+        {
+          "id": "anime-6-noah",
+          "avversario": "noah",
+          "capitolo": "virtuale",
+          "vinto": true,
+          "tentativi": 18,
+          "turni": 331,
+          "tempoVirtualeSecondi": 4308,
+          "semeIniziale": 27001
+        },
+        {
+          "id": "anime-4-kaiba",
+          "avversario": "kaiba",
+          "capitolo": "battlecity2",
+          "vinto": true,
+          "tentativi": 11,
+          "turni": 155,
+          "tempoVirtualeSecondi": 1971,
+          "semeIniziale": 28001
+        },
+        {
+          "id": "anime-4-marik",
+          "avversario": "marik",
+          "capitolo": "battlecity2",
+          "vinto": true,
+          "tentativi": 15,
+          "turni": 197,
+          "tempoVirtualeSecondi": 2554,
+          "semeIniziale": 29001
+        },
+        {
+          "id": "anime-9-bakura",
+          "avversario": "bakura",
+          "capitolo": "cerimoniale",
+          "vinto": true,
+          "tentativi": 3,
+          "turni": 31,
+          "tempoVirtualeSecondi": 396,
+          "semeIniziale": 30001
+        },
+        {
+          "id": "anime-9-zorc",
+          "avversario": "bakura",
+          "capitolo": "cerimoniale",
+          "vinto": true,
+          "tentativi": 8,
+          "turni": 93,
+          "tempoVirtualeSecondi": 1226,
+          "semeIniziale": 31001
+        },
+        {
+          "id": "anime-5-yamiyugi",
+          "avversario": "yamiYugi",
+          "capitolo": "cerimoniale",
+          "vinto": true,
+          "tentativi": 23,
+          "turni": 366,
+          "tempoVirtualeSecondi": 4762,
+          "semeIniziale": 32001
+        }
+      ]
+    }
+  ],
+  "analisiIncontri": [
+    {
+      "id": "anime-1-kaiba",
+      "avversario": "kaiba",
+      "capitolo": "prologo",
+      "facile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "normale": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "difficile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "progressioneCoerente": true
+    },
+    {
+      "id": "anime-1-pegasus-video",
+      "avversario": "pegasus",
+      "capitolo": "prologo",
+      "facile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "normale": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "difficile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "progressioneCoerente": true
+    },
+    {
+      "id": "anime-2-weevil",
+      "avversario": "weevil",
+      "capitolo": "regno",
+      "facile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "normale": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "difficile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "progressioneCoerente": true
+    },
+    {
+      "id": "anime-2-mako",
+      "avversario": "mako",
+      "capitolo": "regno",
+      "facile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "normale": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "difficile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "progressioneCoerente": true
+    },
+    {
+      "id": "anime-2-panik",
+      "avversario": "panik",
+      "capitolo": "regno",
+      "facile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "normale": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "difficile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "progressioneCoerente": true
+    },
+    {
+      "id": "anime-2-bakura-isola",
+      "avversario": "bakura",
+      "capitolo": "regno",
+      "facile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "normale": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "difficile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "progressioneCoerente": true
+    },
+    {
+      "id": "anime-2-falso-kaiba",
+      "avversario": "kaiba",
+      "capitolo": "regno",
+      "facile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "normale": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "difficile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "progressioneCoerente": true
+    },
+    {
+      "id": "anime-2-paradox",
+      "avversario": "paradoxBrothers",
+      "capitolo": "regno",
+      "facile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "normale": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "difficile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "progressioneCoerente": true
+    },
+    {
+      "id": "anime-2-kaiba",
+      "avversario": "kaiba",
+      "capitolo": "regno",
+      "facile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "normale": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "difficile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "progressioneCoerente": true
+    },
+    {
+      "id": "anime-2c-mai",
+      "avversario": "mai",
+      "capitolo": "regno",
+      "facile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "normale": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "difficile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "progressioneCoerente": true
+    },
+    {
+      "id": "anime-2c-joey",
+      "avversario": "joey",
+      "capitolo": "regno",
+      "facile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "normale": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "difficile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "progressioneCoerente": true
+    },
+    {
+      "id": "anime-2-pegasus",
+      "avversario": "pegasus",
+      "capitolo": "regno",
+      "facile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "normale": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "difficile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "progressioneCoerente": true
+    },
+    {
+      "id": "anime-3-seeker",
+      "avversario": "seeker",
+      "capitolo": "battlecity1",
+      "facile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "normale": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "difficile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "progressioneCoerente": true
+    },
+    {
+      "id": "anime-3-strings",
+      "avversario": "strings",
+      "capitolo": "battlecity1",
+      "facile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "normale": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "difficile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "progressioneCoerente": true
+    },
+    {
+      "id": "anime-3-arkana",
+      "avversario": "arkana",
+      "capitolo": "battlecity1",
+      "facile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "normale": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "difficile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "progressioneCoerente": true
+    },
+    {
+      "id": "anime-3-lumis",
+      "avversario": "lumis",
+      "capitolo": "battlecity1",
+      "facile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "normale": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "difficile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "progressioneCoerente": true
+    },
+    {
+      "id": "anime-3-umbra",
+      "avversario": "umbra",
+      "capitolo": "battlecity1",
+      "facile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "normale": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "difficile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "progressioneCoerente": true
+    },
+    {
+      "id": "anime-3-joey-controllato",
+      "avversario": "joey",
+      "capitolo": "battlecity1",
+      "facile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "normale": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "difficile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "progressioneCoerente": true
+    },
+    {
+      "id": "anime-3-bakura",
+      "avversario": "bakura",
+      "capitolo": "battlecity1",
+      "facile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "normale": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "difficile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "progressioneCoerente": true
+    },
+    {
+      "id": "anime-6-gansley",
+      "avversario": "gansley",
+      "capitolo": "virtuale",
+      "facile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "normale": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "difficile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "progressioneCoerente": true
+    },
+    {
+      "id": "anime-6-noah",
+      "avversario": "noah",
+      "capitolo": "virtuale",
+      "facile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "normale": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "difficile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "progressioneCoerente": true
+    },
+    {
+      "id": "anime-4-kaiba",
+      "avversario": "kaiba",
+      "capitolo": "battlecity2",
+      "facile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "normale": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "difficile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "progressioneCoerente": true
+    },
+    {
+      "id": "anime-4-marik",
+      "avversario": "marik",
+      "capitolo": "battlecity2",
+      "facile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "normale": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "difficile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "progressioneCoerente": true
+    },
+    {
+      "id": "anime-9-bakura",
+      "avversario": "bakura",
+      "capitolo": "cerimoniale",
+      "facile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "normale": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "difficile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "progressioneCoerente": true
+    },
+    {
+      "id": "anime-9-zorc",
+      "avversario": "bakura",
+      "capitolo": "cerimoniale",
+      "facile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "normale": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "difficile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "progressioneCoerente": true
+    },
+    {
+      "id": "anime-5-yamiyugi",
+      "avversario": "yamiYugi",
+      "capitolo": "cerimoniale",
+      "facile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "normale": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "difficile": {
+        "campioni": 0,
+        "superatoDa": 0,
+        "tentativiMedi": 0,
+        "alTetto": 0
+      },
+      "progressioneCoerente": true
+    }
+  ]
+}

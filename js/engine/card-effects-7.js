@@ -1730,37 +1730,20 @@
     });
 
     // ------------------------------------------------------------------
-    // 483 — Stregone Mascherato Toon / Toon Masked Sorcerer. A
-    // differenza degli altri mostri Toon di questo file (484/486/606:
-    // Special Summon esclusivo da "Mondo dei Toon"), il testo reale di
-    // QUESTA carta non ha alcun vincolo di Evocazione — resta Evocabile
-    // Normalmente come qualunque mostro, con solo clausole "in campo"
-    // legate a Mondo dei Toon.
-    // CORREZIONE di fedeltà: aggiunte le tre clausole mancanti (prima
-    // c'era solo "pesca 1 carta se infligge danno da battaglia").
-    // requiresToonWorld: true (opt-in generico, id 487 qui sopra: si
-    // autodistrugge se Mondo dei Toon lascia il Terreno scoperto) e
-    // cannotAttackTurnSummoned: true (stesso flag generico di
-    // resolveAttack/actions.js usato da 123/484/486/606) sono gli stessi
-    // due meccanismi già esistenti per l'intera famiglia Toon — nessuna
-    // nuova infrastruttura. "Può attaccare direttamente finché controlli
-    // Mondo dei Toon E l'avversario non controlla mostri Toon" è invece
-    // CONDIZIONATO (a differenza di id 606, sempre concesso una volta
-    // Special Summonata): ricalcolato ad ogni static() con entrambe le
-    // condizioni, non solo la presenza di Mondo dei Toon.
+    // 483 — Stregone Mascherato Toon: Mondo gli concede i vantaggi comuni;
+    // il suo effetto personale resta la pescata dopo il danno, limitata a
+    // una volta per turno anche se Riavvolgimento gli concede due attacchi.
     // ------------------------------------------------------------------
     CardEffects.register(483, {
-        requiresToonWorld: true,
-        cannotAttackTurnSummoned: true,
-        static(ctx) {
-            const hasToonWorld = ctx.stField(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 487);
-            const opponentHasToon = ctx.field(ctx.opponent).some((slot) => slot && !slot.isFaceDown && slot.card.type === 'monster' && slot.card.name.includes('Toon'));
-            if (hasToonWorld && !opponentHasToon) {
-                gameState.directAttackAllowedFor = gameState.directAttackAllowedFor || {};
-                gameState.directAttackAllowedFor[ctx.card.uid] = true;
-            }
+        isToon: true,
+        mustTargetFilterIfPresent(card, owner) {
+            const hasWorld = Tavolo.magieTrappole(owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 487);
+            return hasWorld && card.type === 'monster' && ((DuelEngine.getDefinition(card.id)?.isToon) || /Toon/i.test(card.name || ''));
         },
         onDealsBattleDamage(ctx) {
+            const key = `toon-masked-sorcerer-draw:${ctx.card.uid}`;
+            if (ctx.hasUsedOncePerTurn(key)) return;
+            ctx.markUsedOncePerTurn(key);
             ctx.drawCards(ctx.owner, 1);
             ctx.log('🎭 Stregone Mascherato Toon pesca 1 carta!');
         }

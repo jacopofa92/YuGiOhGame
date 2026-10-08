@@ -1176,7 +1176,8 @@ const cardDatabase = [
     "attribute": "LUCE",
     "attack": 3000,
     "defense": 2500,
-    "effect": "Special Summonabile dalla mano sacrificando 2 mostri, solo se controlli \"Mondo Toon\". Può attaccare direttamente. Non può attaccare il turno in cui viene Special Summonata; paga 500 Life Points per dichiarare un attacco. Se \"Mondo dei Toon\" sul Terreno viene distrutto, distruggi anche questa carta.",
+    "effect": "Può essere Evocato normalmente rispettandone il Livello. Se controlli \"Mondo dei Toon\", puoi invece Evocarlo Specialmente dalla mano sacrificando 1 mostro Toon. Finché controlli \"Mondo dei Toon\", può attaccare direttamente e nel turno in cui viene Evocato.",
+    "legacyOfficialEffect": "Special Summonabile dalla mano sacrificando 2 mostri, solo se controlli \"Mondo Toon\". Può attaccare direttamente. Non può attaccare il turno in cui viene Special Summonata; paga 500 Life Points per dichiarare un attacco. Se \"Mondo dei Toon\" sul Terreno viene distrutto, distruggi anche questa carta.",
     "artOnly": true
   },
   {
@@ -5287,7 +5288,8 @@ const cardDatabase = [
     "attribute": "OSCURITÀ",
     "attack": 900,
     "defense": 1400,
-    "effect": "Non può attaccare nel turno in cui viene Evocata. Se \"Mondo dei Toon\" scoperto sul Terreno viene distrutto, distruggi questa carta. Finché controlli \"Mondo dei Toon\" e il tuo avversario non controlla mostri Toon, questa carta può attaccare direttamente il tuo avversario. Se questa carta infligge danno da battaglia al tuo avversario: pesca 1 carta.",
+    "effect": "Finché controlli \"Mondo dei Toon\", può attaccare direttamente e può attaccare nel turno in cui viene Evocato. Una volta per turno, se infligge danno da battaglia all'avversario: pesca 1 carta.",
+    "legacyOfficialEffect": "Non può attaccare nel turno in cui viene Evocata. Se \"Mondo dei Toon\" scoperto sul Terreno viene distrutto, distruggi questa carta. Finché controlli \"Mondo dei Toon\" e il tuo avversario non controlla mostri Toon, questa carta può attaccare direttamente il tuo avversario. Se questa carta infligge danno da battaglia al tuo avversario: pesca 1 carta.",
     "artOnly": true
   },
   {
@@ -5300,7 +5302,8 @@ const cardDatabase = [
     "attribute": "ACQUA",
     "attack": 1400,
     "defense": 1500,
-    "effect": "Non può essere Evocata Normalmente/Set. Deve prima essere Special Summonata (dalla tua mano), mentre controlli \"Mondo dei Toon\". Non può attaccare nel turno in cui viene Special Summonata. Devi pagare 500 Life Points per dichiarare un attacco con questa carta. Se \"Mondo dei Toon\" scoperto sul Terreno viene distrutto, distruggi questa carta.",
+    "effect": "Può essere Evocata Normalmente. Se controlli \"Mondo dei Toon\" e non controlli mostri, puoi invece Evocarla Specialmente dalla mano. Finché controlli \"Mondo dei Toon\", può attaccare direttamente e nel turno in cui viene Evocata.",
+    "legacyOfficialEffect": "Non può essere Evocata Normalmente/Set. Deve prima essere Special Summonata (dalla tua mano), mentre controlli \"Mondo dei Toon\". Non può attaccare nel turno in cui viene Special Summonata. Devi pagare 500 Life Points per dichiarare un attacco con questa carta. Se \"Mondo dei Toon\" scoperto sul Terreno viene distrutto, distruggi questa carta.",
     "artOnly": true
   },
   {
@@ -5322,7 +5325,8 @@ const cardDatabase = [
     "attribute": "OSCURITÀ",
     "attack": 2500,
     "defense": 1200,
-    "effect": "Non può essere Evocata Normalmente/Set. Deve prima essere Special Summonata (dalla tua mano) sacrificando 1 mostro, mentre controlli \"Mondo dei Toon\". Non può attaccare nel turno in cui viene Special Summonata. Devi pagare 500 Life Points per dichiarare un attacco con questa carta. Se \"Mondo dei Toon\" scoperto sul Terreno viene distrutto, distruggi questa carta.",
+    "effect": "Può essere Evocato normalmente rispettandone il Livello. Se controlli \"Mondo dei Toon\", puoi invece Evocarlo Specialmente dalla mano sacrificando 1 mostro Toon. Finché controlli \"Mondo dei Toon\", può attaccare direttamente e nel turno in cui viene Evocato.",
+    "legacyOfficialEffect": "Non può essere Evocata Normalmente/Set. Deve prima essere Special Summonata (dalla tua mano) sacrificando 1 mostro, mentre controlli \"Mondo dei Toon\". Non può attaccare nel turno in cui viene Special Summonata. Devi pagare 500 Life Points per dichiarare un attacco con questa carta. Se \"Mondo dei Toon\" scoperto sul Terreno viene distrutto, distruggi questa carta.",
     "artOnly": true
   },
   {
@@ -5331,7 +5335,8 @@ const cardDatabase = [
     "name": "Mondo dei Toon",
     "type": "spell",
     "subtype": "continuous",
-    "effect": "Attiva questa carta pagando 1000 Life Points.",
+    "effect": "I tuoi mostri Toon possono attaccare direttamente e nel turno in cui vengono Evocati. Se l'avversario controlla un Toon, devono prima attaccare i suoi Toon. Una volta per turno, se un tuo Toon sta per essere distrutto, puoi pagare 500 LP; non viene distrutto. Se questa carta lascia il Terreno, i tuoi Toon perdono questi vantaggi ma non vengono distrutti.",
+    "legacyOfficialEffect": "Attiva questa carta pagando 1000 Life Points.",
     "artOnly": true
   },
   {
@@ -6715,7 +6720,8 @@ const cardDatabase = [
     "attribute": "FUOCO",
     "attack": 2200,
     "defense": 2600,
-    "effect": "Trattata sempre come una carta \"Toon\". Non può essere Evocata Normalmente/Set. Deve prima essere Special Summonata dalla mano sacrificando 2 mostri, mentre controlli \"Mondo dei Toon\". Può attaccare direttamente, a meno che l'avversario controlli un mostro Toon, nel qual caso deve bersagliare un mostro Toon. Non può attaccare il turno in cui viene Special Summonata; paga 500 Life Points per dichiarare un attacco. Se \"Mondo dei Toon\" sul Terreno viene distrutto, distruggi anche questa carta.",
+    "effect": "Trattata sempre come una carta Toon. Può essere Evocata normalmente rispettandone il Livello. Se controlli \"Mondo dei Toon\", puoi invece Evocarla Specialmente dalla mano sacrificando 2 mostri. Finché controlli \"Mondo dei Toon\", può attaccare direttamente e nel turno in cui viene Evocata. Se l'avversario controlla un Toon, deve prima attaccare un suo Toon.",
+    "legacyOfficialEffect": "Trattata sempre come una carta \"Toon\". Non può essere Evocata Normalmente/Set. Deve prima essere Special Summonata dalla mano sacrificando 2 mostri, mentre controlli \"Mondo dei Toon\". Può attaccare direttamente, a meno che l'avversario controlli un mostro Toon, nel qual caso deve bersagliare un mostro Toon. Non può attaccare il turno in cui viene Special Summonata; paga 500 Life Points per dichiarare un attacco. Se \"Mondo dei Toon\" sul Terreno viene distrutto, distruggi anche questa carta.",
     "artOnly": true
   },
   {

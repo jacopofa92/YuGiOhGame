@@ -174,6 +174,36 @@ mostrata nell'anime e la debolezza concreta delle meccaniche Toon. Per isolare l
 con tetto 50 il giocatore è sempre pilotato dall'IA Difficile; cambia solo
 l'IA/deck dell'avversario.
 
+### Deroga Toon e Pegasus
+
+Sul branch `feature/rework-toon-pegasus` lo Starter Pegasus conserva
+esattamente le proprie 40 carte, ma l'archetipo usa una deroga dichiarata
+alle regole ufficiali per mediare fra resa dell'anime e giocabilità reale.
+Ogni carta il cui testo è stato sostituito conserva il vecchio testo nel
+campo dati `legacyOfficialEffect`, volutamente ignorato dalla UI.
+
+`Mondo dei Toon` non costa più 1000 LP: concede ai Toon attacco diretto e
+immediato e, una volta per turno, previene una loro distruzione pagando 500
+LP. Se lascia il Terreno, i Toon perdono questi vantaggi ma non si
+autodistruggono. I Toon possono inoltre essere Evocati normalmente secondo
+il proprio Livello; con Mondo attivo conservano scorciatoie tematiche: Sirena
+apre un campo vuoto, Teschio e Drago Toon usano un Toon come Sacrificio.
+Manga Ryu-Ran conserva i due Sacrifici e l'obbligo di affrontare prima un
+Toon avversario. Stregone Mascherato pesca al massimo una volta per turno.
+
+Abbandonato e Restrizione dai Mille Occhi restano il secondo piano di
+Pegasus: Media (e quindi Facile) non li lascia più inattivi quando possono
+assorbire; Hard ordina i bersagli dal più pericoloso. Mille Occhi ora libera
+correttamente il mostro assorbito anche su bando, Sacrificio e ritorno in
+mano, non soltanto su distruzione.
+
+La lista dello Starter non è stata toccata e ora completa 26/26 duelli a
+tutte le difficoltà nel report `STORY_PEGASUS_TOON_REWORK_REPORT.json`, con
+medie **2,12 / 7,15 / 9,31** tentativi. Le liste avversarie Pegasus sono
+state ripulite dalle mani troppo cariche di Toon alti mantenendo soltanto
+carte della sua lore. Su tre blocchi di semi e 15 deck campione la difficoltà
+sale da **1,84** tentativi (Facile) a **2,27** (Media) e **2,47** (Difficile).
+
 Il Pannello Admin può segnare al 100% tutte le campagne attualmente giocabili,
 in ogni difficoltà. `js/dev/story-admin-tools.js` scrive solo il progresso:
 marca i premi finali come già gestiti e non chiama né Rewards né
@@ -287,7 +317,7 @@ del protocollo corrente.
 
 ## Stato rapido
 
-- Versione dichiarata: `1.1.5` (`package.json` e `js/version.js`).
+- Versione dichiarata: `1.2.0` (`package.json` e `js/version.js`).
 - Applicazione HTML/CSS/JavaScript puro: nessun framework, bundler o build del
   frontend. Gli script globali devono essere caricati nell'ordine giusto.
 - 19 pagine HTML, 104 file JS applicativi sotto `js/` (esclusi i vendor),
@@ -298,9 +328,10 @@ del protocollo corrente.
   `refactor/chiudi-ultime-carte`.
 - PWA tramite `manifest.json`, `sw.js` e `js/pwa-register.js`.
 - App Android/Capacitor: le shell dev e produzione includono `NativeMusic`;
-  la produzione è `1.1.5` (`versionCode 23`) e punta a GitHub Pages. Gli APK
+  la produzione nativa resta `1.1.5` (`versionCode 23`) e punta a GitHub Pages;
+  il contenuto web caricato dall'APK espone invece `GAME_VERSION` `1.2.0`. Gli APK
   sono ignorati da Git e restano artefatti locali rigenerabili. La cache
-  WebView/PWA corrente è `ygo-duel-arena-v172`.
+  WebView/PWA corrente è `ygo-duel-arena-v174`.
 - Cloud tramite Supabase; multiplayer tramite relay WebSocket Node nativo.
 - Le preferenze utente (`save.settings`: dettagli video, ologrammi, aptica,
   volume e mute musica/SFX) fanno parte del salvataggio unificato e quindi di

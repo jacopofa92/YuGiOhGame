@@ -713,6 +713,21 @@
     // onDestroy. Il redirect "se distrutta in battaglia, distruggi il
     // mostro equipaggiato al posto suo" è implementato tramite
     // onWouldBeDestroyedInBattle, stesso schema di 416 (vedi lì).
+    function releaseThousandEyesTarget(ctx) {
+        const absorbed = ctx.card._restrictTarget;
+        if (!absorbed) return;
+        const owner = ctx.card._restrictFromOwner;
+        const emptySlot = ctx.field(owner).findIndex((slot) => slot === null);
+        if (emptySlot !== -1) {
+            ctx.field(owner)[emptySlot] = { card: absorbed, position: 'attack', isFaceDown: false, hasAttacked: false, canChangePosition: false, summonedOnTurn: gameState.turn };
+            ctx.log(`👁️ ${absorbed.name} torna sul campo del suo proprietario!`);
+        } else {
+            ctx.graveyard(owner).push(absorbed);
+            ctx.log(`👁️ ${absorbed.name} torna al Cimitero del suo proprietario (Terreno pieno).`);
+        }
+        ctx.card._restrictTarget = null;
+    }
+
     CardEffects.register(476, {
         fusionMaterials: [416, 475],
         canActivate(ctx) {
@@ -721,7 +736,10 @@
             return ctx.field(ctx.opponent).some((slot) => slot && !slot.isFaceDown);
         },
         activate(ctx) {
-            const candidati = collectFieldTargets(ctx, { zone: 'monster', owner: 'opponent' });
+            let candidati = collectFieldTargets(ctx, { zone: 'monster', owner: 'opponent' });
+            if ((gameState.livelloIA && gameState.livelloIA[ctx.owner]) === 'hard') {
+                candidati = candidati.sort((a, b) => DuelEngine.getEffectiveAtk(b.card) - DuelEngine.getEffectiveAtk(a.card));
+            }
             if (candidati.length === 0) return;
             chooseFieldCardTarget(ctx, candidati, {
                 title: '👁️ Restrizione dai Mille Occhi',
@@ -738,19 +756,10 @@
                 ctx.log(`👁️ Restrizione dai Mille Occhi equipaggia ${absorbed.name}, copiandone ATK/DEF!`);
             });
         },
-        onDestroy(ctx) {
-            const absorbed = ctx.card._restrictTarget;
-            if (!absorbed) return;
-            const owner = ctx.card._restrictFromOwner;
-            const emptySlot = ctx.field(owner).findIndex((slot) => slot === null);
-            if (emptySlot !== -1) {
-                ctx.field(owner)[emptySlot] = { card: absorbed, position: 'attack', isFaceDown: false, hasAttacked: false, canChangePosition: false, summonedOnTurn: gameState.turn };
-                ctx.log(`👁️ ${absorbed.name} torna sul campo del suo proprietario!`);
-            } else {
-                ctx.graveyard(owner).push(absorbed);
-                ctx.log(`👁️ ${absorbed.name} torna al Cimitero del suo proprietario (Terreno pieno).`);
-            }
-        },
+        onDestroy: releaseThousandEyesTarget,
+        onReturnedToHandSelf: releaseThousandEyesTarget,
+        onSacrificedForTribute: releaseThousandEyesTarget,
+        onBanished: releaseThousandEyesTarget,
         // "Se questa carta dovrebbe essere distrutta IN BATTAGLIA,
         // distruggi il mostro equipaggiato al posto suo" (stesso schema di
         // Abbandonato/id 416, proprio materiale da Fusione): a differenza

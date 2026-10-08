@@ -240,9 +240,9 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
     // qui sopra, per uid) perché "Toon" non è un Tipo/Attributo ma una
     // convenzione sul nome (vedi isToon, più sotto in questo file).
     const mustTargetFilter = window.DuelEngine && DuelEngine.getDefinition(attackerSlot.card.id)?.mustTargetFilterIfPresent;
-    if (typeof mustTargetFilter === 'function' && defenderField.some((slot) => slot && !slot.isFaceDown && mustTargetFilter(slot.card))) {
+    if (typeof mustTargetFilter === 'function' && defenderField.some((slot) => slot && !slot.isFaceDown && mustTargetFilter(slot.card, attackerOwner))) {
         const targetSlot = targetIndex !== -1 ? defenderField[targetIndex] : null;
-        const targetMatches = targetSlot && !targetSlot.isFaceDown && mustTargetFilter(targetSlot.card);
+        const targetMatches = targetSlot && !targetSlot.isFaceDown && mustTargetFilter(targetSlot.card, attackerOwner);
         if (!targetMatches) {
             addToLog(`🚫 ${attackerSlot.card.name} deve scegliere come bersaglio un mostro specifico!`);
             done();
@@ -1047,6 +1047,7 @@ function resolveBattleDamage(attackerOwner, defenderOwner, attackerIndex, target
     // redirect (la carta sopravvive), false/undefined altrimenti.
     const survivesOrUnionRedirected = (owner, card, opponentAtk, extraSurviveCondition) => {
         if (extraSurviveCondition || survivesBattleDestruction(owner) || cardIsIndestructibleByBattle(card, opponentAtk)) return true;
+        if (window.DuelEngine && DuelEngine.tryProtectToonWithWorld(owner, card)) return true;
         if (window.DuelEngine && DuelEngine.tryRedirectUnionDestroy(owner, card.uid, card.name)) return true;
         const def = window.DuelEngine && DuelEngine.getDefinition(card.id);
         if (def && typeof def.onWouldBeDestroyedInBattle === 'function') {

@@ -2040,7 +2040,10 @@
             return ctx.field(ctx.opponent).some((slot) => slot && !slot.isFaceDown);
         },
         activate(ctx) {
-            const candidati = collectFieldTargets(ctx, { zone: 'monster', owner: 'opponent' });
+            let candidati = collectFieldTargets(ctx, { zone: 'monster', owner: 'opponent' });
+            if ((gameState.livelloIA && gameState.livelloIA[ctx.owner]) === 'hard') {
+                candidati = candidati.sort((a, b) => DuelEngine.getEffectiveAtk(b.card) - DuelEngine.getEffectiveAtk(a.card));
+            }
             if (candidati.length === 0) return;
             chooseFieldCardTarget(ctx, candidati, {
                 title: '🌀 Abbandonato',
@@ -2180,6 +2183,18 @@
             gameState.blockedCardUids = gameState.blockedCardUids || new Set();
             targets.forEach((slot) => gameState.blockedCardUids.add(slot.card.uid));
             ctx.log(`🀄 Xing Zhen Hu blocca l'attivazione di ${targets.length} cart${targets.length === 1 ? 'a' : 'e'} Set dell'avversario!`);
+        }
+    });
+
+    // ================================================================
+    // 481 — Alligatore Toon: mostro normale, ma partecipa alle regole
+    // condivise dell'archetipo (protezione/attacco diretto da Mondo e
+    // precedenza ai Toon avversari negli scontri fra due Mondi).
+    CardEffects.register(481, {
+        isToon: true,
+        mustTargetFilterIfPresent(card, owner) {
+            const hasWorld = Tavolo.magieTrappole(owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 487);
+            return hasWorld && card.type === 'monster' && ((DuelEngine.getDefinition(card.id)?.isToon) || /Toon/i.test(card.name || ''));
         }
     });
 
@@ -2712,58 +2727,45 @@
     });
 
     // ================================================================
-    // 487 — Mondo dei Toon / Toon World (Magia Continua)
-    // Attiva questa carta pagando 1000 Life Points. Alcune carte "Toon"
-    // dipendono da questa per il proprio Special Summon dalla mano — vedi
-    // id 484/486 qui sotto.
-    // ================================================================
-    // CORREZIONE di fedeltà: aggiunta la clausola condivisa mancante "se
-    // Mondo dei Toon viene distrutto, distruggi anche i mostri Toon che
-    // lo richiedono" — nuovo opt-in def.requiresToonWorld, riusabile da
-    // ogni futuro mostro Toon con lo stesso vincolo (finora 123, 606).
+    // 487 — Mondo dei Toon / Toon World (deroga anime controllata).
+    // Niente costo iniziale e niente autodistruzione a cascata: finché è
+    // scoperta, ogni Toon può attaccare direttamente. La protezione da
+    // 500 LP una volta per turno è centralizzata nel motore perché deve
+    // intercettare sia battaglia sia effetti. L'effetto ufficiale storico
+    // resta in data/cards.json (`legacyOfficialEffect`), non mostrato UI.
     CardEffects.register(487, {
         continuous: true,
-        activate(ctx) {
-            ctx.dealDamage(ctx.owner, 1000);
-            ctx.log(`🎨 Mondo dei Toon attivato pagando 1000 Life Points!`);
-        },
-        onSTDestroyed(ctx) {
-            ctx.field(ctx.owner).forEach((slot, index) => {
-                if (slot && !slot.isFaceDown && DuelEngine.getDefinition(slot.card.id)?.requiresToonWorld) {
-                    ctx.destroyMonster(ctx.owner, index);
+        static(ctx) {
+            ctx.field(ctx.owner).forEach((slot) => {
+                if (!slot || slot.isFaceDown) return;
+                const def = DuelEngine.getDefinition(slot.card.id);
+                if ((def && def.isToon) || /Toon/i.test(slot.card.name || '')) {
+                    gameState.directAttackAllowedUids[slot.card.uid] = true;
                 }
             });
         }
     });
 
     // ================================================================
-    // 484 — Sirena Toon / Toon Mermaid (Special Summon dalla mano)
-    // Non può essere Evocata Normalmente/Set. Deve prima essere Special
-    // Summonata dalla mano, mentre controlli "Mondo dei Toon" (id 487).
-    // requiresToonWorld: true (distrutta anche lei se Mondo dei Toon
-    // lascia il Terreno — mancava, nonostante il testo lo richiedesse).
-    // "Non può attaccare il turno in cui viene Special Summonata" e
-    // "paga 500 LP per dichiarare un attacco": cannotAttackTurnSummoned/
-    // requiresLifePointsToAttack, nuovi flag generici (resolveAttack in
-    // actions.js, executeAttack/botPerformAttacks).
+    // 484 — Sirena Toon: con Mondo apre gratuitamente soltanto un campo
+    // vuoto; senza Mondo resta una normale Evocazione di Livello 4. I
+    // vantaggi offensivi arrivano dallo static di Mondo, non dalla carta.
     // ================================================================
     CardEffects.register(484, {
-        cannotNormalSummon: true,
-        requiresToonWorld: true,
-        cannotAttackTurnSummoned: true,
-        requiresLifePointsToAttack: 500,
+        isToon: true,
+        mustTargetFilterIfPresent(card, owner) {
+            const hasWorld = Tavolo.magieTrappole(owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 487);
+            return hasWorld && card.type === 'monster' && ((DuelEngine.getDefinition(card.id)?.isToon) || /Toon/i.test(card.name || ''));
+        },
         canSpecialSummonFromHand(ctx) {
-            return ctx.stField(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 487);
+            const hasWorld = ctx.stField(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 487);
+            return hasWorld && ctx.field(ctx.owner).every((slot) => !slot);
         }
     });
 
     // ================================================================
-    // 486 — Teschio Evocato Toon / Toon Summoned Skull (Special Summon
-    // dalla mano)
-    // Non può essere Evocata Normalmente/Set. Deve prima essere Special
-    // Summonata dalla mano sacrificando 1 mostro, mentre controlli
-    // "Mondo dei Toon" (id 487). requiresToonWorld/cannotAttackTurnSummoned/
-    // requiresLifePointsToAttack come Sirena Toon (id 484) qui sopra.
+    // 486 — Teschio Evocato Toon: normalmente segue il proprio Livello;
+    // con Mondo può invece entrare dalla mano sacrificando un Toon.
     // Sceglie il Sacrificio tramite un'interfaccia dedicata: nuovo hook
     // generico getSpecialSummonSacrificeCandidates(ctx) (letto SOLO in
     // actions.js, PRIMA di chiamare DuelEngine.trySpecialSummonFromHand,
@@ -2771,31 +2773,33 @@
     // paySpecialSummonCost — nessuna modifica alla sua firma/agli altri
     // 17 usi nel dataset). Il click apre il picker e salva la scelta in
     // gameState.pendingSpecialSummonSacrificeUid; paySpecialSummonCost la
-    // legge e la consuma, con fallback al primo trovato (invariato) se
+    // legge e la consuma, con fallback al primo Toon trovato se
     // assente — copre sia il bot (mai apre un picker) sia una chiamata
     // diretta da test/console senza passare dal click UI.
     // ================================================================
     CardEffects.register(486, {
-        cannotNormalSummon: true,
-        requiresToonWorld: true,
-        cannotAttackTurnSummoned: true,
-        requiresLifePointsToAttack: 500,
+        isToon: true,
+        mustTargetFilterIfPresent(card, owner) {
+            const hasWorld = Tavolo.magieTrappole(owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 487);
+            return hasWorld && card.type === 'monster' && ((DuelEngine.getDefinition(card.id)?.isToon) || /Toon/i.test(card.name || ''));
+        },
         canSpecialSummonFromHand(ctx) {
             const hasToonWorld = ctx.stField(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 487);
-            const hasSacrifice = ctx.field(ctx.owner).some((slot) => slot);
+            const hasSacrifice = ctx.field(ctx.owner).some((slot) => slot && ((DuelEngine.getDefinition(slot.card.id)?.isToon) || /Toon/i.test(slot.card.name || '')));
             return hasToonWorld && hasSacrifice;
         },
         getSpecialSummonSacrificeCandidates(ctx) {
             return ctx.field(ctx.owner)
-                .map((slot, index) => (slot ? { index: index, card: slot.card } : null))
+                .map((slot, index) => (slot && ((DuelEngine.getDefinition(slot.card.id)?.isToon) || /Toon/i.test(slot.card.name || '')) ? { index: index, card: slot.card } : null))
                 .filter(Boolean);
         },
         paySpecialSummonCost(ctx) {
             const field = ctx.field(ctx.owner);
             const pendingUid = gameState.pendingSpecialSummonSacrificeUid;
             gameState.pendingSpecialSummonSacrificeUid = null;
-            let index = pendingUid ? field.findIndex((slot) => slot && slot.card.uid === pendingUid) : -1;
-            if (index === -1) index = field.findIndex((slot) => slot);
+            const isToon = (slot) => slot && ((DuelEngine.getDefinition(slot.card.id)?.isToon) || /Toon/i.test(slot.card.name || ''));
+            let index = pendingUid ? field.findIndex((slot) => isToon(slot) && slot.card.uid === pendingUid) : -1;
+            if (index === -1) index = field.findIndex(isToon);
             if (index === -1) return false;
             ctx.graveyard(ctx.owner).push(field[index].card);
             const sacrificedName = field[index].card.name;

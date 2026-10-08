@@ -414,7 +414,8 @@
 // e apertura touch limitata al tap diretto.
 // v172: unione col fix degli stream Range/HTTP 206 e il player persistente.
 // v173: dettaglio carta landscape compatto e strumenti admin per le Storie.
-const CACHE_NAME = 'ygo-duel-arena-v173';
+// v174: rework completo dei Toon e bilanciamento dei deck Pegasus.
+const CACHE_NAME = 'ygo-duel-arena-v174';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
