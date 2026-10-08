@@ -51,12 +51,18 @@ sempre coerenti con il personaggio. Toon/Pegasus si affronta per ultimo.
       testa. La personalità Magie/Trappole viene ora letta dal posto che sta
       decidendo e non dalla sessione globale; WW1, sandbox e personaggi custom
       senza profilo usano automaticamente il comportamento neutro.
-- [ ] Playbook Hard ulteriori: solo regole generiche o profili opzionali e
-      misurati. Sospeso il vecchio punto basato su metadati obbligatori per
-      ogni carta: renderebbe WW1/custom dipendenti da compilazione manuale.
-      Prima priorità residua: Joey, Seeker, Gansley e Noah; Pegasus/Toon per
-      ultimo. Una prova di aggressività sui coperti non ha mosso alcun dato
-      ed è stata rimossa.
+- [x] Playbook Hard misurati, senza metadati obbligatori carta-per-carta:
+      Joey beneficia della scelta M/T più incisiva; Seeker privilegia tramite
+      testo i mostri che cercano Exodia; Terreni e carte utilizzabili solo a
+      inizio Main Phase vengono preparati prima dell'Evocazione; Gansley e
+      Noah seguono il piano visibile invece di reagire ai coperti. Audit
+      finale: Hard +0,82 tentativi medi e 12/16 incontri pari o superiori.
+      Pegasus/Toon resta escluso e rinviato come richiesto.
+- [x] Primo bilanciamento dei deck avversari basato sull'audit, senza toccare
+      Starter/Structure: solo Kaiba Hard era sistematicamente anomalo. Tolti
+      un Kaiser Glider e Uomo Giudice, reinseriti Saggi il Pagliaccio Oscuro
+      e Carità Aggraziata, tutte carte del suo repertorio anime. Deck Hard
+      +0,81 tentativi medi sui Medium e 13/16 incontri pari o superiori.
 
 ## Audio multipagina
 

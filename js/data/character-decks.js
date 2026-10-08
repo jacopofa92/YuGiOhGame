@@ -371,8 +371,8 @@ const characterDeckDatabase = {
                 { id: 321, qty: 1 }, // Kaiser Sea Horse
                 { id: 454, qty: 1 }, // Drago Lancia
                 { id: 198, qty: 1 }, // Drago della Dimensione Diversa
-                { id: 320, qty: 2 }, // Kaiser Glider
-                { id: 317, qty: 1 }, // Uomo Giudice
+                { id: 320, qty: 1 }, // Kaiser Glider
+                { id: 431, qty: 1 }, // Saggi il Pagliaccio Oscuro
                 { id: 578, qty: 1 }, // Il Flauto per Evocare Draghi
                 { id: 38, qty: 1 }, // Fusione
                 { id: 35, qty: 1 }, // Rinascita del Mostro
@@ -387,6 +387,7 @@ const characterDeckDatabase = {
                 { id: 793, qty: 1 }, // Armatura Sakuretsu
                 { id: 7, qty: 1 }, // Buco Nero
                 { id: 8, qty: 1 }, // Spada Rivelatrice
+                { id: 272, qty: 1 }, // Carità Aggraziata
                 { id: 607, qty: 1 }, // Tifone dello Spazio Mistico
                 { id: 30, qty: 1 }, // Obelisk il Tormentatore
                 { id: 398, qty: 1 }, // Paladino del Drago Bianco
