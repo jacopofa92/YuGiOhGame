@@ -70,6 +70,37 @@
         return decision;
     }
 
+    function choosePreSummonSpellAction(gameStateArg, io = 'bot') {
+        const level = currentLevel(io);
+        const decision = level && typeof level.choosePreSummonSpellAction === 'function'
+            ? level.choosePreSummonSpellAction(gameStateArg, io) : null;
+        debugLog('choosePreSummonSpellAction', decision ? { card: decision.card.name } : null, io);
+        return decision;
+    }
+
+    function orderAttackers(attackers, io = 'bot') {
+        const level = currentLevel(io);
+        const ordered = level && typeof level.orderAttackers === 'function'
+            ? level.orderAttackers(attackers, io) : attackers;
+        debugLog('orderAttackers', ordered.map((item) => item.slot.card.name), io);
+        return ordered;
+    }
+
+    function estimateLethal(attackers, defenders, opponentLp, io = 'bot') {
+        const level = currentLevel(io);
+        return level && typeof level.estimateLethal === 'function'
+            ? level.estimateLethal(attackers, defenders, opponentLp, io)
+            : { possible: false, damage: 0 };
+    }
+
+    function choosePositionChanges(gameStateArg, io = 'bot') {
+        const level = currentLevel(io);
+        const changes = level && typeof level.choosePositionChanges === 'function'
+            ? level.choosePositionChanges(gameStateArg, io) : [];
+        debugLog('choosePositionChanges', changes, io);
+        return changes;
+    }
+
     function chooseAttackTarget(attackerSlot, playerMonsters, io = 'bot') {
         const level = currentLevel(io);
         const decision = level ? level.chooseAttackTarget(attackerSlot, playerMonsters, io) : null;
@@ -117,6 +148,10 @@
 
     window.BotAI = {
         chooseSummon: chooseSummon,
+        choosePreSummonSpellAction: choosePreSummonSpellAction,
+        orderAttackers: orderAttackers,
+        estimateLethal: estimateLethal,
+        choosePositionChanges: choosePositionChanges,
         chooseAttackTarget: chooseAttackTarget,
         chooseChainResponse: chooseChainResponse,
         chooseNextSpellTrapAction: chooseNextSpellTrapAction,

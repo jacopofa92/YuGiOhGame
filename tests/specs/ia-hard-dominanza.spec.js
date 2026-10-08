@@ -1,6 +1,6 @@
 // L'IA Difficile può raffinare la Media, ma non deve diventare più passiva.
 module.exports = {
-    name: 'IA Difficile: mantiene gli attacchi validi e privilegia pressione a campo libero',
+    name: 'IA Difficile: base stabile, preparazione del turno e linea letale',
     async run({ page, assert }) {
         const r = await page.evaluate(() => {
             const carta = (uid, atk, def) => ({
@@ -61,13 +61,45 @@ module.exports = {
                 gameState.botMonsterField[0] = { card: ignition, isFaceDown: false, position: 'attack' };
                 DuelEngine.canActivate = (_io, zona, indice) => zona === 'st' ? indice === 0 : zona === 'monster' && indice === 0;
                 const attivazioneSet = AI_HARD.chooseSetCardActivation(gameState, 'bot');
+
+                // Una pescata pura deve precedere l'Evocazione: il nuovo
+                // mostro ottenuto potrà così essere scelto nello stesso turno.
+                const pescata = { id: 9803, uid: 'pescata', name: 'Pescata', type: 'spell', effect: 'Pesca 2 carte.' };
+                gameState.botHand = [pescata];
+                DuelEngine.canActivate = (_io, zona, indice) => zona === 'hand' && indice === 0;
+                const preparazione = AI_HARD.choosePreSummonSpellAction(gameState, 'bot');
+
+                // Il più debole elimina il bersaglio piccolo; il più forte
+                // resta per l'attacco diretto che completa il letale.
+                const attaccanti = [
+                    { index: 0, slot: { card: carta('forte', 3000, 1000), position: 'attack', isFaceDown: false } },
+                    { index: 1, slot: { card: carta('debole', 1200, 1000), position: 'attack', isFaceDown: false } },
+                    { index: 2, slot: { card: carta('medio', 2000, 1000), position: 'attack', isFaceDown: false } }
+                ];
+                const difensori = [
+                    { index: 0, slot: { card: carta('difensore', 900, 1000), position: 'attack', isFaceDown: false } }
+                ];
+                const ordinati = AI_HARD.orderAttackers(attaccanti);
+                const letale = AI_HARD.estimateLethal(attaccanti, difensori, 4500, 'bot');
+
+                gameState.playerMonsterField = Array(5).fill(null);
+                gameState.botMonsterField = Array(5).fill(null);
+                gameState.botMonsterField[3] = {
+                    card: carta('difensivo-pronto', 1700, 1900),
+                    position: 'defense', isFaceDown: false, canChangePosition: true
+                };
+                const cambiPosizione = AI_HARD.choosePositionChanges(gameState, 'bot');
                 return {
                     bersaglioMedio, bersaglioHard, bersaglioMedioSuMuro, bersaglioHardSuMuro,
                     evocato: evocazione && evocazione.card.uid,
                     attaccoScelto: !!(evocazione && evocazione.card.uid === 'attacco'),
                     magiaBaseline: decisioneMagia && decisioneMagia.card.uid,
                     conteggioMagie: usate.activateCount,
-                    zonaAttivata: attivazioneSet && attivazioneSet.zone
+                    zonaAttivata: attivazioneSet && attivazioneSet.zone,
+                    preparazione: preparazione && preparazione.card.uid,
+                    ordineAttacchi: ordinati.map((item) => item.slot.card.uid),
+                    letale,
+                    cambiPosizione
                 };
             } finally {
                 DuelEngine.canActivate = canActivateOriginale;
@@ -85,5 +117,13 @@ module.exports = {
             `Hard deve partire dalla decisione valida della Media: ${JSON.stringify(r)}`);
         assert(r.zonaAttivata === null,
             `Hard non deve consumare attivazioni proattive fuori contesto: ${JSON.stringify(r)}`);
+        assert(r.preparazione === 'pescata',
+            `Hard deve pescare/cercare prima di scegliere l'Evocazione: ${JSON.stringify(r)}`);
+        assert(r.ordineAttacchi.join(',') === 'debole,medio,forte',
+            `Hard deve conservare l'attaccante più forte per ultimo: ${JSON.stringify(r)}`);
+        assert(r.letale.possible === true && r.letale.damage === 5000,
+            `Hard deve riconoscere la linea letale disponibile: ${JSON.stringify(r)}`);
+        assert(r.cambiPosizione.length === 1 && r.cambiPosizione[0] === 3,
+            `Hard deve rimettere in Attacco un mostro libero di colpire: ${JSON.stringify(r)}`);
     }
 };

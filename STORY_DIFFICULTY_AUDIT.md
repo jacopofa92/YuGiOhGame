@@ -159,3 +159,24 @@ Il miglioramento è netto ma non viene presentato come perfetto:
 - Mako e Noah restano gli scostamenti negativi più evidenti da esaminare
   quando si passerà alle singole liste, senza alterare i deck del giocatore;
 - Pegasus/Toon resta escluso e verrà affrontato per ultimo come concordato.
+
+## Affinamento tattico successivo
+
+Il report `STORY_DIFFICULTY_FACTORIAL_REPORT_HARD_TACTICS.json` misura un
+secondo intervento sempre a deck invariati. Hard ora:
+
+- attiva una pescata/ricerca pura prima dell'Evocazione Normale, così può
+  usare nello stesso turno il mostro appena ottenuto;
+- ordina gli attaccanti dal meno potente al più potente, conservando la
+  forza eccedente per gli attacchi diretti;
+- riconosce in sola lettura una linea di danno letale;
+- cambia legalmente da Difesa ad Attacco i mostri dei turni precedenti se il
+  campo è libero o hanno un bersaglio battibile.
+
+Il risultato sale a **13 incontri su 16** pari o superiori alla Media; la
+media passa da 3,32 tentativi contro Media a 4,07 contro Hard, quindi
+**+0,75 tentativi**. I tre scostamenti residui sono Kaiba nel prologo
+(−0,66), Joey al Castello (−0,13) e Noah (−0,27). Una prova intermedia che
+attivava automaticamente gli effetti Ignition apparentemente vantaggiosi è
+stata rimossa: costi e timing non sono deducibili in modo affidabile dal solo
+testo e il report peggiorava.
