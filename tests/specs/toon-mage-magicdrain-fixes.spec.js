@@ -16,8 +16,8 @@ module.exports = {
         const r1 = await t.evaluate(() => {
             const toonSkull = { ...cardDatabase.find((c) => c.id === 486), uid: 'toonskull-1' };
             const toonWorld = { ...cardDatabase.find((c) => c.id === 487), uid: 'toonworld-1' };
-            const firstMonster = { ...cardDatabase.find((c) => c.type === 'monster' && !c.extraDeck), uid: 'first-1' };
-            const chosenMonster = { ...cardDatabase.find((c) => c.type === 'monster' && !c.extraDeck), uid: 'chosen-1' };
+            const firstMonster = { ...cardDatabase.find((c) => c.id === 481), uid: 'first-1' };
+            const chosenMonster = { ...cardDatabase.find((c) => c.id === 481), uid: 'chosen-1' };
 
             gameState.playerHand = [toonSkull];
             gameState.playerMonsterField = [{ card: firstMonster, position: 'attack', isFaceDown: false }, { card: chosenMonster, position: 'attack', isFaceDown: false }, null, null, null];

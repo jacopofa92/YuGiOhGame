@@ -661,7 +661,7 @@ const characterDeckDatabase = {
                 { id: 481, qty: 3 }, // Alligatore Toon
                 { id: 483, qty: 2 }, // Stregone Mascherato Toon
                 { id: 190, qty: 3 }, // Coniglio Oscuro
-                { id: 209, qty: 2 }, // Suonatore di Draghi
+                { id: 209, qty: 3 }, // Suonatore di Draghi
                 { id: 475, qty: 2 }, // Idolo dai Mille Occhi
                 { id: 328, qty: 3 }, // Kiseitai
                 { id: 484, qty: 2 }, // Sirena Toon
@@ -677,7 +677,6 @@ const characterDeckDatabase = {
                 { id: 143, qty: 2 }, // Mura del Castello
                 { id: 35, qty: 1 }, // Rinascita del Mostro
                 { id: 36, qty: 1 }, // Vaso dell'Avidità
-                { id: 272, qty: 1 }, // Carità Aggraziata
                 { id: 40, qty: 1 }, // Buco Trappola
                 { id: 546, qty: 1 }, // Dian Keto la Maestra delle Cure
                 { id: 595, qty: 1 }, // Il Guardiano Affidabile
@@ -688,19 +687,18 @@ const characterDeckDatabase = {
         medium: {
             main: [
                 { id: 123, qty: 2 }, // Drago Toon Occhi Blu
-                { id: 486, qty: 2 }, // Teschio Evocato Toon
-                { id: 484, qty: 2 }, // Sirena Toon
+                { id: 486, qty: 1 }, // Teschio Evocato Toon
+                { id: 484, qty: 3 }, // Sirena Toon
                 { id: 481, qty: 2 }, // Alligatore Toon
                 { id: 606, qty: 1 }, // Manga Ryu-Ran
-                { id: 483, qty: 1 }, // Stregone Mascherato Toon
+                { id: 483, qty: 2 }, // Stregone Mascherato Toon
                 { id: 190, qty: 3 }, // Coniglio Oscuro
-                { id: 209, qty: 1 }, // Suonatore di Draghi
                 { id: 475, qty: 1 }, // Idolo dai Mille Occhi
                 { id: 416, qty: 1 }, // Abbandonato
                 { id: 202, qty: 1 }, // Bambola della Rovina
                 { id: 306, qty: 1 }, // Mago Senza Volto Illusionista
                 { id: 400, qty: 1 }, // Drago Pappagallo
-                { id: 487, qty: 2 }, // Mondo dei Toon
+                { id: 487, qty: 3 }, // Mondo dei Toon
                 { id: 482, qty: 2 }, // Maschera Toon
                 { id: 485, qty: 1 }, // Riavvolgimento Toon
                 { id: 116, qty: 1 }, // Rito dell'Illusione Nera
@@ -716,8 +714,7 @@ const characterDeckDatabase = {
                 { id: 820, qty: 1 }, // Nega Attacco
                 { id: 10, qty: 1 }, // Cilindro Magico
                 { id: 272, qty: 1 }, // Carità Aggraziata
-                { id: 646, qty: 1 }, // Tempesta Pesante
-                { id: 466, qty: 1 } // L'Occhio della Verità
+                { id: 646, qty: 1 } // Tempesta Pesante
             ],
             extra: [
                 { id: 476, qty: 1 } // Restrizione dai Mille Occhi
@@ -726,18 +723,17 @@ const characterDeckDatabase = {
         hard: {
             main: [
                 { id: 123, qty: 2 }, // Drago Toon Occhi Blu
-                { id: 486, qty: 3 }, // Teschio Evocato Toon
-                { id: 484, qty: 2 }, // Sirena Toon
+                { id: 486, qty: 1 }, // Teschio Evocato Toon
+                { id: 484, qty: 3 }, // Sirena Toon
                 { id: 481, qty: 2 }, // Alligatore Toon
-                { id: 606, qty: 2 }, // Manga Ryu-Ran
-                { id: 483, qty: 1 }, // Stregone Mascherato Toon
-                { id: 190, qty: 2 }, // Coniglio Oscuro
+                { id: 606, qty: 1 }, // Manga Ryu-Ran
+                { id: 483, qty: 2 }, // Stregone Mascherato Toon
                 { id: 475, qty: 1 }, // Idolo dai Mille Occhi
                 { id: 416, qty: 1 }, // Abbandonato
                 { id: 202, qty: 1 }, // Bambola della Rovina
                 { id: 306, qty: 1 }, // Mago Senza Volto Illusionista
                 { id: 400, qty: 1 }, // Drago Pappagallo
-                { id: 487, qty: 2 }, // Mondo dei Toon
+                { id: 487, qty: 3 }, // Mondo dei Toon
                 { id: 482, qty: 3 }, // Maschera Toon
                 { id: 485, qty: 1 }, // Riavvolgimento Toon
                 { id: 116, qty: 1 }, // Rito dell'Illusione Nera
@@ -749,6 +745,7 @@ const characterDeckDatabase = {
                 { id: 793, qty: 1 }, // Armatura Sakuretsu
                 { id: 7, qty: 1 }, // Buco Nero
                 { id: 8, qty: 1 }, // Spada Rivelatrice
+                { id: 820, qty: 2 }, // Nega Attacco
                 { id: 10, qty: 1 }, // Cilindro Magico
                 { id: 272, qty: 1 }, // Carità Aggraziata
                 { id: 646, qty: 1 }, // Tempesta Pesante

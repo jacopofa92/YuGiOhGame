@@ -170,6 +170,15 @@
     // la regola disponibile anche a future carte custom equivalenti.
     function chooseSetCardActivation(gameState, io = 'bot') {
         const campo = Tavolo.mostri(io, gameState);
+        // Prima il piano di controllo di Pegasus: lasciare inutilizzato un
+        // Abbandonato/Mille Occhi scoperto vanificherebbe Ritual/Fusione.
+        for (let index = 0; index < campo.length; index++) {
+            const slot = campo[index];
+            if (!slot || slot.isFaceDown || (slot.card.id !== 416 && slot.card.id !== 476)) continue;
+            if (window.DuelEngine && DuelEngine.canActivate(io, 'monster', index)) {
+                return { zone: 'monster', index, card: slot.card };
+            }
+        }
         for (let index = 0; index < campo.length; index++) {
             const slot = campo[index];
             if (!slot || slot.isFaceDown) continue;

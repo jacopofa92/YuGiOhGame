@@ -694,6 +694,31 @@
         return source.id !== 866 && source.uid !== slot.card.uid;
     }
 
+    /**
+     * Deroga Toon del progetto: Mondo dei Toon protegge una sola volta per
+     * turno l'intera famiglia pagando 500 LP. Il controllo vive nel motore
+     * perché deve coprire allo stesso modo distruzione da effetto e da
+     * battaglia; le carte custom possono aderire con `isToon: true`.
+     */
+    function tryProtectToonWithWorld(owner, card) {
+        if (!card) return false;
+        const def = getDefinition(card.id);
+        const isToon = !!(def && def.isToon) || /Toon/i.test(card.name || '');
+        if (!isToon) return false;
+        const world = stFieldOf(owner).find((slot) => slot && !slot.isFaceDown && slot.card.id === 487);
+        const lpKey = Tavolo.chiave(owner, 'LP');
+        const key = `toon-world-protection:${owner}`;
+        const worldBlocked = world && ((gameState.blockedCardUids && gameState.blockedCardUids.has(world.card.uid))
+            || (gameState.blockedCardUidsThisTurn && gameState.blockedCardUidsThisTurn.has(world.card.uid)));
+        if (!world || worldBlocked || areSpellsNegatedFor(owner) || gameState[lpKey] < 500
+            || (gameState.usedOncePerTurnEffect && gameState.usedOncePerTurnEffect[key])) return false;
+        gameState.usedOncePerTurnEffect = gameState.usedOncePerTurnEffect || {};
+        gameState.usedOncePerTurnEffect[key] = true;
+        gameState[lpKey] -= 500;
+        addToLog(`📖 Mondo dei Toon protegge ${card.name}: ${owner === 'player' ? 'paghi' : 'il bot paga'} 500 LP!`);
+        return true;
+    }
+
     const ACTIONS = {
         /**
          * Distrugge il mostro nello slot indicato (owner+index, il
@@ -807,6 +832,10 @@
                     return;
                 }
             }
+            // La protezione a pagamento di Mondo dei Toon arriva dopo le
+            // immunità gratuite: non si devono spendere 500 LP se la carta
+            // sarebbe comunque sopravvissuta per un proprio effetto.
+            if (tryProtectToonWithWorld(owner, slot.card)) return;
             // Mostri Union (def.isUnion — es. Testa di Drago Y id 513,
             // Carro Armato Metallico Z id 515): "se il mostro equipaggiato
             // dovrebbe essere distrutto, questa carta viene distrutta al
@@ -5994,6 +6023,7 @@
         notifySacrificedForTribute: notifySacrificedForTribute,
         redirectToBanishIfFlagged: redirectToBanishIfFlagged,
         tryRedirectUnionDestroy: tryRedirectUnionDestroy,
+        tryProtectToonWithWorld: tryProtectToonWithWorld,
         hasUnionProtector: hasUnionProtector,
         getDamageStepBonus: getDamageStepBonus,
         runBeforeDamageCalculation: runBeforeDamageCalculation,

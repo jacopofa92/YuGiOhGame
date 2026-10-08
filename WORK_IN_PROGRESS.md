@@ -69,9 +69,12 @@ sempre coerenti con il personaggio. Toon/Pegasus si affronta per ultimo.
       due difetti generali emersi durante la misura: Hard sa ricoprire i
       mostri che lo prevedono nel testo per riusarne il Flip, e la scelta
       pesata M/T usa `Casuale`, rendendo gli audit riproducibili.
-- [ ] Mediazione Pegasus/Toon: mantenere identità e forza percepita dell'anime
-      senza trasformare i Toon reali in carte generiche fuori tema. Da
-      affrontare separatamente, per ultimo, come richiesto.
+- [x] Mediazione Pegasus/Toon: lista Starter invariata, effetti Toon
+      ripensati con Mondo come fulcro e vecchio testo ufficiale conservato
+      in `legacyOfficialEffect` (non visibile nella UI). Abbandonato e Mille
+      Occhi sono usati dall'IA e ripuliscono correttamente l'assorbito.
+      Starter 26/26 a ogni difficoltà; Pegasus avversario cresce 1,84 →
+      2,27 → 2,47 tentativi su tre campioni di semi.
 
 ## Audio multipagina
 

@@ -238,7 +238,20 @@
      * fa mai: resta puramente reattiva sul proprio retrocampo, per
      * differenziarsi davvero da IA_DIFFICILE (vedi ai-hard.js).
      */
-    function chooseSetCardActivation() {
+    function chooseSetCardActivation(gameState, io = 'bot') {
+        // Abbandonato e Restrizione dai Mille Occhi sono il secondo piano
+        // identitario di Pegasus, non un Ignition generico facoltativo: se
+        // il boss è riuscito ad arrivare in campo deve almeno usare il suo
+        // assorbimento. Facile condivide volutamente questa IA; la vera
+        // differenza fra Facile/Media resta nella lista del personaggio.
+        const campo = Tavolo.mostri(io, gameState);
+        for (let index = 0; index < campo.length; index++) {
+            const slot = campo[index];
+            if (!slot || slot.isFaceDown || (slot.card.id !== 416 && slot.card.id !== 476)) continue;
+            if (window.DuelEngine && DuelEngine.canActivate(io, 'monster', index)) {
+                return { zone: 'monster', index, card: slot.card };
+            }
+        }
         return null;
     }
 

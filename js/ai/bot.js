@@ -487,7 +487,7 @@ async function botPerformAttacks(giro = 0, soloUids = null, io = 'bot') {
         // verrebbe comunque rifiutato.
         const mustTargetFilter = attackerDef && attackerDef.mustTargetFilterIfPresent;
         if (typeof mustTargetFilter === 'function') {
-            const matches = playerMonsters.filter((item) => !item.slot.isFaceDown && mustTargetFilter(item.slot.card));
+            const matches = playerMonsters.filter((item) => !item.slot.isFaceDown && mustTargetFilter(item.slot.card, io));
             if (matches.length > 0) playerMonsters = matches;
         }
         // Anello Magnetico (id 420) sul Terreno del giocatore: si può

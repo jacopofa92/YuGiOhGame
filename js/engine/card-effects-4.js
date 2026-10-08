@@ -2304,64 +2304,35 @@
     });
 
     // ================================================================
-    // 123 — Drago Toon Occhi Blu / Blue-Eyes Toon Dragon (Special
-    // Summon dalla mano) — stesso schema Toon di Sirena Toon (id 484)/
-    // Teschio Evocato Toon (id 486), ma sacrificando 2 mostri invece di 1.
-    // NOTA: la carta esisteva già con l'effetto descritto in `effect` ma
-    // senza ALCUNA registrazione (mai davvero attivabile) — stesso genere
-    // di svista già trovato per Umi/Mura del Castello, qui scoperta
-    // durante l'aggiunta dello Starter Deck: Pegasus, che la include.
-    // ================================================================
-    // CORREZIONE di fedeltà: aggiunti l'attacco diretto mancante
-    // (gameState.directAttackAllowedFor, stesso schema di Manga Ryu-Ran
-    // id 606), requiresToonWorld: true (distrutta anche lei se Mondo
-    // dei Toon lascia il Terreno — vedi onDestroy su id 487 qui sopra),
-    // il divieto di attaccare nel turno di Special Summon
-    // (cannotAttackTurnSummoned, resolveAttack in actions.js) e il costo
-    // di 500 LP per attaccare (requiresLifePointsToAttack, executeAttack/
-    // botPerformAttacks) — stessa mancanza già corretta per id 484/486/606.
+    // 123 — Drago Toon Occhi Blu: può essere Evocato normalmente oppure,
+    // con Mondo attivo, sacrificando un solo Toon. Attacco diretto,
+    // attacco immediato e protezione appartengono a Mondo: quando Mondo
+    // sparisce il Drago resta un 3000 ATK regolare, non si autodistrugge.
     CardEffects.register(123, {
-        cannotNormalSummon: true,
-        requiresToonWorld: true,
-        cannotAttackTurnSummoned: true,
-        requiresLifePointsToAttack: 500,
+        isToon: true,
+        mustTargetFilterIfPresent(card, owner) {
+            const hasWorld = Tavolo.magieTrappole(owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 487);
+            return hasWorld && card.type === 'monster' && ((DuelEngine.getDefinition(card.id)?.isToon) || /Toon/i.test(card.name || ''));
+        },
         canSpecialSummonFromHand(ctx) {
             const hasToonWorld = ctx.stField(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 487);
-            const tributes = ctx.field(ctx.owner).filter((slot) => slot).length;
-            return hasToonWorld && tributes >= 2;
+            const hasToon = ctx.field(ctx.owner).some((slot) => slot && ((DuelEngine.getDefinition(slot.card.id)?.isToon) || /Toon/i.test(slot.card.name || '')));
+            return hasToonWorld && hasToon;
         },
         getSpecialSummonTributeFilters() {
-            return [() => true, () => true];
+            return [(card) => (DuelEngine.getDefinition(card.id)?.isToon) || /Toon/i.test(card.name || '')];
         },
         paySpecialSummonCost(ctx) {
-            return resolveSpecialSummonTributeCost(ctx, [() => true, () => true], '🐉 Drago Toon Occhi Blu sacrifica 2 mostri per essere Special Summonato!');
-        },
-        static(ctx) {
-            gameState.directAttackAllowedFor = gameState.directAttackAllowedFor || {};
-            gameState.directAttackAllowedFor[ctx.card.uid] = true;
+            return resolveSpecialSummonTributeCost(ctx, [(card) => (DuelEngine.getDefinition(card.id)?.isToon) || /Toon/i.test(card.name || '')], '🐉 Drago Toon Occhi Blu sacrifica 1 mostro Toon per essere Special Summonato!');
         }
     });
 
     // ================================================================
-    // 606 — Manga Ryu-Ran (Toon) — identico schema di Drago Toon Occhi
-    // Blu (id 123) qui sopra: Special Summon dalla mano sacrificando 2
-    // mostri, mentre si controlla "Mondo dei Toon" (id 487).
-    // requiresToonWorld: true già presente (distrutta anche lei se Mondo
-    // dei Toon lascia il Terreno). cannotAttackTurnSummoned/
-    // requiresLifePointsToAttack come id 123/484/486.
-    // ================================================================
-    // CORREZIONE di fedeltà: aggiunta la clausola mancante "può attaccare
-    // direttamente" (gameState.directAttackAllowedFor, ri-concesso ad
-    // ogni render via static() perché quel flag si azzera da solo ad
-    // ogni cambio turno). "Se l'avversario controlla un mostro Toon, deve
-    // invece bersagliare un mostro Toon": def.mustTargetFilterIfPresent
-    // (nuovo aggancio generico, resolveAttack/actions.js), consultato
-    // anche lato bot in botPerformAttacks (bot.js).
+    // 606 — Manga Ryu-Ran resta il Toon pesante più lento: due Sacrifici
+    // per la scorciatoia con Mondo. Conserva la regola anime dello scontro
+    // fra Toon: se il difensore ne controlla uno, deve attaccare quello.
     CardEffects.register(606, {
-        cannotNormalSummon: true,
-        requiresToonWorld: true,
-        cannotAttackTurnSummoned: true,
-        requiresLifePointsToAttack: 500,
+        isToon: true,
         canSpecialSummonFromHand(ctx) {
             const hasToonWorld = ctx.stField(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 487);
             const tributes = ctx.field(ctx.owner).filter((slot) => slot).length;
@@ -2377,11 +2348,7 @@
         // bersagliare un mostro Toon" (mustTargetFilterIfPresent,
         // resolveAttack/actions.js) — "Toon" qui è la stessa convenzione
         // sul nome già usata altrove in questo file (isToon, vedi id 482).
-        mustTargetFilterIfPresent(card) { return card.type === 'monster' && card.name.includes('Toon'); },
-        static(ctx) {
-            gameState.directAttackAllowedFor = gameState.directAttackAllowedFor || {};
-            gameState.directAttackAllowedFor[ctx.card.uid] = true;
-        }
+        mustTargetFilterIfPresent(card) { return card.type === 'monster' && ((DuelEngine.getDefinition(card.id)?.isToon) || /Toon/i.test(card.name || '')); }
     });
 
     // ================================================================
