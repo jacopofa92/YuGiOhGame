@@ -334,6 +334,12 @@ function initGame() {
         }
     }
     resetGameState();
+    // La pagina conosce l'avversario tramite DuelSession; lo stato di regola
+    // conserva solo l'id opzionale per consentire a IA Hard un playbook. Il
+    // giocatore umano non riceve identità IA. Assenza = fallback generale.
+    if (window.DuelSession && DuelSession.opponent) {
+        gameState.personaggioPerPosto.bot = DuelSession.opponent.id || null;
+    }
     if (!document.getElementById('playerHand') || !document.getElementById('playerFieldBoard') || !document.getElementById('botFieldBoard')) {
         console.error('Elementi del campo mancanti nella pagina.');
         return;

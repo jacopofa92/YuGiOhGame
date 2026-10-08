@@ -109,6 +109,18 @@ tentativi**, ma è pari o superiore in 10/16 incontri. Questo comportamento
 di Media è un requisito esplicito e non va rimosso per gonfiare il divario;
 la separazione successiva dovrà arrivare dalle strategie Hard specifiche.
 
+L'identità IA è ora proprietà del posto (`gameState.personaggioPerPosto`),
+inizializzata sia dal duello browser sia dal motore senza testa. Questo evita
+che in IA contro IA entrambi i lati ereditino la personalità dell'avversario
+della sessione. I profili restano opzionali: un personaggio WW1/custom senza
+voce usa la strategia neutra e non richiede metadati carta-per-carta. Il
+report `STORY_DIFFICULTY_FACTORIAL_REPORT_PLAYBOOKS.json`, 50 tentativi per
+scontro su 15 deck campione, porta Hard a **+0,57 tentativi medi** e a
+**11/16** incontri pari o superiori alla Media. Restano sotto Kaiba nel
+prologo, Joey al Castello, Seeker, Gansley e Noah. Un playbook che forzava i
+personaggi aggressivi contro i coperti non modificava alcun risultato ed è
+stato scartato.
+
 **Criterio di bilanciamento deciso dall'utente.** Starter e Structure Deck
 sono campioni immutabili: non vanno corretti per farli convergere e ci si
 aspetta che gli Starter siano più deboli. L'audit serve a valutare se IA

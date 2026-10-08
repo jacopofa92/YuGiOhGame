@@ -449,8 +449,15 @@
      * richiesta esplicita dell'utente ("non tutte [le carte punitive]
      * subito").
      */
-    function getSpellTrapRestraint(gameState) {
-        const id = window.DuelSession && DuelSession.opponent && DuelSession.opponent.id;
+    function getSpellTrapRestraint(gameState, owner) {
+        // L'identità appartiene al POSTO, non alla sessione globale. È
+        // indispensabile nei duelli IA contro IA: prima entrambi i lati
+        // ereditavano per errore la personalità dell'avversario scelto
+        // dalla pagina. Un id assente (WW1, personaggio custom, sandbox)
+        // continua a usare il comportamento neutro: nessun dato manuale
+        // diventa obbligatorio per poter giocare.
+        const perPosto = gameState && gameState.personaggioPerPosto;
+        const id = (perPosto && owner && perPosto[owner]) || null;
         const aggression = (id && CHARACTER_AGGRESSION[id] !== undefined) ? CHARACTER_AGGRESSION[id] : DEFAULT_AGGRESSION;
         const turn = (gameState && gameState.turn) || 1;
         const earlyTurnBonus = turn <= 1 ? 0.4 : (turn === 2 ? 0.2 : 0);

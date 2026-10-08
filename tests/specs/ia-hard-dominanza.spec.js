@@ -33,6 +33,9 @@ module.exports = {
                 coperto.card.defense = 2200;
                 const bersaglioMedioSuMuro = AI_MEDIUM.chooseAttackTarget(attaccante, [{ slot: coperto, index: 2 }]);
                 const bersaglioHardSuMuro = AI_HARD.chooseAttackTarget(attaccante, [{ slot: coperto, index: 2 }]);
+                gameState.personaggioPerPosto = { player: 'joey', bot: 'kaiba' };
+                const restraintKaiba = AI_SHARED.getSpellTrapRestraint(gameState, 'bot');
+                const restraintJoey = AI_SHARED.getSpellTrapRestraint(gameState, 'player');
 
                 // A campo libero, un 1800/1000 deve creare pressione invece
                 // di perdere contro un muro 900/2200 per il solo max DEF.
@@ -102,6 +105,7 @@ module.exports = {
                 const riparoMedia = AI_MEDIUM.choosePositionChanges(gameState, 'bot');
                 return {
                     bersaglioMedio, bersaglioHard, bersaglioMedioSuMuro, bersaglioHardSuMuro,
+                    restraintKaiba, restraintJoey,
                     evocato: evocazione && evocazione.card.uid,
                     attaccoScelto: !!(evocazione && evocazione.card.uid === 'attacco'),
                     magiaBaseline: decisioneMagia && decisioneMagia.card.uid,
@@ -124,6 +128,8 @@ module.exports = {
             `Hard non deve rinunciare a un attacco valido della Media: ${JSON.stringify(r)}`);
         assert(r.bersaglioMedioSuMuro === 2 && r.bersaglioHardSuMuro === null,
             `Hard deve evitare uno schianto certo contro un coperto: ${JSON.stringify(r)}`);
+        assert(r.restraintKaiba < r.restraintJoey,
+            `La personalità deve appartenere al posto IA che sta decidendo: ${JSON.stringify(r)}`);
         assert(r.attaccoScelto === true,
             `A campo libero Hard deve privilegiare la pressione offensiva: ${JSON.stringify(r)}`);
         assert(r.magiaBaseline === 'magia-media' && r.conteggioMagie === 1,

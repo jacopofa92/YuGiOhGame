@@ -193,7 +193,7 @@
         // dell'utente: "non tutte subito", "meno punitivo specialmente
         // per IA Normale" — qui applicata con un restraint di base più
         // alto, vedi pickWeighted qui sotto).
-        const restraint = Math.min(1, (window.AI_SHARED ? AI_SHARED.getSpellTrapRestraint(gameState) : 0) + 0.15);
+        const restraint = Math.min(1, (window.AI_SHARED ? AI_SHARED.getSpellTrapRestraint(gameState, io) : 0) + 0.15);
         const pickWeighted = (list) => (window.AI_SHARED ? AI_SHARED.pickWeightedByImpact(list, restraint) : list[0]);
 
         if (!usedThisTurn.activateDone) {
