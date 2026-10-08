@@ -29,8 +29,13 @@ sempre coerenti con il personaggio. Toon/Pegasus si affronta per ultimo.
       dominante (migliore della Media solo in 2/16 casi); le liste Hard sono
       mediamente più forti delle Easy. Dati in
       `STORY_DIFFICULTY_FACTORIAL_REPORT.json`.
-- [ ] Correggere l'euristica `AI_HARD` mantenendo invariati i deck, quindi
-      rieseguire lo stesso audit prima di valutare singole liste avversarie.
+- [x] Corretta l'euristica `AI_HARD` mantenendo invariati tutti i deck e
+      rieseguito l'audit a 50 tentativi. Prima Hard era peggiore della Media
+      in 14/16 incontri (−2,48 tentativi medi); ora è pari o migliore in
+      10/16 e lo scarto medio residuo è −0,25. Hard eredita la linea stabile
+      della Media e in più evita gli schianti certi sui mostri coperti. Il
+      seguito è valutare le singole liste, iniziando dagli scostamenti ancora
+      evidenti (Mako e Noah); Pegasus/Toon resta per ultimo.
 
 ## Audio multipagina
 

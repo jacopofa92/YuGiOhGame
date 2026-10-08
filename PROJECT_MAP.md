@@ -80,6 +80,15 @@ tentativi; con IA Hard fissa, le liste Hard sono invece mediamente più forti
 delle Easy di 2,27 tentativi. La priorità è quindi correggere l'IA Hard prima
 di ritoccare le liste dei personaggi.
 
+La correzione è misurata in
+`STORY_DIFFICULTY_FACTORIAL_REPORT_AFTER_AI_FIX_V2.json`: `AI_HARD` non usa
+più una seconda strategia completa che rompeva le combo del deck, ma eredita
+la linea stabile della Media e aggiunge la lettura dei mostri coperti per
+evitare scontri certamente persi. A parità di deck Hard passa da 2/16 a
+10/16 incontri pari o più difficili della Media; il divario medio scende da
+−2,48 a −0,25 tentativi. Non è ancora monotonia perfetta: Mako e Noah sono i
+primi casi da studiare nelle liste avversarie; Pegasus/Toon resta rinviato.
+
 **Criterio di bilanciamento deciso dall'utente.** Starter e Structure Deck
 sono campioni immutabili: non vanno corretti per farli convergere e ci si
 aspetta che gli Starter siano più deboli. L'audit serve a valutare se IA
