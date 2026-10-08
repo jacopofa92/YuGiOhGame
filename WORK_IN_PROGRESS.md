@@ -221,7 +221,10 @@ righe, actions.js 3.855, game-flow.js 3.797; 205 accessi al DOM e 85
       posizione desktop/mobile.
 - [x] Service worker più leggero e verificato (vedi «Peso e velocità»).
 - [ ] Tutorial o partita guidata (meglio dopo la Priorità 2).
-- [ ] Bilanciamento delle difficoltà con simulazioni bot contro bot.
+- [x] Bilanciamento delle difficoltà con simulazioni bot contro bot: matrice
+      completa post-intervento in `STORY_DECK_SIMULATION_REPORT_AFTER_BALANCE.json`.
+      La scala media è 1,64 / 3,45 / 4,12 tentativi per duello e 19 incontri
+      su 26 sono monotoni. Restano Pegasus e, a Difficile, Invincible Fortress.
 
 **Priorità 5 — espansioni**
 - [ ] Forbidden Memories come secondo set di regole sullo stesso nucleo.
@@ -318,13 +321,15 @@ Decisioni aperte dell'utente: i 6 PNG di avatar non usati; le regole del
       (Kaiba in Mantello Viola, soldato Grande Guerra, kaibaV2,
       setoKaiba_duelist Kingdom, setoKaiba_forbiddenMemories, yamiYugiV2):
       decidere se rimuoverli o dar loro un uso.
-- [ ] Bilanciamento dei livelli di difficoltà con dati veri. Provato un giro
+- [x] Bilanciamento dei livelli di difficoltà con dati veri. Provato un giro
       (77 partite: giocatore scriptato semplice contro il bot): 0 vittorie
       ovunque, quindi inutile. Servirebbe un giocatore di riferimento più
       forte, che usi anche Magie e Trappole. AGGIORNAMENTO (Priorità 3): ora
       il duello senza testa è IA contro IA vera, in Node, circa 0,1 s a
       partita (`tools/duello-senza-testa.js --giocatore ... --livello-giocatore ...`):
-      il giocatore di riferimento c'è, ed è l'IA stessa.
+      il giocatore di riferimento c'è, ed è l'IA stessa. CHIUSO: il report
+      completo post-bilanciamento usa 16 deck × 3 difficoltà × 26 incontri;
+      45 percorsi su 48 terminano e la progressione media è monotona.
 
 ## Manutenzione
 

@@ -141,6 +141,16 @@ liste Hard salgono a **+0,81 tentativi medi** sulle Medium e **13/16**
 incontri pari o superiori. Starter e Structure Deck restano invariati;
 Pegasus/Toon è escluso da questo ciclo per richiesta dell'utente.
 
+La verifica end-to-end successiva è in
+`STORY_DECK_SIMULATION_REPORT_AFTER_BALANCE.json`: 16 Starter/Structure × 3
+difficoltà × 26 duelli, con tetto di 50 tentativi. La scala aggregata passa
+da **1,64** tentativi medi a Facile a **3,45** a Normale e **4,12** a
+Difficile; 19/26 incontri sono monotoni (erano 9/26). Completano 45 percorsi
+su 48: i due Pegasus già noti e Invincible Fortress a Difficile restano
+incompleti. Quest'ultimo arriva a 24/26 e si blocca su Mako e Marik; è un dato
+da studiare, non un'autorizzazione a modificare lo Structure Deck, che resta
+un campione immutabile per decisione dell'utente.
+
 **Criterio di bilanciamento deciso dall'utente.** Starter e Structure Deck
 sono campioni immutabili: non vanno corretti per farli convergere e ci si
 aspetta che gli Starter siano più deboli. L'audit serve a valutare se IA

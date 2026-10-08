@@ -232,3 +232,19 @@ Uomo Giudice con Saggi il Pagliaccio Oscuro e Carità Aggraziata. Sono tutte
 carte già attribuite a Kaiba nell'anime e nelle sue liste del gioco. I deck
 Hard chiudono a 4,48 contro 3,67 dei Medium (**+0,81**) e 13/16 incontri pari
 o superiori. Nessuno Starter/Structure è stato modificato.
+
+## Matrice completa dopo il bilanciamento
+
+`STORY_DECK_SIMULATION_REPORT_AFTER_BALANCE.json` ripete l'intera campagna
+principale con 16 Starter/Structure, tre difficoltà e fino a 50 tentativi per
+ciascuno dei 26 duelli. La progressione aggregata è ora chiaramente monotona:
+**1,64** tentativi medi per duello a Facile, **3,45** a Normale e **4,12** a
+Difficile. Gli incontri con progressione strettamente coerente salgono da
+9/26 nel vecchio report a **19/26**.
+
+Sono completati 45 percorsi su 48. Pegasus Starter resta bloccato a Normale
+e Difficile, caso già escluso e rinviato. La nuova anomalia da valutare è
+Structure Deck: Invincible Fortress a Difficile, che raggiunge 24/26 duelli
+e si arresta su Mako e Marik. Non è stato modificato automaticamente: serve
+prima distinguere la debolezza intenzionale del deck Roccia da un problema
+dei due avversari.
