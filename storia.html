@@ -1680,7 +1680,17 @@
         if (esito.torneoId || torneoAperto) {
             const idTorneo = esito.torneoId || torneoAperto;
             if (esito.torneoVinto) { tornaDalTorneo(campagnaAperta, esito); return; }
-            if (esito.perso) {
+            const dentroUnArea = (StoryProgress.getTorneo(campagnaAperta, idTorneo) || {}).kind === 'area';
+            if (dentroUnArea && esito.rigiocata) {
+                // Una tappa già superata dell'area, rigiocata: si resta
+                // sulla mappa dell'area e va detto che non si è mossa —
+                // stesso messaggio di una tappa rigiocata sulla mappa grande.
+                const pg = esito.opponentId ? StoryProgress.getPersonaggio(esito.opponentId) : null;
+                const chi = pg ? pg.name : 'quel duello';
+                mostraAvviso(esito.perso
+                    ? `Hai rigiocato ${chi} e perso. Nella storia non cambia nulla: era una tappa già superata.`
+                    : `Hai rigiocato e battuto ${chi}. La storia resta dov'era: era una tappa già superata.`);
+            } else if (esito.perso) {
                 const pg = esito.opponentId ? StoryProgress.getPersonaggio(esito.opponentId) : null;
                 const chi = pg ? pg.name : 'quel duello';
                 // In un'AREA non si torna indietro di niente: prometterlo
@@ -1688,7 +1698,6 @@
                 // riparte dal primo" e poi ritrova la mappa intatta non
                 // capisce più quale delle due cose sia vera. Vedi
                 // SOTTOPERCORSI in js/story/story-progress.js.
-                const dentroUnArea = (StoryProgress.getTorneo(campagnaAperta, idTorneo) || {}).kind === 'area';
                 if (dentroUnArea) {
                     mostraAvviso(`Hai perso contro ${chi}. La tappa resta lì: riprova quando vuoi.`, 'avviso--perso');
                 } else {

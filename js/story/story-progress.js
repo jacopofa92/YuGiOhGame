@@ -671,6 +671,18 @@
                 // mappa che si è misteriosamente svuotata.
                 return Object.assign(base, { perso: true, torneoAzzerato: quante });
             }
+            // In un'AREA "rigiocata" vuol dire UNA tappa già superata, non
+            // l'intero percorso (in un'area le tappe fatte restano
+            // cliccabili, in un torneo no). Non deve far salire niente:
+            // prima saliva di un passo — saltando la tappa ancora da giocare
+            // — e in un'area già finita andava oltre la fine, azzerava l'area
+            // e la dichiarava vinta, rimandando alla mappa grande
+            // (segnalato dall'utente: "fatto un nodo, mi riporta alla mappa
+            // principale"). Stesso difetto già chiuso per le scene rilette,
+            // vedi apriProva in storia.html.
+            if (rigiocato && getTorneo(campaignId, esito.torneoId).kind === 'area') {
+                return Object.assign(base, { vinta: true });
+            }
             const salita = avanzaTorneo(campaignId, esito.torneoId, rigiocato);
             return Object.assign(base, {
                 avanzato: true,
