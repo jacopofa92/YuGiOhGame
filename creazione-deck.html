@@ -810,10 +810,17 @@
     /* L'aspetto della carta (.card/.card-frame/...) vive in js/card.css,
        condiviso da tutte le pagine — qui resta solo l'overlay "+M/+E" che
        compare al passaggio del mouse, sovrapposto alla carta. */
+    /* Una fascia in FONDO alla carta, non un velo che la copre tutta: il
+       click sul resto della carta apre la scheda (come in Cartoteca), e con
+       i pulsanti al centro chi voleva solo leggerla finiva per aggiungerla
+       al mazzo — preso provandolo. */
     .search-card-add-overlay {
         position: absolute;
-        inset: 0;
-        background: rgba(0,0,0,0.6);
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 18px 6px 7px;
+        background: linear-gradient(180deg, transparent, rgba(0,0,0,0.82) 45%);
         opacity: 0;
         display: flex;
         align-items: center;
@@ -949,6 +956,125 @@
         border-radius: 999px;
     }
 
+    /* ============================================================
+       Editor: righe del mazzo toccabili, riscontro di aggiunte e
+       rimozioni (richiesta esplicita: "più evidente, con animazione e
+       messaggio", anche da mobile) — vedi segnalaAggiunta/
+       segnalaRimozione/volaNelMazzo nello script.
+       ============================================================ */
+    .deck-row { cursor: pointer; transition: background 0.15s ease; }
+    .deck-row:hover { background: rgba(255,255,255,0.08); }
+    /* Miniatura dell'illustrazione; l'icona di tipo resta sotto e si vede
+       solo se l'immagine manca. */
+    .deck-row-thumb {
+        position: relative;
+        flex: 0 0 34px;
+        height: 34px;
+        border-radius: 7px;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        background: rgba(255,255,255,0.06);
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12);
+    }
+    .deck-row-thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    @keyframes rigaAggiunta {
+        0% { background: rgba(243,156,18,0.42); box-shadow: 0 0 0 1px rgba(247,215,116,0.8), 0 0 16px rgba(243,156,18,0.45); }
+        100% { background: rgba(255,255,255,0.04); box-shadow: none; }
+    }
+    @keyframes rigaTolta {
+        0% { background: rgba(231,76,60,0.38); box-shadow: 0 0 0 1px rgba(255,99,99,0.7); }
+        100% { background: rgba(255,255,255,0.04); box-shadow: none; }
+    }
+    @keyframes qtyScatto { 0% { transform: scale(1.5); } 100% { transform: scale(1); } }
+    .deck-row.riga-aggiunta { animation: rigaAggiunta 0.9s ease-out; }
+    .deck-row.riga-tolta { animation: rigaTolta 0.7s ease-out; }
+    .deck-row.riga-aggiunta .deck-row-qty,
+    .deck-row.riga-tolta .deck-row-qty { display: inline-block; animation: qtyScatto 0.35s ease-out; }
+    /* L'ultima copia esce scivolando prima che la riga sparisca (220ms,
+       come il ritardo in removeFromZone). */
+    .deck-row.riga-uscita {
+        transition: transform 0.22s ease-in, opacity 0.22s ease-in;
+        transform: translateX(-24px);
+        opacity: 0;
+        pointer-events: none;
+    }
+    @keyframes conteggioPulsa {
+        0% { transform: scale(1); }
+        35% { transform: scale(1.18); box-shadow: 0 0 0 2px rgba(247,215,116,0.7), 0 0 18px rgba(243,156,18,0.55); }
+        100% { transform: scale(1); }
+    }
+    .conteggio-pulsa { animation: conteggioPulsa 0.45s ease-out; }
+    /* La copia della carta che vola verso il contatore: sopra tutto,
+       anche sopra la scheda della carta (z-index 600), e mai cliccabile. */
+    .card.carta-in-volo {
+        position: fixed;
+        z-index: 900;
+        margin: 0;
+        pointer-events: none;
+        transform-origin: center;
+        box-shadow: 0 10px 28px rgba(0,0,0,0.5), 0 0 18px rgba(243,156,18,0.45);
+    }
+    /* Su un dispositivo a tocco non c'è il passaggio del mouse: i +M/+E
+       resterebbero invisibili, o comparirebbero al primo tocco al posto
+       della scheda. Lì si aggiunge dalla scheda della carta. */
+    @media (hover: none) {
+        .search-card-add-overlay { display: none; }
+    }
+    .results-grid .card { cursor: pointer; }
+
+    /* Le due schede dell'editor (Il mio mazzo / Aggiungi carte): solo
+       quando le colonne non stanno affiancate (stesso punto in cui
+       .editor-body passa a una colonna, 860px). */
+    .editor-tabs { display: none; }
+    @media (max-width: 860px) {
+        .editor-tabs {
+            display: flex;
+            flex: 1 1 100%;
+            gap: 6px;
+        }
+        .editor-tab {
+            flex: 1 1 0;
+            min-height: 44px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.14);
+            background: rgba(255,255,255,0.05);
+            color: #cdd6ea;
+            font-family: inherit;
+            font-size: 0.82rem;
+            font-weight: 800;
+            cursor: pointer;
+        }
+        .editor-tab.active {
+            color: #fff;
+            border-color: rgba(243,156,18,0.7);
+            background: linear-gradient(145deg, #3a2c10, #201705);
+            box-shadow: 0 0 10px rgba(243,156,18,0.3);
+        }
+        .editor-tab-count {
+            display: inline-block;
+            min-width: 1.6em;
+            padding: 1px 6px;
+            margin-left: 4px;
+            border-radius: 999px;
+            background: rgba(0,0,0,0.35);
+            color: var(--gold);
+            font-variant-numeric: tabular-nums;
+        }
+        #screenEditor[data-scheda="mazzo"] .editor-right { display: none; }
+        #screenEditor[data-scheda="carte"] .editor-left { display: none; }
+        .editor-left { border-right: none; }
+        /* Il "−" a misura di dito. */
+        .deck-row-remove { width: 34px; height: 34px; font-size: 1rem; }
+        .deck-row { padding: 6px 8px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .deck-row.riga-aggiunta, .deck-row.riga-tolta, .conteggio-pulsa,
+        .deck-row.riga-aggiunta .deck-row-qty, .deck-row.riga-tolta .deck-row-qty { animation: none; }
+    }
+
     /* Toast */
     .toast {
         position: fixed;
@@ -969,8 +1095,39 @@
         max-width: 92vw;
         text-align: center;
     }
-    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
     .toast.toast-error { border-color: rgba(231,76,60,0.6); }
+    /* Sopra la scheda della carta (z-index 600), che dall'editor si apre
+       spesso proprio mentre compare un messaggio. */
+    .toast { z-index: 700; display: flex; align-items: center; gap: 12px; }
+    /* Larghezza dal contenuto, con un tetto: con left:50% un riquadro
+       "auto" può allargarsi solo fino al bordo destro, cioè metà schermo,
+       e su telefono il messaggio usciva come una colonna stretta e alta
+       (visto in foto). Su due righe gli angoli tondi pieni non stanno più
+       bene, quindi raggio fisso. */
+    .toast {
+        width: max-content;
+        max-width: min(92vw, 560px);
+        border-radius: 18px;
+        text-align: left;
+    }
+    /* Con la scheda aperta in alto: in basso coprirebbe i suoi pulsanti. */
+    .toast.toast-alto { top: 18px; bottom: auto; transform: translate(-50%, -16px); }
+    .toast.toast-alto.show { transform: translate(-50%, 0); }
+    .toast-azione {
+        flex: 0 0 auto;
+        min-height: 34px;
+        padding: 6px 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(247,215,116,0.6);
+        background: rgba(247,215,116,0.12);
+        color: var(--gold);
+        font-family: inherit;
+        font-weight: 800;
+        font-size: 0.8rem;
+        cursor: pointer;
+    }
+    .toast-azione:active { transform: scale(0.96); }
 
     /* Conferma eliminazione */
     .confirm-backdrop {
@@ -1093,6 +1250,13 @@
             <span class="count-badge" id="extraCountBadge">Extra: 0/15</span>
             <button type="button" class="editor-action-btn save" id="saveDeckBtn">💾 Salva</button>
             <button type="button" class="editor-action-btn cancel" id="cancelEditBtn">✖ Annulla</button>
+            <!-- Solo su schermi stretti (vedi il CSS): mazzo e ricerca in due
+                 schede invece di una pagina lunghissima. Stanno nella barra
+                 fissa, così restano sempre a portata di dito. -->
+            <div class="editor-tabs" role="tablist">
+                <button type="button" class="editor-tab" id="tabMazzoBtn" role="tab" data-scheda="mazzo">🃏 Il mio mazzo <span class="editor-tab-count" id="tabMazzoCount">0</span></button>
+                <button type="button" class="editor-tab" id="tabCarteBtn" role="tab" data-scheda="carte">➕ Aggiungi carte</button>
+            </div>
         </div>
         <div class="editor-body">
             <div class="editor-left">
@@ -1536,13 +1700,33 @@
     // Toast & conferma
     // ============================================================
     let toastTimeout = null;
-    function showToast(text, isError) {
+    /**
+     * `azione` (facoltativa): { testo, onClick } — un pulsante dentro il
+     * messaggio, per l'"Annulla" di aggiunte e rimozioni nell'editor. Con un
+     * pulsante il messaggio resta più a lungo: deve esserci il tempo di
+     * leggerlo E di toccarlo.
+     */
+    function showToast(text, isError, azione) {
         const toast = $('toast');
-        toast.textContent = text;
+        toast.textContent = '';
+        const testo = document.createElement('span');
+        testo.textContent = text;
+        toast.appendChild(testo);
+        if (azione) {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'toast-azione';
+            b.textContent = azione.testo;
+            b.onclick = () => { toast.classList.remove('show'); azione.onClick(); };
+            toast.appendChild(b);
+        }
         toast.classList.toggle('toast-error', !!isError);
+        // Con la scheda di una carta aperta il messaggio va in ALTO: in basso
+        // coprirebbe i pulsanti della scheda, che su telefono stanno lì.
+        toast.classList.toggle('toast-alto', !!(window.CardDetail && CardDetail.isOpen()));
         toast.classList.add('show');
         clearTimeout(toastTimeout);
-        toastTimeout = setTimeout(() => toast.classList.remove('show'), 2600);
+        toastTimeout = setTimeout(() => toast.classList.remove('show'), azione ? 4500 : 2600);
     }
 
     function askConfirm(message, onYes) {
@@ -1892,6 +2076,9 @@
         $('deckNameInput').value = editingDeck.name;
         $('screenList').style.display = 'none';
         $('screenEditor').style.display = '';
+        // Sul telefono: un mazzo nuovo apre sulla ricerca (non c'è ancora
+        // niente da guardare), uno esistente sul mazzo.
+        mostraSchedaEditor(editingDeck.main.length || editingDeck.extra.length ? 'mazzo' : 'carte', false);
         resetEditorFilters();
         renderEditorLists();
         renderEditorFilterChips();
@@ -1977,6 +2164,23 @@
         fitDeckBoxNames($('deckLookPreview'));
     }
 
+    /**
+     * Quale delle due schede dell'editor si vede su uno schermo stretto
+     * ('mazzo' o 'carte'). Su desktop le due colonne restano affiancate e
+     * l'attributo non ha effetto (vedi il CSS di .editor-tabs).
+     */
+    function mostraSchedaEditor(nome, scorriInCima) {
+        $('screenEditor').dataset.scheda = nome;
+        ['tabMazzoBtn', 'tabCarteBtn'].forEach((id) => {
+            const attiva = $(id).dataset.scheda === nome;
+            $(id).classList.toggle('active', attiva);
+            $(id).setAttribute('aria-selected', attiva ? 'true' : 'false');
+        });
+        if (scorriInCima) window.scrollTo({ top: 0, behavior: movimentoRidotto() ? 'auto' : 'smooth' });
+    }
+    $('tabMazzoBtn').onclick = () => mostraSchedaEditor('mazzo', true);
+    $('tabCarteBtn').onclick = () => mostraSchedaEditor('carte', true);
+
     function closeEditor() {
         editingDeck = null;
         $('screenEditor').style.display = 'none';
@@ -2039,36 +2243,201 @@
         return copyLimitMessage(card);
     }
 
-    function addToMain(cardId) {
-        const card = cardById[cardId];
-        if (!card) return;
-        if (card.extraDeck) { showToast('⚠️ Questa è una carta da Extra Deck.', true); return; }
-        if (deckListCountLocal(editingDeck.main) >= MAIN_MAX) { showToast(`⚠️ Il Main Deck può contenere al massimo ${MAIN_MAX} carte.`, true); return; }
-        if (ownedCountOf(cardId) === 0) { showToast(`⚠️ Non possiedi "${card.name}": non puoi metterla nel mazzo.`, true); return; }
-        if (totalCopiesOf(cardId) >= usableCopiesOf(card)) { showToast(addLimitMessage(card), true); return; }
-        const entry = editingDeck.main.find(e => e.id === cardId);
-        if (entry) entry.qty += 1; else editingDeck.main.push({ id: cardId, qty: 1 });
-        renderEditorLists();
+    const ZONE_LABEL = { main: 'Main Deck', extra: 'Extra Deck' };
+
+    /**
+     * Perché `card` NON si può aggiungere a `zone` adesso (un messaggio), o
+     * null se si può. UNA regola sola per i pulsanti +M/+E, per la scheda
+     * della carta (che spegne il pulsante e ne mostra il motivo) e per i
+     * messaggi: prima i controlli stavano copiati in due funzioni.
+     */
+    function motivoBloccoAggiunta(card, zone) {
+        if (zone === 'main' && card.extraDeck) return '⚠️ Questa è una carta da Extra Deck.';
+        if (zone === 'extra' && !card.extraDeck) return '⚠️ Solo i Mostri Fusione possono entrare nell\'Extra Deck.';
+        if (zone === 'main' && deckListCountLocal(editingDeck.main) >= MAIN_MAX) return `⚠️ Il Main Deck può contenere al massimo ${MAIN_MAX} carte.`;
+        if (zone === 'extra' && deckListCountLocal(editingDeck.extra) >= EXTRA_MAX) return `⚠️ L'Extra Deck può contenere al massimo ${EXTRA_MAX} carte.`;
+        if (ownedCountOf(card.id) === 0) return `⚠️ Non possiedi "${card.name}": non puoi metterla nel mazzo.`;
+        if (totalCopiesOf(card.id) >= usableCopiesOf(card)) return addLimitMessage(card);
+        return null;
     }
 
-    function addToExtra(cardId) {
-        const card = cardById[cardId];
-        if (!card || !card.extraDeck) { showToast('⚠️ Solo i Mostri Fusione possono entrare nell\'Extra Deck.', true); return; }
-        if (deckListCountLocal(editingDeck.extra) >= EXTRA_MAX) { showToast(`⚠️ L'Extra Deck può contenere al massimo ${EXTRA_MAX} carte.`, true); return; }
-        if (ownedCountOf(cardId) === 0) { showToast(`⚠️ Non possiedi "${card.name}": non puoi metterla nel mazzo.`, true); return; }
-        if (totalCopiesOf(cardId) >= usableCopiesOf(card)) { showToast(addLimitMessage(card), true); return; }
-        const entry = editingDeck.extra.find(e => e.id === cardId);
-        if (entry) entry.qty += 1; else editingDeck.extra.push({ id: cardId, qty: 1 });
-        renderEditorLists();
+    function copieInZona(zone, cardId) {
+        const entry = editingDeck[zone].find(e => e.id === cardId);
+        return entry ? entry.qty : 0;
     }
 
-    function removeFromZone(zone, cardId) {
+    // Le due mosse elementari sui dati, senza controlli né effetti: le usano
+    // le azioni vere qui sotto e il loro "Annulla".
+    function inserisciCopia(zone, cardId) {
+        const entry = editingDeck[zone].find(e => e.id === cardId);
+        if (entry) entry.qty += 1; else editingDeck[zone].push({ id: cardId, qty: 1 });
+    }
+    function togliCopia(zone, cardId) {
         const list = editingDeck[zone];
         const idx = list.findIndex(e => e.id === cardId);
-        if (idx === -1) return;
+        if (idx === -1) return -1;
         list[idx].qty -= 1;
-        if (list[idx].qty <= 0) list.splice(idx, 1);
+        if (list[idx].qty <= 0) { list.splice(idx, 1); return 0; }
+        return list[idx].qty;
+    }
+
+    /**
+     * Aggiunge una copia di `cardId` a `zone`. `origine` (facoltativo) è
+     * l'elemento da cui parte la carta che "vola" nel mazzo: la carta nei
+     * risultati, o l'anteprima nella scheda.
+     */
+    function aggiungiCarta(cardId, zone, origine) {
+        const card = cardById[cardId];
+        if (!card) return;
+        const motivo = motivoBloccoAggiunta(card, zone);
+        if (motivo) { showToast(motivo, true); return; }
+        inserisciCopia(zone, cardId);
         renderEditorLists();
+        segnalaAggiunta(card, zone, origine);
+    }
+    function addToMain(cardId, origine) { aggiungiCarta(cardId, 'main', origine); }
+    function addToExtra(cardId, origine) { aggiungiCarta(cardId, 'extra', origine); }
+
+    function removeFromZone(zone, cardId) {
+        const card = cardById[cardId];
+        const riga = rigaDelMazzo(zone, cardId);
+        const rimaste = togliCopia(zone, cardId);
+        if (rimaste < 0) return;
+        // L'ultima copia: la riga esce scivolando PRIMA di sparire dalla
+        // lista, altrimenti scomparirebbe di colpo e l'occhio non capirebbe
+        // cosa è successo. Il dato è già aggiornato: si ritarda solo il
+        // disegno, quindi un'altra azione nel frattempo resta corretta.
+        if (rimaste === 0 && riga && !movimentoRidotto()) {
+            riga.classList.add('riga-uscita');
+            setTimeout(renderEditorLists, 220);
+        } else {
+            renderEditorLists();
+            evidenziaRiga(zone, cardId, 'riga-tolta');
+        }
+        segnalaRimozione(card, zone, rimaste);
+    }
+
+    // ============================================================
+    // Riscontro visivo di aggiunte e rimozioni (richiesta esplicita:
+    // "più evidente, con un'animazione e un messaggio", anche da mobile)
+    // ============================================================
+    function movimentoRidotto() {
+        try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; }
+    }
+
+    function rigaDelMazzo(zone, cardId) {
+        return document.querySelector(`.deck-row[data-zone="${zone}"][data-card-id="${cardId}"]`);
+    }
+
+    function evidenziaRiga(zone, cardId, classe) {
+        const riga = rigaDelMazzo(zone, cardId);
+        if (!riga) return;
+        riga.classList.remove('riga-aggiunta', 'riga-tolta');
+        void riga.offsetWidth; // riparte anche se la classe c'era già (clic ripetuti)
+        riga.classList.add(classe);
+    }
+
+    function pulsaContatore(zone) {
+        const badge = $(zone === 'main' ? 'mainCountBadge' : 'extraCountBadge');
+        const scheda = $('tabMazzoBtn');
+        [badge, scheda].forEach((el) => {
+            if (!el) return;
+            el.classList.remove('conteggio-pulsa');
+            void el.offsetWidth;
+            el.classList.add('conteggio-pulsa');
+        });
+    }
+
+    /**
+     * La carta "vola" dal punto in cui l'hai scelta al contatore del mazzo
+     * in alto (sempre a schermo: la barra è fissa). Su telefono, con la
+     * lista del mazzo in un'altra scheda, è l'unico modo di VEDERE dove è
+     * andata. Una copia della carta, mai l'originale: la griglia dei
+     * risultati viene ridisegnata subito dopo.
+     */
+    function volaNelMazzo(card, zone, origine) {
+        const bersaglio = $(zone === 'main' ? 'mainCountBadge' : 'extraCountBadge');
+        if (!origine || !bersaglio || movimentoRidotto() || !origine.isConnected) return;
+        const da = origine.getBoundingClientRect();
+        const a = bersaglio.getBoundingClientRect();
+        if (!da.width || !a.width) return;
+        const fantasma = createCardElement(card);
+        fantasma.classList.add('carta-in-volo');
+        fantasma.style.setProperty('--card-w', da.width + 'px');
+        fantasma.style.setProperty('--card-h', `calc(${da.width}px / var(--card-ratio))`);
+        fantasma.style.left = da.left + 'px';
+        fantasma.style.top = da.top + 'px';
+        document.body.appendChild(fantasma);
+        const dx = (a.left + a.width / 2) - (da.left + da.width / 2);
+        const dy = (a.top + a.height / 2) - (da.top + da.height / 2);
+        // Curva morbida, niente rimbalzo (scelta di stile del progetto per
+        // le animazioni di carte).
+        const volo = fantasma.animate([
+            { transform: 'translate(0, 0) scale(1)', opacity: 1 },
+            { transform: `translate(${dx * 0.55}px, ${dy * 0.55 - 30}px) scale(0.6)`, opacity: 1, offset: 0.55 },
+            { transform: `translate(${dx}px, ${dy}px) scale(0.18)`, opacity: 0.2 }
+        ], { duration: 560, easing: 'cubic-bezier(.4,0,.2,1)' });
+        volo.onfinish = () => { fantasma.remove(); pulsaContatore(zone); };
+        volo.oncancel = () => fantasma.remove();
+    }
+
+    function segnalaAggiunta(card, zone, origine) {
+        evidenziaRiga(zone, card.id, 'riga-aggiunta');
+        if (origine && !movimentoRidotto()) volaNelMazzo(card, zone, origine);
+        else pulsaContatore(zone);
+        const tot = totalCopiesOf(card.id);
+        showToast(`➕ "${card.name}" aggiunta al ${ZONE_LABEL[zone]} (${tot} di ${usableCopiesOf(card)})`, false, {
+            testo: 'Annulla',
+            onClick: () => {
+                if (togliCopia(zone, card.id) < 0) return;
+                renderEditorLists();
+                pulsaContatore(zone);
+                if (window.CardDetail) CardDetail.aggiorna();
+                showToast(`↩️ Annullato: "${card.name}" tolta dal ${ZONE_LABEL[zone]}.`);
+            }
+        });
+    }
+
+    function segnalaRimozione(card, zone, rimaste) {
+        pulsaContatore(zone);
+        const coda = rimaste > 0 ? `ne ${rimaste === 1 ? 'resta' : 'restano'} ${rimaste}` : 'non è più nel mazzo';
+        showToast(`➖ "${card.name}" tolta dal ${ZONE_LABEL[zone]} (${coda})`, false, {
+            testo: 'Annulla',
+            onClick: () => {
+                inserisciCopia(zone, card.id);
+                renderEditorLists();
+                evidenziaRiga(zone, card.id, 'riga-aggiunta');
+                pulsaContatore(zone);
+                if (window.CardDetail) CardDetail.aggiorna();
+                showToast(`↩️ Annullato: "${card.name}" di nuovo nel ${ZONE_LABEL[zone]}.`);
+            }
+        });
+    }
+
+    /**
+     * La scheda di una carta (quella condivisa, js/ui/card-detail.js) con i
+     * pulsanti per il mazzo: è il modo principale di aggiungere e togliere
+     * sul telefono, dove i +M/+E al passaggio del mouse non esistono.
+     */
+    function apriSchedaEditor(card) {
+        const zona = card.extraDeck ? 'extra' : 'main';
+        CardDetail.open(card, {
+            riepilogo: () => `Nel mazzo: ${totalCopiesOf(card.id)} di ${usableCopiesOf(card)} utilizzabili · Possiedi: ${ownedCountOf(card.id)}`,
+            azioni: () => {
+                const motivo = motivoBloccoAggiunta(card, zona);
+                const azioni = [{
+                    testo: `➕ Aggiungi al ${ZONE_LABEL[zona]}`,
+                    stile: 'primaria',
+                    disabilitata: !!motivo,
+                    motivo: motivo ? motivo.replace(/^⚠️\s*/, '') : '',
+                    onClick: () => aggiungiCarta(card.id, zona, CardDetail.anteprima())
+                }];
+                if (copieInZona(zona, card.id) > 0) {
+                    azioni.push({ testo: '➖ Togli una copia', stile: 'pericolo', onClick: () => removeFromZone(zona, card.id) });
+                }
+                return azioni;
+            }
+        });
     }
 
     function renderDeckZoneList(zone) {
@@ -2099,16 +2468,35 @@
             const meta = card.type === 'monster'
                 ? `Lv.${card.level} • ATK ${card.attack}/DEF ${card.defense}`
                 : (card.type === 'spell' ? rowTerms.spellSingular : rowTerms.trapSingular);
+            row.dataset.zone = zone;
+            row.dataset.cardId = id;
+            // Miniatura dell'illustrazione al posto della sola icona di tipo:
+            // l'icona resta sotto, e si vede se l'immagine manca.
             row.innerHTML = `
-                <span class="deck-row-icon">${TYPE_ICON[card.type]}</span>
+                <span class="deck-row-thumb">${TYPE_ICON[card.type]}</span>
                 <div class="deck-row-info">
-                    <div class="deck-row-name">${card.name}</div>
+                    <div class="deck-row-name"></div>
                     <div class="deck-row-meta">${meta}</div>
                 </div>
                 <span class="deck-row-qty">×${qty}</span>
-                <button type="button" class="deck-row-remove" title="Rimuovi una copia">−</button>
+                <button type="button" class="deck-row-remove" title="Togli una copia">−</button>
             `;
-            row.querySelector('.deck-row-remove').onclick = () => removeFromZone(zone, id);
+            // Il nome di una carta personalizzata è testo libero dell'utente:
+            // va in textContent/setAttribute, mai nel markup qui sopra.
+            row.querySelector('.deck-row-name').textContent = card.name;
+            row.querySelector('.deck-row-remove').setAttribute('aria-label', 'Togli una copia di ' + card.name);
+            if (typeof getCardImagePath === 'function') {
+                const img = document.createElement('img');
+                img.alt = '';
+                img.loading = 'lazy';
+                img.onerror = () => img.remove();
+                img.src = getCardImagePath(card);
+                row.querySelector('.deck-row-thumb').appendChild(img);
+            }
+            // Toccare la riga apre la scheda della carta (con i pulsanti per
+            // aggiungerne o toglierne una copia); il "−" toglie subito.
+            row.onclick = () => apriSchedaEditor(card);
+            row.querySelector('.deck-row-remove').onclick = (e) => { e.stopPropagation(); removeFromZone(zone, id); };
             container.appendChild(row);
         });
     }
@@ -2129,6 +2517,7 @@
         const extraBadge = $('extraCountBadge');
         extraBadge.textContent = `Extra: ${extraCount}/${EXTRA_MAX}`;
         extraBadge.className = 'count-badge ' + (extraOk ? 'valid' : 'invalid');
+        $('tabMazzoCount').textContent = mainCount + extraCount;
 
         // Rigenera i risultati di ricerca per aggiornare eventuali stati
         // (es. limiti raggiunti). `true` = resta sulla pagina corrente:
@@ -2309,13 +2698,20 @@
             const overlay = document.createElement('div');
             overlay.className = 'search-card-add-overlay';
             overlay.innerHTML = `
-                <button type="button" class="add-btn main" title="Aggiungi al Main Deck">+M</button>
-                ${card.extraDeck ? '<button type="button" class="add-btn extra" title="Aggiungi all\'Extra Deck">+E</button>' : ''}
+                <button type="button" class="add-btn main" title="Aggiungi al Main Deck">+ Main</button>
+                ${card.extraDeck ? '<button type="button" class="add-btn extra" title="Aggiungi all\'Extra Deck">+ Extra</button>' : ''}
             `;
             el.appendChild(overlay);
-            overlay.querySelector('.add-btn.main').onclick = () => addToMain(card.id);
+            // Il click sulla carta apre la scheda (come in Cartoteca); i
+            // pulsanti +M/+E aggiungono al volo senza aprirla. Su un
+            // dispositivo a tocco i pulsanti non si vedono (non c'è il
+            // passaggio del mouse, vedi il CSS): lì si aggiunge dalla scheda.
+            el.onclick = () => apriSchedaEditor(card);
+            const mainBtn = overlay.querySelector('.add-btn.main');
+            if (card.extraDeck) mainBtn.remove();
+            else mainBtn.onclick = (e) => { e.stopPropagation(); addToMain(card.id, el); };
             const extraBtn = overlay.querySelector('.add-btn.extra');
-            if (extraBtn) extraBtn.onclick = () => addToExtra(card.id);
+            if (extraBtn) extraBtn.onclick = (e) => { e.stopPropagation(); addToExtra(card.id, el); };
             grid.appendChild(el);
         });
         if (results.length === 0) {
