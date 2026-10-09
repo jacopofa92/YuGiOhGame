@@ -127,7 +127,65 @@
     padding: 8px 10px;
 }
 
+/* ============================================================
+   Barra d'azione (facoltativa, vedi open(card, opzioni) nel .js): per le
+   pagine in cui dalla scheda si FA qualcosa, es. Creazione Deck.
+   Incollata in fondo alla scheda che scorre: su un telefono l'anteprima
+   grande spinge il testo molto in basso, e i pulsanti devono restare a
+   portata di dito senza dover scorrere.
+   ============================================================ */
+.cd-azioni { display: none; }
+.cd-con-azioni .cd-azioni {
+    display: grid;
+    gap: 8px;
+    flex: 1 1 100%;
+    position: sticky;
+    bottom: -22px; /* annulla il padding inferiore della scheda */
+    margin: 0 -22px -22px;
+    padding: 12px 22px 16px;
+    background: linear-gradient(180deg, rgba(7, 10, 20, 0.6), rgba(7, 10, 20, 0.98) 30%);
+    border-top: 1px solid rgba(247, 215, 116, 0.22);
+    z-index: 2;
+}
+.cd-riepilogo {
+    font-size: 0.78rem;
+    color: #cdd6ea;
+    font-variant-numeric: tabular-nums;
+}
+.cd-azioni-fila { display: flex; flex-wrap: wrap; gap: 8px; }
+.cd-azione {
+    flex: 1 1 160px;
+    min-height: 44px; /* area di tocco comoda */
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.07);
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.86rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+.cd-azione:active:not(:disabled) { transform: scale(0.97); }
+/* Oro come il resto del gioco per l'azione principale, rosso per quella
+   che toglie: stessi colori dei pulsanti dell'editor dei mazzi. */
+.cd-azione--primaria {
+    background: linear-gradient(145deg, #3a2c10, #201705);
+    border-color: rgba(243, 156, 18, 0.65);
+    box-shadow: 0 0 10px rgba(243, 156, 18, 0.28);
+}
+.cd-azione--primaria:hover:not(:disabled) { box-shadow: 0 0 16px rgba(243, 156, 18, 0.5); }
+.cd-azione--pericolo {
+    background: linear-gradient(145deg, #3a1410, #1f0906);
+    border-color: rgba(255, 99, 99, 0.6);
+    color: #ffd2cc;
+}
+.cd-azione:disabled { opacity: 0.42; cursor: not-allowed; box-shadow: none; }
+.cd-motivo { font-size: 0.74rem; color: #e9c46a; line-height: 1.4; }
+
 @media (max-width: 520px) {
+    .cd-con-azioni .cd-azioni { bottom: -18px; margin: 0 -14px -18px; padding: 10px 14px 14px; }
     .cd-card { padding: 18px 14px; gap: 12px; }
     .cd-preview { flex: 1 1 100%; justify-content: center; }
     .cd-name { padding-right: 0; }

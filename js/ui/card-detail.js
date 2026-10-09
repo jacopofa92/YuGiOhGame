@@ -43,29 +43,41 @@
     }
 
     let backdrop = null;
+    let scheda = null;
     let preview = null;
     let info = null;
+    let azioniBox = null;
+    // Le opzioni della scheda aperta adesso: servono ad aggiorna(), che
+    // ridisegna riepilogo e pulsanti dopo un'azione senza riaprire tutto.
+    let opzioniCorrenti = null;
 
     function costruisci() {
         if (backdrop) return;
         backdrop = document.createElement('div');
         backdrop.className = 'cd-backdrop';
-        const card = document.createElement('div');
-        card.className = 'cd-card';
+        scheda = document.createElement('div');
+        scheda.className = 'cd-card';
         preview = document.createElement('div');
         preview.className = 'cd-preview';
         info = document.createElement('div');
         info.className = 'cd-info';
+        // Pulsanti d'azione (facoltativi, vedi open): figlio DIRETTO della
+        // scheda e non di .cd-info, perché è la scheda a scorrere. Solo così
+        // la barra può restare incollata in fondo (position: sticky) anche
+        // su un telefono, dove l'anteprima grande spinge il testo sotto.
+        azioniBox = document.createElement('div');
+        azioniBox.className = 'cd-azioni';
         const chiudi = document.createElement('button');
         chiudi.type = 'button';
         chiudi.className = 'cd-close';
         chiudi.setAttribute('aria-label', 'Chiudi');
         chiudi.textContent = '×';
         chiudi.onclick = close;
-        card.appendChild(chiudi);
-        card.appendChild(preview);
-        card.appendChild(info);
-        backdrop.appendChild(card);
+        scheda.appendChild(chiudi);
+        scheda.appendChild(preview);
+        scheda.appendChild(info);
+        scheda.appendChild(azioniBox);
+        backdrop.appendChild(scheda);
         // Il click FUORI dalla scheda la chiude: confronto sull'elemento
         // vero e non sull'id (un confronto per stringa è già costato un
         // bug in questo progetto, vedi CLAUDE.md).
@@ -83,9 +95,22 @@
         }, true);
     }
 
-    function open(card) {
+    /**
+     * Apre la scheda di `card`. `opzioni` (facoltativo) aggiunge in fondo
+     * una barra d'azione, per le pagine in cui dalla scheda si FA qualcosa
+     * (Creazione Deck: aggiungi al mazzo / togli una copia):
+     *   riepilogo: () => testo   una riga sopra i pulsanti (es. le copie)
+     *   azioni:    () => [{ testo, onClick, stile, disabilitata, motivo }]
+     *              stile: 'primaria' | 'pericolo' | '' ; `motivo` compare
+     *              come suggerimento su un pulsante disabilitato.
+     * Sono FUNZIONI e non valori: dopo ogni tocco la barra si ridisegna da
+     * sola richiamandole, così i conteggi e i pulsanti disabilitati restano
+     * veri senza che la pagina debba riaprire la scheda.
+     */
+    function open(card, opzioni) {
         if (!card) return;
         costruisci();
+        opzioniCorrenti = opzioni || null;
 
         preview.innerHTML = '';
         if (typeof window.createCardElement === 'function') {
@@ -128,16 +153,65 @@
             ${window.CardAcquisition ? `<div class="cd-acquisition"><strong>Come si ottiene</strong><span>${escapeHtml(CardAcquisition.sourceFor(card.id))}</span>${CardAcquisition.progressFor && CardAcquisition.progressFor(card.id) ? `<small>Progresso: ${escapeHtml(CardAcquisition.progressFor(card.id))}</small>` : ''}</div>` : ''}
             ${card.missingEffectNote ? `<p class="cd-note">🟡 Effetto implementato parzialmente: ${escapeHtml(card.missingEffectNote)}</p>` : ''}
         `;
+        aggiorna();
         backdrop.classList.add('open');
+    }
+
+    /** Ridisegna riepilogo e pulsanti della scheda aperta (dopo un'azione, o quando la pagina cambia qualcosa sotto). */
+    function aggiorna() {
+        if (!azioniBox) return;
+        const o = opzioniCorrenti;
+        const azioni = o && typeof o.azioni === 'function' ? (o.azioni() || []) : [];
+        const riepilogo = o && typeof o.riepilogo === 'function' ? o.riepilogo() : '';
+        scheda.classList.toggle('cd-con-azioni', azioni.length > 0);
+        azioniBox.innerHTML = '';
+        if (!azioni.length) return;
+        if (riepilogo) {
+            const r = document.createElement('div');
+            r.className = 'cd-riepilogo';
+            r.textContent = riepilogo;
+            azioniBox.appendChild(r);
+        }
+        const fila = document.createElement('div');
+        fila.className = 'cd-azioni-fila';
+        azioni.forEach((a) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'cd-azione' + (a.stile ? ' cd-azione--' + a.stile : '');
+            b.textContent = a.testo;
+            b.disabled = !!a.disabilitata;
+            if (a.motivo) b.title = a.motivo;
+            b.onclick = () => {
+                if (typeof a.onClick === 'function') a.onClick(b);
+                aggiorna();
+            };
+            fila.appendChild(b);
+        });
+        azioniBox.appendChild(fila);
+        // Il motivo di un pulsante spento si LEGGE anche col dito: su un
+        // telefono un title non compare mai.
+        const motivi = azioni.filter((a) => a.disabilitata && a.motivo).map((a) => a.motivo);
+        if (motivi.length) {
+            const m = document.createElement('div');
+            m.className = 'cd-motivo';
+            m.textContent = motivi[0];
+            azioniBox.appendChild(m);
+        }
     }
 
     function close() {
         if (backdrop) backdrop.classList.remove('open');
+        opzioniCorrenti = null;
     }
 
     function isOpen() {
         return !!backdrop && backdrop.classList.contains('open');
     }
 
-    window.CardDetail = { open: open, close: close, isOpen: isOpen };
+    /** L'anteprima della carta nella scheda aperta: chi anima un'azione la usa come punto di partenza. */
+    function anteprima() {
+        return isOpen() && preview ? preview.querySelector('.card') : null;
+    }
+
+    window.CardDetail = { open: open, close: close, isOpen: isOpen, aggiorna: aggiorna, anteprima: anteprima };
 })();
