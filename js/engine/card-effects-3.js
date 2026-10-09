@@ -3252,11 +3252,12 @@
     // secondo attacco in questa Battle Phase (slot.extraAttackGranted,
     // stesso meccanismo di Cavaliere Hayabusa qui sopra, ma concesso da
     // un'altra carta invece che permanente). SEMPLIFICAZIONE: bersaglio
-    // auto-selezionato tra QUALUNQUE proprio mostro scoperto, non solo i
-    // Toon (nessun tag "è un mostro Toon" nel database attuale).
+    // Toon. Il tag condiviso `def.isToon`, introdotto dal rework
+    // dell'archetipo, permette di applicare davvero il vincolo del testo.
     CardEffects.register(485, {
         canActivate(ctx) {
-            return ctx.field(ctx.owner).some((s) => s && !s.isFaceDown);
+            return ctx.field(ctx.owner).some((s) => s && !s.isFaceDown
+                && ((DuelEngine.getDefinition(s.card.id)?.isToon) || /Toon/i.test(s.card.name || '')));
         },
         activate(ctx) {
             // A QUALE dei propri mostri concedere il secondo attacco lo
@@ -3264,7 +3265,10 @@
             // fra un attacco utile e uno sprecato.
             const candidati = [];
             ctx.field(ctx.owner).forEach((slot, index) => {
-                if (slot && !slot.isFaceDown) candidati.push({ owner: ctx.owner, index, card: slot.card });
+                if (slot && !slot.isFaceDown
+                    && ((DuelEngine.getDefinition(slot.card.id)?.isToon) || /Toon/i.test(slot.card.name || ''))) {
+                    candidati.push({ owner: ctx.owner, index, card: slot.card });
+                }
             });
             chooseFieldMonsterTarget(ctx, candidati, {
                 title: '🎪 Riavvolgimento Toon',

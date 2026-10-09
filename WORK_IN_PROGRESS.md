@@ -73,8 +73,10 @@ sempre coerenti con il personaggio. Toon/Pegasus si affronta per ultimo.
       ripensati con Mondo come fulcro e vecchio testo ufficiale conservato
       in `legacyOfficialEffect` (non visibile nella UI). Abbandonato e Mille
       Occhi sono usati dall'IA e ripuliscono correttamente l'assorbito.
-      Starter 26/26 a ogni difficoltà; Pegasus avversario cresce 1,84 →
-      2,27 → 2,47 tentativi su tre campioni di semi.
+      Dopo aver corretto l'attivazione reale di Mondo e Maschera Toon, lo
+      Starter completa 26/26 a ogni difficoltà con 2,62 → 6,23 → 8,12
+      tentativi medi. Le precedenti medie dell'avversario Pegasus erano
+      contaminate dallo stesso difetto e vanno ricalcolate separatamente.
 
 ## Audio multipagina
 

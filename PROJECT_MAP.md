@@ -176,7 +176,7 @@ l'IA/deck dell'avversario.
 
 ### Deroga Toon e Pegasus
 
-Sul branch `feature/rework-toon-pegasus` lo Starter Pegasus conserva
+Il rework Toon, ora unito in `main`, conserva nello Starter Pegasus
 esattamente le proprie 40 carte, ma l'archetipo usa una deroga dichiarata
 alle regole ufficiali per mediare fra resa dell'anime e giocabilità reale.
 Ogni carta il cui testo è stato sostituito conserva il vecchio testo nel
@@ -199,10 +199,15 @@ mano, non soltanto su distruzione.
 
 La lista dello Starter non è stata toccata e ora completa 26/26 duelli a
 tutte le difficoltà nel report `STORY_PEGASUS_TOON_REWORK_REPORT.json`, con
-medie **2,12 / 7,15 / 9,31** tentativi. Le liste avversarie Pegasus sono
-state ripulite dalle mani troppo cariche di Toon alti mantenendo soltanto
-carte della sua lore. Su tre blocchi di semi e 15 deck campione la difficoltà
-sale da **1,84** tentativi (Facile) a **2,27** (Media) e **2,47** (Difficile).
+medie corrette **2,62 / 6,23 / 8,12** tentativi. Il primo report era stato
+generato mentre a `Mondo dei Toon` mancava l'handler vuoto `activate()`: il
+motore lo lasciava quindi in mano e quei numeri sono stati sostituiti, non
+conservati come riferimento. Lo stesso audit ha corretto `Maschera Toon`, che
+cercava erroneamente Mondo nella zona Magia Terreno, e ha ristretto
+`Riavvolgimento Toon` ai veri Toon. Le liste avversarie Pegasus restano
+ripulite dalle mani troppo cariche di Toon alti mantenendo soltanto carte
+della sua lore; le vecchie medie dell'avversario precedenti al fix non sono
+più considerate una misura valida e andranno ricalcolate separatamente.
 
 Il Pannello Admin può segnare al 100% tutte le campagne attualmente giocabili,
 in ogni difficoltà. `js/dev/story-admin-tools.js` scrive solo il progresso:

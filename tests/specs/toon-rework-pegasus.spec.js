@@ -16,6 +16,7 @@ module.exports = {
             // anche quando tutto il lavoro successivo vive in static().
             gameState.playerHand = [world];
             const attivabileDallaMano = DuelEngine.canActivate('player', 'hand', 0);
+            const sceltaIaMondo = AI_HARD.chooseNextSpellTrapAction(gameState, {}, 'player');
             gameState.playerHand = [];
             gameState.playerSTField[0] = { card: world, isFaceDown: false };
             gameState.playerMonsterField[0] = { card: toon, position: 'attack', isFaceDown: false, summonedOnTurn: gameState.turn };
@@ -38,6 +39,36 @@ module.exports = {
 
             const defDrago = DuelEngine.getDefinition(123);
             const defSirena = DuelEngine.getDefinition(484);
+            const toonRegistrati = [123, 481, 483, 484, 486, 606]
+                .every((id) => DuelEngine.getDefinition(id)?.isToon === true);
+            gameState.playerSTField[0] = { card: copia(487, 'world-shortcuts'), isFaceDown: false };
+            gameState.playerMonsterField = [null, null, null, null, null];
+            const sirenaSpeciale = defSirena.canSpecialSummonFromHand(
+                DuelEngine.makeContext('player', { card: copia(484, 'mermaid-shortcut') })
+            );
+            gameState.playerMonsterField[0] = { card: copia(481, 'toon-cost-1'), position: 'attack', isFaceDown: false };
+            const dragoSpeciale = defDrago.canSpecialSummonFromHand(
+                DuelEngine.makeContext('player', { card: copia(123, 'dragon-shortcut') })
+            );
+            const teschioSpeciale = DuelEngine.getDefinition(486).canSpecialSummonFromHand(
+                DuelEngine.makeContext('player', { card: copia(486, 'skull-shortcut') })
+            );
+            gameState.playerMonsterField[1] = { card: copia(202, 'generic-cost-2'), position: 'attack', isFaceDown: false };
+            const mangaSpeciale = DuelEngine.getDefinition(606).canSpecialSummonFromHand(
+                DuelEngine.makeContext('player', { card: copia(606, 'manga-shortcut') })
+            );
+
+            // Carte di supporto: Maschera deve trovare Mondo nella zona
+            // Magie/Trappole, mentre Riavvolgimento può scegliere soltanto
+            // un Toon, non un mostro generico.
+            const maschera = copia(482, 'mask');
+            gameState.playerSTField[0] = { card: copia(487, 'world-mask'), isFaceDown: false };
+            gameState.botMonsterField = [{ card: copia(202, 'enemy'), position: 'attack', isFaceDown: false }, null, null, null, null];
+            const mascheraConMondo = DuelEngine.getDefinition(482).canActivate(DuelEngine.makeContext('player', { card: maschera }));
+            gameState.playerMonsterField = [{ card: copia(202, 'non-toon-rewind'), position: 'attack', isFaceDown: false }, null, null, null, null];
+            const rewindSoloNonToon = DuelEngine.getDefinition(485).canActivate(DuelEngine.makeContext('player', { card: copia(485, 'rewind') }));
+            gameState.playerMonsterField[1] = { card: copia(481, 'toon-rewind'), position: 'attack', isFaceDown: false };
+            const rewindConToon = DuelEngine.getDefinition(485).canActivate(DuelEngine.makeContext('player', { card: copia(485, 'rewind-2') }));
 
             // Abbandonato non deve più restare un boss "muto" in mano
             // all'IA. Facile usa intenzionalmente la Media; Hard applica
@@ -61,6 +92,12 @@ module.exports = {
             const milleOcchiRipristina = gameState.playerMonsterField.some((slot) => slot && slot.card.uid === assorbito.uid);
             return {
                 attivabileDallaMano,
+                iaAttivaMondo: sceltaIaMondo && sceltaIaMondo.action === 'activate' && sceltaIaMondo.card.id === 487,
+                mascheraConMondo,
+                rewindSoloNonToon,
+                rewindConToon,
+                toonRegistrati,
+                scorciatoieToon: sirenaSpeciale && dragoSpeciale && teschioSpeciale && mangaSpeciale,
                 diretto,
                 regolaScontroToon,
                 protetto,
@@ -78,6 +115,10 @@ module.exports = {
             };
         });
         t.assert(r.attivabileDallaMano, `Mondo dei Toon deve mostrare l'azione Attiva quando è in mano: ${JSON.stringify(r)}`);
+        t.assert(r.iaAttivaMondo, `L'IA deve scegliere Mondo dei Toon quando è l'unica Magia disponibile: ${JSON.stringify(r)}`);
+        t.assert(r.mascheraConMondo, `Maschera Toon deve riconoscere Mondo dei Toon nella zona Magie/Trappole: ${JSON.stringify(r)}`);
+        t.assert(!r.rewindSoloNonToon && r.rewindConToon, `Riavvolgimento Toon deve richiedere un vero mostro Toon: ${JSON.stringify(r)}`);
+        t.assert(r.toonRegistrati && r.scorciatoieToon, `Tutti i mostri Toon e le loro Evocazioni alternative devono riconoscere Mondo dei Toon: ${JSON.stringify(r)}`);
         t.assert(r.diretto, `Mondo dei Toon deve concedere l'attacco diretto: ${JSON.stringify(r)}`);
         t.assert(r.regolaScontroToon, `Con due Mondi i Toon devono affrontare prima i Toon avversari: ${JSON.stringify(r)}`);
         t.assert(r.protetto && r.lpDopoProtezione === 7500, `La prima distruzione deve essere prevenuta pagando 500 LP: ${JSON.stringify(r)}`);

@@ -2210,8 +2210,12 @@
     // ================================================================
     CardEffects.register(482, {
         canActivate(ctx) {
-            const toonWorld = Tavolo.magiaTerreno(ctx.owner);
-            if (!toonWorld || toonWorld.isFaceDown || toonWorld.card.id !== 487) return false;
+            // Mondo dei Toon è una Magia Continua nella normale zona M/T,
+            // non una Magia Terreno. Cercarlo in `magiaTerreno` rendeva
+            // Maschera Toon impossibile da attivare anche con Mondo scoperto.
+            const toonWorld = ctx.stField(ctx.owner)
+                .find((slot) => slot && !slot.isFaceDown && slot.card.id === 487);
+            if (!toonWorld) return false;
             return ctx.field(ctx.opponent).some((slot) => slot && !slot.isFaceDown);
         },
         activate(ctx) {

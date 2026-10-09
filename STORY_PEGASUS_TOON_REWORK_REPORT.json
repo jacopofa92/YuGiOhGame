@@ -1,5 +1,5 @@
 {
-  "generatoIl": "2026-10-08T22:40:45.669Z",
+  "generatoIl": "2026-10-09T07:34:09.027Z",
   "metodo": "IA giocatore fissa; stessi semi per deck/nodo/tentativo nelle tre difficoltà; Pegasus Starter escluso dalla sola analisi aggregata",
   "opzioni": {
     "deck": "starter_sdp_pegasus",
@@ -19,11 +19,11 @@
       "completata": true,
       "duelliCompletati": 26,
       "duelliTotali": 26,
-      "tentativi": 55,
-      "tentativiMediPerDuello": 2.12,
-      "turni": 1238,
-      "tempoVirtualeSecondi": 16479,
-      "tempoRealeMs": 4749,
+      "tentativi": 68,
+      "tentativiMediPerDuello": 2.62,
+      "turni": 1497,
+      "tempoVirtualeSecondi": 20151,
+      "tempoRealeMs": 5894,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -31,9 +31,9 @@
           "avversario": "kaiba",
           "capitolo": "prologo",
           "vinto": true,
-          "tentativi": 2,
-          "turni": 41,
-          "tempoVirtualeSecondi": 536,
+          "tentativi": 5,
+          "turni": 107,
+          "tempoVirtualeSecondi": 1409,
           "semeIniziale": 7001
         },
         {
@@ -41,9 +41,9 @@
           "avversario": "pegasus",
           "capitolo": "prologo",
           "vinto": true,
-          "tentativi": 1,
-          "turni": 43,
-          "tempoVirtualeSecondi": 550,
+          "tentativi": 12,
+          "turni": 255,
+          "tempoVirtualeSecondi": 3520,
           "semeIniziale": 8001
         },
         {
@@ -72,8 +72,8 @@
           "capitolo": "regno",
           "vinto": true,
           "tentativi": 1,
-          "turni": 57,
-          "tempoVirtualeSecondi": 806,
+          "turni": 62,
+          "tempoVirtualeSecondi": 853,
           "semeIniziale": 11001
         },
         {
@@ -131,9 +131,9 @@
           "avversario": "joey",
           "capitolo": "regno",
           "vinto": true,
-          "tentativi": 3,
-          "turni": 85,
-          "tempoVirtualeSecondi": 1124,
+          "tentativi": 2,
+          "turni": 55,
+          "tempoVirtualeSecondi": 764,
           "semeIniziale": 17001
         },
         {
@@ -173,7 +173,7 @@
           "vinto": true,
           "tentativi": 4,
           "turni": 83,
-          "tempoVirtualeSecondi": 1157,
+          "tempoVirtualeSecondi": 1160,
           "semeIniziale": 21001
         },
         {
@@ -193,7 +193,7 @@
           "vinto": true,
           "tentativi": 3,
           "turni": 97,
-          "tempoVirtualeSecondi": 1233,
+          "tempoVirtualeSecondi": 1236,
           "semeIniziale": 23001
         },
         {
@@ -212,8 +212,8 @@
           "capitolo": "battlecity1",
           "vinto": true,
           "tentativi": 5,
-          "turni": 109,
-          "tempoVirtualeSecondi": 1432,
+          "turni": 111,
+          "tempoVirtualeSecondi": 1468,
           "semeIniziale": 25001
         },
         {
@@ -243,7 +243,7 @@
           "vinto": true,
           "tentativi": 1,
           "turni": 13,
-          "tempoVirtualeSecondi": 163,
+          "tempoVirtualeSecondi": 183,
           "semeIniziale": 28001
         },
         {
@@ -253,7 +253,7 @@
           "vinto": true,
           "tentativi": 6,
           "turni": 125,
-          "tempoVirtualeSecondi": 1764,
+          "tempoVirtualeSecondi": 1767,
           "semeIniziale": 29001
         },
         {
@@ -272,8 +272,8 @@
           "capitolo": "cerimoniale",
           "vinto": true,
           "tentativi": 4,
-          "turni": 73,
-          "tempoVirtualeSecondi": 1022,
+          "turni": 75,
+          "tempoVirtualeSecondi": 1054,
           "semeIniziale": 31001
         },
         {
@@ -282,8 +282,8 @@
           "capitolo": "cerimoniale",
           "vinto": true,
           "tentativi": 4,
-          "turni": 97,
-          "tempoVirtualeSecondi": 1250,
+          "turni": 99,
+          "tempoVirtualeSecondi": 1295,
           "semeIniziale": 32001
         }
       ]
@@ -295,11 +295,11 @@
       "completata": true,
       "duelliCompletati": 26,
       "duelliTotali": 26,
-      "tentativi": 186,
-      "tentativiMediPerDuello": 7.15,
-      "turni": 2819,
-      "tempoVirtualeSecondi": 37277,
-      "tempoRealeMs": 12394,
+      "tentativi": 162,
+      "tentativiMediPerDuello": 6.23,
+      "turni": 2412,
+      "tempoVirtualeSecondi": 32018,
+      "tempoRealeMs": 10964,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -309,7 +309,7 @@
           "vinto": true,
           "tentativi": 3,
           "turni": 27,
-          "tempoVirtualeSecondi": 352,
+          "tempoVirtualeSecondi": 355,
           "semeIniziale": 7001
         },
         {
@@ -318,8 +318,8 @@
           "capitolo": "prologo",
           "vinto": true,
           "tentativi": 5,
-          "turni": 75,
-          "tempoVirtualeSecondi": 982,
+          "turni": 65,
+          "tempoVirtualeSecondi": 866,
           "semeIniziale": 8001
         },
         {
@@ -337,9 +337,9 @@
           "avversario": "mako",
           "capitolo": "regno",
           "vinto": true,
-          "tentativi": 40,
-          "turni": 612,
-          "tempoVirtualeSecondi": 8329,
+          "tentativi": 17,
+          "turni": 212,
+          "tempoVirtualeSecondi": 2964,
           "semeIniziale": 10001
         },
         {
@@ -348,8 +348,8 @@
           "capitolo": "regno",
           "vinto": true,
           "tentativi": 2,
-          "turni": 39,
-          "tempoVirtualeSecondi": 510,
+          "turni": 35,
+          "tempoVirtualeSecondi": 463,
           "semeIniziale": 11001
         },
         {
@@ -369,7 +369,7 @@
           "vinto": true,
           "tentativi": 8,
           "turni": 91,
-          "tempoVirtualeSecondi": 1190,
+          "tempoVirtualeSecondi": 1201,
           "semeIniziale": 13001
         },
         {
@@ -379,7 +379,7 @@
           "vinto": true,
           "tentativi": 6,
           "turni": 101,
-          "tempoVirtualeSecondi": 1363,
+          "tempoVirtualeSecondi": 1369,
           "semeIniziale": 14001
         },
         {
@@ -387,9 +387,9 @@
           "avversario": "kaiba",
           "capitolo": "regno",
           "vinto": true,
-          "tentativi": 2,
-          "turni": 31,
-          "tempoVirtualeSecondi": 404,
+          "tentativi": 13,
+          "turni": 169,
+          "tempoVirtualeSecondi": 2173,
           "semeIniziale": 15001
         },
         {
@@ -408,8 +408,8 @@
           "capitolo": "regno",
           "vinto": true,
           "tentativi": 27,
-          "turni": 406,
-          "tempoVirtualeSecondi": 5355,
+          "turni": 408,
+          "tempoVirtualeSecondi": 5432,
           "semeIniziale": 17001
         },
         {
@@ -417,9 +417,9 @@
           "avversario": "pegasus",
           "capitolo": "regno",
           "vinto": true,
-          "tentativi": 13,
-          "turni": 219,
-          "tempoVirtualeSecondi": 2800,
+          "tentativi": 14,
+          "turni": 237,
+          "tempoVirtualeSecondi": 3144,
           "semeIniziale": 18001
         },
         {
@@ -448,8 +448,8 @@
           "capitolo": "battlecity1",
           "vinto": true,
           "tentativi": 2,
-          "turni": 41,
-          "tempoVirtualeSecondi": 546,
+          "turni": 39,
+          "tempoVirtualeSecondi": 520,
           "semeIniziale": 21001
         },
         {
@@ -469,7 +469,7 @@
           "vinto": true,
           "tentativi": 4,
           "turni": 59,
-          "tempoVirtualeSecondi": 802,
+          "tempoVirtualeSecondi": 818,
           "semeIniziale": 23001
         },
         {
@@ -477,9 +477,9 @@
           "avversario": "joey",
           "capitolo": "battlecity1",
           "vinto": true,
-          "tentativi": 18,
-          "turni": 223,
-          "tempoVirtualeSecondi": 2944,
+          "tentativi": 6,
+          "turni": 83,
+          "tempoVirtualeSecondi": 1074,
           "semeIniziale": 24001
         },
         {
@@ -489,7 +489,7 @@
           "vinto": true,
           "tentativi": 4,
           "turni": 57,
-          "tempoVirtualeSecondi": 739,
+          "tempoVirtualeSecondi": 742,
           "semeIniziale": 25001
         },
         {
@@ -499,7 +499,7 @@
           "vinto": true,
           "tentativi": 17,
           "turni": 293,
-          "tempoVirtualeSecondi": 3858,
+          "tempoVirtualeSecondi": 3876,
           "semeIniziale": 26001
         },
         {
@@ -509,7 +509,7 @@
           "vinto": true,
           "tentativi": 6,
           "turni": 107,
-          "tempoVirtualeSecondi": 1413,
+          "tempoVirtualeSecondi": 1416,
           "semeIniziale": 27001
         },
         {
@@ -518,8 +518,8 @@
           "capitolo": "battlecity2",
           "vinto": true,
           "tentativi": 6,
-          "turni": 55,
-          "tempoVirtualeSecondi": 720,
+          "turni": 57,
+          "tempoVirtualeSecondi": 761,
           "semeIniziale": 28001
         },
         {
@@ -529,7 +529,7 @@
           "vinto": true,
           "tentativi": 2,
           "turni": 34,
-          "tempoVirtualeSecondi": 438,
+          "tempoVirtualeSecondi": 444,
           "semeIniziale": 29001
         },
         {
@@ -539,7 +539,7 @@
           "vinto": true,
           "tentativi": 4,
           "turni": 93,
-          "tempoVirtualeSecondi": 1206,
+          "tempoVirtualeSecondi": 1209,
           "semeIniziale": 30001
         },
         {
@@ -549,7 +549,7 @@
           "vinto": true,
           "tentativi": 4,
           "turni": 47,
-          "tempoVirtualeSecondi": 613,
+          "tempoVirtualeSecondi": 616,
           "semeIniziale": 31001
         },
         {
@@ -557,9 +557,9 @@
           "avversario": "yamiYugi",
           "capitolo": "cerimoniale",
           "vinto": true,
-          "tentativi": 5,
-          "turni": 75,
-          "tempoVirtualeSecondi": 954,
+          "tentativi": 4,
+          "turni": 64,
+          "tempoVirtualeSecondi": 814,
           "semeIniziale": 32001
         }
       ]
@@ -571,11 +571,11 @@
       "completata": true,
       "duelliCompletati": 26,
       "duelliTotali": 26,
-      "tentativi": 242,
-      "tentativiMediPerDuello": 9.31,
-      "turni": 3715,
-      "tempoVirtualeSecondi": 48564,
-      "tempoRealeMs": 16330,
+      "tentativi": 211,
+      "tentativiMediPerDuello": 8.12,
+      "turni": 3432,
+      "tempoVirtualeSecondi": 44974,
+      "tempoRealeMs": 15354,
       "bloccatoA": null,
       "dettaglioDuelli": [
         {
@@ -594,8 +594,8 @@
           "capitolo": "prologo",
           "vinto": true,
           "tentativi": 7,
-          "turni": 171,
-          "tempoVirtualeSecondi": 2164,
+          "turni": 153,
+          "tempoVirtualeSecondi": 1959,
           "semeIniziale": 8001
         },
         {
@@ -605,7 +605,7 @@
           "vinto": true,
           "tentativi": 7,
           "turni": 153,
-          "tempoVirtualeSecondi": 2085,
+          "tempoVirtualeSecondi": 2091,
           "semeIniziale": 9001
         },
         {
@@ -613,9 +613,9 @@
           "avversario": "mako",
           "capitolo": "regno",
           "vinto": true,
-          "tentativi": 26,
-          "turni": 326,
-          "tempoVirtualeSecondi": 4356,
+          "tentativi": 15,
+          "turni": 198,
+          "tempoVirtualeSecondi": 2670,
           "semeIniziale": 10001
         },
         {
@@ -635,7 +635,7 @@
           "vinto": true,
           "tentativi": 8,
           "turni": 119,
-          "tempoVirtualeSecondi": 1592,
+          "tempoVirtualeSecondi": 1595,
           "semeIniziale": 12001
         },
         {
@@ -645,7 +645,7 @@
           "vinto": true,
           "tentativi": 20,
           "turni": 259,
-          "tempoVirtualeSecondi": 3318,
+          "tempoVirtualeSecondi": 3334,
           "semeIniziale": 13001
         },
         {
@@ -654,8 +654,8 @@
           "capitolo": "regno",
           "vinto": true,
           "tentativi": 8,
-          "turni": 127,
-          "tempoVirtualeSecondi": 1793,
+          "turni": 139,
+          "tempoVirtualeSecondi": 1972,
           "semeIniziale": 14001
         },
         {
@@ -665,7 +665,7 @@
           "vinto": true,
           "tentativi": 1,
           "turni": 23,
-          "tempoVirtualeSecondi": 309,
+          "tempoVirtualeSecondi": 312,
           "semeIniziale": 15001
         },
         {
@@ -675,7 +675,7 @@
           "vinto": true,
           "tentativi": 8,
           "turni": 129,
-          "tempoVirtualeSecondi": 1650,
+          "tempoVirtualeSecondi": 1653,
           "semeIniziale": 16001
         },
         {
@@ -693,9 +693,9 @@
           "avversario": "pegasus",
           "capitolo": "regno",
           "vinto": true,
-          "tentativi": 1,
-          "turni": 11,
-          "tempoVirtualeSecondi": 150,
+          "tentativi": 3,
+          "turni": 43,
+          "tempoVirtualeSecondi": 587,
           "semeIniziale": 18001
         },
         {
@@ -705,7 +705,7 @@
           "vinto": true,
           "tentativi": 3,
           "turni": 61,
-          "tempoVirtualeSecondi": 778,
+          "tempoVirtualeSecondi": 781,
           "semeIniziale": 19001
         },
         {
@@ -723,9 +723,9 @@
           "avversario": "arkana",
           "capitolo": "battlecity1",
           "vinto": true,
-          "tentativi": 16,
-          "turni": 245,
-          "tempoVirtualeSecondi": 3245,
+          "tentativi": 4,
+          "turni": 89,
+          "tempoVirtualeSecondi": 1171,
           "semeIniziale": 21001
         },
         {
@@ -743,9 +743,9 @@
           "avversario": "umbra",
           "capitolo": "battlecity1",
           "vinto": true,
-          "tentativi": 5,
-          "turni": 93,
-          "tempoVirtualeSecondi": 1246,
+          "tentativi": 7,
+          "turni": 172,
+          "tempoVirtualeSecondi": 2244,
           "semeIniziale": 23001
         },
         {
@@ -753,9 +753,9 @@
           "avversario": "joey",
           "capitolo": "battlecity1",
           "vinto": true,
-          "tentativi": 18,
-          "turni": 241,
-          "tempoVirtualeSecondi": 3142,
+          "tentativi": 6,
+          "turni": 111,
+          "tempoVirtualeSecondi": 1420,
           "semeIniziale": 24001
         },
         {
@@ -765,7 +765,7 @@
           "vinto": true,
           "tentativi": 6,
           "turni": 97,
-          "tempoVirtualeSecondi": 1211,
+          "tempoVirtualeSecondi": 1220,
           "semeIniziale": 25001
         },
         {
@@ -774,8 +774,8 @@
           "capitolo": "virtuale",
           "vinto": true,
           "tentativi": 25,
-          "turni": 368,
-          "tempoVirtualeSecondi": 4800,
+          "turni": 372,
+          "tempoVirtualeSecondi": 4883,
           "semeIniziale": 26001
         },
         {
@@ -785,7 +785,7 @@
           "vinto": true,
           "tentativi": 18,
           "turni": 331,
-          "tempoVirtualeSecondi": 4308,
+          "tempoVirtualeSecondi": 4324,
           "semeIniziale": 27001
         },
         {
@@ -794,8 +794,8 @@
           "capitolo": "battlecity2",
           "vinto": true,
           "tentativi": 11,
-          "turni": 155,
-          "tempoVirtualeSecondi": 1971,
+          "turni": 165,
+          "tempoVirtualeSecondi": 2114,
           "semeIniziale": 28001
         },
         {
@@ -805,7 +805,7 @@
           "vinto": true,
           "tentativi": 15,
           "turni": 197,
-          "tempoVirtualeSecondi": 2554,
+          "tempoVirtualeSecondi": 2557,
           "semeIniziale": 29001
         },
         {
@@ -814,8 +814,8 @@
           "capitolo": "cerimoniale",
           "vinto": true,
           "tentativi": 3,
-          "turni": 31,
-          "tempoVirtualeSecondi": 396,
+          "turni": 37,
+          "tempoVirtualeSecondi": 478,
           "semeIniziale": 30001
         },
         {
@@ -824,8 +824,8 @@
           "capitolo": "cerimoniale",
           "vinto": true,
           "tentativi": 8,
-          "turni": 93,
-          "tempoVirtualeSecondi": 1226,
+          "turni": 91,
+          "tempoVirtualeSecondi": 1203,
           "semeIniziale": 31001
         },
         {
@@ -834,8 +834,8 @@
           "capitolo": "cerimoniale",
           "vinto": true,
           "tentativi": 23,
-          "turni": 366,
-          "tempoVirtualeSecondi": 4762,
+          "turni": 374,
+          "tempoVirtualeSecondi": 4901,
           "semeIniziale": 32001
         }
       ]
