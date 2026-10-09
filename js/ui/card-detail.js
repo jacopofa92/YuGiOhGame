@@ -1,12 +1,14 @@
 /**
  * js/ui/card-detail.js — LA SCHEDA DI UNA CARTA, CONDIVISA
  * =====================================================================
- * Cartoteca e Creazione Deck avevano ciascuna la propria copia di questa
- * scheda, e il commento su quella di creazione-deck.html diceva:
- * «Resta una copia e non un componente condiviso [...] Se un giorno
- * servisse anche altrove, allora sì.» Quel giorno è arrivato: il Negozio
- * vende carte singole, e chi sta per spendere crediti deve poter leggere
- * cosa fa la carta prima di comprarla.
+ * L'UNICA scheda di dettaglio carta del gioco: Cartoteca (pagina e vista
+ * del menu), Creazione Deck, Negozio e sbustamento aprono tutti questa,
+ * con CardDetail.open(card). Prima ce n'erano quattro copie scritte a
+ * mano, andate alla deriva fra loro: la copia nel menu aveva perso il
+ * riquadro "Come si ottiene", due non proteggevano il nome della carta
+ * (una carta personalizzata è testo libero dell'utente, e finiva in
+ * innerHTML così com'era). Una funzione nuova della scheda va aggiunta
+ * qui, e la vedono tutti.
  *
  * Il modale si costruisce da sé al primo uso e non ha alcun id: si
  * innesta in qualunque pagina senza chiedere markup, e senza rischiare
@@ -69,6 +71,16 @@
         // bug in questo progetto, vedi CLAUDE.md).
         backdrop.addEventListener('click', (e) => { if (e.target === backdrop) close(); });
         document.body.appendChild(backdrop);
+        // Esc chiude la scheda, e SOLO lei: in fase di cattura e fermando
+        // l'evento, così un ascoltatore della pagina (Creazione Deck chiude
+        // con Esc la lista carte che sta sotto la scheda) non chiude anche
+        // la finestra di sotto con lo stesso tasto. Una schermata per volta,
+        // dalla più in alto.
+        window.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape' || !isOpen()) return;
+            e.stopPropagation();
+            close();
+        }, true);
     }
 
     function open(card) {
@@ -123,5 +135,9 @@
         if (backdrop) backdrop.classList.remove('open');
     }
 
-    window.CardDetail = { open: open, close: close };
+    function isOpen() {
+        return !!backdrop && backdrop.classList.contains('open');
+    }
+
+    window.CardDetail = { open: open, close: close, isOpen: isOpen };
 })();

@@ -36,6 +36,7 @@
 <link rel="stylesheet" href="js/ui/deck-switcher.css">
 <title>Yu-Gi-Oh! Duel Arena — Cartoteca</title>
 <link rel="stylesheet" href="js/ui/card.css">
+<link rel="stylesheet" href="js/ui/card-detail.css">
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     /* Niente selezione di testo/pressione lunga sul contenuto del gioco (nomi
@@ -387,8 +388,7 @@
        nel duello (duelMonstersCore.html) — qui le carte non si trascinano mai,
        e quella regola bloccava anche lo scroll verticale col dito quando
        il tocco iniziava sopra una carta. */
-    .cartoteca-grid .card,
-    .card-modal-preview .card {
+    .cartoteca-grid .card {
         touch-action: pan-y;
     }
     /* Badge "effetto implementato parzialmente" (richiesta esplicita
@@ -426,91 +426,9 @@
     .card:hover { transform: translateY(-8px) scale(1.045); box-shadow: 0 16px 34px rgba(0,0,0,0.4); }
 
     /* ============================================================
-       Modale dettaglio carta
+       La scheda di dettaglio carta è quella condivisa da tutto il gioco:
+       js/ui/card-detail.js + js/ui/card-detail.css (CardDetail.open).
        ============================================================ */
-    .card-modal-backdrop {
-        position: fixed;
-        inset: 0;
-        background: rgba(0,0,0,0.78);
-        display: none;
-        align-items: center;
-        justify-content: center;
-        z-index: 200;
-        padding: 20px;
-    }
-    .card-modal-backdrop.open { display: flex; }
-    .card-modal {
-        background: linear-gradient(145deg, #1f2a44, #2a2032);
-        border: 2px solid var(--gold-strong);
-        border-radius: 20px;
-        width: min(94vw, 720px);
-        max-height: 92vh;
-        overflow-y: auto;
-        padding: clamp(18px, 3vw, 32px);
-        box-shadow: 0 24px 60px rgba(0,0,0,0.5);
-        display: flex;
-        gap: clamp(16px, 3vw, 30px);
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-    .card-modal-preview { flex: 0 0 auto; margin: 0 auto; }
-    .card-modal-preview .card { width: min(46vh, clamp(180px, 26vw, 280px)); height: calc(min(46vh, clamp(180px, 26vw, 280px)) / var(--card-ratio)); cursor: default; }
-    .card-modal-preview .card:hover { transform: none; }
-    .card-modal-info { flex: 1 1 260px; min-width: 220px; }
-    .card-modal-name { font-size: 1.4rem; font-weight: 900; color: #fff; margin-bottom: 6px; }
-    .card-modal-meta {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        margin-bottom: 14px;
-    }
-    .card-modal-tag {
-        font-size: 0.72rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        padding: 4px 10px;
-        border-radius: 999px;
-        background: rgba(255,255,255,0.1);
-        color: #dfe7f7;
-        border: 1px solid rgba(255,255,255,0.14);
-    }
-    .card-modal-stats { display: flex; gap: 16px; margin-bottom: 14px; }
-    .card-modal-stat { font-size: 0.95rem; font-weight: 800; }
-    .card-modal-stat.atk { color: #ff8a7a; }
-    .card-modal-stat.def { color: #7dd3fc; }
-    .card-modal-effect { color: #dbe6ff; line-height: 1.5; font-size: 0.92rem; }
-    .card-modal-acquisition {
-        display: grid; gap: 6px; margin-top: 14px; padding: 12px 14px;
-        border: 1px solid rgba(247,215,116,.35); border-radius: 10px;
-        background: rgba(247,215,116,.07); color: #dbe6ff;
-        font-size: .84rem; line-height: 1.45;
-    }
-    .card-modal-acquisition strong { color: #f7d774; font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; }
-    .card-modal-acquisition small { color: #8ee6b0; font-size: .76rem; font-weight: 700; }
-    .card-modal-partial-note {
-        margin-top: 10px;
-        padding: 10px 12px;
-        border-left: 3px solid #f1c40f;
-        background: rgba(241,196,15,0.12);
-        border-radius: 0 6px 6px 0;
-        color: #e8dfa8;
-        font-size: 0.82rem;
-        line-height: 1.4;
-    }
-    .card-modal-close {
-        position: absolute;
-        top: 14px;
-        right: 16px;
-        background: none;
-        border: none;
-        color: #cdd6ea;
-        font-size: 1.4rem;
-        cursor: pointer;
-        line-height: 1;
-    }
-    .card-modal-close:hover { color: #fff; }
-    .card-modal { position: relative; }
 
     /* ============================================================
        Telefono: la topbar/filtri restavano dimensionati per desktop
@@ -647,14 +565,6 @@
         <div class="cartoteca-pager bottom" id="pagerBottom" hidden></div>
     </main>
 
-    <div class="card-modal-backdrop" id="cardModal">
-        <div class="card-modal">
-            <button class="card-modal-close" id="cardModalClose">✕</button>
-            <div class="card-modal-preview" id="cardModalPreview"></div>
-            <div class="card-modal-info" id="cardModalInfo"></div>
-        </div>
-    </div>
-
 <script src="js/audio/audio-manager.js"></script>
 <script src="js/native/app-back-button.js"></script>
 <script src="js/native/haptics.js"></script>
@@ -688,6 +598,8 @@
 <script src="js/engine/card-effects-8.js"></script>
 <!-- /gruppo-script:motore -->
 <script src="js/ui/card-renderer.js"></script>
+<!-- La scheda di dettaglio carta è quella condivisa da tutto il gioco. -->
+<script src="js/ui/card-detail.js"></script>
 <script src="js/ui/icon-library.js"></script>
 <script src="js/ui/deck-switcher.js"></script>
 <script src="js/ui/topbar.js"></script>
@@ -1063,63 +975,12 @@
         document.getElementById('resultCount').textContent = `${results.length} cart${results.length === 1 ? 'a' : 'e'}`;
     }
 
+    // La scheda della carta è quella condivisa da tutto il gioco
+    // (js/ui/card-detail.js): tag, ATK/DEF, effetto, "Come si ottiene",
+    // avviso di effetto parziale, Esc e click fuori per chiudere.
     function openCardModal(card) {
-        const modal = document.getElementById('cardModal');
-        const preview = document.getElementById('cardModalPreview');
-        const info = document.getElementById('cardModalInfo');
-
-        preview.innerHTML = '';
-        preview.appendChild(createCardTile(card));
-        preview.querySelector('.card').onclick = null;
-
-        // TYPE_LABELS resta per i CHIP del filtro (una scelta globale, non
-        // legata a una carta sola): qui invece siamo sulla scheda di UNA
-        // carta, quindi valgono i termini della sua provenienza — una
-        // carta 'ww1' è una Truppa, non un Mostro. Vedi getCardTerms in
-        // js/data/cards-db.js.
-        // typeof: vedi il commento gemello in creazione-deck.html — nei
-        // minuti dopo una pubblicazione un dispositivo puo' ricevere questo
-        // .html nuovo e cards-db.js ancora vecchio, e una chiamata a freddo
-        // farebbe comparire il banner rosso invece della scheda.
-        const cardTerms = (typeof getCardTerms === 'function') ? getCardTerms(card) : {
-            monsterSingular: 'Mostro', spellSingular: 'Magia', trapSingular: 'Trappola'
-        };
-        const typeLabel = card.type === 'monster' ? cardTerms.monsterSingular
-            : card.type === 'spell' ? cardTerms.spellSingular : cardTerms.trapSingular;
-        const effectText = (typeof formatCardText === 'function') ? formatCardText(card.effect, card) : card.effect;
-        const tags = [`${TYPE_ICON[card.type]} ${typeLabel}`];
-        if (card.race) tags.push(card.race);
-        if (card.attribute) tags.push(card.attribute);
-        if (card.type === 'monster' && card.level) tags.push(`⭐ Livello ${card.level}`);
-        if (window.CardRarity) tags.push(CardRarity.label(CardRarity.of(card.id)));
-
-        const tributes = (typeof getTributesRequired === 'function') ? getTributesRequired(card) : 0;
-        if (tributes > 0) tags.push(`Richiede ${tributes} Tribut${tributes > 1 ? 'i' : 'o'}`);
-
-        info.innerHTML = `
-            <div class="card-modal-name">${card.name}</div>
-            <div class="card-modal-meta">${tags.map(t => `<span class="card-modal-tag">${t}</span>`).join('')}</div>
-            ${card.type === 'monster' ? `
-                <div class="card-modal-stats">
-                    <span class="card-modal-stat atk">ATK ${card.attack}</span>
-                    <span class="card-modal-stat def">DEF ${card.defense}</span>
-                </div>
-            ` : ''}
-            <p class="card-modal-effect">${effectText || (card.type === 'monster' ? `${cardTerms.monsterSingular} normale senza effetto speciale.` : 'Questa carta non presenta un effetto scritto.')}</p>
-            ${window.CardAcquisition ? `<div class="card-modal-acquisition"><strong>Come si ottiene</strong><span>${CardAcquisition.sourceFor(card.id)}</span>${CardAcquisition.progressFor && CardAcquisition.progressFor(card.id) ? `<small>Progresso: ${CardAcquisition.progressFor(card.id)}</small>` : ''}</div>` : ''}
-            ${card.missingEffectNote ? `<p class="card-modal-partial-note">🟡 Effetto implementato parzialmente: ${card.missingEffectNote}</p>` : ''}
-        `;
-
-        modal.classList.add('open');
+        CardDetail.open(card);
     }
-
-    function closeCardModal() {
-        document.getElementById('cardModal').classList.remove('open');
-    }
-    document.getElementById('cardModalClose').onclick = closeCardModal;
-    document.getElementById('cardModal').addEventListener('click', (e) => {
-        if (e.target.id === 'cardModal') closeCardModal();
-    });
 
     initFilters();
     renderGrid();
