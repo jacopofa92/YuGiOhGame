@@ -93,7 +93,7 @@
         --red: #e74c3c;
         --green: #2ecc71;
         --card-w: 118px;
-        --card-h: calc(var(--card-w) / 0.685);
+        --card-h: calc(var(--card-w) / var(--card-ratio));
     }
 
     /* ============================================================
@@ -606,7 +606,7 @@
     .card-detail-preview { flex: 0 0 auto; margin: 0 auto; }
     .card-detail-preview .card {
         width: min(46vh, clamp(180px, 26vw, 280px));
-        height: calc(min(46vh, clamp(180px, 26vw, 280px)) / 0.685);
+        height: calc(min(46vh, clamp(180px, 26vw, 280px)) / var(--card-ratio));
         cursor: default;
     }
     .card-detail-preview .card:hover { transform: none; }

@@ -36,16 +36,17 @@
         if (text != null) node.textContent = text;
         return node;
     }
+    // La carta si disegna SEMPRE con il renderer di tutte le altre carte
+    // (js/ui/card-renderer.js + js/ui/card.css): ogni pagina che carica
+    // questo file carica anche quelli, lo controlla il guardrail
+    // tests/specs/guardrail-pagine-con-carte.spec.js. Prima qui c'era una
+    // seconda cornice di ripiego, con un suo stile e un percorso
+    // dell'illustrazione sbagliato per le carte non Yu-Gi-Oh (stanno in
+    // images/cards/non-ygo/, e il ripiego le cercava in images/cards/).
+    // Una carta che non esiste nel database resta coperta: meglio un dorso
+    // di una carta inventata.
     function cardNode(entry) {
-        const data = cardById(entry.cardId);
-        if (data && typeof window.createCardElement === 'function') return window.createCardElement(data);
-        const fallback = make('div', 'cdrop-fallback-card');
-        const img = document.createElement('img');
-        img.alt = entry.nome || 'Carta ottenuta';
-        img.src = `images/cards/${entry.cardId}.jpg`;
-        fallback.appendChild(img);
-        fallback.appendChild(make('div', 'cdrop-fallback-name', entry.nome || `Carta #${entry.cardId}`));
-        return fallback;
+        return window.createCardElement(cardById(entry.cardId));
     }
     function particles(root, amount) {
         const layer = make('div', 'cdrop-particles');
@@ -83,7 +84,12 @@
         content.appendChild(make('div', 'cdrop-kicker', 'RICOMPENSA OTTENUTA'));
         const stage = make('div', 'cdrop-stage');
         const card = make('div', 'cdrop-card');
-        card.appendChild(make('div', 'cdrop-card-back'));
+        // Il dorso è quello di ogni altra carta coperta del gioco (stesso
+        // renderer, stessa immagine backCard.jpg quando c'è), non un motivo
+        // disegnato apposta per questa schermata.
+        const back = make('div', 'cdrop-card-back');
+        back.appendChild(window.createCardElement(null));
+        card.appendChild(back);
         const face = make('div', 'cdrop-card-front');
         face.appendChild(cardNode(entry));
         card.appendChild(face);

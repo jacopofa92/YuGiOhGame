@@ -38,18 +38,16 @@
     opacity: 0; animation: cdropBeam 1.15s .2s ease-out forwards;
 }
 @keyframes cdropBeam { 0% { opacity:0; transform:scaleY(.3); } 40% { opacity:.72; } 100% { opacity:.24; transform:scaleY(1); } }
-.cdrop-card { position: relative; width: clamp(150px, min(36vw, 32vh), 240px); aspect-ratio: .685; transform-style: preserve-3d; opacity: 0; will-change: transform,opacity; animation: cdropArrive 1.45s .12s cubic-bezier(.18,.78,.2,1) forwards; }
+.cdrop-card { position: relative; width: clamp(150px, min(36vw, 32vh), 240px); aspect-ratio: var(--card-ratio); transform-style: preserve-3d; opacity: 0; will-change: transform,opacity; animation: cdropArrive 1.45s .12s cubic-bezier(.18,.78,.2,1) forwards; }
 @keyframes cdropArrive { 0% { opacity:0; transform:translate3d(0,72px,-360px) rotateY(-360deg) rotateX(18deg) scale(.48); } 72% { opacity:1; transform:translate3d(0,-7px,18px) rotateY(8deg) rotateX(-2deg) scale(1.035); } 100% { opacity:1; transform:translate3d(0,0,0) rotateY(0) rotateX(0) scale(1); } }
 @keyframes cdropFloat { 0%,100% { transform:translate3d(0,0,0); } 50% { transform:translate3d(0,-6px,0); } }
 .cdrop-card::after { content:''; position:absolute; inset:-5%; border-radius:12px; z-index:-1; background:radial-gradient(circle,var(--drop-soft),transparent 70%); opacity:.5; }
 .cdrop-card-back, .cdrop-card-front { position:absolute; inset:0; backface-visibility:hidden; border-radius:8px; overflow:hidden; }
-.cdrop-card-back { transform:rotateY(180deg); background:repeating-radial-gradient(ellipse at center,#d97823 0 4px,#21100b 9px 13px); border:5px solid #111; }
+.cdrop-card-back { transform:rotateY(180deg); }
 .cdrop-card-front { background:#17131d; box-shadow:0 18px 38px rgba(0,0,0,.72),0 0 18px var(--drop-soft); }
 .cdrop-revealed .cdrop-card-front { animation:cdropFloat 4s ease-in-out infinite; }
-.cdrop-card-front > .card { width:100% !important; height:100% !important; }
-.cdrop-fallback-card { width:100%; height:100%; position:relative; overflow:hidden; border:5px solid #b68a3e; background:#18131c; }
-.cdrop-fallback-card img { width:100%; height:100%; object-fit:cover; display:block; }
-.cdrop-fallback-name { position:absolute; left:5%; right:5%; top:4%; padding:5px; background:rgba(245,225,176,.9); color:#1a1208; font-weight:900; font-size:.72rem; }
+/* Fronte e dorso sono carte vere del renderer (js/ui/card.css): riempiono la faccia. */
+.cdrop-card-back > .card, .cdrop-card-front > .card { width:100%; height:100%; }
 .cdrop-name, .cdrop-rarity, .cdrop-rule { opacity:0; transform:translateY(10px); transition:opacity .5s ease,transform .5s ease; }
 .cdrop-name { margin-top:-5px; font:900 clamp(1.25rem,4vw,2rem)/1.05 Georgia,serif; color:#fff7dc; text-shadow:0 3px 20px #000,0 0 18px var(--drop-soft); }
 .cdrop-rarity { display:inline-block; margin-top:8px; padding:4px 14px; border:1px solid var(--drop); border-radius:999px; color:var(--drop); font-size:.68rem; font-weight:900; letter-spacing:.16em; text-transform:uppercase; background:rgba(0,0,0,.4); transition-delay:.1s; }

@@ -126,7 +126,7 @@
         text-align: center;
     }
     /* --card-w (non width diretto): l'altezza di .card in js/ui/card.css
-       si calcola da var(--card-h, calc(var(--card-w)/0.685)) — un width
+       si calcola da var(--card-h, calc(var(--card-w)/ var(--card-ratio))) — un width
        fisso qui senza toccare --card-w scollega larghezza e altezza e
        la carta viene "schiacciata" (bug reale trovato su mobile, ma
        presente a qualunque dimensione: qui semplicemente più visibile

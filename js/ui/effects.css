@@ -1236,7 +1236,7 @@
     transform: translate(-50%,-50%) rotate(var(--ritual-angle)) translateY(calc(-1 * var(--ritual-radius))) rotate(calc(-1 * var(--ritual-angle))) perspective(800px) rotateY(-12deg);
     animation: fxRitualMaterial 2.35s cubic-bezier(.55,.05,.85,.35) calc(var(--ritual-i) * 90ms) both;
 }
-.fx-ritual-card.card { width: 100%; height: auto; aspect-ratio: .685; box-shadow: 0 0 24px rgba(104,225,255,.72); }
+.fx-ritual-card.card { width: 100%; height: auto; aspect-ratio: var(--card-ratio); box-shadow: 0 0 24px rgba(104,225,255,.72); }
 .fx-ritual-title {
     position: absolute; left: 50%; bottom: clamp(8%,12vh,16%); transform: translateX(-50%);
     color: #d8f8ff; text-align: center; white-space: nowrap; letter-spacing: .16em;

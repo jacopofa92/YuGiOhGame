@@ -104,7 +104,7 @@
         const node = window.createCardElement(carta);
         const w = larghezza || CARD_W;
         node.style.setProperty('--card-w', w);
-        node.style.setProperty('--card-h', `calc(${w} / 0.685)`);
+        node.style.setProperty('--card-h', `calc(${w} / var(--card-ratio))`);
         return node;
     }
 

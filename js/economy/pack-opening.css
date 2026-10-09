@@ -300,7 +300,7 @@
 .po-mazzetto-carta {
     position: absolute;
     width: clamp(80px, min(24vw, 27vh), 150px);
-    aspect-ratio: 0.685;
+    aspect-ratio: var(--card-ratio);
     top: 0;
     left: 0;
     transform: translate(calc(var(--i) * 7px - 50%), calc(var(--i) * -6px - 50%)) rotate(calc(var(--i) * 2.5deg));
@@ -387,7 +387,7 @@
     gap: clamp(4px, 1vw, 8px);
     /* Anche in `vh`: su un telefono girato 10vw fanno 85px, che sommati
        a testa, carta e pulsante non ci stanno in 393px di altezza. */
-    min-height: calc(var(--po-summary-card-w) / .685 + 24px);
+    min-height: calc(var(--po-summary-card-w) / var(--card-ratio) + 24px);
     /* `wrap` come rete di sicurezza per una bustina molto più grande di
        dieci carte: va a capo invece di sbordare, e la fascia cresce di
        una riga. Con le buste di oggi non succede mai. */
