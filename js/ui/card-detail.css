@@ -22,7 +22,7 @@
 
 .cd-card {
     position: relative;
-    width: min(560px, 100%);
+    width: min(720px, 100%);
     max-height: 88dvh;
     overflow-y: auto;
     display: flex;
@@ -56,12 +56,17 @@
     align-items: flex-start;
 }
 /* La carta nell'anteprima è più grande che in griglia: è il motivo per
-   cui si è aperta questa scheda. Non cliccabile: qui si legge. */
+   cui si è aperta questa scheda (la misura è quella che aveva la scheda
+   della Cartoteca, la più usata). Non cliccabile e ferma: qui si legge.
+   touch-action: card.css blocca lo scorrimento col dito su ogni carta
+   (serve al trascinamento in duello), qui deve poter scorrere la scheda. */
 .cd-preview .card {
-    --card-w: clamp(140px, 34vw, 190px);
-    --card-h: calc(clamp(140px, 34vw, 190px) / var(--card-ratio));
+    --card-w: min(46vh, clamp(180px, 26vw, 280px));
+    --card-h: calc(min(46vh, clamp(180px, 26vw, 280px)) / var(--card-ratio));
     cursor: default;
+    touch-action: pan-y;
 }
+.cd-preview .card:hover { transform: none; }
 
 .cd-info { flex: 1 1 220px; min-width: 0; }
 .cd-name {

@@ -23,7 +23,8 @@ module.exports = {
 
                 const leggi = (id) => {
                     openCardModal(cardDatabase.find((c) => c.id === id));
-                    const box = document.querySelector('.card-modal-acquisition');
+                    // La scheda è quella condivisa (js/ui/card-detail.js).
+                    const box = document.querySelector('.cd-backdrop.open .cd-acquisition');
                     return box ? box.innerText : '';
                 };
                 return { slifer: leggi(31), exodia: leggi(11), drago: leggi(1) };
