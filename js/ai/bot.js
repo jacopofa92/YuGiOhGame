@@ -61,6 +61,10 @@ function turnoIA(io = 'bot') {
                 // che copre tutto lo schermo significa far perdere al
                 // giocatore quello che e' successo.
                 .then(waitForSummonCinematics)
+                // X/Y/Z e ogni futura combinazione che bandisce materiali
+                // dal Terreno passano dallo stesso comando del giocatore.
+                .then(() => attemptBotBanishFusion(io))
+                .then(waitForSummonCinematics)
                 // Dopo l'Evocazione (o il Set) del mostro, il bot valuta se
                 // Settare Trappole e/o attivare Magie dalla mano — una vera
                 // novità: prima il bot non toccava MAI le proprie Magie/
@@ -70,9 +74,9 @@ function turnoIA(io = 'bot') {
                 // js/ai/ai-hard.js per quanto ogni livello ne approfitta.
                 .then(() => attemptBotSpellTrap(io))
                 // Poi valuta se attivare PROATTIVAMENTE una propria carta
-                // già Set in un turno precedente (solo IA_DIFFICILE lo fa,
-                // vedi ai-hard.js) — anche questa una novità: prima il
-                // retrocampo del bot restava sempre e solo reattivo.
+                // già Set in un turno precedente o un Ignition identitario
+                // (Hard in generale; Media solo per boss esplicitamente
+                // gestiti, vedi ai-medium.js).
                 .then(() => attemptBotActivateSetCards(io))
                 // Una Magia Terreno del GIOCATORE che "il giocatore di turno"
                 // può usare (Cancello di Fusione id 887): nel suo turno il
@@ -305,6 +309,21 @@ function attemptBotUseTurnPlayerFieldSpell(io) {
     });
 }
 
+/** Combina dall'Extra Deck solo la linea scelta dal livello IA corrente. */
+function attemptBotBanishFusion(io) {
+    return quandoFermo(() => {
+        if (gameState.currentPlayer !== io || gameState.gameOver || !window.BotAI) return Promise.resolve();
+        const decision = BotAI.chooseBanishFusion(gameState, io);
+        if (!decision) return Promise.resolve();
+        Comandi.esegui(io, {
+            tipo: 'fusioneBandendo',
+            extraDeck: decision.extraDeckIndex,
+            materiali: decision.materialFieldIndices
+        });
+        return new Promise((resolve) => setTimeout(resolve, 1200));
+    });
+}
+
 function attemptBotPositionChanges(io) {
     return new Promise((resolve) => {
         if (gameState.currentPlayer !== io || gameState.gameOver || !window.BotAI) { resolve(); return; }
@@ -370,7 +389,9 @@ function botSummonMonster(card, tributeIndices, emptySlotHint, position, faceDow
     // solo se il campo avversario è vuoto (nessun mostro pronto ad
     // attaccare al turno successivo). Viaggia nel comando ('pagaLpRa'),
     // che lo rimette su card._raPayLp per CardEffects.register(472).onSummon.
-    const pagaLpRa = card.id === 472 ? !Tavolo.mostri(Tavolo.avversario(io)).some((s) => s) : undefined;
+    const pagaLpRa = card.id === 472
+        ? !!(window.AI_SHARED && AI_SHARED.shouldPayRaLp(gameState, io))
+        : undefined;
     return new Promise((resolve) => {
         const evoca = (casella) => {
             if (casella === -1 || casella === undefined) { resolve(); return; }

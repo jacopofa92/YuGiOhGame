@@ -101,6 +101,14 @@
         return changes;
     }
 
+    function chooseBanishFusion(gameStateArg, io = 'bot') {
+        const level = currentLevel(io);
+        const decision = level && typeof level.chooseBanishFusion === 'function'
+            ? level.chooseBanishFusion(gameStateArg, io) : null;
+        debugLog('chooseBanishFusion', decision ? { card: decision.card.name, materiali: decision.materialFieldIndices } : null, io);
+        return decision;
+    }
+
     function chooseAttackTarget(attackerSlot, playerMonsters, io = 'bot') {
         const level = currentLevel(io);
         const decision = level ? level.chooseAttackTarget(attackerSlot, playerMonsters, io) : null;
@@ -152,6 +160,7 @@
         orderAttackers: orderAttackers,
         estimateLethal: estimateLethal,
         choosePositionChanges: choosePositionChanges,
+        chooseBanishFusion: chooseBanishFusion,
         chooseAttackTarget: chooseAttackTarget,
         chooseChainResponse: chooseChainResponse,
         chooseNextSpellTrapAction: chooseNextSpellTrapAction,

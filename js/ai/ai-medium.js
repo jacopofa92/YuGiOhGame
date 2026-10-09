@@ -244,10 +244,10 @@
     }
 
     /**
-     * Vero se conviene attivare ORA una propria carta già Set durante la
-     * propria Main Phase (non in risposta a un trigger). IA_MEDIA non lo
-     * fa mai: resta puramente reattiva sul proprio retrocampo, per
-     * differenziarsi davvero da IA_DIFFICILE (vedi ai-hard.js).
+     * Vero se conviene attivare ORA una propria carta già Set o un effetto
+     * Ignition identitario durante la Main Phase. IA_MEDIA resta reattiva
+     * sul retrocampo; fanno eccezione soltanto i boss il cui piano sarebbe
+     * altrimenti morto (Abbandonato/Mille Occhi e Cannoni Drago).
      */
     function chooseSetCardActivation(gameState, io = 'bot') {
         // Abbandonato e Restrizione dai Mille Occhi sono il secondo piano
@@ -263,7 +263,47 @@
                 return { zone: 'monster', index, card: slot.card };
             }
         }
+        // I Cannoni Drago di Kaiba e future carte equivalenti convertono
+        // uno scarto in una rimozione. Lasciarli scoperti senza usare
+        // l'Ignition renderebbe inutile la combinazione appena compiuta.
+        // Il filtro sul testo evita una lista rigida di id.
+        for (let index = 0; index < campo.length; index++) {
+            const slot = campo[index];
+            if (!slot || slot.isFaceDown) continue;
+            if (!/scart(?:a|are) 1 carta.*distrugg/i.test(slot.card.effect || '')) continue;
+            if (window.DuelEngine && DuelEngine.canActivate(io, 'monster', index)) {
+                return { zone: 'monster', index, card: slot.card };
+            }
+        }
         return null;
+    }
+
+    /**
+     * Sceglie una combinazione dall'Extra Deck senza Polimerizzazione
+     * soltanto quando il risultato non perde valore: oppure è almeno forte
+     * quanto i materiali, oppure il suo effetto scarto+rimozione può già
+     * compensare la concentrazione di due corpi in uno.
+     */
+    function chooseBanishFusion(gameState, io = 'bot') {
+        if (!window.DuelEngine) return null;
+        const candidates = DuelEngine.getBanishFusableExtraDeckMonsters(io);
+        const ownField = Tavolo.mostri(io, gameState);
+        const enemyCards = (Tavolo.mostri(Tavolo.avversario(io), gameState) || []).filter(Boolean)
+            .concat((Tavolo.magieTrappole(Tavolo.avversario(io), gameState) || []).filter(Boolean));
+        const handHasDiscard = (Tavolo.mano(io, gameState) || []).length > 0;
+        return candidates
+            .map((candidate) => {
+                const materialPower = candidate.materialFieldIndices.reduce((sum, index) => {
+                    const slot = ownField[index];
+                    return sum + (slot ? AI_SHARED.effAtk(slot.card) : 0);
+                }, 0);
+                const resultPower = candidate.card.attack || 0;
+                const removalReady = handHasDiscard && enemyCards.length > 0
+                    && /scart(?:a|are) 1 carta.*distrugg/i.test(candidate.card.effect || '');
+                return { ...candidate, score: resultPower + (removalReady ? 2000 : 0), materialPower };
+            })
+            .filter((candidate) => candidate.score >= candidate.materialPower)
+            .sort((a, b) => b.score - a.score)[0] || null;
     }
 
     /** Media gestisce i cambi di Posizione usando solo informazioni visibili. */
@@ -277,6 +317,7 @@
         chooseChainResponse: chooseChainResponse,
         chooseNextSpellTrapAction: chooseNextSpellTrapAction,
         chooseSetCardActivation: chooseSetCardActivation,
+        chooseBanishFusion: chooseBanishFusion,
         choosePositionChanges: choosePositionChanges
     };
 })();

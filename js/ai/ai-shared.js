@@ -127,7 +127,23 @@
             const remainingCards = Math.max(0, hand.length - (hand.includes(card) ? 1 : 0));
             return { atk: remainingCards * 1000, def: remainingCards * 1000 };
         }
+        if (card && card.id === 472 && shouldPayRaLp(gameState, owner)) {
+            const lp = Tavolo.lp(owner, gameState) || 0;
+            const paid = Math.max(0, lp - 100);
+            return { atk: paid, def: paid };
+        }
         return { atk: (card && card.attack) || 0, def: (card && card.defense) || 0 };
+    }
+
+    /**
+     * Ra lascia il controllore a 100 LP: il bot accetta il costo solo se
+     * nessun mostro avversario può punirlo al turno seguente. La decisione
+     * è condivisa tra valutazione ed esecuzione, così l'IA non sceglie Ra
+     * stimandolo forte per poi rifiutare il pagamento (o viceversa).
+     */
+    function shouldPayRaLp(gameState, owner) {
+        const opposingMonsters = Tavolo.mostri(Tavolo.avversario(owner), gameState) || [];
+        return (Tavolo.lp(owner, gameState) || 0) > 100 && !opposingMonsters.some(Boolean);
     }
 
     function decideMonsterPosture(card, gameState, owner, riskAversion) {
@@ -538,6 +554,8 @@
         isMassDestructionWorthwhile: isMassDestructionWorthwhile,
         shouldHoldForExodia: shouldHoldForExodia,
         canBeDestroyedByBattle: canBeDestroyedByBattle,
+        estimateSummonedStats: estimateSummonedStats,
+        shouldPayRaLp: shouldPayRaLp,
         isTributeSummonWorthwhile: isTributeSummonWorthwhile,
         getSpellTrapRestraint: getSpellTrapRestraint,
         pickWeightedByImpact: pickWeightedByImpact

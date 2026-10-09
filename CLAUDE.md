@@ -3990,6 +3990,31 @@ livello contro Kaiba pilotato dalla Hard, semi identici: Yami Yugi
 18/50 Facile, 21/50 Normale, 31/50 Difficile; Slifer è comparso nel log di
 4/50 duelli Difficili e in nessun livello precedente.
 
+### Audit Seto Kaiba e Marik Ishtar avversari (2026-10-09)
+
+L'audit riguarda esclusivamente `characterDeckDatabase.kaiba` e `.marik`:
+Starter e Structure non sono stati modificati. Le sei liste erano già
+coerenti e restano invariate: 40 carte, tre Draghi Bianchi per Kaiba (le
+tre copie canoniche), Obelisk/Ra in copia singola soltanto a Difficile.
+
+Erano invece morte due linee IA. Il bot non tentava mai le combinazioni
+dall'Extra Deck senza Polimerizzazione, quindi X/Y/Z erano solo decorative;
+ora `chooseBanishFusion` valuta genericamente materiali, ATK risultante e
+una rimozione scarto+distruzione già disponibile, poi esegue la mossa con
+il comando `fusioneBandendo`. Media e Hard attivano anche l'Ignition del
+Cannone tramite riconoscimento del testo, non tramite id. Flauto/Signore dei
+D. e le normali Fusioni erano già operative e sono ora coperte dal test.
+
+Ra soffriva lo stesso 0/0 stampato di Slifer: Hard lo rifiutava sempre.
+`AI_SHARED.estimateSummonedStats` considera il pagamento LP, condividendo
+con l'esecutore `shouldPayRaLp`: Marik paga fino a 100 soltanto se il campo
+mostri avversario è libero. Nel campione identico da 50 duelli per livello
+contro Yami Yugi Hard, Kaiba chiude 22/29/27 e Marik 12/32/33; Ra compare
+in 8/50 Hard (prima 0), i Cannoni in 1/50 Medium e 1/50 Hard. La differenza
+Normale/Difficile è quindi qualitativa ma reale; nessuna lista è stata
+alterata per inseguire il rumore di un singolo matchup. Guardrail:
+`kaiba-marik-deck-ai.spec.js`.
+
 Sotto carico (headless + CPU condivisa) un `page.waitForTimeout(N)`
 fisso può far leggere lo stato PRIMA che l'animazione/timeout nel
 motore sia davvero completato — trovato e corretto concretamente in

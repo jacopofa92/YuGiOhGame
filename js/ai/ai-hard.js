@@ -57,6 +57,18 @@
                 }
             });
         }
+        if (personaggio === 'marik') {
+            return AI_MEDIUM.chooseSummon(gameState, io, {
+                // Come Slifer, Ra ha 0/0 stampato. Quando il campo nemico è
+                // libero Marik può pagare fino a 100 LP e trasformarlo nel
+                // mostro più incisivo della mano: usa la stessa stima
+                // condivisa che governa la decisione reale del pagamento.
+                scoreMonster(card) {
+                    if (card.id !== 472 || !window.AI_SHARED) return card.attack || 0;
+                    return AI_SHARED.estimateSummonedStats(card, gameState, io).atk;
+                }
+            });
+        }
         return AI_MEDIUM.chooseSummon(gameState, io);
     }
 
@@ -201,7 +213,7 @@
                 return { zone: 'monster', index, card: slot.card };
             }
         }
-        return null;
+        return AI_MEDIUM.chooseSetCardActivation(gameState, io);
     }
 
     window.AI_HARD = {
@@ -214,6 +226,7 @@
         chooseAttackTarget,
         chooseChainResponse,
         chooseNextSpellTrapAction,
-        chooseSetCardActivation
+        chooseSetCardActivation,
+        chooseBanishFusion: AI_MEDIUM.chooseBanishFusion
     };
 })();
