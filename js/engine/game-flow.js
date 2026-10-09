@@ -253,7 +253,7 @@ function showPhaseAnnouncement(title, subtitle, variant = 'phase') {
 /**
  * Annuncio epico "cinematografico", in stile Master Duel: dura 3 secondi e
  * combina flash a schermo, barre cinematografiche, raggi rotanti e due
- * parole che si scontrano al centro con impatto e leggero screen-shake.
+ * parole che si scontrano al centro con impatto (senza scuotere lo schermo).
  * Riservato al momento più "importante" del duello — il cambio turno tra
  * giocatore e bot (vedi changeTurn()) — non più alla Battle Phase, che ora
  * usa lo stesso trattamento delle altre fasi (showPhaseAnnouncement sopra).
@@ -289,9 +289,11 @@ function showEpicSlamAnnouncement(wordLeft, wordRight, subtitle) {
     void overlay.offsetWidth;
     overlay.classList.add('play');
 
-    const container = document.querySelector('.game-container') || document.body;
-    container.classList.add('fx-shake');
-    setTimeout(() => container.classList.remove('fx-shake'), 450);
+    // NIENTE scuotimento dello schermo qui (richiesta esplicita
+    // dell'utente): il cambio turno capita a ogni turno, e uno scossone del
+    // campo ogni volta stanca. L'impatto lo danno già flash, barre e le due
+    // parole che si scontrano. Lo scuotimento (.fx-shake) resta per i colpi
+    // veri: danni, distruzioni, attacchi (js/ui/effects.js).
 
     setTimeout(() => overlay.remove(), 3000);
 }
