@@ -184,10 +184,21 @@
         options = options || {};
         const hand = Tavolo.mano(io, gameState);
         const emptySlot = Tavolo.magieTrappole(io, gameState).some((s) => s === null);
-        const worthwhile = (card) => !window.AI_SHARED || (
-            AI_SHARED.isRemovalWorthwhile(card, gameState, io, REMOVAL_WORTH_THRESHOLD)
-            && AI_SHARED.isMassDestructionWorthwhile(card, gameState, io)
-        );
+        const worthwhile = (card) => {
+            if (!window.AI_SHARED) return true;
+            // Una carta-combo che Evoca Specialmente dalla mano (es.
+            // Dimensione Magica) non è prima di tutto una rimozione. Il
+            // suo "poi puoi distruggere" è facoltativo: classificarla solo
+            // dalle parole distruggi/mostro la faceva trattenere quando il
+            // campo nemico era vuoto, perdendo l'intera linea di Evocazione.
+            // Il riconoscimento semantico vale anche per future carte custom
+            // con la stessa struttura, senza una lista di id mantenuta a mano.
+            const isHandSpecialSummonPlan = /Special Summon.*dalla (?:tua )?mano/i.test(card.effect || '');
+            return isHandSpecialSummonPlan || (
+                AI_SHARED.isRemovalWorthwhile(card, gameState, io, REMOVAL_WORTH_THRESHOLD)
+                && AI_SHARED.isMassDestructionWorthwhile(card, gameState, io)
+            );
+        };
 
         // Restraint (vedi AI_SHARED.getSpellTrapRestraint): quanto la
         // scelta tra più candidate resta "trattenuta"/imprevedibile

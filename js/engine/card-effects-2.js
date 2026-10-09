@@ -2323,7 +2323,10 @@
     // ================================================================
     CardEffects.register(430, {
         canActivate(ctx) {
-            const hasMagicianGirl = ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 19);
+            // La Maga Oscura corrente è id 188. L'id 19 apparteneva a una
+            // vecchia versione del database ed è stato eliminato: lasciarlo
+            // qui rendeva Pietra del Saggio permanentemente inattivabile.
+            const hasMagicianGirl = ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 188);
             if (!hasMagicianGirl) return false;
             if (ctx.findEmptyMonsterSlot(ctx.owner) === -1) return false;
             const deck = Tavolo.mazzo(ctx.owner, ctx.gameState);

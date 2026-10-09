@@ -3966,6 +3966,30 @@ l'aggiornamento 1.0.35 sulla regola di `onAttackDeclare`). Anche 235 e
 
 ## Test: insidie note
 
+### Audit Yami Yugi (2026-10-09)
+
+Il deck avversario di Yami Yugi usa ora **una sola copia di Mago Nero**
+in Facile/Normale/Difficile, coerente con l'anime; le due copie rimosse
+sono state sostituite con Soldato di Pietra Gigante e, da Normale in su,
+Guardiano Celtico Sgradito. I Main Deck restano da 40 carte e Slifer resta
+una singola esclusiva del Difficile.
+
+Due difetti falsavano il deck e le vecchie simulazioni: Pietra del Saggio
+(430) cercava la Maga Oscura con il vecchio id inesistente 19 invece di
+188; inoltre l'IA valutava Slifer dai valori stampati 0/0 e rifiutava
+sempre i tre Tributi. `AI_SHARED` stima ora l'ATK/DEF che Slifer avrà dopo
+aver lasciato la mano e considera anche il valore del suo controllo sulle
+Evocazioni avversarie; il playbook Hard di Yami Yugi gli assegna la stessa
+priorità stimata. La valutazione Magie riconosce inoltre semanticamente le
+linee che fanno Special Summon dalla mano: Dimensione Magica non viene più
+scartata solo perché la sua distruzione successiva è facoltativa e non ha
+ancora un bersaglio.
+
+Guardrail: `yami-yugi-deck-ai.spec.js`. Campione mirato, 50 duelli per
+livello contro Kaiba pilotato dalla Hard, semi identici: Yami Yugi
+18/50 Facile, 21/50 Normale, 31/50 Difficile; Slifer è comparso nel log di
+4/50 duelli Difficili e in nessun livello precedente.
+
 Sotto carico (headless + CPU condivisa) un `page.waitForTimeout(N)`
 fisso può far leggere lo stato PRIMA che l'animazione/timeout nel
 motore sia davvero completato — trovato e corretto concretamente in

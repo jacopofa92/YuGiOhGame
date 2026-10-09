@@ -152,10 +152,11 @@ const characterDeckDatabase = {
     // Magica, Pietra del Saggio, Anello della Distruzione. Difficile aggiunge Slifer il Drago
     // del Cielo (una copia, come nell'anime) e il Mago del Caos Nero.
     yamiYugi: {
-        flagship: 2, // Mago Nero — carta simbolo: stessa quantità in tutti e tre i livelli
+        flagship: 2, // Mago Nero — la singola copia canonica resta in tutti e tre i livelli
         easy: {
             main: [
-                { id: 2, qty: 3 }, // Mago Nero
+                { id: 2, qty: 1 }, // Mago Nero — Yugi ne possiede una sola copia nell'anime
+                { id: 261, qty: 2 }, // Soldato di Pietra Gigante
                 { id: 22, qty: 3 }, // Kuriboh
                 { id: 115, qty: 2 }, // Gran Scudo Gardna
                 { id: 4, qty: 1 }, // Guerriero Celtico
@@ -187,7 +188,9 @@ const characterDeckDatabase = {
         },
         medium: {
             main: [
-                { id: 2, qty: 3 }, // Mago Nero
+                { id: 2, qty: 1 }, // Mago Nero — una copia, sostenuta dalle carte dedicate sotto
+                { id: 261, qty: 1 }, // Soldato di Pietra Gigante
+                { id: 712, qty: 1 }, // Guardiano Celtico Sgradito
                 { id: 188, qty: 1 }, // Maga Oscura
                 { id: 20, qty: 1 }, // Buster Blader
                 { id: 532, qty: 1 }, // Gazelle, Re delle Bestie Mitiche
@@ -230,7 +233,9 @@ const characterDeckDatabase = {
         },
         hard: {
             main: [
-                { id: 2, qty: 3 }, // Mago Nero
+                { id: 2, qty: 1 }, // Mago Nero — una copia, come nell'anime
+                { id: 261, qty: 1 }, // Soldato di Pietra Gigante
+                { id: 712, qty: 1 }, // Guardiano Celtico Sgradito
                 { id: 188, qty: 1 }, // Maga Oscura
                 { id: 20, qty: 1 }, // Buster Blader
                 { id: 532, qty: 1 }, // Gazelle, Re delle Bestie Mitiche

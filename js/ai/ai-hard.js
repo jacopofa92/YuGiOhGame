@@ -44,6 +44,19 @@
                 }
             });
         }
+        if (personaggio === 'yamiYugi') {
+            return AI_MEDIUM.chooseSummon(gameState, io, {
+                // Slifer ha ATK/DEF stampati 0 perché il valore è dinamico.
+                // Senza una priorità coerente col valore futuro finirebbe
+                // dietro qualunque mostro normale nell'ordinamento e non
+                // arriverebbe mai alla valutazione dei tre Tributi.
+                scoreMonster(card) {
+                    if (card.id !== 31) return card.attack || 0;
+                    const remainingCards = Math.max(0, Tavolo.mano(io, gameState).length - 1);
+                    return remainingCards * 1000 + (remainingCards > 0 ? 2000 : 0);
+                }
+            });
+        }
         return AI_MEDIUM.chooseSummon(gameState, io);
     }
 

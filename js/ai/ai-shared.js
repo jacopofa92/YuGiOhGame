@@ -118,10 +118,23 @@
      *      la stessa nozione di rischio già usata per gli attacchi anche
      *      alla scelta Evocazione scoperta/coperta.
      */
+    function estimateSummonedStats(card, gameState, owner) {
+        if (card && card.id === 31) {
+            const hand = Tavolo.mano(owner, gameState) || [];
+            // Durante chooseSummon Slifer è ancora in mano: dopo la mossa
+            // non contribuirà più al proprio bonus. Il confronto deve usare
+            // il valore che avrà davvero sul Terreno, non quello attuale.
+            const remainingCards = Math.max(0, hand.length - (hand.includes(card) ? 1 : 0));
+            return { atk: remainingCards * 1000, def: remainingCards * 1000 };
+        }
+        return { atk: (card && card.attack) || 0, def: (card && card.defense) || 0 };
+    }
+
     function decideMonsterPosture(card, gameState, owner, riskAversion) {
         if (!card) return { position: 'attack', faceDown: false };
-        const atk = card.attack || 0;
-        const def = card.defense || 0;
+        const previste = estimateSummonedStats(card, gameState, owner);
+        const atk = previste.atk;
+        const def = previste.def;
         const opponentField = Tavolo.mostri(Tavolo.avversario(owner), gameState);
         const hasFavorableTarget = (opponentField || []).some((slot) => {
             if (!slot || slot.isFaceDown) return false;
@@ -386,14 +399,22 @@
      * modo incoerente.
      */
     function isTributeSummonWorthwhile(card, sacrificedValue, gameState, owner) {
+        const previste = estimateSummonedStats(card, gameState, owner);
+        // Slifer non è uno 0/0: il valore stampato è "?" e il motore lo
+        // rappresenta con zero, mentre sul Terreno vale 1000 per ogni carta
+        // rimasta in mano. In più il suo Second Mouth riduce di 2000 ATK i
+        // mostri nemici appena Evocati. Senza questa stima l'IA rifiutava
+        // SEMPRE i tre Tributi, rendendo la Divinità una carta morta.
+        const valoreControllo = card.id === 31 && previste.atk > 0 ? 2000 : 0;
+        const piccoStimato = Math.max(previste.atk, previste.def) + valoreControllo;
         // Mai in perdita netta pura, indipendentemente dal campo
         // avversario: se NESSUNA statistica del nuovo mostro supera il
         // valore sacrificato, è sempre uno spreco.
-        if (Math.max(card.attack, card.defense) <= sacrificedValue) return false;
+        if (piccoStimato <= sacrificedValue) return false;
         // Il nuovo ATK da solo già supera il valore sacrificato: è
         // un'evocazione offensivamente valida di per sé, nessun bisogno
         // di guardare la DEF né il campo avversario.
-        if (card.attack >= sacrificedValue) return true;
+        if (previste.atk + valoreControllo >= sacrificedValue) return true;
         // Da qui in poi il nuovo ATK è PIÙ BASSO del valore sacrificato:
         // l'unica ragione per accettare comunque il tributo è che la DEF
         // più alta serva DAVVERO a sopravvivere a una minaccia reale —
@@ -408,7 +429,7 @@
             if (!slot || slot.isFaceDown || slot.position !== 'attack') return max;
             return Math.max(max, effAtk(slot.card));
         }, 0);
-        return strongestOpposingAtk > card.attack && strongestOpposingAtk <= card.defense;
+        return strongestOpposingAtk > previste.atk && strongestOpposingAtk <= previste.def;
     }
 
     // Aggressività stimata (0 = molto trattenuta/imprevedibile, 1 = gioca
