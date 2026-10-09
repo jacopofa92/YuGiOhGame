@@ -9,6 +9,14 @@ module.exports = {
             const copia = (id, uid) => ({ ...cardDatabase.find((c) => c.id === id), uid });
             const world = copia(487, 'world');
             const toon = copia(481, 'toon');
+
+            // Regressione UI/motore: non basta verificare Mondo già scoperto.
+            // Il giocatore deve poterlo selezionare in mano e ottenere il
+            // comando "Attiva"; canActivate richiede un handler activate
+            // anche quando tutto il lavoro successivo vive in static().
+            gameState.playerHand = [world];
+            const attivabileDallaMano = DuelEngine.canActivate('player', 'hand', 0);
+            gameState.playerHand = [];
             gameState.playerSTField[0] = { card: world, isFaceDown: false };
             gameState.playerMonsterField[0] = { card: toon, position: 'attack', isFaceDown: false, summonedOnTurn: gameState.turn };
 
@@ -52,6 +60,7 @@ module.exports = {
             DuelEngine.getDefinition(476).onBanished(DuelEngine.makeContext('bot', { card: restrict }));
             const milleOcchiRipristina = gameState.playerMonsterField.some((slot) => slot && slot.card.uid === assorbito.uid);
             return {
+                attivabileDallaMano,
                 diretto,
                 regolaScontroToon,
                 protetto,
@@ -68,6 +77,7 @@ module.exports = {
                 })
             };
         });
+        t.assert(r.attivabileDallaMano, `Mondo dei Toon deve mostrare l'azione Attiva quando è in mano: ${JSON.stringify(r)}`);
         t.assert(r.diretto, `Mondo dei Toon deve concedere l'attacco diretto: ${JSON.stringify(r)}`);
         t.assert(r.regolaScontroToon, `Con due Mondi i Toon devono affrontare prima i Toon avversari: ${JSON.stringify(r)}`);
         t.assert(r.protetto && r.lpDopoProtezione === 7500, `La prima distruzione deve essere prevenuta pagando 500 LP: ${JSON.stringify(r)}`);

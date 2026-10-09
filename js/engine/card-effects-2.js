@@ -2735,6 +2735,13 @@
     // resta in data/cards.json (`legacyOfficialEffect`), non mostrato UI.
     CardEffects.register(487, {
         continuous: true,
+        // Anche un effetto puramente continuo deve esporre `activate`: è il
+        // contratto usato da DuelEngine.canActivate per distinguere una
+        // carta giocabile da una carta priva di implementazione. Il corpo è
+        // volutamente vuoto perché l'attivazione si limita a lasciare Mondo
+        // dei Toon scoperto sul Terreno; i vantaggi vengono ricalcolati da
+        // static() finché la carta rimane presente.
+        activate() {},
         static(ctx) {
             ctx.field(ctx.owner).forEach((slot) => {
                 if (!slot || slot.isFaceDown) return;
