@@ -312,7 +312,7 @@
         function aggiungiAllaStriscia(id) {
             const r = rarita(id);
             const slot = el('div', 'po-slot po-slot-' + r);
-            slot.appendChild(nodoCarta(id, 'var(--po-summary-card-w)'));
+            slot.appendChild(nodoCarta(id, 'var(--carta-striscia)'));
             if (nuoveSet.has(id)) slot.appendChild(el('span', 'po-slot-nuova', '★'));
             slot.title = ((cartaPerId(id) || {}).name || '') + (nuoveSet.has(id) ? ' — nuova' : '');
             slot.onclick = () => {
@@ -359,7 +359,7 @@
             // misurata sulla sola larghezza sborderebbe su uno schermo
             // basso — è esattamente com'era nata la versione con lo
             // scorrimento.
-            mostra.appendChild(nodoCarta(id, 'clamp(92px, min(28vw, 26vh), 180px)'));
+            mostra.appendChild(nodoCarta(id, 'var(--carta-rivelata)'));
             const targhetta = el('div', 'po-targhetta');
             targhetta.appendChild(el('div', 'po-nome', (cartaPerId(id) || {}).name || '???'));
             if (r !== 'common' && window.CardRarity) {
@@ -417,7 +417,7 @@
         abilitaScorrimentoOrizzontale(striscia);
         elenco.forEach((id) => {
             const slot = el('div', 'po-slot po-slot-' + rarita(id));
-            slot.appendChild(nodoCarta(id, 'clamp(40px, 9vw, 64px)'));
+            slot.appendChild(nodoCarta(id, 'var(--carta-casella)'));
             if (nuoveSet.has(id)) slot.appendChild(el('span', 'po-slot-nuova', '★'));
             striscia.appendChild(slot);
         });
@@ -444,7 +444,7 @@
         const r = rarita(cardId);
         const backdrop = el('div', 'po-backdrop po-backdrop-leggero');
         const gruppo = el('div', 'po-acquisto-gruppo');
-        const nodo = nodoCarta(cardId, 'clamp(120px, min(30vw, 38vh), 190px)');
+        const nodo = nodoCarta(cardId, 'var(--carta-acquisto)');
         nodo.classList.add('po-acquisto', 'po-acquisto-' + r);
         gruppo.appendChild(nodo);
         gruppo.appendChild(el('div', 'po-acquisto-nome', carta.name));
@@ -512,7 +512,7 @@
             // il ventaglio resta comunque simmetrico.
             c.style.setProperty('--i', k - (ids.length - 1) / 2);
             c.style.animationDelay = (420 + k * 90) + 'ms';
-            c.appendChild(nodoCarta(id, 'clamp(52px, min(13vw, 16vh), 88px)'));
+            c.appendChild(nodoCarta(id, 'var(--carta-ventaglio)'));
             ventaglio.appendChild(c);
         });
         palco.appendChild(ventaglio);

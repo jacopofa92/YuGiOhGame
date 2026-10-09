@@ -93,7 +93,7 @@
         --blue: #3498db;
         --red: #e74c3c;
         --green: #2ecc71;
-        --card-w: 118px;
+        --card-w: var(--carta-griglia-stretta);
         --card-h: calc(var(--card-w) / var(--card-ratio));
     }
 
@@ -1026,7 +1026,6 @@
         .pager-btn .pager-lbl { display: none; }
         .pager-btn { min-width: 44px; min-height: 44px; padding: 6px 10px; }
         .pager-status { flex: 1 0 100%; order: -1; min-width: 0; }
-        :root { --card-w: 78px; }
         .editor-header { top: 45px; padding: 8px 10px; gap: 8px; }
         #deckNameInput { padding: 7px 10px; font-size: 0.8rem; }
         .count-badge { font-size: 0.65rem; padding: 5px 9px; }
@@ -1042,7 +1041,6 @@
     @media (max-height: 500px) and (orientation: landscape) {
         .list-main { padding: 8px 14px 30px; }
         .deck-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
-        :root { --card-w: 90px; }
         .editor-header { top: 41px; padding: 6px 14px; gap: 8px; }
         .editor-left, .editor-right { padding: 8px 14px; }
     }

@@ -38,7 +38,7 @@
     opacity: 0; animation: cdropBeam 1.15s .2s ease-out forwards;
 }
 @keyframes cdropBeam { 0% { opacity:0; transform:scaleY(.3); } 40% { opacity:.72; } 100% { opacity:.24; transform:scaleY(1); } }
-.cdrop-card { position: relative; width: clamp(150px, min(36vw, 32vh), 240px); aspect-ratio: var(--card-ratio); transform-style: preserve-3d; opacity: 0; will-change: transform,opacity; animation: cdropArrive 1.45s .12s cubic-bezier(.18,.78,.2,1) forwards; }
+.cdrop-card { position: relative; width: var(--carta-premio); aspect-ratio: var(--card-ratio); transform-style: preserve-3d; opacity: 0; will-change: transform,opacity; animation: cdropArrive 1.45s .12s cubic-bezier(.18,.78,.2,1) forwards; }
 @keyframes cdropArrive { 0% { opacity:0; transform:translate3d(0,72px,-360px) rotateY(-360deg) rotateX(18deg) scale(.48); } 72% { opacity:1; transform:translate3d(0,-7px,18px) rotateY(8deg) rotateX(-2deg) scale(1.035); } 100% { opacity:1; transform:translate3d(0,0,0) rotateY(0) rotateX(0) scale(1); } }
 @keyframes cdropFloat { 0%,100% { transform:translate3d(0,0,0); } 50% { transform:translate3d(0,-6px,0); } }
 .cdrop-card::after { content:''; position:absolute; inset:-5%; border-radius:12px; z-index:-1; background:radial-gradient(circle,var(--drop-soft),transparent 70%); opacity:.5; }
@@ -58,5 +58,5 @@
 .cdrop-continue:hover { filter:brightness(1.1); }
 .cdrop-particle { position:absolute; left:50%; top:48%; width:var(--size); height:var(--size); border-radius:50%; background:var(--drop); box-shadow:0 0 4px var(--drop); opacity:0; animation:cdropParticle 2.4s var(--delay) ease-out infinite; }
 @keyframes cdropParticle { 0% { opacity:0; transform:rotate(var(--a)) translateX(18px) scale(.2); } 18% { opacity:1; } 100% { opacity:0; transform:rotate(var(--a)) translateX(var(--d)) scale(1.1); } }
-@media (max-height: 560px) and (orientation: landscape) { .cdrop-stage { height:54vh; } .cdrop-card { width:clamp(110px,24vh,150px); } .cdrop-rule { display:none; } .cdrop-name { font-size:1rem; } }
+@media (max-height: 560px) and (orientation: landscape) { .cdrop-stage { height:54vh; } .cdrop-rule { display:none; } .cdrop-name { font-size:1rem; } }
 @media (prefers-reduced-motion: reduce) { .cdrop-overlay *, .cdrop-overlay *::after { animation:none !important; transition:none !important; } .cdrop-overlay { transition:none; } .cdrop-card { opacity:1; } .cdrop-beam { opacity:.25; } .cdrop-name,.cdrop-rarity,.cdrop-rule,.cdrop-continue { opacity:1; transform:none; } }

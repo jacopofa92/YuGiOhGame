@@ -61,8 +61,8 @@
    touch-action: card.css blocca lo scorrimento col dito su ogni carta
    (serve al trascinamento in duello), qui deve poter scorrere la scheda. */
 .cd-preview .card {
-    --card-w: min(46vh, clamp(180px, 26vw, 280px));
-    --card-h: calc(min(46vh, clamp(180px, 26vw, 280px)) / var(--card-ratio));
+    --card-w: var(--carta-anteprima);
+    --card-h: calc(var(--carta-anteprima) / var(--card-ratio));
     cursor: default;
     touch-action: pan-y;
 }
