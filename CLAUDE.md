@@ -3150,6 +3150,25 @@ priorità o richiedono un refactor ampio):
   dritti. Perché il bordo arrivi a zero il raggio deve restare poco sopra
   il 50%.
 
+- ✅ **Riscontri del duello (`js/ui/duel-feedback.js`/`.css`)**, richiesta
+  dell'utente: ATK/DEF che cambiano (+500 / −1000 fluttuanti e lampo sul
+  valore), carta bandita (varco viola), attivazione annullata (sigillo ⛔,
+  sulla carta se è in campo, al centro altrimenti), cambio di Posizione
+  (rotazione vera, `rotate` via Web Animations API), Token che nasce
+  (fumo), Life Point critici ≤1000 (riquadro rosso, vignetta solo per i
+  propri). **Il principio**: `DuelFeedback.sync()` gira in
+  `ridisegnaDuello` dopo gli ologrammi e CONFRONTA la fotografia del
+  Terreno con quella del ridisegno precedente, quindi copre qualunque
+  carta causi il cambiamento senza agganci carta per carta. Solo
+  l'annullamento non si vede dallo stato: evento `attivazione-negata`,
+  emesso in `resolveChain` prima della pulizia della Continua. Livello
+  `#duelFeedbackLayer` a z-index 10040 (sopra gli FX, sotto i modali).
+  Nello stesso giro, **ologrammi**: non nascono più a metà giro di una
+  carta che si scopre (`playFlipReveal` chiede un `sync`, che vede il giro
+  in corso e aspetta che finisca) e in Difesa hanno le proporzioni giuste
+  (misure dalla carta "in piedi"); moneta e dado senza `bounce.out`/
+  `back.out`. Spec `riscontri-duello-e-ologrammi`.
+
 - ✅ **Carte "vive" e parallasse del menu** (richiesta dell'utente,
   "grafiche simil 3D"). `CartaViva.rendi(el, card, { modo, bersaglio,
   area })` in `js/ui/card-renderer.js` (CSS "Carta viva" in fondo a

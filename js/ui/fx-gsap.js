@@ -1205,7 +1205,9 @@
 
             gsap.timeline()
                 .fromTo(moneta, { y: 40, scale: 0.7 }, { y: -30, scale: 1.15, duration: 0.4, ease: 'power2.out' })
-                .to(moneta, { y: 0, scale: 1, duration: 0.45, ease: 'bounce.out' })
+                // Atterra e si ferma: niente rimbalzo (preferenza esplicita
+                // dell'utente per ogni atterraggio in 3D del duello).
+                .to(moneta, { y: 0, scale: 1, duration: 0.45, ease: 'power3.out' })
                 // 5 giri che rallentano: il risultato compare a rotazione
                 // quasi ferma, come se fosse la moneta a deciderlo.
                 .to(moneta, { rotationX: 1800, duration: 1.0, ease: 'power3.out' }, 0)
@@ -1357,10 +1359,11 @@
             gsap.set(etichetta, { opacity: 0, y: 12 });
 
             gsap.timeline()
-                .fromTo(dado, { scale: 0.6, y: -50 }, { scale: 1, y: 0, duration: 0.5, ease: 'bounce.out' })
+                // Come la moneta: atterra e si ferma, senza rimbalzi né scatti oltre il bersaglio.
+                .fromTo(dado, { scale: 0.6, y: -50 }, { scale: 1, y: 0, duration: 0.5, ease: 'power3.out' })
                 .to(dado, { rotationX: 1080, rotationY: 720, duration: 1.0, ease: 'power3.out' }, 0)
                 .call(() => { dado.textContent = String(result); }, null, 0.95)
-                .to(dado, { scale: 1.2, duration: 0.16, ease: 'back.out(4)' }, 0.95)
+                .to(dado, { scale: 1.2, duration: 0.16, ease: 'power2.out' }, 0.95)
                 .to(dado, { scale: 1, duration: 0.14 })
                 .to(etichetta, { opacity: 1, y: 0, duration: 0.28 }, 1.05)
                 .to(backdrop, { opacity: 0, duration: 0.25, onComplete: () => backdrop.remove() }, 1.45);

@@ -422,7 +422,8 @@
 // v189: Storia, ritorno nell'area dopo un duello rigiocato e riparazione delle aree azzerate.
 // v190: azzeramento delle storie per tutti (save-manager.js, AZZERAMENTO_STORIE).
 // v191: ritocchi dell'Editor Mappa in un file proprio (js/data/story-ritocchi.js + js/story/story-ritocchi.js) ed editor rinnovato.
-const CACHE_NAME = 'ygo-duel-arena-v191';
+// v192: riscontri del duello (duel-feedback.js), ologrammi giusti su carte scoperte e in Difesa, moneta e dado senza rimbalzo.
+const CACHE_NAME = 'ygo-duel-arena-v192';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -596,6 +597,8 @@ const APP_SHELL = [
     'js/ui/field-ambience.css',
     'js/ui/monster-hologram.js',
     'js/ui/monster-hologram.css',
+    'js/ui/duel-feedback.js',
+    'js/ui/duel-feedback.css',
     'js/ui/hologram-setting.js',
     'js/data/arena-options.js',
     'js/data/card-origins.generated.js',

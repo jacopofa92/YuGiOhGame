@@ -4625,6 +4625,11 @@
             const link = chain.links.pop();
             if (link.negated) {
                 addToLog(`🚫 L'attivazione di ${link.card.name} è stata negata!`);
+                // Prima di togliere un'eventuale Continua dal Terreno qui
+                // sotto: l'interfaccia (js/ui/duel-feedback.js) mette il
+                // sigillo sulla carta se è ancora lì, al centro altrimenti.
+                EventiDuello.emetti('attivazione-negata', link.card, link.owner,
+                    link.ctx ? link.ctx.zone : null, link.ctx ? link.ctx.index : null);
                 // Una Magia/Trappola Normale negata è già finita al
                 // Cimitero PRIMA di aprire questa finestra (activateCard
                 // sposta la carta subito, come da regola vera "si paga il
