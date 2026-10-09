@@ -262,6 +262,43 @@
         return { credits: 0, starChips: 0, locatorCards: 0, millenniumCards: 0 };
     }
 
+    /**
+     * AZZERAMENTO DELLE STORIE PER TUTTI (richiesta dell'utente, 2026-10-09:
+     * "resettare tutte le storie a tutti e salvare su cloud, così si
+     * riparte per bene", premi finali compresi).
+     *
+     * Un salvataggio che non porta questo segno ha le storie scritte prima
+     * dell'azzeramento: `save.story` si svuota per intero — avanzamento di
+     * ogni campagna a ogni livello, livelli Normale/Difficile sbloccati e
+     * premio finale già ritirato (si può riscuotere di nuovo). Tutto il
+     * resto resta: carte, crediti, mazzi, Sfide, e il registro delle carte
+     * ottenute dai capitoli (js/economy/card-acquisition.js), che fa anche
+     * da lucchetto a carte del Negozio.
+     *
+     * Perché nel codice e non sul database: ogni copia del salvataggio —
+     * quella del telefono, del computer, del cloud, perfino un backup
+     * importato da file — si azzera da sé quando viene letta, quindi le
+     * copie non possono rimettersi a vicenda le storie vecchie. Un
+     * azzeramento fatto solo sul cloud verrebbe invece ricoperto dal primo
+     * dispositivo che carica la sua copia.
+     *
+     * La data del salvataggio NON si sposta (writeRaw, non touch): la
+     * regola "vince il più recente" del cloud resta quella di prima, e un
+     * dispositivo rimasto indietro non diventa "il più recente" solo perché
+     * si è azzerato. Per un ALTRO azzeramento in futuro basta cambiare il
+     * valore qui sotto.
+     */
+    const AZZERAMENTO_STORIE = '2026-10-09';
+    /** Il salvataggio è appena stato azzerato e va detto a chi sincronizza (vedi onSaved). */
+    let azzeramentoDaComunicare = false;
+
+    function azzeraStorieSeVecchie(save) {
+        if (save.storieAzzerate === AZZERAMENTO_STORIE) return false;
+        save.story = {};
+        save.storieAzzerate = AZZERAMENTO_STORIE;
+        return true;
+    }
+
     function load() {
         let save = readRaw();
         if (!save) save = migrateLegacyIfNeeded();
@@ -327,6 +364,14 @@
         // getStoryState piu' sotto. Assente in ogni salvataggio
         // precedente alla Modalita' Storia.
         if (!save.story) { save.story = {}; dirty = true; }
+        if (azzeraStorieSeVecchie(save)) {
+            dirty = true;
+            azzeramentoDaComunicare = true;
+            // Chi sincronizza è già in ascolto (di solito sì, a pagina
+            // avviata): gli si dice subito, dopo la scrittura qui sotto.
+            // Se non c'è ancora, glielo dirà onSaved quando si registra.
+            setTimeout(comunicaAzzeramento, 0);
+        }
         if (!save.settings) {
             save.settings = readCachedSettings();
             dirty = true;
@@ -385,6 +430,8 @@
             tournamentStats: {},
         millenniumItems: {},
         story: {},
+            // Nato dopo l'azzeramento delle storie: non c'è niente da azzerare.
+            storieAzzerate: AZZERAMENTO_STORIE,
             settings: readCachedSettings(),
             // Un giocatore nuovo non possiede NESSUNA carta, tranne quelle
             // del mazzo iniziale che il gioco stesso gli mette in mano
@@ -416,7 +463,28 @@
      */
     const savedListeners = [];
     function onSaved(fn) {
-        if (typeof fn === 'function') savedListeners.push(fn);
+        if (typeof fn !== 'function') return;
+        savedListeners.push(fn);
+        // Un azzeramento delle storie avvenuto prima che chi sincronizza
+        // si registrasse (load() gira presto, auto-sync si aggancia dopo).
+        if (azzeramentoDaComunicare) setTimeout(comunicaAzzeramento, 0);
+    }
+
+    /**
+     * Dice a chi ascolta che il salvataggio è cambiato per l'azzeramento
+     * delle storie, SENZA toccarne la data: così auto-sync lo porta sul
+     * cloud (la richiesta dell'utente era anche "salvare su cloud"), ma il
+     * caricamento si ferma da solo se sul cloud c'è un salvataggio più
+     * recente — che a sua volta si azzera leggendolo.
+     */
+    function comunicaAzzeramento() {
+        if (!azzeramentoDaComunicare || !savedListeners.length) return;
+        azzeramentoDaComunicare = false;
+        const save = readRaw();
+        if (!save) return;
+        savedListeners.forEach((fn) => {
+            try { fn(save); } catch (e) { /* un ascoltatore rotto non rompe niente */ }
+        });
     }
 
     function touch(save) {
@@ -1026,6 +1094,14 @@
         }
         if (parsed.activeDeckId == null || !parsed.decks.some((d) => d.id === parsed.activeDeckId)) {
             parsed.activeDeckId = parsed.decks[0] ? parsed.decks[0].id : null;
+        }
+        // Una copia scritta prima dell'azzeramento delle storie (il cloud,
+        // un backup su file) si azzera come quella del dispositivo: è il
+        // pezzo che impedisce al cloud di riportare indietro le storie
+        // vecchie. E si rimanda su, così anche il cloud resta azzerato.
+        if (azzeraStorieSeVecchie(parsed)) {
+            azzeramentoDaComunicare = true;
+            setTimeout(comunicaAzzeramento, 0);
         }
         writeRaw(parsed);
         syncSettingsCache(parsed.settings);

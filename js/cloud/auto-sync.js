@@ -160,8 +160,22 @@
         });
     }
 
+    /**
+     * Un salvataggio arrivato prima di sapere CHI è l'utente (la sessione
+     * si legge in asincrono all'avvio): senza tenerlo da parte andava
+     * perso, e con lui ciò che il salvataggio cambia da sé caricandosi —
+     * l'azzeramento delle storie, per esempio. Si riprende appena la
+     * sessione è nota (vedi waitForUser in fondo).
+     */
+    let richiestaPrimaDellUtente = false;
+
     function programma() {
-        if (!pronto()) return;
+        if (!pronto()) {
+            if (window.CloudSync && CloudSync.available && !(CloudSync.getUser && CloudSync.getUser())) {
+                richiestaPrimaDellUtente = true;
+            }
+            return;
+        }
         segna(true);
         if (timer) clearTimeout(timer);
         timer = setTimeout(caricaOra, RITARDO_MS);
@@ -224,6 +238,7 @@
     // dichiara RICONCILIA_DA_SE: qui si salterebbe solo un doppione.
     if (window.CloudSync && typeof CloudSync.waitForUser === 'function') {
         CloudSync.waitForUser().then(() => {
+            if (richiestaPrimaDellUtente) { richiestaPrimaDellUtente = false; programma(); }
             const prima = inSospeso() ? caricaOra() : Promise.resolve();
             return prima.then(() => { if (!window.RICONCILIA_DA_SE) riguardaIlCloud(); });
         }).catch(() => { /* nessuna sessione: si riproverà al prossimo avvio */ });

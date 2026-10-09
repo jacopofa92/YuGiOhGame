@@ -3265,6 +3265,21 @@ priorità o richiedono un refactor ampio):
   `index.html` sia `profilo.html`, cioè due copie che sono già andate
   alla deriva in passato.
 
+- ✅ **Azzeramento delle storie per TUTTI i giocatori** (2026-10-09,
+  richiesta dell'utente, premi finali compresi): `AZZERAMENTO_STORIE` in
+  `js/save-manager.js`. Ogni salvataggio senza il segno `storieAzzerate`
+  uguale a quel valore svuota `save.story` (avanzamento, livelli,
+  premio finale) leggendolo — in `load()` e in `applyExternalSave`, quindi
+  anche la copia del cloud e un backup importato. Resta tutto il resto,
+  compreso il registro di `card-acquisition.js`. La data NON si sposta
+  (writeRaw), e la copia azzerata va sul cloud tramite `onSaved` senza
+  toccare la data. **Fatto nel codice e non sul database apposta**: un
+  azzeramento solo sul cloud verrebbe ricoperto dal primo dispositivo con
+  la copia vecchia. Per un altro azzeramento basta cambiare la costante.
+  Insieme: `auto-sync.js` tiene da parte un salvataggio arrivato prima di
+  sapere chi è l'utente (`richiestaPrimaDellUtente`). Spec
+  `azzeramento-storie-per-tutti`.
+
 - ✅ **Reset del profilo (`CloudSync.resetAccount`)**: azzera il
   progresso QUI e SUL CLOUD ma **non** cancella l'account, che resta
   approvato — differenza netta da `deleteAccount()`, che invece fa

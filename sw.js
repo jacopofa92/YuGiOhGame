@@ -420,7 +420,8 @@
 // v187: carte "vive" (inclinazione e riflessi per rarità) e parallasse del menu.
 // v188: Dettagli video "Alti" di default; "Profondità del menu" attivabile dalle Impostazioni.
 // v189: Storia, ritorno nell'area dopo un duello rigiocato e riparazione delle aree azzerate.
-const CACHE_NAME = 'ygo-duel-arena-v189';
+// v190: azzeramento delle storie per tutti (save-manager.js, AZZERAMENTO_STORIE).
+const CACHE_NAME = 'ygo-duel-arena-v190';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
