@@ -4209,7 +4209,7 @@
         }
 
         :scope {
-            --card-w: 168px;
+            --card-w: var(--carta-griglia);
             --card-h: calc(var(--card-w) / var(--card-ratio));
             --gold: #f7d774;
             --gold-strong: #f39c12;
@@ -4579,7 +4579,6 @@
             .filter-sort, .filter-toggle-btn { padding: 7px 10px; font-size: 0.72rem; }
             .filter-search input { padding: 8px 12px 8px 34px; font-size: 0.82rem; }
             .cartoteca-main { padding: 12px 8px 40px; }
-            :scope { --card-w: 82px; }
             .cartoteca-grid { gap: 8px; }
         }
 
@@ -4594,7 +4593,6 @@
             .filter-sort, .filter-toggle-btn { padding: 5px 10px; font-size: 0.7rem; }
             .filter-search input { padding: 6px 12px 6px 32px; font-size: 0.78rem; }
             .cartoteca-main { padding: 8px 14px 30px; }
-            :scope { --card-w: 96px; }
             .cartoteca-grid { gap: 8px; }
         }
 

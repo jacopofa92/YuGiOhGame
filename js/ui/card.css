@@ -50,6 +50,82 @@
 }
 
 /* ============================================================
+   SCALA DELLE MISURE DELLE CARTE (fuori dal duello)
+   ============================================================
+   Ogni schermata che mostra carte FUORI DAL DUELLO sceglie una di queste
+   larghezze per nome, invece di scriversi una formula sua: prima erano
+   una ventina, metà nel CSS delle pagine e metà nel JS di Negozio e
+   sbustamento, con tre "carte piccole" del Negozio quasi uguali ma non
+   identiche. Per cambiare una misura ovunque si cambia una riga qui.
+   Si usano così:  --card-w: var(--carta-griglia);
+   (l'altezza la ricava .card dal rapporto, vedi --card-ratio).
+
+   IL DUELLO NON STA QUI, di proposito: Terreno, mano, Catena, pannello
+   info e picker hanno misure calcolate perché il campo entri nello
+   schermo (variabili in cima a duelMonstersCore.html) e devono restare
+   legate a quel calcolo, non a questa scala.
+
+   Ogni gradino sta con margine da UN lato della soglia della carta
+   compatta (72px, vedi "CARTA COMPATTA" in fondo al file), così una carta
+   non cambia stile ruotando il telefono:
+     sempre compatte:  casella, piccola (su telefono)
+     sempre classiche: miniatura e tutte le più grandi
+   Prima di spostare un valore, controllare da che parte della soglia
+   finisce a 390px e a 844px di larghezza.
+
+   I tre punti di rottura sono quelli che le pagine usavano già tutte:
+   telefono in verticale (<= 480px), telefono in orizzontale (altezza
+   <= 500px), e la striscia dello sbustamento (<= 600px). */
+:root {
+    /* Caselle del pacchetto durante l'apertura: segnaposti, sempre compatte. */
+    --carta-casella: clamp(40px, 9vw, 64px);
+    /* Righe di carte in un riquadro del Negozio: carte del giorno e
+       pescate (erano 60-80 e 58-76px, ora una misura sola). Compatte su
+       telefono in verticale. */
+    --carta-piccola: clamp(58px, 13vw, 80px);
+    /* Il ventaglio che esce dalla scatola quando compri un mazzo: la sua
+       misura segue quella della scatola, non le griglie, e tiene conto
+       dell'altezza per starci col telefono in orizzontale. */
+    --carta-ventaglio: clamp(52px, min(13vw, 16vh), 88px);
+    /* Miniature del Negozio: classiche anche sul telefono più stretto
+       (minimo 76px, la soglia è 72). */
+    --carta-miniatura: clamp(76px, 17vw, 104px);
+    /* La striscia di carte appena aperte, larga come una mano. */
+    --carta-striscia: clamp(88px, min(8.2vw, 16vh), 108px);
+    /* Griglia accanto a un pannello (Creazione Deck, le tue carte in Crea
+       Carta) e griglia a tutta pagina (Cartoteca). */
+    --carta-griglia-stretta: 118px;
+    --carta-griglia: 168px;
+    /* Una carta sola al centro della scena. */
+    --carta-rivelata: clamp(92px, min(28vw, 26vh), 180px);
+    --carta-acquisto: clamp(120px, min(30vw, 38vh), 190px);
+    --carta-premio: clamp(150px, min(36vw, 32vh), 240px);
+    --carta-modello: 220px;
+    /* La scheda di dettaglio carta (js/ui/card-detail.css). */
+    --carta-anteprima: min(46vh, clamp(180px, 26vw, 280px));
+}
+@media (max-width: 600px) {
+    :root { --carta-striscia: clamp(82px, 24vw, 96px); }
+}
+@media (max-width: 480px) {
+    :root {
+        --carta-griglia-stretta: 78px;
+        --carta-griglia: 82px;
+        --carta-modello: 120px;
+    }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+    :root {
+        --carta-griglia-stretta: 90px;
+        --carta-griglia: 96px;
+        --carta-modello: 150px;
+    }
+}
+@media (max-height: 560px) and (orientation: landscape) {
+    :root { --carta-premio: clamp(110px, 24vh, 150px); }
+}
+
+/* ============================================================
    COME È FATTA UNA CARTA: una scatola e un corpo.
    ============================================================
    .card è solo la SCATOLA: misura, posizione, interazione (hover,

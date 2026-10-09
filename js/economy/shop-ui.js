@@ -26,7 +26,7 @@
 (function () {
     'use strict';
 
-    const CARD_W = 'clamp(74px, 17vw, 104px)';
+    const CARD_W = 'var(--carta-miniatura)';
 
     // `nome` è il plurale, `singolare` la forma da usare quando manca UNA
     // sola unità: "ti manca 1 Carte Locazione" si legge male, e queste
@@ -418,7 +418,7 @@
             estratte.forEach((id, i) => {
                 const cell = el('div', 'shop-pull-cell');
                 cell.style.animationDelay = (i * 90) + 'ms';
-                const mini = miniatura(id, 'clamp(60px, 13vw, 80px)');
+                const mini = miniatura(id, 'var(--carta-piccola)');
                 mini.style.cursor = 'pointer';
                 cell.appendChild(mini);
                 cell.appendChild(el('div', 'shop-pull-name', nomeCarta(id)));
@@ -631,7 +631,7 @@
                 pullGrid.appendChild(titolo);
                 zona.lista.forEach((voce) => {
                     const cell = el('div', 'shop-pull-cell');
-                    const mini = miniatura(voce.id, 'clamp(58px, 12vw, 76px)');
+                    const mini = miniatura(voce.id, 'var(--carta-piccola)');
                     mini.style.cursor = 'pointer';
                     cell.appendChild(mini);
                     cell.appendChild(el('div', 'shop-pull-name', nomeCarta(voce.id)));

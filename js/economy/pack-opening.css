@@ -17,7 +17,6 @@
    ===================================================================== */
 
 .po-backdrop {
-    --po-summary-card-w: clamp(88px, min(8.2vw, 16vh), 108px);
     position: fixed;
     inset: 0;
     z-index: 100700;
@@ -387,7 +386,7 @@
     gap: clamp(4px, 1vw, 8px);
     /* Anche in `vh`: su un telefono girato 10vw fanno 85px, che sommati
        a testa, carta e pulsante non ci stanno in 393px di altezza. */
-    min-height: calc(var(--po-summary-card-w) / var(--card-ratio) + 24px);
+    min-height: calc(var(--carta-striscia) / var(--card-ratio) + 24px);
     /* `wrap` come rete di sicurezza per una bustina molto più grande di
        dieci carte: va a capo invece di sbordare, e la fascia cresce di
        una riga. Con le buste di oggi non succede mai. */
@@ -457,7 +456,6 @@ body:has(.cd-backdrop.open) .po-riepilogo {
 }
 
 @media (max-width: 600px) {
-    .po-backdrop { --po-summary-card-w: clamp(82px, 24vw, 96px); }
     .po-striscia {
         width: calc(100vw - 12px);
         padding-inline: max(8px, calc(env(safe-area-inset-left, 0px) + 4px));

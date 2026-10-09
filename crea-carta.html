@@ -131,7 +131,7 @@
        la carta viene "schiacciata" (bug reale trovato su mobile, ma
        presente a qualunque dimensione: qui semplicemente più visibile
        perché l'anteprima è il primo blocco a piena larghezza). */
-    #cardPreviewSlot { --card-w: 220px; }
+    #cardPreviewSlot { --card-w: var(--carta-modello); }
 
     .form-card {
         background: linear-gradient(150deg, rgba(40,32,20,0.78), rgba(18,16,22,0.82));
@@ -495,7 +495,10 @@
         align-items: center;
         gap: 8px;
     }
-    .my-card-item .card { width: 130px; }
+    /* --card-w e non width: con la sola width l'altezza restava quella di
+       default (100px di larghezza) e la carta usciva schiacciata, 130x146
+       (misurato). Con la variabile .card ricava l'altezza dal rapporto. */
+    .my-card-item .card { --card-w: var(--carta-griglia-stretta); }
     .my-card-actions { display: flex; gap: 6px; }
     .my-card-delete, .my-card-edit {
         border: none;
@@ -538,14 +541,12 @@
         .preview-col { top: 45px; }
         .maker-layout { padding: 10px 8px 10px; gap: 12px; }
         .form-card { padding: 12px 10px; }
-        #cardPreviewSlot { --card-w: 150px; }
     }
 
     @media (max-height: 500px) and (orientation: landscape) {
         .preview-col { top: 41px; }
         .maker-layout { padding: 8px 14px; gap: 12px; }
         .form-card { padding: 10px 14px; }
-        #cardPreviewSlot { --card-w: 120px; }
     }
 </style>
 </head>
