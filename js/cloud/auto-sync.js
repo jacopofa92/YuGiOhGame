@@ -44,21 +44,34 @@
      */
     const RITARDO_MS = 15000;
 
-    /** Segno "c'è qualcosa da caricare che non è ancora arrivato". Sopravvive alla chiusura dell'app, quindi localStorage e non sessionStorage. */
+    /**
+     * Segni "c'è qualcosa da caricare che non è ancora arrivato". Sopravvivono
+     * alla chiusura dell'app, quindi localStorage e non sessionStorage. Due,
+     * perché salvataggio e carte personalizzate stanno in due tabelle del
+     * cloud: una carta creata non deve costare un caricamento del
+     * salvataggio da sola, e viceversa le carte (una sostituzione completa,
+     * vedi CloudSync.pushCustomCards) si mandano solo se sono cambiate.
+     */
     const CHIAVE_IN_SOSPESO = 'ygoSyncInSospeso';
+    const CHIAVE_CARTE_IN_SOSPESO = 'ygoSyncCarteInSospeso';
 
     let timer = null;
     let inCorso = false;
+    /** Qualcosa è cambiato mentre un caricamento era in volo: si riparte alla fine. */
+    let ancoraDopo = false;
 
-    function segna(inSospeso) {
+    function segnaChiave(chiave, attivo) {
         try {
-            if (inSospeso) localStorage.setItem(CHIAVE_IN_SOSPESO, '1');
-            else localStorage.removeItem(CHIAVE_IN_SOSPESO);
+            if (attivo) localStorage.setItem(chiave, '1');
+            else localStorage.removeItem(chiave);
         } catch (e) { /* senza il segno si perde solo il recupero differito */ }
     }
-    function inSospeso() {
-        try { return localStorage.getItem(CHIAVE_IN_SOSPESO) === '1'; } catch (e) { return false; }
+    function leggiChiave(chiave) {
+        try { return localStorage.getItem(chiave) === '1'; } catch (e) { return false; }
     }
+    function segna(attivo) { segnaChiave(CHIAVE_IN_SOSPESO, attivo); }
+    function carteInSospeso() { return leggiChiave(CHIAVE_CARTE_IN_SOSPESO); }
+    function inSospeso() { return leggiChiave(CHIAVE_IN_SOSPESO) || carteInSospeso(); }
 
     function pronto() {
         return !!(window.CloudSync && CloudSync.available && CloudSync.getUser && CloudSync.getUser()
@@ -72,10 +85,12 @@
      */
     function caricaOra() {
         if (timer) { clearTimeout(timer); timer = null; }
-        if (inCorso || !pronto()) return Promise.resolve(false);
+        if (inCorso) { ancoraDopo = true; return Promise.resolve(false); }
+        if (!pronto()) return Promise.resolve(false);
         inCorso = true;
         segna(true);
-        return CloudSync.pushSave()
+        const conCarte = carteInSospeso();
+        const salvataggio = CloudSync.pushSave()
             .then(() => { segna(false); return true; })
             // Silenzioso di proposito: questo gira mentre si gioca, e un
             // avviso a ogni sbalzo di rete sarebbe rumore su qualcosa che
@@ -91,8 +106,22 @@
                 // i dati da mandare non esistono più.
                 if (e && (e.code === 'CLOUD_PIU_RECENTE' || e.code === 'PROFILO_AZZERATO')) segna(false);
                 return false;
-            })
-            .then((esito) => { inCorso = false; return esito; });
+            });
+        // Le carte DOPO il salvataggio, non insieme: ognuno dei due guarda
+        // prima il cloud (azzeramento fatto altrove, vedi leggiCloud), e uno
+        // alla volta il secondo trova la situazione già sistemata dal primo.
+        // Partono anche se il salvataggio è stato rifiutato perché il cloud ne
+        // ha uno più recente: le carte cambiate sono quelle fatte QUI.
+        const tutto = !conCarte || typeof CloudSync.pushCustomCards !== 'function' || !window.CustomCards
+            ? salvataggio
+            : salvataggio.then((esito) => CloudSync.pushCustomCards()
+                .then(() => { segnaChiave(CHIAVE_CARTE_IN_SOSPESO, false); return esito; })
+                .catch(() => false));
+        return tutto.then((esito) => {
+            inCorso = false;
+            if (ancoraDopo) { ancoraDopo = false; programma(); }
+            return esito;
+        });
     }
 
     /**
@@ -136,6 +165,22 @@
         segna(true);
         if (timer) clearTimeout(timer);
         timer = setTimeout(caricaOra, RITARDO_MS);
+    }
+
+    /**
+     * Le carte personalizzate o la loro terminologia sono cambiate. La
+     * chiamano i due punti di scrittura (saveAll di js/data/custom-cards.js e
+     * di js/data/custom-taxonomy.js), così una funzione futura che salvi carte
+     * o categorie è coperta senza ricordarsene. Prima esisteva un secondo
+     * meccanismo a parte (cloud-autosync.js) con un suo timer e una sua coda:
+     * caricava salvataggio e carte insieme, accavallandosi a questo. Ora la
+     * coda è una sola, e la terminologia (che viaggia DENTRO il salvataggio,
+     * vedi CloudSync.pushSave) arriva col caricamento del salvataggio.
+     */
+    function cartePersonalizzateCambiate() {
+        if (!pronto()) return;
+        segnaChiave(CHIAVE_CARTE_IN_SOSPESO, true);
+        programma();
     }
 
     /**
@@ -187,6 +232,7 @@
     window.AutoSync = {
         /** Forza il caricamento adesso. Torna una Promise: usarla quando si DEVE sapere se è arrivato (es. prima di uscire). */
         caricaOra: caricaOra,
-        inSospeso: inSospeso
+        inSospeso: inSospeso,
+        cartePersonalizzateCambiate: cartePersonalizzateCambiate
     };
 })();

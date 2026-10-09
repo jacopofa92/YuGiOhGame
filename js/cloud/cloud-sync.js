@@ -587,8 +587,8 @@
     /**
      * Carica il salvataggio locale sul cloud — MA MAI sopra uno più recente.
      *
-     * Prima caricava sempre, e i caricamenti automatici (auto-sync.js,
-     * cloud-autosync.js) partono da soli: all'avvio se era rimasto qualcosa
+     * Prima caricava sempre, e i caricamenti automatici (auto-sync.js)
+     * partono da soli: all'avvio se era rimasto qualcosa
      * in sospeso, e a ogni salvataggio. Un telefono con la copia vecchia
      * finiva così per scrivere sopra i progressi fatti nel frattempo su un
      * altro dispositivo, senza che nessuno avesse scelto niente. Ora si

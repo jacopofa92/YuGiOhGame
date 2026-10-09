@@ -105,8 +105,8 @@
         // Unico punto da cui passa OGNI scrittura di questo modulo: basta
         // avvisare qui perché provenienze, Tipi Mostro e terminologia
         // finiscano sul cloud da sole, senza che l'utente debba ricordarsi
-        // di sincronizzare (vedi js/cloud/cloud-autosync.js).
-        if (!applyingRemote && window.CloudAutoSync) CloudAutoSync.schedule();
+        // di sincronizzare (vedi js/cloud/auto-sync.js).
+        if (!applyingRemote && window.AutoSync) AutoSync.cartePersonalizzateCambiate();
     }
 
     /**

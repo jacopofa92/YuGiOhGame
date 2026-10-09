@@ -416,7 +416,8 @@
 // v173: dettaglio carta landscape compatto e strumenti admin per le Storie.
 // v174: rework completo dei Toon e bilanciamento dei deck Pegasus.
 // v185: l'azzeramento del profilo vale anche sugli altri dispositivi.
-const CACHE_NAME = 'ygo-duel-arena-v185';
+// v186: un solo caricamento automatico sul cloud (cloud-autosync.js assorbito da auto-sync.js).
+const CACHE_NAME = 'ygo-duel-arena-v186';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -546,7 +547,6 @@ const APP_SHELL = [
     'js/multiplayer/multiplayer.js',
     'js/multiplayer/network.js',
     'js/cloud/auth-gate.js',
-    'js/cloud/cloud-autosync.js',
     'js/cloud/cloud-sync.js',
     'js/cloud/auto-sync.js',
     'js/cloud/supabase-config.js',
