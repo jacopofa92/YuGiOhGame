@@ -149,15 +149,56 @@
         // accorgimento di renderEquipLinks().
         if (r.width === 0 && r.height === 0) return false;
         const m = misure();
-        const w = r.width * m.larghezza;
-        const h = r.height * m.altezza;
+        // Un mostro in DIFESA è la stessa carta ruotata di 90°: il suo
+        // riquadro a schermo è orizzontale. Misurato prima di questa
+        // correzione (segnalazione dell'utente, "bug con gli olografici
+        // quando si scopre una carta"): su una carta 116×79 la proiezione
+        // usciva 185×107, bassa e larga, schiacciata sulla carta. Le misure
+        // si prendono quindi dalla carta "in piedi" (lati scambiati),
+        // centrate sul suo riquadro vero; il sollevamento resta sull'altezza
+        // VISIBILE, così la figura nasce comunque dalla carta.
+        const inDifesa = cardEl.classList.contains('defense-pos');
+        const larga = inDifesa ? r.height : r.width;
+        const alta = inDifesa ? r.width : r.height;
+        const w = larga * m.larghezza;
+        const h = alta * m.altezza;
         // Centrato sulla carta e sollevato: la base del fascio resta
         // dentro la carta, così la figura sembra uscire DA LÌ.
-        item.style.left = `${Math.round(r.left + (r.width - w) / 2)}px`;
+        item.style.left = `${Math.round(r.left + r.width / 2 - w / 2)}px`;
         item.style.width = `${Math.round(w)}px`;
         item.style.height = `${Math.round(h)}px`;
         item.style.top = `${Math.round(r.bottom - h - r.height * m.sollevamento)}px`;
         return true;
+    }
+
+    /**
+     * La carta da misurare, e se sta ancora GIRANDO.
+     *
+     * Scoprire un mostro (Flip Summon, o un attacco contro un coperto) lo
+     * fa girare in 3D: CardRenderer.playFlipReveal mette nella casella un
+     * contenitore con DUE copie della carta, dorso e fronte, che ruotano.
+     * Prima l'ologramma nasceva all'istante — lo stato dice già "scoperto"
+     * — sopra una carta ancora di dorso a metà giro (misurato: presente
+     * dopo 30 ms), e veniva misurato sulla faccia che ruotava. Si guarda
+     * invece il contenitore, che resta fermo, e finché il giro non finisce
+     * l'ologramma aspetta: la proiezione arriva DOPO la rivelazione, che è
+     * il momento da vedere.
+     */
+    const inAttesaDelGiro = new Set();
+    function cartaDaMisurare(cardEl, uid) {
+        const giro = cardEl.closest('.card-flip-outer');
+        if (!giro) return { el: cardEl, gira: false };
+        const interno = giro.querySelector('.card-flip-inner');
+        const animazioni = interno && typeof interno.getAnimations === 'function' ? interno.getAnimations() : [];
+        const inCorso = animazioni.filter((a) => a.playState === 'running' || a.playState === 'pending');
+        if (inCorso.length && !inAttesaDelGiro.has(uid)) {
+            inAttesaDelGiro.add(uid);
+            Promise.all(inCorso.map((a) => a.finished.catch(() => null)))
+                .then(() => { inAttesaDelGiro.delete(uid); sync(); });
+        }
+        // A giro finito si misura la FACCIA (davanti): è lei a portare
+        // l'eventuale rotazione della Difesa, il contenitore resta in piedi.
+        return { el: giro.querySelector('.card-flip-face-front') || giro, gira: inCorso.length > 0 };
     }
 
     /**
@@ -189,6 +230,10 @@
                     ? findFieldCardElementByUid(slot.card.uid)
                     : document.querySelector(`#${owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard'} .card[data-uid="${slot.card.uid}"]`);
                 if (!cardEl) return;
+                // Una carta che si sta scoprendo: niente ologramma finché
+                // il giro non finisce (vedi cartaDaMisurare).
+                const daMisurare = cartaDaMisurare(cardEl, slot.card.uid);
+                if (daMisurare.gira) return;
                 let item = vivi.get(slot.card.uid);
                 if (!item) {
                     item = creaOlogramma(slot.card, owner);
@@ -199,7 +244,7 @@
                     // si gira senza ricreare nulla.
                     item.dataset.owner = owner;
                 }
-                if (posiziona(item, cardEl)) attesi.add(slot.card.uid);
+                if (posiziona(item, daMisurare.el)) attesi.add(slot.card.uid);
             });
         });
 

@@ -64,6 +64,10 @@
          impostazione "Dettagli video: Alti" degli strati ambientali qui
          sopra — vedi js/ui/monster-hologram.js. -->
     <link rel="stylesheet" href="js/ui/monster-hologram.css">
+<!-- I riscontri dei momenti del duello (ATK/DEF che cambiano, bando,
+     annullamento, cambio di Posizione, Token, Life Point critici): vedi
+     js/ui/duel-feedback.js. -->
+<link rel="stylesheet" href="js/ui/duel-feedback.css">
     <link rel="stylesheet" href="js/ui/page-loader.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -802,35 +806,87 @@
             from { opacity: 0.72; transform: translateX(-50%) rotateY(-5deg) scale(0.98); }
             to   { opacity: 1; transform: translateX(-50%) rotateY(5deg) scale(1.03); }
         }
+        /* Caselle "quasi assenti" (richiesta dell'utente: "meno cella, quasi
+           come se non ci fossero, un po' d'ombra al posto della cella").
+           Nessun bordo e nessun riempimento: al posto della casella c'è solo
+           un'ombra morbida sull'arena, come l'impronta di dove si posa una
+           carta. Così si legge DOVE sono le zone senza disegnare una griglia
+           sopra lo sfondo, e sta bene su qualunque arena perché è solo un
+           velo scuro sfumato.
+           Il colore dell'arena (--campo-tinta, js/ui/tinta-campo.js) compare
+           solo sotto il mouse, come un alone leggero: è l'unico momento in
+           cui serve vedere il contorno della zona.
+           Misure, posizioni e icone delle zone invariate.
+           L'ombra NON sta sullo sfondo della casella ma su un ::before più
+           grande di lei: un gradiente dipinto dentro la casella viene tagliato
+           dai suoi bordi, e si vedeva ancora il rettangolo. Col ::before che
+           sborda e un gradiente "closest-side" (arriva a trasparente proprio
+           sul bordo del suo riquadro) la sfumatura è piena a 360 gradi.
+           Per lo stesso motivo l'alone del mouse non usa box-shadow, che
+           seguirebbe di nuovo il rettangolo. */
         .field-slot {
+            --tinta: var(--campo-tinta, rgb(190 165 120));
+            --ombra-casella: radial-gradient(closest-side,
+                rgba(0, 0, 0, 0.62) 0%,
+                rgba(0, 0, 0, 0.46) 40%,
+                rgba(0, 0, 0, 0.18) 72%,
+                rgba(0, 0, 0, 0) 100%);
             width: var(--field-slot-w);
             height: var(--field-slot-h);
-            border: 1px dashed rgba(255,255,255,0.22);
-            border-radius: 2px;
+            border: none;
+            border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
-            background:
-                linear-gradient(145deg, rgba(133, 118, 102, 0.34), rgba(75, 62, 50, 0.28)),
-                linear-gradient(180deg, rgba(255,255,255,0.08), rgba(0,0,0,0.16));
-            transition: border-color 0.25s ease, background 0.25s ease;
+            background: transparent;
             position: relative;
+            /* Il ::before qui sotto ha z-index -1: senza un contesto proprio
+               finirebbe dietro allo sfondo del Terreno (su desktop spariva). */
+            isolation: isolate;
             cursor: pointer;
             flex-shrink: 0;
             box-shadow: none;
         }
+        .field-slot::before {
+            content: '';
+            position: absolute;
+            inset: -14% -26%;
+            background: var(--ombra-casella);
+            pointer-events: none;
+            z-index: -1;
+            transition: opacity 0.25s ease;
+        }
+        /* Il contorno delle caselle compare SOLO durante la zoomata
+           d'ingresso (.camera-intro, vedi playCameraIntro in game-flow.js).
+           Le ombre tonde, da sole, non hanno lati dritti, e senza lati dritti
+           l'occhio non legge il campo inclinato che si raddrizza: l'effetto
+           3D dell'ingresso spariva. Il contorno ridà la griglia in
+           prospettiva finché la telecamera si muove, poi si dissolve e resta
+           il campo "quasi assente" voluto per la partita.
+           Il contorno c'è sempre ma trasparente: è solo il colore a cambiare,
+           così la dissolvenza in uscita è una transizione e non uno scatto
+           quando la classe viene tolta. Entra in fretta (la scena è ancora
+           in dissolvenza dal nero) ed esce lentamente. outline e non border:
+           non cambia le misure della casella. */
+        .field-slot {
+            outline: 1px solid transparent;
+            outline-offset: -1px;
+            transition: outline-color 0.7s ease;
+        }
+        .game-container.camera-intro .field-slot {
+            outline-color: color-mix(in srgb, var(--tinta) 55%, rgba(255, 255, 255, 0.55));
+            transition-duration: 0.2s;
+        }
         .field-slot:hover {
-            background:
-                linear-gradient(145deg, rgba(154, 138, 118, 0.42), rgba(92, 74, 58, 0.32)),
-                linear-gradient(180deg, rgba(255,255,255,0.12), rgba(0,0,0,0.20));
-            border-color: rgba(255,255,255,0.35);
+            --ombra-casella: radial-gradient(closest-side,
+                color-mix(in srgb, var(--tinta) 38%, rgba(0, 0, 0, 0.40)) 0%,
+                color-mix(in srgb, var(--tinta) 20%, rgba(0, 0, 0, 0.22)) 50%,
+                rgba(0, 0, 0, 0) 100%);
             transform: none;
         }
         .field-slot.special-slot {
-            border: 1px dashed rgba(255,255,255,0.22);
-            background:
-                linear-gradient(145deg, rgba(111, 97, 81, 0.38), rgba(74, 61, 49, 0.26)),
-                linear-gradient(180deg, rgba(255,255,255,0.08), rgba(0,0,0,0.16));
+            border: none;
+            background: transparent;
             color: #eaf2ff;
             font-size: 0.72rem;
             text-align: center;
@@ -4175,6 +4231,7 @@
      prima senza modificare altro. -->
 <script src="js/ui/field-ambience.js"></script>
 <script src="js/ui/monster-hologram.js"></script>
+<script src="js/ui/duel-feedback.js"></script>
 <!-- Libreria di effetti visivi nominati, applicata automaticamente da
      FX.playCardActivateCenterScreen qui sopra se una carta dichiara
      card.visualEffect — vedi il commento in testa al file. -->
@@ -4270,6 +4327,10 @@
         document.body.style.backgroundImage = `url('${fieldFolder}${window.DUEL_ARENA_CUSTOM_FIELD}')`;
     }
 </script>
+<!-- Il colore dell'arena per le caselle del campo (alone e contorno): dopo lo
+     sfondo qui sopra, da cui lo legge. Vedi js/ui/tinta-campo.js. -->
+<script src="js/data/tinte-campi.js"></script>
+<script src="js/ui/tinta-campo.js"></script>
 <!-- Sessione di duello: questa pagina è l'arena condivisa da Duello Demo,
      Duello Libero (e in futuro la Storia) — il Multiplayer ha la sua
      pagina dedicata, multiplayer.html, che riusa questa stessa arena
@@ -4296,6 +4357,9 @@
      successo in questo progetto con la topbar e con le note delle
      carte. Per una modalità che non è la Storia resta inerte. -->
 <script src="js/data/story-campaigns.js"></script>
+<!-- I ritocchi dell'Editor Mappa (js/story/story-ritocchi.js): subito dopo il catalogo. -->
+<script src="js/data/story-ritocchi.js"></script>
+<script src="js/story/story-ritocchi.js"></script>
 <script src="js/ui/duel-cinematics.js"></script>
 <!-- Morra cinese pre-duello (decide chi gioca per primo): deve stare
      PRIMA di js/duel-session.js, che la chiama in start(). -->

@@ -665,6 +665,11 @@ function ridisegnaDuello() {
     // ridisegna nulla: aggiorna solo ciò che è cambiato, vedi lì il
     // perché vive fuori dal Terreno.
     if (window.MonsterHolograms) MonsterHolograms.sync();
+    // I riscontri dei cambiamenti sul Terreno (js/ui/duel-feedback.js):
+    // ATK/DEF che cambiano, carte bandite, Token, cambi di Posizione, Life
+    // Point critici. Confronta col ridisegno precedente, quindi va anche lui
+    // DOPO renderFields.
+    if (window.DuelFeedback) DuelFeedback.sync();
     updatePhaseIndicator();
 }
 

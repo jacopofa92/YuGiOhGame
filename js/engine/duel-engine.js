@@ -590,7 +590,12 @@
      * regge già.
      */
     function sorteggioCondiviso(chiave, contesto) {
-        if (!window.MULTIPLAYER_MODE) return Casuale.random();
+        // Anche a passo comune (casualità condivisa, Casuale.condivisa()) si
+        // usa la sequenza per chiave, non il generatore di tutta la partita:
+        // altrimenti il numero dipende da quante volte quel generatore è già
+        // stato usato, e basta un uso in più da un lato per sfalsare gli uid
+        // dei Token fra i due client (misurato nel duello gemello).
+        if (!window.MULTIPLAYER_MODE && !Casuale.condivisa()) return Casuale.random();
         if (turnoDelSorteggio !== gameState.turn) {
             turnoDelSorteggio = gameState.turn;
             usiPerCarta.clear();
@@ -4625,6 +4630,11 @@
             const link = chain.links.pop();
             if (link.negated) {
                 addToLog(`🚫 L'attivazione di ${link.card.name} è stata negata!`);
+                // Prima di togliere un'eventuale Continua dal Terreno qui
+                // sotto: l'interfaccia (js/ui/duel-feedback.js) mette il
+                // sigillo sulla carta se è ancora lì, al centro altrimenti.
+                EventiDuello.emetti('attivazione-negata', link.card, link.owner,
+                    link.ctx ? link.ctx.zone : null, link.ctx ? link.ctx.index : null);
                 // Una Magia/Trappola Normale negata è già finita al
                 // Cimitero PRIMA di aprire questa finestra (activateCard
                 // sposta la carta subito, come da regola vera "si paga il

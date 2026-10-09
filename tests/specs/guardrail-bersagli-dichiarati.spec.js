@@ -18,7 +18,7 @@ const fs = require('fs');
 const path = require('path');
 
 const RADICE = path.resolve(__dirname, '..', '..');
-const FORME = /\.declareTarget\(|\.destroyTargetedMonster\(|\bdichiara:\s*true\b|\bequipToChosenTarget\(|\battachUnionMonster\(/;
+const FORME = /\.declareTarget\(|\.declareTargetWaiting\(|\.destroyTargetedMonster\(|\bdichiara:\s*true\b|\bequipToChosenTarget\(|\battachUnionMonster\(/;
 
 // Ogni motivo è una categoria: aggiungere un id a una categoria sbagliata
 // per far passare il test è esattamente ciò che questo file deve impedire.

@@ -506,6 +506,11 @@
         outer.appendChild(inner);
 
         oldEl.replaceWith(outer);
+        // L'ologramma del mostro (js/ui/monster-hologram.js) era già nato col
+        // ridisegno appena prima del giro, sopra una carta ancora di dorso:
+        // riallinearlo adesso gli fa vedere il giro in corso, lo toglie e lo
+        // rimette quando la carta ha finito di scoprirsi.
+        if (window.MonsterHolograms && typeof MonsterHolograms.sync === 'function') MonsterHolograms.sync();
     }
 
     // ------------------------------------------------------------------

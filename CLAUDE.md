@@ -3150,6 +3150,25 @@ priorità o richiedono un refactor ampio):
   dritti. Perché il bordo arrivi a zero il raggio deve restare poco sopra
   il 50%.
 
+- ✅ **Riscontri del duello (`js/ui/duel-feedback.js`/`.css`)**, richiesta
+  dell'utente: ATK/DEF che cambiano (+500 / −1000 fluttuanti e lampo sul
+  valore), carta bandita (varco viola), attivazione annullata (sigillo ⛔,
+  sulla carta se è in campo, al centro altrimenti), cambio di Posizione
+  (rotazione vera, `rotate` via Web Animations API), Token che nasce
+  (fumo), Life Point critici ≤1000 (riquadro rosso, vignetta solo per i
+  propri). **Il principio**: `DuelFeedback.sync()` gira in
+  `ridisegnaDuello` dopo gli ologrammi e CONFRONTA la fotografia del
+  Terreno con quella del ridisegno precedente, quindi copre qualunque
+  carta causi il cambiamento senza agganci carta per carta. Solo
+  l'annullamento non si vede dallo stato: evento `attivazione-negata`,
+  emesso in `resolveChain` prima della pulizia della Continua. Livello
+  `#duelFeedbackLayer` a z-index 10040 (sopra gli FX, sotto i modali).
+  Nello stesso giro, **ologrammi**: non nascono più a metà giro di una
+  carta che si scopre (`playFlipReveal` chiede un `sync`, che vede il giro
+  in corso e aspetta che finisca) e in Difesa hanno le proporzioni giuste
+  (misure dalla carta "in piedi"); moneta e dado senza `bounce.out`/
+  `back.out`. Spec `riscontri-duello-e-ologrammi`.
+
 - ✅ **Carte "vive" e parallasse del menu** (richiesta dell'utente,
   "grafiche simil 3D"). `CartaViva.rendi(el, card, { modo, bersaglio,
   area })` in `js/ui/card-renderer.js` (CSS "Carta viva" in fondo a
@@ -3547,6 +3566,23 @@ priorità o richiedono un refactor ampio):
   sostituiti con due fotografie storiche vere di pubblico dominio
   (Wikimedia Commons, vedi il bullet più sotto). `ww1_regio_esercito.jpg`
   non è più usato dalla campagna.
+- ✅ **SUPERATO (2026-10-09): l'Editor Mappa salva TUTTO in un file suo,
+  `js/data/story-ritocchi.js`**, e non tocca più il catalogo — la voce qui
+  sotto (patch di field/music dentro story-campaigns.js) descrive la
+  versione precedente, rimossa. Il file dei ritocchi è generato e riscritto
+  per intero a ogni modifica ("📂 Collega file", che controlla che il file
+  scelto sia davvero quello): `modifiche` per id (proprietà semplici,
+  elenco `PROPRIETA`, `null` toglie), `aggiunte` (contenitore + `dopo`) e
+  `rimosse`. Li applica `js/story/story-ritocchi.js`, caricato subito dopo
+  catalogo e dati in OGNI pagina che carica il catalogo (guardrail
+  `guardrail-ritocchi-storia`); tiene anche una copia del catalogo
+  originale, da cui l'editor calcola le differenze (`StoryRitocchi.attuali`).
+  Il pannello è stato rifatto su richiesta dell'utente: personaggio da una
+  griglia di ritratti, musica da un elenco con anteprima, dialoghi a
+  battute con una voce per battuta (anche il `dialogo` prima di un duello).
+  Restano fuori, a mano nel catalogo: struttura (mappe, livelli,
+  separazioni). I `tools/` di simulazione caricano il catalogo da soli e
+  NON vedono i ritocchi. Spec `editor-mappa-scrive-sul-file`.
 - ✅ **L'Editor Mappa scrive ANCHE sul file vero, solo per `field`/`music`
   (beta.70, richiesta esplicita dell'utente: "davvero non posso
   riflettere direttamente i valori sul file story-campaigns?")** — prima

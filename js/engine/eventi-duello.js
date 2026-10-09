@@ -69,6 +69,7 @@
         'impatto-campo': '(owner, indice, zona) una carta è atterrata in una casella',
         'distruzione': '(owner, indice, zona) una carta in campo viene distrutta',
         'attacco-bloccato': '(owner, indice, zona, elementoAttaccante) un attacco non ha distrutto il bersaglio',
+        'attivazione-negata': '(carta, owner, zona, indice) un\'attivazione è stata annullata in Catena',
         'effetto-battaglia': '(...) gli stessi argomenti di showBattleEffect',
         'danno-fluttuante': '(...) gli stessi argomenti di showFloatingDamage',
         'avviso-attacco-diretto': '(...) gli stessi argomenti di showDirectAttackWarning',

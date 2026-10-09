@@ -17,17 +17,22 @@
  * Di default è spento: un amministratore che non l'ha mai acceso vede la
  * Storia come chiunque altro.
  *
- * IL MODELLO — perché non è "salva sul cloud" e cosa succede alle modifiche:
- * Questo gioco non ha un backend per i CONTENUTI (le campagne sono un file
- * JS statico, js/data/story-campaigns.js, versionato con git) — solo per
- * account/salvataggi. Un editor "vivo" può quindi lavorare SOLO sulla
- * copia in memoria di questa scheda: sposta, crea, modifica e cancella
- * DAVVERO (si vede subito sulla mappa, sopravvive a un giro nell'area e
- * ritorno), ma torna quella del file appena si ricarica la pagina. Il
- * pulsante "📋 Esporta codice" stampa l'array aggiornato pronto da
- * incollare in story-campaigns.js: è quello il modo in cui una modifica
- * diventa permanente per tutti i giocatori, non un salvataggio automatico
- * che finirebbe per mentire su cosa vede chi non è amministratore.
+ * DOVE FINISCONO LE MODIFICHE. L'editor lavora sugli oggetti veri del
+ * catalogo in memoria (si vede subito sulla mappa). Per renderle
+ * permanenti c'è "📂 Collega file": si sceglie UNA volta a sessione il
+ * file js/data/story-ritocchi.js (File System Access API di Chrome/Edge,
+ * che funziona anche aprendo il gioco a doppio clic) e da lì ogni modifica
+ * lo riscrive per intero con le differenze rispetto al catalogo — vedi
+ * js/story/story-ritocchi.js, che le applica in ogni pagina.
+ *
+ * Perché un file a parte invece del catalogo stesso
+ * (js/data/story-campaigns.js): il catalogo è scritto a mano, con
+ * commenti e più proprietà sulla stessa riga, e riscriverlo a pezzi da un
+ * browser rischierebbe di romperlo — la prima versione di questo editor lo
+ * faceva solo per field/music, proprio per quel rischio. Il file dei
+ * ritocchi invece è tutto generato: riscriverlo per intero non può rompere
+ * niente. "📋 Esporta codice" resta per consolidare i ritocchi nel
+ * catalogo quando lo si vuole fare a mano.
  *
  * COME SI AGGANCIA ALLA PAGINA — zero righe toccate in storia.html:
  * si avvolge `NodeMap.render` (come test-shortcuts.js avvolge
@@ -39,29 +44,6 @@
  * oggetti VERI) e ridisegna da sé, leggendo `campaignId`/`torneoId`
  * dall'URL — la stessa fonte che usa storia.html — e risalendo da lì
  * fino agli oggetti originali dentro `storyCampaignsDatabase`.
- *
- * ECCEZIONE AL MODELLO QUI SOPRA — `field`/`music` SCRIVONO ANCHE SUL
- * FILE VERO (richiesto esplicitamente dall'utente, che usa questo editor
- * da sé per lavoro di sviluppo, non come strumento per un amministratore
- * "cliente"): "📂 Collega file" chiede, UNA volta a sessione, l'accesso
- * in scrittura a js/data/story-campaigns.js tramite il picker nativo del
- * browser (File System Access API — Chrome/Edge, compreso `file://`: è
- * il caso comune di questo progetto, verificato). Da lì in poi, salvare
- * il pannello di un nodo `duel`/`scene` patcha ANCHE il testo del file
- * su disco, oltre alla copia in memoria.
- *
- * Il patch è VOLUTAMENTE ristretto a queste due sole proprietà — mai
- * generalizzato a label/x/y/testo/dialogo/ecc. — perché SOLO loro, in
- * tutto questo file, stanno sempre sulla propria riga, mai in coda a
- * un'altra proprietà sulla stessa riga (verificato: nessuna occorrenza
- * di "field:"/"music:" preceduta da un'altra proprietà). Una proprietà
- * come `x`/`label` condivide spesso la riga con altre
- * ("label: '...', x: 123, y: 456,"): sostituirne una lì con una regex
- * rischierebbe di toccare pezzi che non le appartengono. Per tutto il
- * resto (compresa la creazione/cancellazione di un nodo intero) resta
- * solo "📋 Esporta codice" — mai un salvataggio su disco che tocchi
- * strutture con array/oggetti annidati o più proprietà per riga:
- * sbagliare lì potrebbe corrompere il file o mangiare un commento.
  */
 (function () {
     'use strict';
@@ -101,9 +83,6 @@
             if (!on) impostaModalita(false);
             return interruttoreAcceso();
         }
-        // `_patchCampoEMusicaNelTesto` viene aggiunta più sotto, solo su
-        // storia.html (qui in cima il file gira su OGNI pagina per
-        // esporre acceso/imposta al Pannello Admin) — vedi lì per cosa fa.
     };
 
     // Il resto del file serve solo su storia.html, e solo dopo che
@@ -118,6 +97,10 @@
     function datiGrezzi() {
         if (typeof storyCampaignsDatabase !== 'undefined') return storyCampaignsDatabase;
         return Array.isArray(window.storyCampaignsDatabase) ? window.storyCampaignsDatabase : [];
+    }
+    function personaggi() {
+        if (typeof characterDatabase !== 'undefined') return characterDatabase;
+        return Array.isArray(window.characterDatabase) ? window.characterDatabase : [];
     }
 
     /**
@@ -301,7 +284,8 @@
                     // va zittito solo per QUESTA volta, non per sempre.
                     statoClick.sopprimi = true;
                     setTimeout(() => { statoClick.sopprimi = false; }, 0);
-                    aggiornaSuggerimento(`Spostato a x:${tappa.x} y:${tappa.y} — resta in questa scheda finché non lo esporti.`);
+                    aggiornaSuggerimento(`Spostato a x:${tappa.x} y:${tappa.y}.`);
+                    salvaSeCollegato();
                 };
                 bottone.addEventListener('pointermove', onMove);
                 bottone.addEventListener('pointerup', onUp);
@@ -349,8 +333,8 @@
             <span class="sme-spazio"></span>
             ${(ctx.pagine && ctx.pagine.length > 1) ? ctx.pagine.map((p) => `<button type="button" class="sme-btn${p === ctx.pagina ? ' sme-btn--attivo' : ''}" data-sme-pagina="${p.indice}">🗺️ ${escapeHtml(p.nome || ('Mappa ' + (p.indice + 1)))}</button>`).join('') : ''}
             <button type="button" class="sme-btn" id="smeAggiungi">➕ Aggiungi nodo</button>
-            <button type="button" class="sme-btn" id="smeCollegaFile" title="Scrive direttamente field/music di un nodo duel/scene sul file vero">📂 Collega file</button>
-            <span class="sme-suggerimento" id="smeStatoFile"></span>
+            <button type="button" class="sme-btn" id="smeCollegaFile" title="Scegli js/data/story-ritocchi.js: ogni modifica verrà salvata lì">📂 Collega file</button>
+            <span class="sme-stato-file" id="smeStatoFile"></span>
             <button type="button" class="sme-btn" id="smeEsporta">📋 Esporta codice</button>
             <button type="button" class="sme-btn sme-btn--chiudi" id="smeChiudi">✖ Chiudi editor</button>
         `;
@@ -359,7 +343,7 @@
         aggiornaStatoCollegamento();
         // Cambio di mappa in un percorso a più mappe: si riscrive l'URL
         // (è da lì che contestoCorrente legge la pagina) e si ridisegna,
-        // senza ricaricare — le modifiche non ancora esportate restano.
+        // senza ricaricare — le modifiche non ancora salvate restano.
         barra.querySelectorAll('[data-sme-pagina]').forEach((b) => b.addEventListener('click', () => {
             const qs = new URLSearchParams(location.search);
             qs.set('pagina', b.getAttribute('data-sme-pagina'));
@@ -372,7 +356,10 @@
         });
         document.getElementById('smeEsporta').addEventListener('click', () => apriEsportazione(ctx));
         document.getElementById('smeChiudi').addEventListener('click', () => {
-            if (confirm('Chiudere l\'editor? Le modifiche non esportate andranno perse (tornano quelle del file al prossimo caricamento).')) {
+            const avviso = fileCollegato
+                ? 'Chiudere l\'editor? Le modifiche sono già salvate nel file collegato.'
+                : 'Chiudere l\'editor? Senza un file collegato le modifiche andranno perse.';
+            if (confirm(avviso)) {
                 impostaModalita(false);
                 location.reload();
             }
@@ -434,7 +421,7 @@
     }
 
     // ================================================================
-    // Pannello di modifica / creazione — un piccolo modulo autonomo
+    // Stile
     // ================================================================
     function assicuraStile() {
         if (document.getElementById('smeStile')) return;
@@ -446,6 +433,9 @@
                 padding: 8px 14px; background: rgba(93,45,10,0.95); color: #fff;
                 font: 700 0.78rem/1.3 system-ui, sans-serif; border-bottom: 2px solid rgba(247,215,116,0.6); }
             .sme-suggerimento { font-weight: 400; opacity: 0.85; font-style: italic; }
+            .sme-stato-file { font-weight: 600; }
+            .sme-stato-file--ok { color: #9ff0b4; }
+            .sme-stato-file--errore { color: #ffb3a8; }
             .sme-coordinate { flex: 0 0 auto; min-width: 128px; padding: 4px 9px;
                 border: 1px solid rgba(247,215,116,0.45); border-radius: 5px;
                 background: rgba(0,0,0,0.38); color: #f7d774;
@@ -455,8 +445,10 @@
             .sme-btn { padding: 6px 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.5);
                 background: rgba(0,0,0,0.35); color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
             .sme-btn:hover { background: rgba(0,0,0,0.55); }
+            .sme-btn:focus-visible { outline: 2px solid #f7d774; outline-offset: 2px; }
             .sme-btn--chiudi { border-color: rgba(231,76,60,0.7); }
             .sme-btn--attivo { border-color: #f7d774; box-shadow: 0 0 0 1px #f7d774 inset; }
+            .sme-btn--piccolo { padding: 3px 9px; font-size: 0.78rem; }
             .sme-btn--accendi { position: fixed; right: 14px; bottom: 14px; z-index: 9998;
                 background: rgba(93,45,10,0.95); border-color: rgba(247,215,116,0.7); }
             .sme-node { outline: 2px dashed #5dade2 !important; outline-offset: 2px; cursor: grab; }
@@ -468,15 +460,19 @@
                 font-variant-numeric: tabular-nums; pointer-events: none; }
             .sme-overlay { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center;
                 justify-content: center; background: rgba(4,5,8,0.75); padding: 16px; }
-            .sme-pannello { width: 100%; max-width: 440px; max-height: 88vh; overflow: auto;
+            .sme-pannello { width: 100%; max-width: 620px; max-height: 90vh; overflow: auto;
                 background: #1c1620; border: 2px solid rgba(247,215,116,0.45); border-radius: 16px;
                 padding: 20px; color: #e8e2d0; font: 14px/1.4 system-ui, sans-serif; }
             .sme-pannello h3 { margin: 0 0 12px; color: #f7d774; font-size: 1.05rem; }
+            .sme-pannello h4 { margin: 18px 0 8px; color: #f7d774; font-size: 0.82rem;
+                text-transform: uppercase; letter-spacing: 0.08em; }
             .sme-campo { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
             .sme-campo label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.75; }
-            .sme-campo input, .sme-campo select, .sme-campo textarea {
+            .sme-campo input, .sme-campo select, .sme-campo textarea, .sme-battuta select,
+            .sme-battuta input, .sme-battuta textarea, .sme-cerca {
                 background: rgba(255,255,255,0.08); border: 1px solid rgba(247,215,116,0.3); border-radius: 8px;
                 padding: 7px 9px; color: #fff; font: inherit; }
+            .sme-campo select option, .sme-battuta select option { background: #1c1620; }
             .sme-campo textarea { min-height: 70px; resize: vertical; }
             .sme-riga2 { display: flex; gap: 10px; }
             .sme-riga2 .sme-campo { flex: 1; }
@@ -487,6 +483,40 @@
             textarea.sme-export { width: 100%; min-height: 220px; font: 12px/1.4 'Consolas', monospace;
                 background: rgba(0,0,0,0.4); color: #b8f7c0; border: 1px solid rgba(247,215,116,0.3);
                 border-radius: 8px; padding: 10px; }
+
+            /* Scelta del personaggio: una griglia di ritratti con ricerca. */
+            .sme-scelta-pg { display: flex; align-items: center; gap: 10px; }
+            .sme-ritratto { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; flex: 0 0 auto;
+                border: 2px solid rgba(247,215,116,0.55); background: rgba(255,255,255,0.06); }
+            .sme-ritratto--vuoto { display: grid; place-items: center; font-size: 1.2rem; }
+            .sme-griglia-pg { margin-top: 8px; display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
+                gap: 8px; max-height: 260px; overflow: auto; padding: 4px; }
+            .sme-pg { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 4px;
+                border-radius: 10px; border: 1px solid transparent; background: rgba(255,255,255,0.04);
+                color: #e8e2d0; font: 600 0.7rem/1.2 system-ui, sans-serif; cursor: pointer; text-align: center; }
+            .sme-pg img { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; }
+            .sme-pg:hover { border-color: rgba(247,215,116,0.5); }
+            .sme-pg[aria-pressed="true"] { border-color: #f7d774; background: rgba(247,215,116,0.14); }
+
+            /* Scelta della musica, con anteprima. */
+            .sme-musiche { display: flex; flex-direction: column; gap: 4px; max-height: 240px; overflow: auto;
+                padding: 4px; border: 1px solid rgba(247,215,116,0.2); border-radius: 10px; }
+            .sme-musica { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 8px; }
+            .sme-musica:hover { background: rgba(255,255,255,0.05); }
+            .sme-musica input { accent-color: #f7d774; }
+            .sme-musica label { flex: 1; cursor: pointer; font-size: 0.84rem; }
+            .sme-musica--attiva { background: rgba(247,215,116,0.12); }
+
+            /* Dialogo a battute. */
+            .sme-battute { display: flex; flex-direction: column; gap: 8px; }
+            .sme-battuta { display: grid; grid-template-columns: 40px 1fr auto; gap: 8px; align-items: start;
+                padding: 8px; border-radius: 10px; background: rgba(255,255,255,0.04);
+                border: 1px solid rgba(247,215,116,0.15); }
+            .sme-battuta .sme-ritratto { width: 36px; height: 36px; }
+            .sme-battuta-corpo { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+            .sme-battuta-corpo textarea { min-height: 48px; resize: vertical; }
+            .sme-battuta-comandi { display: flex; flex-direction: column; gap: 4px; }
+            .sme-battuta-comandi .sme-btn { padding: 2px 8px; }
         `;
         document.head.appendChild(s);
     }
@@ -496,6 +526,7 @@
         }[c]));
     }
     function chiudiOverlay() {
+        fermaAnteprima();
         const o = document.getElementById('smeOverlay');
         if (o) o.remove();
     }
@@ -514,9 +545,8 @@
     /**
      * Elenco delle Arene/Colonne Sonore (js/data/arena-options.js), che
      * storia.html non carica normalmente (serve solo a QUESTO editor).
-     * Caricato una volta sola, lazy, e usato per riempire i <datalist>
-     * qui sotto quando arriva — il pannello si apre comunque subito, i
-     * suggerimenti compaiono un istante dopo (file locale, latenza nulla).
+     * Caricato una volta sola, lazy: il pannello si apre subito, gli
+     * elenchi si riempiono un istante dopo (file locale, latenza nulla).
      */
     let arenaOptionsPromise = null;
     function conArenaOptions(poi) {
@@ -532,171 +562,403 @@
         }
         arenaOptionsPromise.then(poi);
     }
-    /** Riempie un <datalist> già presente in pagina, se non se n'è già chiuso il pannello nel frattempo. */
-    function riempiDatalist(id, voci) {
-        const el = document.getElementById(id);
-        if (!el) return; // il pannello è già stato chiuso prima che l'elenco arrivasse
-        el.innerHTML = voci.map((v) => `<option value="${escapeHtml(v.value)}">${escapeHtml(v.nome)}</option>`).join('');
+
+    // ================================================================
+    // Componenti del pannello
+    // ================================================================
+    function ritrattoDi(id) {
+        const p = personaggi().find((x) => x.id === id);
+        return p && p.image ? p.image : '';
     }
-    /**
-     * Il campo (arena) e — solo per un duello — la musica: un <input> con
-     * suggerimenti (come il personaggio qui sotto), non una <select>,
-     * perché resta possibile scrivere un percorso che non sta ancora nel
-     * catalogo (una sottocartella come "ww1/", o un'arena aggiunta da
-     * poco che arena-options.js non ha ancora finito di caricare). Vuoto
-     * = eredita quello della campagna (campoDuello/musicaDuello),
-     * esattamente come legge già js/story/story-progress.js#urlDuello.
-     * Il campo vale sia per un duello (l'arena) sia per una scena (lo
-     * sfondo dell'intermezzo, vedi mostraScena in storia.html) — la
-     * musica ha senso solo per un duello vero.
-     */
-    function campoESeDuelloMusica(t, kind) {
-        conArenaOptions((AO) => {
-            if (!AO) return;
-            riempiDatalist('smeListaCampi', AO.FIELDS.map((f) => ({ value: 'images/fields/mobile/' + f.file, nome: f.nome })));
-            if (kind === 'duel') riempiDatalist('smeListaMusiche', AO.TRACKS.map((m) => ({ value: m.file, nome: m.nome })));
-        });
-        return `
-            <div class="sme-campo">
-                <label>Campo/Arena (field)</label>
-                <input list="smeListaCampi" id="smeField" value="${escapeHtml(t.field || '')}" placeholder="vuoto = quello della campagna">
-                <datalist id="smeListaCampi"></datalist>
-            </div>` + (kind !== 'duel' ? '' : `
-            <div class="sme-campo">
-                <label>Musica del duello (music)</label>
-                <input list="smeListaMusiche" id="smeMusic" value="${escapeHtml(t.music || '')}" placeholder="vuoto = quella della campagna">
-                <datalist id="smeListaMusiche"></datalist>
-            </div>`);
+    function ritrattoHtml(src, alt) {
+        return src
+            ? `<img class="sme-ritratto" src="${escapeHtml(src)}" alt="${escapeHtml(alt || '')}" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'sme-ritratto sme-ritratto--vuoto',textContent:'?'}))">`
+            : '<span class="sme-ritratto sme-ritratto--vuoto">—</span>';
     }
 
-    /** Campi comuni a QUALUNQUE tipo di tappa, più quelli specifici del kind. */
+    /**
+     * Scelta di un personaggio del roster da una griglia di ritratti, con
+     * ricerca per nome. `prefisso` distingue due scelte nello stesso
+     * pannello; il valore scelto sta in un <input type="hidden"> con id
+     * `${prefisso}Id`, così chi legge il pannello non deve sapere com'è
+     * fatta la griglia.
+     */
+    function sceltaPersonaggioHtml(prefisso, valore, etichetta, consentiNessuno) {
+        const p = personaggi().find((x) => x.id === valore);
+        return `
+            <div class="sme-campo">
+                <label>${escapeHtml(etichetta)}</label>
+                <div class="sme-scelta-pg">
+                    <span id="${prefisso}Ritratto">${ritrattoHtml(p && p.image, p && p.name)}</span>
+                    <strong id="${prefisso}Nome">${escapeHtml(p ? p.name : (valore || 'Nessuno'))}</strong>
+                    <input type="hidden" id="${prefisso}Id" value="${escapeHtml(valore || '')}">
+                    <span class="sme-spazio"></span>
+                    ${consentiNessuno ? `<button type="button" class="sme-btn sme-btn--piccolo" data-sme-nessuno="${prefisso}">Nessuno</button>` : ''}
+                    <button type="button" class="sme-btn sme-btn--piccolo" data-sme-apri-griglia="${prefisso}">Scegli…</button>
+                </div>
+                <div id="${prefisso}Griglia" hidden>
+                    <input class="sme-cerca" id="${prefisso}Cerca" placeholder="Cerca un personaggio…" style="margin-top:8px;width:100%">
+                    <div class="sme-griglia-pg" id="${prefisso}Elenco"></div>
+                </div>
+            </div>`;
+    }
+    function agganciaSceltaPersonaggio(prefisso, onCambio) {
+        const griglia = document.getElementById(prefisso + 'Griglia');
+        if (!griglia) return;
+        const elenco = document.getElementById(prefisso + 'Elenco');
+        const cerca = document.getElementById(prefisso + 'Cerca');
+        const valore = document.getElementById(prefisso + 'Id');
+        const imposta = (id) => {
+            valore.value = id || '';
+            const p = personaggi().find((x) => x.id === id);
+            document.getElementById(prefisso + 'Ritratto').innerHTML = ritrattoHtml(p && p.image, p && p.name);
+            document.getElementById(prefisso + 'Nome').textContent = p ? p.name : 'Nessuno';
+            if (onCambio) onCambio(id, p);
+        };
+        const disegna = () => {
+            const q = cerca.value.trim().toLowerCase();
+            elenco.innerHTML = personaggi()
+                .filter((p) => !q || (p.name || '').toLowerCase().includes(q) || (p.id || '').toLowerCase().includes(q))
+                .map((p) => `<button type="button" class="sme-pg" data-id="${escapeHtml(p.id)}" aria-pressed="${p.id === valore.value}">
+                    ${p.image ? `<img src="${escapeHtml(p.image)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">` : '<span class="sme-ritratto sme-ritratto--vuoto">?</span>'}
+                    <span>${escapeHtml(p.name)}</span></button>`).join('');
+        };
+        document.querySelector(`[data-sme-apri-griglia="${prefisso}"]`).addEventListener('click', () => {
+            griglia.hidden = !griglia.hidden;
+            if (!griglia.hidden) { disegna(); cerca.focus(); }
+        });
+        const nessuno = document.querySelector(`[data-sme-nessuno="${prefisso}"]`);
+        if (nessuno) nessuno.addEventListener('click', () => { imposta(''); griglia.hidden = true; });
+        cerca.addEventListener('input', disegna);
+        elenco.addEventListener('click', (e) => {
+            const b = e.target.closest('.sme-pg');
+            if (!b) return;
+            imposta(b.getAttribute('data-id'));
+            griglia.hidden = true;
+        });
+    }
+
+    // --- Musica con anteprima ------------------------------------------
+    let anteprima = null;
+    let musicaDellaPaginaInPausa = false;
+    function fermaAnteprima() {
+        if (anteprima) { anteprima.pause(); anteprima = null; }
+        document.querySelectorAll('[data-sme-ascolta]').forEach((b) => { b.textContent = '▶'; });
+        // La colonna sonora della pagina riparte da dove era.
+        if (musicaDellaPaginaInPausa && window.DuelMusic && DuelMusic.audio) {
+            DuelMusic.audio.play().catch(() => {});
+        }
+        musicaDellaPaginaInPausa = false;
+    }
+    function ascolta(file, bottone) {
+        const stessa = anteprima && anteprima.__file === file;
+        fermaAnteprima();
+        if (stessa) return; // secondo clic sulla stessa traccia: stop
+        if (window.DuelMusic && DuelMusic.audio && !DuelMusic.audio.paused) {
+            DuelMusic.audio.pause();
+            musicaDellaPaginaInPausa = true;
+        }
+        anteprima = new Audio('audio/soundtracks/' + file);
+        anteprima.__file = file;
+        anteprima.volume = 0.7;
+        anteprima.play().catch(() => {});
+        anteprima.addEventListener('ended', fermaAnteprima);
+        if (bottone) bottone.textContent = '■';
+    }
+
+    /**
+     * Le colonne sonore come elenco di scelte, ognuna con ▶ per ascoltarla.
+     * La prima voce è "quella della campagna": il campo `music` si toglie e
+     * il duello eredita `musicaDuello` (vedi StoryProgress.urlDuello).
+     */
+    function sceltaMusicaHtml(valore) {
+        return `
+            <div class="sme-campo">
+                <label>Musica del duello</label>
+                <div class="sme-musiche" id="smeMusiche"><span class="sme-nota">Caricamento elenco…</span></div>
+            </div>`;
+    }
+    function agganciaSceltaMusica(valore) {
+        conArenaOptions((AO) => {
+            const box = document.getElementById('smeMusiche');
+            if (!box) return;
+            const tracce = (AO && AO.TRACKS) || [];
+            // Una traccia scritta nel catalogo ma assente dall'elenco resta
+            // scelta e visibile, invece di sparire salvando.
+            const voci = [{ file: '', nome: '— Quella della campagna —' }].concat(tracce);
+            if (valore && !tracce.some((t) => t.file === valore)) voci.push({ file: valore, nome: valore });
+            box.innerHTML = voci.map((t, i) => `
+                <div class="sme-musica${t.file === (valore || '') ? ' sme-musica--attiva' : ''}">
+                    <input type="radio" name="smeMusica" id="smeMusica${i}" value="${escapeHtml(t.file)}" ${t.file === (valore || '') ? 'checked' : ''}>
+                    <label for="smeMusica${i}">${escapeHtml(t.nome || t.file)}</label>
+                    ${t.file ? `<button type="button" class="sme-btn sme-btn--piccolo" data-sme-ascolta="${escapeHtml(t.file)}" aria-label="Ascolta ${escapeHtml(t.nome || t.file)}">▶</button>` : ''}
+                </div>`).join('');
+            box.addEventListener('click', (e) => {
+                const b = e.target.closest('[data-sme-ascolta]');
+                if (b) ascolta(b.getAttribute('data-sme-ascolta'), b);
+            });
+            box.addEventListener('change', () => {
+                box.querySelectorAll('.sme-musica').forEach((r) => r.classList.toggle('sme-musica--attiva', r.querySelector('input').checked));
+            });
+            const attiva = box.querySelector('.sme-musica--attiva');
+            if (attiva) attiva.scrollIntoView({ block: 'nearest' });
+        });
+    }
+    function leggiMusica() {
+        const scelta = document.querySelector('input[name="smeMusica"]:checked');
+        return scelta ? scelta.value : null; // null = elenco non ancora arrivato: non toccare
+    }
+
+    // --- Campo (arena) ---------------------------------------------------
+    function sceltaCampoHtml(valore) {
+        return `
+            <div class="sme-campo">
+                <label>Campo/Arena</label>
+                <select id="smeField"><option value="">— Quello della campagna —</option>
+                    ${valore ? `<option value="${escapeHtml(valore)}" selected>${escapeHtml(valore)}</option>` : ''}
+                </select>
+            </div>`;
+    }
+    function agganciaSceltaCampo(valore) {
+        conArenaOptions((AO) => {
+            const sel = document.getElementById('smeField');
+            if (!sel || !AO) return;
+            const voci = AO.FIELDS.map((f) => ({ value: 'images/fields/mobile/' + f.file, nome: f.nome }));
+            sel.innerHTML = '<option value="">— Quello della campagna —</option>'
+                + voci.map((v) => `<option value="${escapeHtml(v.value)}" ${v.value === valore ? 'selected' : ''}>${escapeHtml(v.nome)}</option>`).join('')
+                + (valore && !voci.some((v) => v.value === valore) ? `<option value="${escapeHtml(valore)}" selected>${escapeHtml(valore)}</option>` : '');
+        });
+    }
+
+    // --- Dialogo a battute -----------------------------------------------
+    /**
+     * Le battute di una scena (`testo`) o del dialogo prima di un duello
+     * (`dialogo`), nella forma del catalogo: una STRINGA (parla la voce del
+     * nodo — solo nelle scene) oppure `{ chi: <id del roster> | io: true |
+     * nome: 'testo libero', testo }`. Qui diventano righe con un "chi
+     * parla" esplicito, e tornano nella stessa forma salvando.
+     */
+    function battuteDaDati(righe) {
+        return (righe || []).map((r) => {
+            if (typeof r === 'string') return { voce: 'nodo', testo: r };
+            if (r && r.io) return { voce: 'io', testo: r.testo || '' };
+            if (r && r.chi) return { voce: 'pg', chi: r.chi, testo: r.testo || '' };
+            return { voce: 'nome', nome: (r && r.nome) || '', testo: (r && r.testo) || '' };
+        });
+    }
+    function datiDaBattute(battute) {
+        return battute.filter((b) => b.testo.trim()).map((b) => {
+            const testo = b.testo.trim();
+            if (b.voce === 'nodo') return testo;
+            if (b.voce === 'io') return { io: true, testo: testo };
+            if (b.voce === 'pg') return { chi: b.chi, testo: testo };
+            return { nome: b.nome.trim() || '…', testo: testo };
+        });
+    }
+    function editorBattuteHtml(titolo, nota) {
+        return `
+            <h4>${escapeHtml(titolo)}</h4>
+            ${nota ? `<p class="sme-nota" style="margin-top:0">${escapeHtml(nota)}</p>` : ''}
+            <div class="sme-battute" id="smeBattute"></div>
+            <div class="sme-azioni" style="justify-content:flex-start;margin-top:8px">
+                <button type="button" class="sme-btn sme-btn--piccolo" id="smeAggiungiBattuta">➕ Aggiungi battuta</button>
+            </div>`;
+    }
+    /**
+     * Monta l'editor delle battute e torna una funzione che legge i dati.
+     * `conVoceNodo`: le scene ammettono la riga semplice (la voce del
+     * nodo, cioè `chi` della scena); il dialogo di un duello no.
+     */
+    function agganciaEditorBattute(righe, conVoceNodo) {
+        const box = document.getElementById('smeBattute');
+        let battute = battuteDaDati(righe);
+        const opzioniVoce = (b) => {
+            const pg = personaggi().map((p) => `<option value="pg:${escapeHtml(p.id)}" ${b.voce === 'pg' && b.chi === p.id ? 'selected' : ''}>${escapeHtml(p.name)}</option>`).join('');
+            return (conVoceNodo ? `<option value="nodo" ${b.voce === 'nodo' ? 'selected' : ''}>Voce del nodo (chi parla, sopra)</option>` : '')
+                + `<option value="io" ${b.voce === 'io' ? 'selected' : ''}>Protagonista (io)</option>`
+                + `<option value="nome" ${b.voce === 'nome' ? 'selected' : ''}>Un altro nome…</option>`
+                + `<optgroup label="Personaggi">${pg}</optgroup>`;
+        };
+        const disegna = () => {
+            box.innerHTML = battute.length ? battute.map((b, i) => `
+                <div class="sme-battuta" data-i="${i}">
+                    ${b.voce === 'pg' ? ritrattoHtml(ritrattoDi(b.chi), '') : `<span class="sme-ritratto sme-ritratto--vuoto">${b.voce === 'io' ? '🧑' : b.voce === 'nodo' ? '🗨️' : '✎'}</span>`}
+                    <div class="sme-battuta-corpo">
+                        <select data-campo="voce" aria-label="Chi parla">${opzioniVoce(b)}</select>
+                        ${b.voce === 'nome' ? `<input data-campo="nome" value="${escapeHtml(b.nome || '')}" placeholder="Nome di chi parla (es. Il Bollettino)">` : ''}
+                        <textarea data-campo="testo" placeholder="Cosa dice…">${escapeHtml(b.testo)}</textarea>
+                    </div>
+                    <div class="sme-battuta-comandi">
+                        <button type="button" class="sme-btn" data-azione="su" aria-label="Sposta su" ${i === 0 ? 'disabled' : ''}>↑</button>
+                        <button type="button" class="sme-btn" data-azione="giu" aria-label="Sposta giù" ${i === battute.length - 1 ? 'disabled' : ''}>↓</button>
+                        <button type="button" class="sme-btn" data-azione="via" aria-label="Elimina battuta">🗑</button>
+                    </div>
+                </div>`).join('') : '<p class="sme-nota" style="margin:0">Nessuna battuta.</p>';
+        };
+        box.addEventListener('input', (e) => {
+            const riga = e.target.closest('.sme-battuta');
+            if (!riga) return;
+            const b = battute[Number(riga.getAttribute('data-i'))];
+            const campo = e.target.getAttribute('data-campo');
+            if (campo === 'testo') b.testo = e.target.value;
+            if (campo === 'nome') b.nome = e.target.value;
+        });
+        box.addEventListener('change', (e) => {
+            if (e.target.getAttribute('data-campo') !== 'voce') return;
+            const b = battute[Number(e.target.closest('.sme-battuta').getAttribute('data-i'))];
+            const v = e.target.value;
+            if (v.indexOf('pg:') === 0) { b.voce = 'pg'; b.chi = v.slice(3); } else { b.voce = v; }
+            disegna();
+        });
+        box.addEventListener('click', (e) => {
+            const b = e.target.closest('[data-azione]');
+            if (!b) return;
+            const i = Number(b.closest('.sme-battuta').getAttribute('data-i'));
+            const azione = b.getAttribute('data-azione');
+            if (azione === 'via') battute.splice(i, 1);
+            if (azione === 'su' && i > 0) battute.splice(i - 1, 0, battute.splice(i, 1)[0]);
+            if (azione === 'giu' && i < battute.length - 1) battute.splice(i + 1, 0, battute.splice(i, 1)[0]);
+            disegna();
+        });
+        document.getElementById('smeAggiungiBattuta').addEventListener('click', () => {
+            const ultima = battute[battute.length - 1];
+            battute.push(ultima ? Object.assign({}, ultima, { testo: '' }) : { voce: conVoceNodo ? 'nodo' : 'io', testo: '' });
+            disegna();
+            const aree = box.querySelectorAll('textarea');
+            if (aree.length) aree[aree.length - 1].focus();
+        });
+        disegna();
+        return () => datiDaBattute(battute);
+    }
+
+    // ================================================================
+    // Pannello: campi per tipo di nodo
+    // ================================================================
+    /** Il corpo del pannello per il tipo di nodo: HTML + una funzione che aggancia e torna il lettore. */
     function campiPerKind(kind, tappa) {
         const t = tappa || {};
         if (kind === 'duel') {
-            const opzioniPersonaggi = (typeof characterDatabase !== 'undefined' ? characterDatabase : [])
-                .map((p) => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join('');
-            return `
-                <div class="sme-campo">
-                    <label>Personaggio (characterId)</label>
-                    <input list="smeListaPersonaggi" id="smeCharacterId" value="${escapeHtml(t.characterId || '')}">
-                    <datalist id="smeListaPersonaggi">${opzioniPersonaggi}</datalist>
-                </div>
-                <div class="sme-campo">
-                    <label>Difficoltà</label>
-                    <select id="smeDifficulty">
-                        <option value="Medio" ${t.difficulty === 'Medio' ? 'selected' : ''}>Medio</option>
-                        <option value="Difficile" ${t.difficulty === 'Difficile' ? 'selected' : ''}>Difficile</option>
-                    </select>
-                </div>
-                ${campoESeDuelloMusica(t, kind)}`;
+            return {
+                html: `
+                    ${sceltaPersonaggioHtml('smePg', t.characterId || '', 'Avversario')}
+                    <div class="sme-campo">
+                        <label>Difficoltà (solo per le campagne senza livelli)</label>
+                        <select id="smeDifficulty">
+                            <option value="">— Non impostata —</option>
+                            ${['Facile', 'Medio', 'Difficile'].map((d) => `<option value="${d}" ${t.difficulty === d ? 'selected' : ''}>${d}</option>`).join('')}
+                        </select>
+                    </div>
+                    ${sceltaCampoHtml(t.field || '')}
+                    ${sceltaMusicaHtml(t.music || '')}
+                    ${editorBattuteHtml('Dialogo prima del duello', 'Lo scambio di battute che precede il duello. Vuoto = si va dritti al duello.')}`,
+                aggancia: () => {
+                    agganciaSceltaPersonaggio('smePg');
+                    agganciaSceltaCampo(t.field || '');
+                    agganciaSceltaMusica(t.music || '');
+                    const leggiBattute = agganciaEditorBattute(t.dialogo, false);
+                    return (dest) => {
+                        imposta(dest, 'characterId', document.getElementById('smePgId').value);
+                        imposta(dest, 'difficulty', document.getElementById('smeDifficulty').value);
+                        imposta(dest, 'field', document.getElementById('smeField').value);
+                        const musica = leggiMusica();
+                        if (musica !== null) imposta(dest, 'music', musica);
+                        const dialogo = leggiBattute();
+                        if (dialogo.length) dest.dialogo = dialogo; else delete dest.dialogo;
+                    };
+                }
+            };
         }
         if (kind === 'scene') {
-            return `
-                <div class="sme-riga2">
-                    <div class="sme-campo"><label>Chi parla</label><input id="smeChi" value="${escapeHtml(t.chi || '')}"></div>
-                    <div class="sme-campo"><label>chiId (roster, opzionale)</label><input id="smeChiId" value="${escapeHtml(t.chiId || '')}"></div>
-                </div>
-                <div class="sme-campo">
-                    <label><input type="checkbox" id="smeIo" ${t.io ? 'checked' : ''}> È il protagonista (io: true)</label>
-                </div>
-                <div class="sme-campo">
-                    <label>Battute (una per riga)</label>
-                    ${(t.testo || []).some((r) => r && typeof r === 'object')
-                        ? '<p class="sme-nota">Questa scena è un dialogo a più voci (righe con <code>chi</code>/<code>io</code>): si modifica nel catalogo, qui non viene toccata.</p><textarea id="smeTesto" disabled></textarea>'
-                        : `<textarea id="smeTesto">${escapeHtml((t.testo || []).join('\n'))}</textarea>`}
-                </div>
-                ${campoESeDuelloMusica(t, kind)}`;
+            return {
+                html: `
+                    ${sceltaPersonaggioHtml('smeVoce', t.chiId || '', 'Voce del nodo (personaggio del roster)', true)}
+                    <div class="sme-riga2">
+                        <div class="sme-campo"><label>Nome mostrato</label><input id="smeChi" value="${escapeHtml(t.chi || '')}" placeholder="es. Il Bollettino"></div>
+                        <div class="sme-campo" style="justify-content:flex-end">
+                            <label><input type="checkbox" id="smeIo" ${t.io ? 'checked' : ''}> La voce è il protagonista</label>
+                        </div>
+                    </div>
+                    ${sceltaCampoHtml(t.field || '')}
+                    ${editorBattuteHtml('Battute', 'Ogni battuta può avere la sua voce: la voce del nodo, il protagonista, un personaggio o un nome libero.')}`,
+                aggancia: () => {
+                    agganciaSceltaPersonaggio('smeVoce', (id, p) => {
+                        const nome = document.getElementById('smeChi');
+                        if (p && !nome.value.trim()) nome.value = p.name;
+                    });
+                    agganciaSceltaCampo(t.field || '');
+                    const leggiBattute = agganciaEditorBattute(t.testo, true);
+                    return (dest) => {
+                        imposta(dest, 'chi', document.getElementById('smeChi').value);
+                        imposta(dest, 'chiId', document.getElementById('smeVoceId').value);
+                        if (document.getElementById('smeIo').checked) dest.io = true; else delete dest.io;
+                        imposta(dest, 'field', document.getElementById('smeField').value);
+                        const battute = leggiBattute();
+                        if (battute.length || dest.testo) dest.testo = battute;
+                    };
+                }
+            };
         }
         if (kind === 'area' || kind === 'torneo') {
-            return `
-                <div class="sme-campo"><label>Nome (titolo della sua mappa)</label><input id="smeNome" value="${escapeHtml(t.nome || '')}"></div>
-                <div class="sme-campo"><label>Testo introduttivo</label><textarea id="smeTestoArea">${escapeHtml(t.testo || '')}</textarea></div>
-                <p class="sme-nota">Le tappe DENTRO quest'area si modificano aprendo la sua mappa (tocca il nodo qui sotto una volta salvato, mentre l'editor resta acceso).</p>`;
+            return {
+                html: `
+                    <div class="sme-campo"><label>Nome (titolo della sua mappa)</label><input id="smeNome" value="${escapeHtml(t.nome || '')}"></div>
+                    <div class="sme-campo"><label>Testo introduttivo</label><textarea id="smeTestoArea">${escapeHtml(t.testo || '')}</textarea></div>
+                    <p class="sme-nota">Le tappe DENTRO quest'area si modificano aprendo la sua mappa.</p>`,
+                aggancia: () => (dest) => {
+                    imposta(dest, 'nome', document.getElementById('smeNome').value);
+                    imposta(dest, 'testo', document.getElementById('smeTestoArea').value);
+                }
+            };
         }
-        return '';
+        return { html: '', aggancia: () => () => {} };
     }
-
-    /** Vuoto = eredita dalla campagna: non scrivere una stringa vuota, TOGLIERE il campo — vedi campoESeDuelloMusica. */
-    function leggiCampoEMusica(tappa, kind) {
-        const field = document.getElementById('smeField').value.trim();
-        if (field) tappa.field = field; else delete tappa.field;
-        if (kind === 'duel') {
-            const music = document.getElementById('smeMusic').value.trim();
-            if (music) tappa.music = music; else delete tappa.music;
-        }
-    }
-
-    function leggiCampiPerKind(kind, tappa) {
-        if (kind === 'duel') {
-            tappa.characterId = document.getElementById('smeCharacterId').value.trim();
-            tappa.difficulty = document.getElementById('smeDifficulty').value;
-            leggiCampoEMusica(tappa, kind);
-        } else if (kind === 'scene') {
-            tappa.chi = document.getElementById('smeChi').value.trim();
-            const chiId = document.getElementById('smeChiId').value.trim();
-            if (chiId) tappa.chiId = chiId; else delete tappa.chiId;
-            const io = document.getElementById('smeIo').checked;
-            if (io) tappa.io = true; else delete tappa.io;
-            // Un dialogo a più voci (righe-oggetto) non si riscrive da qui.
-            if (!document.getElementById('smeTesto').disabled) {
-                tappa.testo = document.getElementById('smeTesto').value.split('\n').map((r) => r.trim()).filter((r) => r);
-            }
-            leggiCampoEMusica(tappa, kind);
-        } else if (kind === 'area' || kind === 'torneo') {
-            tappa.nome = document.getElementById('smeNome').value.trim();
-            tappa.testo = document.getElementById('smeTestoArea').value.trim();
-        }
+    /** Vuoto = la proprietà si TOGLIE (eredita dalla campagna), mai una stringa vuota. */
+    function imposta(dest, chiave, valore) {
+        const v = (valore || '').trim();
+        if (v) dest[chiave] = v; else delete dest[chiave];
     }
 
     /** Modifica di un nodo ESISTENTE (id e kind non cambiano: cancella e ricrea, per quei due). */
     function apriPannello(ctx, voce) {
         assicuraStile();
         const t = voce.tappa;
+        const corpo = campiPerKind(t.kind, t);
         apriOverlay(`
             <h3>Modifica nodo</h3>
             <p class="sme-nota">${escapeHtml(t.kind)} · id <code>${escapeHtml(t.id)}</code> (non modificabile qui: cancella e ricrea per cambiarlo)</p>
-            <div class="sme-campo"><label>Etichetta (label)</label><input id="smeLabel" value="${escapeHtml(t.label || '')}"></div>
+            <div class="sme-campo"><label>Etichetta sulla mappa</label><input id="smeLabel" value="${escapeHtml(t.label || '')}"></div>
             <div class="sme-riga2">
                 <div class="sme-campo"><label>Icona (emoji)</label><input id="smeIcona" value="${escapeHtml(t.icona || '')}"></div>
                 <div class="sme-campo"><label>x</label><input id="smeX" type="number" value="${t.x}"></div>
                 <div class="sme-campo"><label>y</label><input id="smeY" type="number" value="${t.y}"></div>
             </div>
-            ${campiPerKind(t.kind, t)}
+            ${corpo.html}
             <div class="sme-azioni">
                 <button type="button" class="sme-btn sme-btn--elimina" id="smeElimina">🗑️ Elimina</button>
                 <button type="button" class="sme-btn" id="smeAnnulla">Annulla</button>
-                <button type="button" class="sme-btn sme-btn--salva" id="smeSalva">💾 Salva</button>
                 ${(t.kind === 'area' || t.kind === 'torneo') ? '<button type="button" class="sme-btn" id="smeApriMappa">🔎 Apri la sua mappa</button>' : ''}
+                <button type="button" class="sme-btn sme-btn--salva" id="smeSalva">💾 Salva</button>
             </div>
         `);
+        const leggi = corpo.aggancia();
         document.getElementById('smeAnnulla').addEventListener('click', chiudiOverlay);
         document.getElementById('smeElimina').addEventListener('click', () => {
-            if (!confirm(`Eliminare "${t.label || t.id}"? Solo in questa scheda finché non riesporti.`)) return;
+            if (!confirm(`Eliminare "${t.label || t.id}"?\n\nAttenzione: l'avanzamento delle storie si salva per posizione. Togliere una tappa prima di dove è arrivato un giocatore gli sposta l'avanzamento.`)) return;
             const i = voce.arrayGrezzo.indexOf(t);
             if (i !== -1) voce.arrayGrezzo.splice(i, 1);
             chiudiOverlay();
             ridisegna();
+            salvaSeCollegato();
         });
         document.getElementById('smeSalva').addEventListener('click', () => {
-            t.label = document.getElementById('smeLabel').value.trim();
-            t.icona = document.getElementById('smeIcona').value.trim();
+            imposta(t, 'label', document.getElementById('smeLabel').value);
+            imposta(t, 'icona', document.getElementById('smeIcona').value);
             t.x = Number(document.getElementById('smeX').value) || 0;
             t.y = Number(document.getElementById('smeY').value) || 0;
-            leggiCampiPerKind(t.kind, t);
+            leggi(t);
             chiudiOverlay();
             ridisegna();
-            // Sul file vero, SOLO field/music — vedi il commento in cima
-            // al file. Asincrono e dopo il ridisegno: l'esito arriva un
-            // istante più tardi, la modifica in memoria è già visibile.
-            if ((t.kind === 'duel' || t.kind === 'scene') && fileCollegato) {
-                const valori = { field: t.field !== undefined ? t.field : null };
-                if (t.kind === 'duel') valori.music = t.music !== undefined ? t.music : null;
-                salvaCampoEMusicaSulFile(t.id, valori).then((esito) => {
-                    aggiornaSuggerimento(esito.ok
-                        ? `💾 Campo/musica salvati anche su ${fileCollegato.name}.`
-                        : `⚠️ Non salvato su file: ${esito.motivo}`);
-                });
-            }
+            salvaSeCollegato();
         });
         const apriMappaBtn = document.getElementById('smeApriMappa');
         if (apriMappaBtn) {
@@ -714,16 +976,20 @@
                 <select id="smeCapitolo">${ctx.capitoli.map((c) => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.nome)}</option>`).join('')}</select></div>`
             : '';
         const opzioniKind = ctx.livello === 'campagna'
-            ? `<option value="area">area (una mappa dentro la mappa)</option><option value="scene">scene</option><option value="duel">duel</option>`
-            : `<option value="duel">duel</option><option value="scene">scene</option>`;
+            ? `<option value="area">area (una mappa dentro la mappa)</option><option value="scene">scena</option><option value="duel">duello</option>`
+            : `<option value="duel">duello</option><option value="scene">scena</option>`;
         apriOverlay(`
             <h3>Nuovo nodo</h3>
-            <p class="sme-nota">Posizione: x:${x} y:${y}</p>
-            <div class="sme-campo"><label>id (univoco, es. anime-99-prova)</label><input id="smeNuovoId"></div>
-            <div class="sme-campo"><label>Tipo (kind)</label><select id="smeNuovoKind">${opzioniKind}</select></div>
+            <p class="sme-nota">Posizione: x:${x} y:${y}. L'avanzamento delle storie si salva per posizione: un nodo nuovo prima di dove è arrivato un giocatore gli sposta l'avanzamento.</p>
+            <div class="sme-riga2">
+                <div class="sme-campo"><label>id (univoco, es. anime-99-prova)</label><input id="smeNuovoId"></div>
+                <div class="sme-campo"><label>Tipo</label><select id="smeNuovoKind">${opzioniKind}</select></div>
+            </div>
             ${opzioniCapitolo}
-            <div class="sme-campo"><label>Etichetta (label)</label><input id="smeNuovoLabel"></div>
-            <div class="sme-campo"><label>Icona (emoji)</label><input id="smeNuovoIcona" value="⭐"></div>
+            <div class="sme-riga2">
+                <div class="sme-campo"><label>Etichetta sulla mappa</label><input id="smeNuovoLabel"></div>
+                <div class="sme-campo"><label>Icona (emoji)</label><input id="smeNuovoIcona" value="⭐"></div>
+            </div>
             <div id="smeNuovoExtra"></div>
             <div class="sme-azioni">
                 <button type="button" class="sme-btn" id="smeAnnullaNuovo">Annulla</button>
@@ -732,7 +998,13 @@
         `);
         const selKind = document.getElementById('smeNuovoKind');
         const extra = document.getElementById('smeNuovoExtra');
-        const aggiornaExtra = () => { extra.innerHTML = campiPerKind(selKind.value, {}); };
+        let leggi = () => {};
+        const aggiornaExtra = () => {
+            fermaAnteprima();
+            const corpo = campiPerKind(selKind.value, {});
+            extra.innerHTML = corpo.html;
+            leggi = corpo.aggancia();
+        };
         selKind.addEventListener('change', aggiornaExtra);
         aggiornaExtra();
 
@@ -750,7 +1022,7 @@
                 label: document.getElementById('smeNuovoLabel').value.trim() || id,
                 x: x, y: y
             };
-            leggiCampiPerKind(kind, nuovaTappa);
+            leggi(nuovaTappa);
             if (kind === 'area' || kind === 'torneo') {
                 nuovaTappa.mappa = { sfondo: [], larghezza: 1400, altezza: 900 };
                 nuovaTappa.tappe = [];
@@ -774,145 +1046,82 @@
             }
             chiudiOverlay();
             ridisegna();
+            salvaSeCollegato();
         });
     }
 
     // ================================================================
-    // Collegamento diretto al file (SOLO field/music — vedi il commento
-    // in cima al file per il perché di questo scope ristretto).
+    // Salvataggio sul file dei ritocchi (js/data/story-ritocchi.js)
     // ================================================================
     /** L'handle del file collegato in QUESTA sessione (mai persistito: si ricollega ad ogni ricarica). */
     let fileCollegato = null;
+    let salvataggioInCoda = null;
 
     /**
-     * Chirurgica: trova la tappa `id` nel TESTO del file (bilanciando le
-     * graffe a partire dal suo `id: '...'`, non un parsing vero: questo
-     * file non ha bisogno di capire il JS, solo di trovare i bordi di UN
-     * oggetto) e tocca SOLO la riga di `field`/`music`, se presente —
-     * mai il resto dell'oggetto, mai una riga con altre proprietà, mai
-     * un commento. `valori` è `{ field?, music? }`: `null` cancella la
-     * proprietà (torna a ereditare da campoDuello/musicaDuello della
-     * campagna — vedi js/story/story-progress.js#urlDuello), qualunque
-     * stringa la scrive o la sostituisce.
-     *
-     * Pura funzione testo-a-testo (nessun file, nessun DOM): così si può
-     * verificare da sola, dandole in pasto il vero contenuto del file —
-     * vedi tests/specs/editor-mappa-scrive-sul-file.spec.js. Esposta
-     * anche su window.StoryMapEditor per quello stesso motivo.
-     */
-    function patchCampoEMusicaNelTesto(testoFile, id, valori) {
-        const marcatore = "id: '" + String(id).replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'";
-        const posId = testoFile.indexOf(marcatore);
-        if (posId === -1) return { ok: false, motivo: `id "${id}" non trovato nel file collegato (è diverso da quello caricato in pagina?)` };
-        const posApertura = testoFile.lastIndexOf('{', posId);
-        if (posApertura === -1) return { ok: false, motivo: 'Parentesi di apertura dell\'oggetto non trovata' };
-        // Bilanciamento delle graffe per trovare quella di CHIUSURA vera
-        // (non la prima che capita, che potrebbe essere di un oggetto
-        // annidato come `protagonista: {...}`) — non serve gestire graffe
-        // dentro stringhe: i dati della Storia sono testo narrativo
-        // semplice, nessun `{`/`}` letterale in un valore.
-        let profondita = 0, posChiusura = -1;
-        for (let i = posApertura; i < testoFile.length; i++) {
-            if (testoFile[i] === '{') profondita++;
-            else if (testoFile[i] === '}') { profondita--; if (profondita === 0) { posChiusura = i; break; } }
-        }
-        if (posChiusura === -1) return { ok: false, motivo: 'Parentesi di chiusura non trovata (file corrotto o oggetto malformato)' };
-
-        let oggetto = testoFile.slice(posApertura, posChiusura + 1);
-        ['field', 'music'].forEach((chiave) => {
-            if (!(chiave in valori)) return;
-            const nuovo = valori[chiave];
-            // L'intera riga: dalla sua indentazione a fine riga (comprese
-            // un'eventuale virgola finale e qualunque cosa segua sulla
-            // stessa riga) — si cancella o rimpiazza per intero.
-            const riga = new RegExp(`\\n[ \\t]*${chiave}:\\s*'(?:[^'\\\\]|\\\\.)*'[^\\n]*`);
-            const trovata = oggetto.match(riga);
-            if (nuovo === null) {
-                if (trovata) oggetto = oggetto.slice(0, trovata.index) + oggetto.slice(trovata.index + trovata[0].length);
-                return;
-            }
-            const valoreStampato = "'" + String(nuovo).replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'";
-            if (trovata) {
-                // Si sostituisce SOLO il valore fra virgolette, lasciando
-                // indentazione/virgola/eventuale coda della riga intatte.
-                const rigaOriginale = trovata[0];
-                const nuovaRiga = rigaOriginale.replace(/'(?:[^'\\]|\\.)*'/, valoreStampato);
-                oggetto = oggetto.slice(0, trovata.index) + nuovaRiga + oggetto.slice(trovata.index + rigaOriginale.length);
-            } else {
-                // Non c'era: si aggiunge una riga nuova subito DOPO la
-                // riga che contiene `id:` (quasi sempre in compagnia di
-                // kind/icona) — mai vicino alla graffa di chiusura, che
-                // può trovarsi in fondo a un array multi-riga
-                // (dialogo/testo) con un'indentazione ben più profonda
-                // della sua. BUG PRESO SCRIVENDO IL TEST: quando la `{`
-                // sta da sola sulla propria riga (come in id 'anime-1-nonno'),
-                // cercare "la prima riga dell'oggetto" trovava solo la
-                // graffa e ci incollava la virgola subito dopo ("{,"),
-                // sintassi non valida — ora si cerca la riga che contiene
-                // DAVVERO `id:`. L'indentazione si copia dalla riga
-                // SUCCESSIVA (una proprietà sorella, sempre presente: ogni
-                // tappa ha almeno `label` dopo `id`), mai dalla riga di
-                // `id` stessa, che a volte condivide la riga con la graffa
-                // di apertura e quindi non avrebbe un'indentazione propria.
-                const posIdInterno = oggetto.indexOf('id:');
-                let finePrimaRiga = oggetto.indexOf('\n', posIdInterno === -1 ? 0 : posIdInterno);
-                if (finePrimaRiga === -1) finePrimaRiga = oggetto.length;
-                let testoConVirgola = oggetto.slice(0, finePrimaRiga);
-                if (!/,\s*$/.test(testoConVirgola)) testoConVirgola += ',';
-                const restoDopo = oggetto.slice(finePrimaRiga);
-                const indentSucc = (restoDopo.slice(1).match(/^[ \t]+/) || ['    '])[0];
-                oggetto = testoConVirgola + `\n${indentSucc}${chiave}: ${valoreStampato},` + restoDopo;
-            }
-        });
-        return { ok: true, testo: testoFile.slice(0, posApertura) + oggetto + testoFile.slice(posChiusura + 1) };
-    }
-    // Esposta per un test automatico che le dà in pasto il vero testo del
-    // file: è pura (testo dentro, testo fuori), quindi verificabile senza
-    // toccare il picker nativo o il disco — vedi il commento sulla
-    // funzione. Non è pensata per essere chiamata da admin.html.
-    window.StoryMapEditor._patchCampoEMusicaNelTesto = patchCampoEMusicaNelTesto;
-
-    /**
-     * "📂 Collega file": chiede una volta il permesso di scrittura su
-     * story-campaigns.js tramite il picker nativo del browser. Fuori da
-     * Chrome/Edge (o senza un vero gesto dell'utente) l'API non esiste:
-     * si avvisa e si resta sul solo "Esporta codice", che funziona ovunque.
+     * "📂 Collega file": chiede una volta il permesso di scrittura sul file
+     * dei ritocchi tramite il picker nativo del browser. Fuori da
+     * Chrome/Edge l'API non esiste: si avvisa e resta "Esporta codice".
+     * Si controlla che il file scelto sia DAVVERO quello dei ritocchi:
+     * scegliere per sbaglio il catalogo e riscriverlo per intero lo
+     * cancellerebbe.
      */
     async function collegaFile() {
         if (!window.showOpenFilePicker) {
-            alert('Questo browser non supporta la scrittura diretta su file (serve Chrome o Edge). Resta disponibile "📋 Esporta codice".');
+            alert('Questo browser non supporta la scrittura diretta su file (serve Chrome o Edge sul computer). Resta disponibile "📋 Esporta codice".');
             return;
         }
         try {
             const [handle] = await window.showOpenFilePicker({
-                types: [{ description: 'story-campaigns.js', accept: { 'text/javascript': ['.js'] } }],
+                types: [{ description: 'story-ritocchi.js', accept: { 'text/javascript': ['.js'] } }],
                 excludeAcceptAllOption: false
             });
+            const testo = await (await handle.getFile()).text();
+            if (!/window\.storyRitocchi\s*=/.test(testo)) {
+                alert(`"${handle.name}" non è il file dei ritocchi. Scegli js/data/story-ritocchi.js.`);
+                return;
+            }
             const permesso = await handle.requestPermission({ mode: 'readwrite' });
             if (permesso !== 'granted') { alert('Permesso di scrittura negato: resta il solo "Esporta codice".'); return; }
             fileCollegato = handle;
             aggiornaStatoCollegamento();
-            aggiornaSuggerimento(`📂 Collegato a "${handle.name}" — salvare un nodo duel/scene scrive anche lì.`);
+            // Ciò che si è già modificato prima di collegare va subito sul file.
+            salvaSeCollegato();
         } catch (e) {
             // L'utente ha annullato il picker: non è un errore da segnalare.
         }
     }
 
-    /** Applica `valori` (vedi patchCampoEMusicaNelTesto) al file collegato, se c'è. Non lancia mai: torna sempre un esito. */
-    async function salvaCampoEMusicaSulFile(id, valori) {
+    /**
+     * Riscrive il file dei ritocchi con le differenze ATTUALI fra catalogo
+     * e memoria. Le richieste ravvicinate (un trascinamento, poi subito un
+     * salva) si accorpano: conta solo l'ultimo stato.
+     */
+    function salvaSeCollegato() {
+        if (!fileCollegato) {
+            aggiornaStatoCollegamento('Modifica solo in questa scheda: collega il file per salvarla.');
+            return;
+        }
+        if (salvataggioInCoda) clearTimeout(salvataggioInCoda);
+        salvataggioInCoda = setTimeout(() => {
+            salvataggioInCoda = null;
+            salvaSulFile().then((esito) => aggiornaStatoCollegamento(
+                esito.ok ? '💾 Salvato' : `⚠️ Non salvato: ${esito.motivo}`, esito.ok ? 'ok' : 'errore'));
+        }, 150);
+    }
+
+    /** Non lancia mai: torna sempre un esito. */
+    async function salvaSulFile() {
         if (!fileCollegato) return { ok: false, motivo: 'Nessun file collegato' };
+        if (!window.StoryRitocchi) return { ok: false, motivo: 'js/story/story-ritocchi.js non caricato in questa pagina' };
         try {
             const permesso = await fileCollegato.queryPermission({ mode: 'readwrite' });
             if (permesso !== 'granted') {
                 const chiesto = await fileCollegato.requestPermission({ mode: 'readwrite' });
                 if (chiesto !== 'granted') return { ok: false, motivo: 'Permesso di scrittura non concesso' };
             }
-            const file = await fileCollegato.getFile();
-            const testo = await file.text();
-            const esito = patchCampoEMusicaNelTesto(testo, id, valori);
-            if (!esito.ok) return esito;
+            const testo = StoryRitocchi.testoDelFile(StoryRitocchi.attuali());
             const writable = await fileCollegato.createWritable();
-            await writable.write(esito.testo);
+            await writable.write(testo);
             await writable.close();
             return { ok: true };
         } catch (e) {
@@ -920,20 +1129,21 @@
         }
     }
 
-    function aggiornaStatoCollegamento() {
+    function aggiornaStatoCollegamento(messaggio, tono) {
         const el = document.getElementById('smeStatoFile');
-        if (el) el.textContent = fileCollegato ? `📂 ${fileCollegato.name}` : '';
+        if (!el) return;
+        el.className = 'sme-stato-file' + (tono ? ' sme-stato-file--' + tono : '');
+        el.textContent = (fileCollegato ? `📂 ${fileCollegato.name}` : '') + (messaggio ? (fileCollegato ? ' · ' : '') + messaggio : '');
     }
     // Per un test automatico: finge un "file collegato" senza passare dal
     // picker nativo (che un test headless non può pilotare, essendo un
     // dialogo del sistema operativo) — basta che `handle` implementi
-    // getFile()/createWritable()/queryPermission()/requestPermission()
-    // come farebbe un vero FileSystemFileHandle. Non pensata per
-    // admin.html.
+    // queryPermission()/requestPermission()/createWritable() come farebbe
+    // un vero FileSystemFileHandle. Non pensata per admin.html.
     window.StoryMapEditor._collegaFileFinto = function (handle) { fileCollegato = handle; aggiornaStatoCollegamento(); };
 
     // ================================================================
-    // Esportazione: stampa un array JS pronto da incollare nel file.
+    // Esportazione: stampa un array JS pronto da incollare nel catalogo.
     // ================================================================
     /** Piccolo stampatore ricorsivo: virgolette singole, chiavi senza
      * virgolette quando sono identificatori validi, 4 spazi — lo stesso
@@ -975,9 +1185,9 @@
         const codice = generaEsportazione(ctx);
         apriOverlay(`
             <h3>📋 Esporta codice</h3>
-            <p class="sme-nota">Incolla questo dentro js/data/story-campaigns.js al posto dell'array corrispondente
-            (i commenti originali non ci sono più: rimettili a mano se servono). Finché non lo fai, questa resta
-            una modifica visibile solo in questa scheda.</p>
+            <p class="sme-nota">Per CONSOLIDARE i ritocchi nel catalogo (js/data/story-campaigns.js) a mano: incolla
+            questo al posto dell'array corrispondente, poi svuota js/data/story-ritocchi.js. Per salvare e basta non serve:
+            usa "📂 Collega file".</p>
             <textarea class="sme-export" id="smeExportTesto" readonly>${escapeHtml(codice)}</textarea>
             <div class="sme-azioni">
                 <button type="button" class="sme-btn" id="smeChiudiExport">Chiudi</button>
