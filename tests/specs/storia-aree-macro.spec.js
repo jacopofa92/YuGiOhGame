@@ -350,6 +350,39 @@ module.exports = {
                 t.assert(/tappa già superata/.test(dopo.avviso), `E lo si dice: "${dopo.avviso}"`);
             }
 
+            // --- E CHI L'AVEVA GIÀ SUBITO VIENE RIPARATO ------------------
+            // Il difetto qui sopra azzerava l'area FINITA nel salvataggio.
+            // Un'area che la campagna ha già superato non può che essere
+            // piena: la si ripara leggendo. Quella corrente invece resta
+            // dov'è, e un TORNEO superato può legittimamente essere a zero.
+            const riparata = await page.evaluate(({ timbri, principaliRegno }) => {
+                SaveManager.setStoryState('anime', {
+                    completate: 2, finita: false, premiata: false,
+                    sotto: { 'anime-area-prologo': 0, 'anime-area-regno': 0, 'anime-area-battlecity1': 2 }, separazioni: timbri
+                });
+                const p = StoryProgress.getProgress('anime');
+                const principaliPrologo = StoryProgress.getTappe('anime').find((x) => x.id === 'anime-area-prologo')
+                    .tappe.filter((x) => x.parallelo !== true).length;
+                const fm = StoryProgress.getTappe('forbiddenMemories');
+                const iTorneo = fm.findIndex((x) => x.kind === 'torneo');
+                let torneo = null;
+                if (iTorneo !== -1) {
+                    SaveManager.setStoryState('forbiddenMemories', { completate: iTorneo + 1, finita: false, premiata: false, sotto: {} });
+                    torneo = StoryProgress.getProgress('forbiddenMemories').sotto[fm[iTorneo].id] || 0;
+                }
+                return {
+                    prologo: p.sotto['anime-area-prologo'], principaliPrologo,
+                    regno: p.sotto['anime-area-regno'], principaliRegno,
+                    corrente: p.sotto['anime-area-battlecity1'], completate: p.completate, torneo
+                };
+            }, { timbri, principaliRegno });
+            t.assert(riparata.prologo === riparata.principaliPrologo && riparata.regno === riparata.principaliRegno,
+                `Le aree già superate tornano piene: ${JSON.stringify(riparata)}`);
+            t.assert(riparata.corrente === 2 && riparata.completate === 2,
+                `L'area corrente e la campagna restano dove sono: ${JSON.stringify(riparata)}`);
+            t.assert(riparata.torneo === null || riparata.torneo === 0,
+                `Un TORNEO superato non viene riempito (si rifà da capo): ${JSON.stringify(riparata)}`);
+
             t.assert(JSON.stringify(migrazione.timbro) === JSON.stringify(migrazione.attese),
                 `Ogni scrittura deve timbrare tutte le separazioni del catalogo: ${JSON.stringify(migrazione.timbro)}`);
 
