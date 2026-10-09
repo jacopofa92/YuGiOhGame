@@ -12,8 +12,9 @@
  * JavaScript chiede `HologramSetting.isAttivo()` al momento giusto — è
  * quello che fa js/ui/monster-hologram.js.
  *
- * DEFAULT ACCESO, su richiesta esplicita dell'utente. È una differenza
- * voluta rispetto ai "Dettagli video", che partono da "Normali": quelli
+ * DEFAULT ACCESO, su richiesta esplicita dell'utente. Quando è nato era
+ * una differenza voluta rispetto ai "Dettagli video", che allora partivano
+ * da "Normali" (oggi partono da "Alti", ma la separazione resta): quelli
  * accendono effetti ambientali continui su tutto lo schermo, questo
  * aggiunge un elemento per mostro scoperto, con un costo misurato di 0
  * fps a campo pieno (10 ologrammi, 60 fps con e senza). Per la stessa

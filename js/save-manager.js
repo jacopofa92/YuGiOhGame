@@ -28,20 +28,26 @@
     const LEGACY_RECORD_PREFIX = 'duelArenaRecord_';
     const EXPORT_FILENAME = 'save_yugioh.json';
 
+    // videoDetail parte da 'alti' (richiesta dell'utente; prima 'normali'),
+    // e vale solo se `videoDetailScelto`: vedi in cima a js/ui/video-quality.js
+    // perché serve il segno. menuParallax: la profondità del menu principale
+    // (index.html), accesa di default.
     const DEFAULT_SETTINGS = {
-        videoDetail: 'normali', hologram: true, haptics: true,
+        videoDetail: 'alti', videoDetailScelto: false, hologram: true, haptics: true,
+        menuParallax: true,
         musicVolume: 0.55, musicMuted: false,
         sfxVolume: 0.6, sfxMuted: false
     };
     const SETTINGS_CACHE_KEYS = {
-        videoDetail: 'ygoVideoDetail', hologram: 'ygoHologram', haptics: 'ygoHapticsEnabled',
+        videoDetail: 'ygoVideoDetail', videoDetailScelto: 'ygoVideoDetailScelto',
+        hologram: 'ygoHologram', haptics: 'ygoHapticsEnabled', menuParallax: 'ygoParallasseMenu',
         musicVolume: 'duelArenaMusicVolume', musicMuted: 'duelArenaMusicMuted',
         sfxVolume: 'duelArenaSfxVolume', sfxMuted: 'duelArenaSfxMuted'
     };
 
     function normalizeSetting(key, value) {
         const fallback = DEFAULT_SETTINGS[key];
-        if (key === 'videoDetail') return value === 'alti' ? 'alti' : 'normali';
+        if (key === 'videoDetail') return value === 'normali' ? 'normali' : 'alti';
         if (key === 'musicVolume' || key === 'sfxVolume') {
             const numero = Number(value);
             return Number.isFinite(numero) ? Math.min(1, Math.max(0, numero)) : fallback;
@@ -52,10 +58,13 @@
     function readCachedSettings() {
         const settings = { ...DEFAULT_SETTINGS };
         try {
+            settings.videoDetailScelto = localStorage.getItem(SETTINGS_CACHE_KEYS.videoDetailScelto) === '1';
             const video = localStorage.getItem(SETTINGS_CACHE_KEYS.videoDetail);
-            if (video === 'normali' || video === 'alti') settings.videoDetail = video;
+            if (settings.videoDetailScelto && (video === 'normali' || video === 'alti')) settings.videoDetail = video;
             const hologram = localStorage.getItem(SETTINGS_CACHE_KEYS.hologram);
             if (hologram === 'on' || hologram === 'off') settings.hologram = hologram === 'on';
+            const parallasse = localStorage.getItem(SETTINGS_CACHE_KEYS.menuParallax);
+            if (parallasse === 'on' || parallasse === 'off') settings.menuParallax = parallasse === 'on';
             const haptics = localStorage.getItem(SETTINGS_CACHE_KEYS.haptics);
             if (haptics === '0' || haptics === '1') settings.haptics = haptics === '1';
             ['musicVolume', 'sfxVolume'].forEach((key) => {
@@ -77,12 +86,18 @@
         Object.keys(DEFAULT_SETTINGS).forEach((key) => {
             normalized[key] = normalizeSetting(key, input[key] === undefined ? DEFAULT_SETTINGS[key] : input[key]);
         });
+        // Un livello mai scelto dal giocatore è solo il default di un tempo:
+        // vale quello di oggi.
+        if (!normalized.videoDetailScelto) normalized.videoDetail = DEFAULT_SETTINGS.videoDetail;
         return normalized;
     }
 
     function syncSettingsCache(settings) {
         try {
             localStorage.setItem(SETTINGS_CACHE_KEYS.videoDetail, settings.videoDetail);
+            if (settings.videoDetailScelto) localStorage.setItem(SETTINGS_CACHE_KEYS.videoDetailScelto, '1');
+            else localStorage.removeItem(SETTINGS_CACHE_KEYS.videoDetailScelto);
+            localStorage.setItem(SETTINGS_CACHE_KEYS.menuParallax, settings.menuParallax ? 'on' : 'off');
             localStorage.setItem(SETTINGS_CACHE_KEYS.hologram, settings.hologram ? 'on' : 'off');
             localStorage.setItem(SETTINGS_CACHE_KEYS.haptics, settings.haptics ? '1' : '0');
             localStorage.setItem(SETTINGS_CACHE_KEYS.musicVolume, String(settings.musicVolume));

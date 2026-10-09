@@ -952,13 +952,16 @@
         // Parallasse del menu (vedi .menu-bg-foto nello stile): insegue
         // l'inclinazione con un rallentamento morbido, che arriva e si
         // ferma senza rimbalzi. Il ciclo di disegno gira solo finché c'è
-        // strada da fare.
+        // strada da fare. Si può spegnere dalle Impostazioni ("Profondità
+        // del menu", Inclinazione.parallasseMenuAttiva): spenta, il menu
+        // torna dolcemente al centro e smette di ascoltare.
         (function () {
             if (!window.Inclinazione) return;
             const radice = document.documentElement;
             let meta = { x: 0, y: 0 };
             let ora = { x: 0, y: 0 };
             let giro = null;
+            let smetti = null;
             function passo() {
                 ora.x += (meta.x - ora.x) * 0.08;
                 ora.y += (meta.y - ora.y) * 0.08;
@@ -967,10 +970,20 @@
                 giro = (Math.abs(meta.x - ora.x) > 0.001 || Math.abs(meta.y - ora.y) > 0.001)
                     ? requestAnimationFrame(passo) : null;
             }
-            Inclinazione.ascolta((l) => {
-                meta = { x: l.x, y: l.y };
+            function muovi(x, y) {
+                meta = { x: x, y: y };
                 if (!giro) giro = requestAnimationFrame(passo);
-            });
+            }
+            function aggiorna() {
+                if (Inclinazione.parallasseMenuAttiva()) {
+                    if (!smetti) smetti = Inclinazione.ascolta((l) => muovi(l.x, l.y));
+                } else {
+                    if (smetti) { smetti(); smetti = null; }
+                    muovi(0, 0);
+                }
+            }
+            window.addEventListener('ygo:parallasse-menu', aggiorna);
+            aggiorna();
         })();
     </script>
 
@@ -3343,12 +3356,24 @@
                 <div class="settings-row">
                     <div>
                         <div class="settings-row-label">Dettagli video</div>
-                        <div class="settings-row-sub">Con "Alti" il Terreno di gioco mostra effetti aggiuntivi. Su un dispositivo meno potente conviene restare su "Normali".</div>
+                        <div class="settings-row-sub">Con "Alti" il Terreno di gioco mostra effetti aggiuntivi. Su un dispositivo meno potente conviene passare a "Normali".</div>
                     </div>
                     <div class="seg" id="impostazioni-videoDetailSeg" role="group" aria-label="Dettagli video">
-                        <button type="button" class="seg-btn" data-livello="normali" aria-pressed="true">Normali</button>
-                        <button type="button" class="seg-btn" data-livello="alti" aria-pressed="false">Alti</button>
+                        <button type="button" class="seg-btn" data-livello="normali" aria-pressed="false">Normali</button>
+                        <button type="button" class="seg-btn" data-livello="alti" aria-pressed="true">Alti</button>
                     </div>
+                </div>
+
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-row-label">Profondità del menu</div>
+                        <div class="settings-row-sub">Lo sfondo del menu principale si muove a strati seguendo il mouse o l'inclinazione del telefono.</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="impostazioni-parallaxToggleInput">
+                        <span class="switch-track"></span>
+                        <span class="switch-thumb"></span>
+                    </label>
                 </div>
 
                 <div class="settings-row">
@@ -3531,6 +3556,20 @@
                 hologramToggle.checked = HologramSetting.isAttivo();
                 hologramToggle.addEventListener('change', () => {
                     HologramSetting.set(hologramToggle.checked);
+                    if (window.NativeHaptics) NativeHaptics.light();
+                    touchSave();
+                });
+            }
+
+            // --- Profondità del menu ------------------------------------
+            // La parallasse del menu principale (js/ui/inclinazione.js),
+            // accesa di default. Acceso = il menu si muove a strati: il
+            // menu, nella stessa pagina, si ferma o riparte subito.
+            const parallaxToggle = document.getElementById('impostazioni-parallaxToggleInput');
+            if (parallaxToggle && window.Inclinazione) {
+                parallaxToggle.checked = Inclinazione.parallasseMenuAttiva();
+                parallaxToggle.addEventListener('change', () => {
+                    Inclinazione.impostaParallasseMenu(parallaxToggle.checked);
                     if (window.NativeHaptics) NativeHaptics.light();
                     touchSave();
                 });

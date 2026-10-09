@@ -3172,6 +3172,17 @@ priorità o richiedono un refactor ampio):
   togliere `card--not-owned`), e su una cornice dorata una fusione
   "screen" non si vede affatto — il bordo lucido è dipinto senza fusione.
   Spec `carte-vive-e-parallasse`.
+  **Poi, su richiesta dell'utente**: la parallasse è un'impostazione
+  ("Profondità del menu", `Inclinazione.parallasseMenuAttiva`/
+  `impostaParallasseMenu`, setting `menuParallax`, accesa di default) in
+  entrambe le copie delle Impostazioni (pagina e vista di `index.html`); e
+  i **Dettagli video partono da "Alti"**. Siccome "Normali" era scritto in
+  cache e nel salvataggio anche per chi non l'aveva mai scelto, vale solo
+  se c'è il segno `videoDetailScelto` (`ygoVideoDetailScelto`), che solo
+  `VideoQuality.set` accende: chi aveva scelto "Normali" prima del segno
+  torna ad "Alti" una volta. L'harness dei test fissa "Normali" come
+  scelta, perché la suite è nata con gli effetti ambientali spenti. Spec
+  `impostazioni-default-alti-e-profondita-menu`.
 
 - 🔴 **POSSO APPLICARE MIGRAZIONI SUPABASE DA SOLO, e più sopra in questo
   file c'è scritto il contrario.** La voce sull'accesso con approvazione
