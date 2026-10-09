@@ -75,8 +75,12 @@ sempre coerenti con il personaggio. Toon/Pegasus si affronta per ultimo.
       Occhi sono usati dall'IA e ripuliscono correttamente l'assorbito.
       Dopo aver corretto l'attivazione reale di Mondo e Maschera Toon, lo
       Starter completa 26/26 a ogni difficoltà con 2,62 → 6,23 → 8,12
-      tentativi medi. Le precedenti medie dell'avversario Pegasus erano
-      contaminate dallo stesso difetto e vanno ricalcolate separatamente.
+      tentativi medi.
+- [x] Ricalcolo separato dell'avversario Pegasus dopo il fix di Mondo:
+      1.500 duelli danno una curva monotona 35,8% → 54,2% → 58,6%. La lista
+      Difficile mantiene 40 carte ma prepara con più continuità Mille Occhi;
+      il controllo del registro misura Mondo 74,5%, Abbandonato 18,5% e
+      Restrizione 4%. Dettagli in `PEGASUS_OPPONENT_AUDIT.md`.
 
 ## Audio multipagina
 

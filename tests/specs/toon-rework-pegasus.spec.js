@@ -101,6 +101,13 @@ module.exports = {
                 return [38, 416, 475].every((id) => deck.main.some((e) => e.id === id))
                     && deck.extra.some((e) => e.id === 476);
             }) && characterDeckDatabase.pegasus.easy.extra.length === 0;
+            const hardPegasus = characterDeckDatabase.pegasus.hard;
+            const pianoHardRiconoscibile = deckListCount(hardPegasus.main) === 40
+                && [38, 416, 475].every((id) => hardPegasus.main.some((e) => e.id === id && e.qty === 2))
+                // L'Occhio della Verità è meno efficiente di una rimozione,
+                // ma appartiene all'identità di Pegasus e non va sacrificato
+                // da futuri bilanciamenti puramente numerici.
+                && hardPegasus.main.some((e) => e.id === 466);
             const poly = copia(38, 'poly-ai');
             gameState.botHand = [poly, copia(416, 'relinquished-material'), copia(475, 'idol-material')];
             gameState.botExtraDeck = [copia(476, 'restrict-fusion')];
@@ -147,6 +154,7 @@ module.exports = {
                 iaUsaAbbandonato: sceltaMedia && sceltaMedia.card.id === 416 && sceltaHard && sceltaHard.card.id === 416,
                 milleOcchiRipristina,
                 pianoFusionePegasus,
+                pianoHardRiconoscibile,
                 iaPreparaMilleOcchi: !!opzioneFusione && fusioneAttivabile
                     && sceltaFusioneIa && sceltaFusioneIa.action === 'activate' && sceltaFusioneIa.card.id === 38,
                 assorbimentoMilleOcchi,
@@ -171,6 +179,8 @@ module.exports = {
         t.assert(r.milleOcchiRipristina, `Mille Occhi deve liberare il mostro assorbito comunque lasci il Terreno: ${JSON.stringify(r)}`);
         t.assert(r.pianoFusionePegasus && r.iaPreparaMilleOcchi,
             `Pegasus Normale/Difficile e la sua IA devono poter preparare Restrizione dai Mille Occhi: ${JSON.stringify(r)}`);
+        t.assert(r.pianoHardRiconoscibile,
+            `Pegasus Difficile deve avere 40 carte, il nucleo Mille Occhi 2x e conservare L'Occhio della Verità: ${JSON.stringify(r)}`);
         t.assert(r.assorbimentoMilleOcchi,
             `Restrizione dai Mille Occhi deve assorbire il bersaglio migliore, copiarne l'ATK e bloccare gli altri mostri: ${JSON.stringify(r)}`);
         t.assert(r.noteLegacy, `Ogni effetto Toon sostituito deve conservare legacyOfficialEffect: ${JSON.stringify(r)}`);

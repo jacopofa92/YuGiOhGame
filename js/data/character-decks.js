@@ -351,8 +351,6 @@ const characterDeckDatabase = {
                 { id: 631, qty: 1 }, // Megamorfosi
                 { id: 312, qty: 1 }, // Trasportatore di Materia Interdimensionale
                 { id: 820, qty: 2 }, // Nega Attacco
-                { id: 40, qty: 1 }, // Buco Trappola
-                { id: 793, qty: 1 }, // Armatura Sakuretsu
                 { id: 7, qty: 1 }, // Buco Nero
                 { id: 8, qty: 1 }, // Spada Rivelatrice
                 { id: 272, qty: 1 }, // Carità Aggraziata
@@ -733,29 +731,25 @@ const characterDeckDatabase = {
                 { id: 481, qty: 2 }, // Alligatore Toon
                 { id: 606, qty: 1 }, // Manga Ryu-Ran
                 { id: 483, qty: 2 }, // Stregone Mascherato Toon
-                { id: 475, qty: 1 }, // Idolo dai Mille Occhi
-                { id: 416, qty: 1 }, // Abbandonato
-                { id: 202, qty: 1 }, // Bambola della Rovina
+                { id: 190, qty: 3 }, // Coniglio Oscuro
+                { id: 475, qty: 2 }, // Idolo dai Mille Occhi
+                { id: 416, qty: 2 }, // Abbandonato
                 { id: 306, qty: 1 }, // Mago Senza Volto Illusionista
-                { id: 400, qty: 1 }, // Drago Pappagallo
                 { id: 487, qty: 3 }, // Mondo dei Toon
-                { id: 482, qty: 3 }, // Maschera Toon
+                { id: 482, qty: 2 }, // Maschera Toon
                 { id: 485, qty: 1 }, // Riavvolgimento Toon
                 { id: 116, qty: 1 }, // Rito dell'Illusione Nera
                 { id: 206, qty: 1 }, // Vaso Cattura-Drago
                 { id: 35, qty: 1 }, // Rinascita del Mostro
                 { id: 36, qty: 2 }, // Vaso dell'Avidità
-                { id: 38, qty: 1 }, // Fusione
-                { id: 40, qty: 1 }, // Buco Trappola
-                { id: 793, qty: 1 }, // Armatura Sakuretsu
+                { id: 38, qty: 2 }, // Fusione
                 { id: 7, qty: 1 }, // Buco Nero
                 { id: 8, qty: 1 }, // Spada Rivelatrice
-                { id: 820, qty: 2 }, // Nega Attacco
                 { id: 10, qty: 1 }, // Cilindro Magico
                 { id: 272, qty: 1 }, // Carità Aggraziata
                 { id: 646, qty: 1 }, // Tempesta Pesante
                 { id: 466, qty: 1 }, // L'Occhio della Verità
-                { id: 382, qty: 1 } // Forza dello Specchio
+                { id: 382, qty: 2 } // Forza dello Specchio
             ],
             extra: [
                 { id: 476, qty: 1 } // Restrizione dai Mille Occhi

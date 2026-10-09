@@ -366,7 +366,17 @@ async function giocaPartita(opz, n) {
     // (il risultato porta solo le ultime righe). Serve a trovare la partita
     // che passa da un caso preciso, per farne uno spec.
     const trovate = opz.cerca ? esegui(`__logDuello.filter((r) => r.includes(${JSON.stringify(opz.cerca)})).length`) : 0;
-    return { seme, passi, oraVirtualeMs: orologio.ora, alLimite, invarianti, trovate, erroriCarte: erroriCarte.slice(), ...fine };
+    // Gli audit di identità non devono limitarsi a dire chi ha vinto: devono
+    // poter confermare che un personaggio abbia davvero eseguito più piani
+    // caratteristici nella stessa partita. Accettiamo quindi più frammenti
+    // da contare in un solo duello, evitando di rigiocare la medesima matrice
+    // una volta per ogni carta osservata.
+    const cercaTutte = Array.isArray(opz.cercaTutte) ? opz.cercaTutte : [];
+    const trovatePerTesto = Object.fromEntries(cercaTutte.map((testo) => [
+        testo,
+        esegui(`__logDuello.filter((r) => r.includes(${JSON.stringify(testo)})).length`)
+    ]));
+    return { seme, passi, oraVirtualeMs: orologio.ora, alLimite, invarianti, trovate, trovatePerTesto, erroriCarte: erroriCarte.slice(), ...fine };
 }
 
 async function main() {

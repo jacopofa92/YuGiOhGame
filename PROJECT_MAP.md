@@ -218,8 +218,12 @@ conservati come riferimento. Lo stesso audit ha corretto `Maschera Toon`, che
 cercava erroneamente Mondo nella zona Magia Terreno, e ha ristretto
 `Riavvolgimento Toon` ai veri Toon. Le liste avversarie Pegasus restano
 ripulite dalle mani troppo cariche di Toon alti mantenendo soltanto carte
-della sua lore; le vecchie medie dell'avversario precedenti al fix non sono
-più considerate una misura valida e andranno ricalcolate separatamente.
+della sua lore. Il ricalcolo successivo al fix è ora in
+`PEGASUS_OPPONENT_AUDIT.md`: su 1.500 duelli la curva è **35,8% / 54,2% /
+58,6%**. A Difficile il nucleo Fusione usa due copie di Fusione, Abbandonato
+e Idolo dai Mille Occhi: Restrizione compare nel 4% dei duelli misurati,
+abbastanza da essere un secondo piano riconoscibile ma non dominante sui
+Toon.
 
 Il Pannello Admin può segnare al 100% tutte le campagne attualmente giocabili,
 in ogni difficoltà. `js/dev/story-admin-tools.js` scrive solo il progresso:

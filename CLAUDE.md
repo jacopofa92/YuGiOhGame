@@ -4085,3 +4085,19 @@ ancora mancanti nel Cimitero per arrivare a Exodia Necross; Odion può Settare
 sono stati modificati. Due semi dell'audit sono diventati regressioni per Il
 Guardiano Affidabile (slot senza carta) e Ninja d'Assalto (fonte sparita
 prima della risoluzione).
+
+### Audit Pegasus avversario post-fix Toon (2026-10-09)
+
+Non riusare le vecchie statistiche di Pegasus avversario: erano state
+misurate quando Mondo dei Toon non poteva ancora essere attivato. Il nuovo
+riferimento è `PEGASUS_OPPONENT_AUDIT.md` (dati grezzi nei due JSON): 1.500
+duelli, curva 35,8% / 54,2% / 58,6%. Lo Starter Pegasus resta invariato.
+
+La prima lista Hard post-fix aveva rimosso tutti i Conigli Oscuri e scendeva
+sotto la Media. Ora conserva una base di mostri evocabili e rende visibile il
+secondo piano anime con due Fusione, due Abbandonato e due Idolo dai Mille
+Occhi. Nel controllo su 200 duelli Hard: Mondo 74,5%, assorbimento di
+Abbandonato 18,5%, Restrizione dai Mille Occhi 4%. Il tool dedicato
+`tools/audit-pegasus-identita.js` conta i segnali dal registro completo;
+`duello-senza-testa.js` espone `cercaTutte` per evitare di rigiocare un
+duello una volta per ogni segnale.

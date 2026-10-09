@@ -1,0 +1,79 @@
+{
+  "generatoIl": "2026-10-09T14:23:49.492Z",
+  "metodo": "quattro avversari non-Pegasus con IA Hard; conteggio dei segnali nel registro completo",
+  "opzioni": {
+    "partite": 50,
+    "turni": 80,
+    "seme": 91000
+  },
+  "campioni": [
+    "yamiYugi",
+    "joey",
+    "mako",
+    "bakura"
+  ],
+  "segnali": {
+    "mondoToon": "Il bot ha attivato Mondo dei Toon",
+    "abbandonato": "Abbandonato assorbe",
+    "milleOcchi": "Restrizione dai Mille Occhi equipaggia"
+  },
+  "risultati": [
+    {
+      "livello": "easy",
+      "duelli": 200,
+      "duelliConSegnale": {
+        "mondoToon": 111,
+        "abbandonato": 0,
+        "milleOcchi": 0
+      },
+      "percentualeDuelli": {
+        "mondoToon": 55.5,
+        "abbandonato": 0,
+        "milleOcchi": 0
+      },
+      "occorrenze": {
+        "mondoToon": 150,
+        "abbandonato": 0,
+        "milleOcchi": 0
+      }
+    },
+    {
+      "livello": "medium",
+      "duelli": 200,
+      "duelliConSegnale": {
+        "mondoToon": 148,
+        "abbandonato": 21,
+        "milleOcchi": 1
+      },
+      "percentualeDuelli": {
+        "mondoToon": 74,
+        "abbandonato": 10.5,
+        "milleOcchi": 0.5
+      },
+      "occorrenze": {
+        "mondoToon": 234,
+        "abbandonato": 30,
+        "milleOcchi": 1
+      }
+    },
+    {
+      "livello": "hard",
+      "duelli": 200,
+      "duelliConSegnale": {
+        "mondoToon": 149,
+        "abbandonato": 37,
+        "milleOcchi": 8
+      },
+      "percentualeDuelli": {
+        "mondoToon": 74.5,
+        "abbandonato": 18.5,
+        "milleOcchi": 4
+      },
+      "occorrenze": {
+        "mondoToon": 241,
+        "abbandonato": 43,
+        "milleOcchi": 8
+      }
+    }
+  ]
+}

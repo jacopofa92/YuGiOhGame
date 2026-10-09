@@ -1,0 +1,82 @@
+{
+  "generatoIl": "2026-10-09T14:30:40.189Z",
+  "metodo": "cinque personaggi campione con IA Hard; stessi semi ai tre livelli; vittoria = esito del posto bot",
+  "opzioni": {
+    "gruppo": "tutti",
+    "duellanti": [
+      "pegasus"
+    ],
+    "partite": 100,
+    "turni": 80,
+    "seme": 91000,
+    "output": "PEGASUS_OPPONENT_AUDIT.json"
+  },
+  "campioni": [
+    "yamiYugi",
+    "joey",
+    "pegasus",
+    "mako",
+    "bakura"
+  ],
+  "risultati": [
+    {
+      "duellante": "pegasus",
+      "livello": "easy",
+      "partite": 500,
+      "vittorie": 179,
+      "vittoriePct": 35.8,
+      "turniMedi": 23.1,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 39,
+        "joey": 38,
+        "pegasus": 41,
+        "mako": 28,
+        "bakura": 33
+      }
+    },
+    {
+      "duellante": "pegasus",
+      "livello": "medium",
+      "partite": 500,
+      "vittorie": 271,
+      "vittoriePct": 54.2,
+      "turniMedi": 19.3,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 60,
+        "joey": 63,
+        "pegasus": 49,
+        "mako": 34,
+        "bakura": 65
+      }
+    },
+    {
+      "duellante": "pegasus",
+      "livello": "hard",
+      "partite": 500,
+      "vittorie": 293,
+      "vittoriePct": 58.6,
+      "turniMedi": 20.7,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 67,
+        "joey": 63,
+        "pegasus": 59,
+        "mako": 48,
+        "bakura": 56
+      }
+    }
+  ],
+  "analisi": [
+    {
+      "duellante": "pegasus",
+      "easy": 35.8,
+      "medium": 54.2,
+      "hard": 58.6,
+      "monotono": true,
+      "saltoEasyMedium": 18.4,
+      "saltoMediumHard": 4.4
+    }
+  ]
+}
