@@ -90,6 +90,44 @@ module.exports = {
             gameState.playerMonsterField = [null, null, null, null, null];
             DuelEngine.getDefinition(476).onBanished(DuelEngine.makeContext('bot', { card: restrict }));
             const milleOcchiRipristina = gameState.playerMonsterField.some((slot) => slot && slot.card.uid === assorbito.uid);
+
+            // Piano Fusione di Pegasus: Facile ne resta intenzionalmente
+            // privo, mentre Normale/Difficile devono avere materiali,
+            // Polimerizzazione e Restrizione nell'Extra Deck. Verifichiamo
+            // anche il percorso usato davvero dall'IA, non soltanto la
+            // definizione statica del Mostro Fusione.
+            const pianoFusionePegasus = ['medium', 'hard'].every((livello) => {
+                const deck = characterDeckDatabase.pegasus[livello];
+                return [38, 416, 475].every((id) => deck.main.some((e) => e.id === id))
+                    && deck.extra.some((e) => e.id === 476);
+            }) && characterDeckDatabase.pegasus.easy.extra.length === 0;
+            const poly = copia(38, 'poly-ai');
+            gameState.botHand = [poly, copia(416, 'relinquished-material'), copia(475, 'idol-material')];
+            gameState.botExtraDeck = [copia(476, 'restrict-fusion')];
+            gameState.botMonsterField = [null, null, null, null, null];
+            gameState.currentPlayer = 'bot';
+            gameState.phase = 'main1';
+            const opzioneFusione = DuelEngine.getFusableExtraDeckMonsters('bot').find((o) => o.card.id === 476);
+            const fusioneAttivabile = DuelEngine.canActivate('bot', 'hand', 0);
+            const sceltaFusioneIa = AI_MEDIUM.chooseNextSpellTrapAction(gameState, {}, 'bot');
+
+            const restrictAttivo = copia(476, 'restrict-active');
+            const debole = copia(481, 'restrict-weak');
+            const forte = copia(1, 'restrict-strong');
+            gameState.botMonsterField = [{ card: restrictAttivo, position: 'attack', isFaceDown: false }, null, null, null, null];
+            gameState.playerMonsterField = [
+                { card: debole, position: 'attack', isFaceDown: false },
+                { card: forte, position: 'attack', isFaceDown: false },
+                null, null, null
+            ];
+            gameState.livelloIA = { player: 'hard', bot: 'hard' };
+            DuelEngine.getDefinition(476).activate(DuelEngine.makeContext('bot', {
+                card: restrictAttivo, zone: 'monster', index: 0
+            }));
+            DuelEngine.recomputeStaticEffects();
+            const assorbimentoMilleOcchi = restrictAttivo._restrictTarget?.uid === forte.uid
+                && DuelEngine.getEffectiveAtk(restrictAttivo) === forte.attack
+                && gameState.cannotAttackUids[debole.uid] === true;
             return {
                 attivabileDallaMano,
                 iaAttivaMondo: sceltaIaMondo && sceltaIaMondo.action === 'activate' && sceltaIaMondo.card.id === 487,
@@ -108,6 +146,10 @@ module.exports = {
                 sirenaAttaccaSubito: !defSirena.cannotAttackTurnSummoned && !defSirena.requiresLifePointsToAttack,
                 iaUsaAbbandonato: sceltaMedia && sceltaMedia.card.id === 416 && sceltaHard && sceltaHard.card.id === 416,
                 milleOcchiRipristina,
+                pianoFusionePegasus,
+                iaPreparaMilleOcchi: !!opzioneFusione && fusioneAttivabile
+                    && sceltaFusioneIa && sceltaFusioneIa.action === 'activate' && sceltaFusioneIa.card.id === 38,
+                assorbimentoMilleOcchi,
                 noteLegacy: [123, 483, 484, 486, 487, 606].every((id) => {
                     const card = cardDatabase.find((c) => c.id === id);
                     return card && typeof card.legacyOfficialEffect === 'string' && card.legacyOfficialEffect.length > 10;
@@ -127,6 +169,10 @@ module.exports = {
         t.assert(r.dragoAttaccaSubito && r.sirenaAttaccaSubito, `I Toon evocati devono poter attaccare subito senza costo d'attacco: ${JSON.stringify(r)}`);
         t.assert(r.iaUsaAbbandonato, `Media e Hard devono usare l'assorbimento di Abbandonato: ${JSON.stringify(r)}`);
         t.assert(r.milleOcchiRipristina, `Mille Occhi deve liberare il mostro assorbito comunque lasci il Terreno: ${JSON.stringify(r)}`);
+        t.assert(r.pianoFusionePegasus && r.iaPreparaMilleOcchi,
+            `Pegasus Normale/Difficile e la sua IA devono poter preparare Restrizione dai Mille Occhi: ${JSON.stringify(r)}`);
+        t.assert(r.assorbimentoMilleOcchi,
+            `Restrizione dai Mille Occhi deve assorbire il bersaglio migliore, copiarne l'ATK e bloccare gli altri mostri: ${JSON.stringify(r)}`);
         t.assert(r.noteLegacy, `Ogni effetto Toon sostituito deve conservare legacyOfficialEffect: ${JSON.stringify(r)}`);
     }
 };
