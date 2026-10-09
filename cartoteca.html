@@ -595,6 +595,7 @@
 <script src="js/engine/card-effects-7.js"></script>
 <script src="js/engine/card-effects-8.js"></script>
 <!-- /gruppo-script:motore -->
+<script src="js/ui/inclinazione.js"></script>
 <script src="js/ui/card-renderer.js"></script>
 <!-- La scheda di dettaglio carta è quella condivisa da tutto il gioco. -->
 <script src="js/ui/card-detail.js"></script>
@@ -895,6 +896,8 @@
     function createCardTile(card) {
         const el = createCardElement(card);
         el.onclick = () => openCardModal(card);
+        // Riflesso per rarità e inclinazione sotto il mouse (js/ui/card-renderer.js).
+        if (window.CartaViva) CartaViva.rendi(el, card, { modo: 'griglia' });
         if (card.missingEffectNote) {
             const badge = document.createElement('div');
             badge.className = 'partial-badge';

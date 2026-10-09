@@ -3150,6 +3150,29 @@ priorità o richiedono un refactor ampio):
   dritti. Perché il bordo arrivi a zero il raggio deve restare poco sopra
   il 50%.
 
+- ✅ **Carte "vive" e parallasse del menu** (richiesta dell'utente,
+  "grafiche simil 3D"). `CartaViva.rendi(el, card, { modo, bersaglio,
+  area })` in `js/ui/card-renderer.js` (CSS "Carta viva" in fondo a
+  `card.css`): la carta si inclina e la luce ci scorre sopra, con un
+  riflesso che dice la RARITÀ (comune solo luce, rara bordo lucido,
+  super/ultra arcobaleno sull'illustrazione, leggendaria/mitica oro,
+  segreta/mitica grana di scintille). Modi: 'griglia' (Cartoteca, si
+  solleva sotto il mouse), 'fila' (Negozio, buste), 'grande' (scheda carta,
+  premio: segue anche il giroscopio, a riposo ondeggia). **Mai nel duello**,
+  e nei modi griglia/fila l'inclinazione vale solo sotto il mouse: fuori,
+  il transform resta della pagina (le animazioni delle buste muovono la
+  carta). La fonte dell'inclinazione è UNA, `js/ui/inclinazione.js` (mouse
+  + giroscopio con ricentratura lenta, spenta con "riduci movimento"); la
+  usa anche la parallasse del menu in `index.html` (`--par-x/--par-y`,
+  proprietà `translate` per sommarsi ai transform animati di raggi e
+  scintille). Ogni pagina che carica il renderer deve caricare prima
+  `inclinazione.js`: lo sorveglia `guardrail-pagine-con-carte`. **Insidie
+  prese guardandolo**: nella Cartoteca le carte non possedute sono
+  ingrigite da un filtro che copre anche i riflessi (per fotografarle
+  togliere `card--not-owned`), e su una cornice dorata una fusione
+  "screen" non si vede affatto — il bordo lucido è dipinto senza fusione.
+  Spec `carte-vive-e-parallasse`.
+
 - 🔴 **POSSO APPLICARE MIGRAZIONI SUPABASE DA SOLO, e più sopra in questo
   file c'è scritto il contrario.** La voce sull'accesso con approvazione
   admin dice «L'utente deve eseguire questo script nell'SQL Editor

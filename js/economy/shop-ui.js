@@ -105,6 +105,8 @@
         const w = larghezza || CARD_W;
         node.style.setProperty('--card-w', w);
         node.style.setProperty('--card-h', `calc(${w} / var(--card-ratio))`);
+        // Riflesso per rarità e inclinazione sotto il mouse (js/ui/card-renderer.js).
+        if (window.CartaViva) CartaViva.rendi(node, carta, { modo: 'fila' });
         return node;
     }
 

@@ -87,6 +87,10 @@
         const nodo = window.createCardElement(carta);
         nodo.style.setProperty('--card-w', larghezza);
         nodo.style.setProperty('--card-h', `calc(${larghezza} / var(--card-ratio))`);
+        // Riflesso per rarità e inclinazione sotto il mouse (mai sotto il
+        // dito: la fila lì scorre). Fuori dal mouse le animazioni della
+        // busta restano padrone della carta.
+        if (window.CartaViva) CartaViva.rendi(nodo, carta, { modo: 'fila' });
         return nodo;
     }
 

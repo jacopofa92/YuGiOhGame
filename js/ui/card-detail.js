@@ -117,6 +117,10 @@
             const tile = window.createCardElement(card);
             tile.onclick = null;
             preview.appendChild(tile);
+            // La carta protagonista della scheda si inclina e riflette la
+            // luce secondo la sua rarità (js/ui/card-renderer.js): il mouse
+            // si ascolta su tutta l'anteprima, sul telefono il giroscopio.
+            if (window.CartaViva) CartaViva.rendi(tile, card, { modo: 'grande', area: preview });
         }
 
         const terms = termsOf(card);

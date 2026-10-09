@@ -417,7 +417,8 @@
 // v174: rework completo dei Toon e bilanciamento dei deck Pegasus.
 // v185: l'azzeramento del profilo vale anche sugli altri dispositivi.
 // v186: un solo caricamento automatico sul cloud (cloud-autosync.js assorbito da auto-sync.js).
-const CACHE_NAME = 'ygo-duel-arena-v186';
+// v187: carte "vive" (inclinazione e riflessi per rarità) e parallasse del menu.
+const CACHE_NAME = 'ygo-duel-arena-v187';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -523,6 +524,7 @@ const APP_SHELL = [
     'js/data/custom-cards.js',
     'js/data/custom-taxonomy.js',
     'js/data/starter-structure-decks.js',
+    'js/ui/inclinazione.js',
     'js/ui/card-renderer.js',
     'js/ui/fx-gsap.js',
     'js/ui/challenge-banner.js',
