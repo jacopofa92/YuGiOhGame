@@ -3547,6 +3547,23 @@ priorità o richiedono un refactor ampio):
   sostituiti con due fotografie storiche vere di pubblico dominio
   (Wikimedia Commons, vedi il bullet più sotto). `ww1_regio_esercito.jpg`
   non è più usato dalla campagna.
+- ✅ **SUPERATO (2026-10-09): l'Editor Mappa salva TUTTO in un file suo,
+  `js/data/story-ritocchi.js`**, e non tocca più il catalogo — la voce qui
+  sotto (patch di field/music dentro story-campaigns.js) descrive la
+  versione precedente, rimossa. Il file dei ritocchi è generato e riscritto
+  per intero a ogni modifica ("📂 Collega file", che controlla che il file
+  scelto sia davvero quello): `modifiche` per id (proprietà semplici,
+  elenco `PROPRIETA`, `null` toglie), `aggiunte` (contenitore + `dopo`) e
+  `rimosse`. Li applica `js/story/story-ritocchi.js`, caricato subito dopo
+  catalogo e dati in OGNI pagina che carica il catalogo (guardrail
+  `guardrail-ritocchi-storia`); tiene anche una copia del catalogo
+  originale, da cui l'editor calcola le differenze (`StoryRitocchi.attuali`).
+  Il pannello è stato rifatto su richiesta dell'utente: personaggio da una
+  griglia di ritratti, musica da un elenco con anteprima, dialoghi a
+  battute con una voce per battuta (anche il `dialogo` prima di un duello).
+  Restano fuori, a mano nel catalogo: struttura (mappe, livelli,
+  separazioni). I `tools/` di simulazione caricano il catalogo da soli e
+  NON vedono i ritocchi. Spec `editor-mappa-scrive-sul-file`.
 - ✅ **L'Editor Mappa scrive ANCHE sul file vero, solo per `field`/`music`
   (beta.70, richiesta esplicita dell'utente: "davvero non posso
   riflettere direttamente i valori sul file story-campaigns?")** — prima

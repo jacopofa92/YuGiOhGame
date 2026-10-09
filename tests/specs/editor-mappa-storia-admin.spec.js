@@ -179,22 +179,31 @@ module.exports = {
 
             await (await nodo(indici.duel)).click();
             await page.waitForSelector('#smeOverlay', { timeout: 3000 });
-            const pannelloDuel = await page.evaluate(() => ({ field: !!document.getElementById('smeField'), music: !!document.getElementById('smeMusic') }));
+            const pannelloDuel = await page.evaluate(() => ({ field: !!document.getElementById('smeField'), music: !!document.getElementById('smeMusiche') }));
             t.assert(pannelloDuel.field && pannelloDuel.music, `Il pannello di un duello deve avere campo E musica: ${JSON.stringify(pannelloDuel)}`);
-            await page.fill('#smeField', 'images/fields/mobile/campoProva.jpg');
-            await page.fill('#smeMusic', 'traccia-prova.mp3');
+            // Arena e musica si scelgono da elenchi (arena-options.js, caricato
+            // al volo): si aspetta che arrivino e si prendono le prime voci vere.
+            await page.waitForSelector('input[name="smeMusica"]', { timeout: 5000 });
+            await page.waitForFunction(() => document.querySelectorAll('#smeField option').length > 2, null, { timeout: 5000 });
+            const scelte = await page.evaluate(() => ({
+                campo: document.querySelectorAll('#smeField option')[1].value,
+                musica: document.querySelectorAll('input[name="smeMusica"]')[1].value
+            }));
+            await page.selectOption('#smeField', scelte.campo);
+            await page.check(`input[name="smeMusica"][value="${scelte.musica}"]`);
             await page.click('#smeSalva');
             await page.waitForTimeout(400);
             let tappaDuel = await page.evaluate(() => storyCampaignsDatabase.find((c) => c.id === 'anime').capitoli[0].tappe
                 .find((t) => t.id === 'anime-area-prologo').tappe.find((t) => t.kind === 'duel'));
-            t.assert(tappaDuel.field === 'images/fields/mobile/campoProva.jpg' && tappaDuel.music === 'traccia-prova.mp3',
-                `Campo e musica devono scriversi sulla tappa vera: ${JSON.stringify({ field: tappaDuel.field, music: tappaDuel.music })}`);
+            t.assert(tappaDuel.field === scelte.campo && tappaDuel.music === scelte.musica,
+                `Campo e musica devono scriversi sulla tappa vera: ${JSON.stringify({ field: tappaDuel.field, music: tappaDuel.music, scelte })}`);
 
-            // Svuotare i due campi deve TOGLIERLI, non lasciarli a stringa vuota.
+            // "Quella della campagna" deve TOGLIERE le proprietà, non lasciarle a stringa vuota.
             await (await nodo(indici.duel)).click();
             await page.waitForSelector('#smeOverlay', { timeout: 3000 });
-            await page.fill('#smeField', '');
-            await page.fill('#smeMusic', '');
+            await page.waitForSelector('input[name="smeMusica"]', { timeout: 5000 });
+            await page.selectOption('#smeField', '');
+            await page.check('input[name="smeMusica"][value=""]');
             await page.click('#smeSalva');
             await page.waitForTimeout(400);
             tappaDuel = await page.evaluate(() => storyCampaignsDatabase.find((c) => c.id === 'anime').capitoli[0].tappe
@@ -205,7 +214,7 @@ module.exports = {
             // Una scena ha il campo ma MAI il selettore della musica.
             await (await nodo(indici.scene)).click();
             await page.waitForSelector('#smeOverlay', { timeout: 3000 });
-            const pannelloScene = await page.evaluate(() => ({ field: !!document.getElementById('smeField'), music: !!document.getElementById('smeMusic') }));
+            const pannelloScene = await page.evaluate(() => ({ field: !!document.getElementById('smeField'), music: !!document.getElementById('smeMusiche') }));
             t.assert(pannelloScene.field && !pannelloScene.music,
                 `Il pannello di una scena deve avere il campo ma non la musica: ${JSON.stringify(pannelloScene)}`);
             await page.click('#smeAnnulla');
@@ -228,7 +237,11 @@ module.exports = {
             await page.selectOption('#smeNuovoKind', 'scene');
             await page.fill('#smeNuovoLabel', 'Scena di prova');
             await page.fill('#smeChi', 'Tester');
-            await page.fill('#smeTesto', 'Prima battuta.\nSeconda battuta.');
+            // Le battute si aggiungono una per una (voce del nodo, per default).
+            await page.click('#smeAggiungiBattuta');
+            await page.fill('#smeBattute .sme-battuta:nth-child(1) textarea', 'Prima battuta.');
+            await page.click('#smeAggiungiBattuta');
+            await page.fill('#smeBattute .sme-battuta:nth-child(2) textarea', 'Seconda battuta.');
             await page.click('#smeCreaNuovo');
             await page.waitForTimeout(500);
             const nuovoCreato = await page.evaluate(() => {

@@ -421,7 +421,8 @@
 // v188: Dettagli video "Alti" di default; "Profondità del menu" attivabile dalle Impostazioni.
 // v189: Storia, ritorno nell'area dopo un duello rigiocato e riparazione delle aree azzerate.
 // v190: azzeramento delle storie per tutti (save-manager.js, AZZERAMENTO_STORIE).
-const CACHE_NAME = 'ygo-duel-arena-v190';
+// v191: ritocchi dell'Editor Mappa in un file proprio (js/data/story-ritocchi.js + js/story/story-ritocchi.js) ed editor rinnovato.
+const CACHE_NAME = 'ygo-duel-arena-v191';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -521,6 +522,8 @@ const APP_SHELL = [
     'js/data/challenges-db.js',
     'js/data/missions-db.js',
     'js/data/story-campaigns.js',
+    'js/data/story-ritocchi.js',
+    'js/story/story-ritocchi.js',
     'js/data/character-decks.js',
     'js/data/characters-db.js',
     'js/data/character-unlocks.js',
