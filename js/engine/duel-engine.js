@@ -1266,7 +1266,15 @@
          * Rimozione del Limitatore).
          */
         grantTemporaryAtkDefBonus(card, atk, def, destroyAfter) {
-            const slot = Tavolo.ordine().flatMap((owner) => fieldOf(owner)).find((s) => s && s.card.uid === card.uid);
+            // Durante una risoluzione una zona può contenere per pochi passi
+            // uno slot strutturale senza `card` (la UI lo usa mentre sposta il
+            // bersaglio). Un bonus non deve trasformare quel passaggio lecito
+            // in un TypeError: se carta o slot non esistono più, l'effetto si
+            // risolve semplicemente senza applicare il modificatore.
+            if (!card || card.uid === undefined || card.uid === null) return;
+            const slot = Tavolo.ordine().flatMap((owner) => fieldOf(owner))
+                .find((s) => s && s.card && s.card.uid === card.uid);
+            if (!slot) return;
             if (unaffectedBySourceCard(this, slot)) return;
             gameState.temporaryAtkDefBonus = gameState.temporaryAtkDefBonus || {};
             gameState.temporaryAtkDefBonus[card.uid] = { atk: atk || 0, def: def || 0, destroyAfter: !!destroyAfter };
@@ -1278,7 +1286,10 @@
          * sopra), non fino a fine turno — es. Fuoco di Copertura (id 852).
          */
         grantDamageStepOnlyBonus(card, atk, def) {
-            const slot = Tavolo.ordine().flatMap((owner) => fieldOf(owner)).find((s) => s && s.card.uid === card.uid);
+            if (!card || card.uid === undefined || card.uid === null) return;
+            const slot = Tavolo.ordine().flatMap((owner) => fieldOf(owner))
+                .find((s) => s && s.card && s.card.uid === card.uid);
+            if (!slot) return;
             if (unaffectedBySourceCard(this, slot)) return;
             gameState.damageStepOnlyBonusFor = gameState.damageStepOnlyBonusFor || {};
             gameState.damageStepOnlyBonusFor[card.uid] = { atk: atk || 0, def: def || 0 };

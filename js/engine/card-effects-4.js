@@ -1382,12 +1382,12 @@
     // ================================================================
     CardEffects.register(549, {
         canActivate(ctx) {
-            return Tavolo.ordine().some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown));
+            return Tavolo.ordine().some((owner) => ctx.field(owner).some((s) => s && s.card && !s.isFaceDown));
         },
         activate(ctx) {
             const candidates = [];
             Tavolo.ordine().forEach((owner) => {
-                ctx.field(owner).forEach((s) => { if (s && !s.isFaceDown) candidates.push(s.card); });
+                ctx.field(owner).forEach((s) => { if (s && s.card && !s.isFaceDown) candidates.push(s.card); });
             });
             const boost = (card) => {
                 const owner = ctx.field('player').some((s) => s && s.card.uid === card.uid) ? 'player' : 'bot';
@@ -2083,14 +2083,18 @@
     // ================================================================
     CardEffects.register(595, {
         canActivate(ctx) {
-            return Tavolo.ordine().some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown));
+            return Tavolo.ordine().some((owner) => ctx.field(owner).some((s) => s && s.card && !s.isFaceDown));
         },
         activate(ctx) {
             const candidates = [];
             Tavolo.ordine().forEach((owner) => {
-                ctx.field(owner).forEach((s) => { if (s && !s.isFaceDown) candidates.push(s.card); });
+                ctx.field(owner).forEach((s) => { if (s && s.card && !s.isFaceDown) candidates.push(s.card); });
             });
             const boost = (card) => {
+                // Il bersaglio può lasciare il Terreno mentre l'attivazione
+                // aspetta la propria risoluzione; in quel caso non resta
+                // alcuna carta valida da rinforzare.
+                if (!card) return;
                 ctx.grantTemporaryAtkDefBonus(card, 0, 700, false);
                 ctx.log(`🛡️ Il Guardiano Affidabile aumenta la DEF di ${card.name} di 700 punti!`);
             };
