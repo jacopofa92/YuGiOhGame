@@ -374,7 +374,7 @@
                         }
                     }
                 }
-                const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                const targetSlot = ctx.field(scelto.owner)[scelto.index];
                 if (!targetSlot) return;
                 targetSlot.position = targetSlot.position === 'attack' ? 'defense' : 'attack';
                 ctx.log(`⚙️ Controllore Nemico cambia la Posizione di ${targetSlot.card.name}!`);

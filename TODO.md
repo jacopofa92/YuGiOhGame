@@ -19,14 +19,17 @@ Falliscono su `main` anche senza il lavoro grafico e di sync del 9 ottobre
 commit dell'audit dei duellanti (Toon, Pegasus, Yami Yugi, audit della serie
 principale).
 
-- [ ] `duello-gemello` va in errore prima di finire. È il test che controlla che
-      il Multiplayer a passo comune resti allineato: il più importante dei tre.
-- [ ] `duello-senza-testa`: "la partita col bersaglio sparito prima del calcolo
-      dei danni deve attraversare il caso e finire" — trovate 0.
-- [ ] `guardrail-bersagli-dichiarati`: carte il cui effetto bersaglia un mostro
-      senza passare dal checkpoint di targeting (fra le altre 492, 549, 632,
-      747, 793, 820).
-- [ ] Rimettere verdi tutti e tre prima di continuare l'audit.
+- [x] `duello-gemello` — sistemato: Controllore Nemico (845) usava una
+      variabile inesistente nella modalità "cambia Posizione"; a passo comune
+      gli uid dei Token dipendevano dal generatore di tutta la partita.
+- [x] `duello-senza-testa` — sistemato: la partita d'esempio (seme 473) non
+      passava più dal caso dopo il ribilanciamento dei mazzi; ora Pegasus
+      contro Joey, seme 466.
+- [x] `guardrail-bersagli-dichiarati` — sistemato: il guardrail non conosceva
+      `declareTargetWaiting`; le 16 carte erano già a posto.
+- [ ] Quel controllo di `duello-senza-testa` resta fragile: un altro cambio di
+      mazzi può far sparire di nuovo il caso. Meglio un test che costruisce la
+      situazione a mano invece di cercarla in una partita simulata.
 
 ## 3. Prove a mano sul telefono (APK) e sul PC
 
