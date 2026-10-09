@@ -246,6 +246,12 @@ righe, actions.js 3.855, game-flow.js 3.797; 205 accessi al DOM e 85
 
 **Priorità 5 — espansioni**
 - [ ] Forbidden Memories come secondo set di regole sullo stesso nucleo.
+- [x] Audit dei 21 deck avversari Forbidden Memories sull'attuale set di
+      regole Duel Monsters: 15.750 duelli, 20 curve monotone su 21; Atenza
+      resta quasi piatto per scelta tematica. Corretti Controllore Nemico,
+      uso Hard degli effetti continui ripetibili e piano Wall Shadow;
+      dettagli in `FORBIDDEN_MEMORIES_AUDIT.md`. Questo non sostituisce il
+      futuro set di regole specifico di Forbidden Memories.
 - [ ] Più avanti, se si vorrà: file `.ts` veri compilati in uno script
       classico (esbuild, formato IIFE: `file://` resta), un framework per
       l'interfaccia, il 2 contro 2.

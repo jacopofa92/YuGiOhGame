@@ -4201,3 +4201,21 @@ Abbandonato 18,5%, Restrizione dai Mille Occhi 4%. Il tool dedicato
 `tools/audit-pegasus-identita.js` conta i segnali dal registro completo;
 `duello-senza-testa.js` espone `cercaTutte` per evitare di rigiocare un
 duello una volta per ogni segnale.
+
+### Audit deck avversari Forbidden Memories (2026-10-10)
+
+Il riferimento è `FORBIDDEN_MEMORIES_AUDIT.md`: 21 personaggi, cinque deck
+campione, 50 semi, 15.750 duelli nella matrice principale. Starter e
+Structure non sono stati toccati. Venti curve su ventuno sono monotone;
+High Mage Atenza ha Hard 1,6 punti sotto Medio, ma realizza più spesso Drago
+Nero Meteora (7% contro 2%) e resta invariato per non sacrificare Drago
+Bianco e il piano narrativo a un margine statistico minimo.
+
+Difetti emersi: Controllore Nemico usava `decl` fuori scope nel ramo cambio
+Posizione; Hard ignorava le carte scoperte `repeatableWhileContinuous`;
+Labyrinth Mage Settava Muro coperto rendendo impossibile Labirinto Magico;
+Giltia era un Extra Deck morto e fuori piano. Ora Hard riconosce
+genericamente gli effetti continui ripetibili, il playbook di Labyrinth
+prepara Muro scoperto in Difesa e Giltia è stato rimosso soltanto dai tre
+deck di Labyrinth Mage. Il futuro set di regole PS1 resta un'attività
+separata: questo audit riguarda i deck dentro l'attuale Duel Monsters.

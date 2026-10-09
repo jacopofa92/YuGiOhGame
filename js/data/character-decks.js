@@ -4665,9 +4665,7 @@ const characterDeckDatabase = {
                 { id: 595, qty: 1 }, // Il Guardiano Affidabile
                 { id: 546, qty: 1 } // Dian Keto la Maestra delle Cure
             ],
-            extra: [
-                { id: 268, qty: 1 } // Giltia il Cavaliere D.
-            ]
+            extra: []
         },
         medium: {
             main: [
@@ -4706,9 +4704,7 @@ const characterDeckDatabase = {
                 { id: 646, qty: 1 }, // Tempesta Pesante
                 { id: 363, qty: 1 } // Cappelli Magici
             ],
-            extra: [
-                { id: 268, qty: 1 } // Giltia il Cavaliere D.
-            ]
+            extra: []
         },
         hard: {
             main: [
@@ -4724,7 +4720,7 @@ const characterDeckDatabase = {
                 { id: 737, qty: 2 }, // Mago Apprendista
                 { id: 550, qty: 1 }, // Il Mistico Severo
                 { id: 194, qty: 1 }, // Illusionista dagli Occhi Oscuri
-                { id: 364, qty: 1 }, // Labirinto Magico
+                { id: 364, qty: 2 }, // Labirinto Magico
                 { id: 557, qty: 1 }, // Yami
                 { id: 127, qty: 1 }, // Libro delle Arti Segrete
                 { id: 848, qty: 1 }, // Vaso dell'Avarizia
@@ -4734,7 +4730,6 @@ const characterDeckDatabase = {
                 { id: 272, qty: 1 }, // Carità Aggraziata
                 { id: 40, qty: 1 }, // Buco Trappola
                 { id: 7, qty: 1 }, // Buco Nero
-                { id: 793, qty: 1 }, // Armatura Sakuretsu
                 { id: 8, qty: 1 }, // Spada Rivelatrice
                 { id: 820, qty: 1 }, // Nega Attacco
                 { id: 10, qty: 1 }, // Cilindro Magico
@@ -4747,9 +4742,7 @@ const characterDeckDatabase = {
                 { id: 382, qty: 1 }, // Forza dello Specchio
                 { id: 448, qty: 1 } // Giudizio Solenne
             ],
-            extra: [
-                { id: 268, qty: 1 } // Giltia il Cavaliere D.
-            ]
+            extra: []
         }
     },
 

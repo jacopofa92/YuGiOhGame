@@ -1,0 +1,164 @@
+{
+  "generatoIl": "2026-10-09T19:22:13.865Z",
+  "metodo": "cinque deck campione Hard; conteggio delle Evocazioni Fusione del bot nel registro completo",
+  "opzioni": {
+    "partite": 20,
+    "turni": 80,
+    "seme": 94000
+  },
+  "campioni": [
+    "yamiYugi",
+    "joey",
+    "pegasus",
+    "mako",
+    "bakura"
+  ],
+  "piani": {
+    "priestSeto": [
+      "Drago Bianco Definitivo"
+    ],
+    "highMageAtenza": [
+      "Drago Nero Meteora"
+    ],
+    "meadowMage": [
+      "Gaia il Campione dei Draghi"
+    ],
+    "highMageKepura": [
+      "Gaia il Campione dei Draghi",
+      "Drago Nero Meteora"
+    ],
+    "heishin": [
+      "Drago Nero del Teschio"
+    ],
+    "darkNite": [
+      "Drago Nero Meteora",
+      "Drago Nero del Teschio"
+    ]
+  },
+  "risultati": [
+    {
+      "duellante": "priestSeto",
+      "livello": "medium",
+      "duelli": 100,
+      "duelliConFusione": 2,
+      "percentualeDuelli": 2,
+      "evocazioniPerFusione": {
+        "Drago Bianco Definitivo": 2
+      }
+    },
+    {
+      "duellante": "priestSeto",
+      "livello": "hard",
+      "duelli": 100,
+      "duelliConFusione": 2,
+      "percentualeDuelli": 2,
+      "evocazioniPerFusione": {
+        "Drago Bianco Definitivo": 2
+      }
+    },
+    {
+      "duellante": "highMageAtenza",
+      "livello": "medium",
+      "duelli": 100,
+      "duelliConFusione": 2,
+      "percentualeDuelli": 2,
+      "evocazioniPerFusione": {
+        "Drago Nero Meteora": 2
+      }
+    },
+    {
+      "duellante": "highMageAtenza",
+      "livello": "hard",
+      "duelli": 100,
+      "duelliConFusione": 7,
+      "percentualeDuelli": 7,
+      "evocazioniPerFusione": {
+        "Drago Nero Meteora": 7
+      }
+    },
+    {
+      "duellante": "meadowMage",
+      "livello": "medium",
+      "duelli": 100,
+      "duelliConFusione": 8,
+      "percentualeDuelli": 8,
+      "evocazioniPerFusione": {
+        "Gaia il Campione dei Draghi": 8
+      }
+    },
+    {
+      "duellante": "meadowMage",
+      "livello": "hard",
+      "duelli": 100,
+      "duelliConFusione": 9,
+      "percentualeDuelli": 9,
+      "evocazioniPerFusione": {
+        "Gaia il Campione dei Draghi": 9
+      }
+    },
+    {
+      "duellante": "highMageKepura",
+      "livello": "medium",
+      "duelli": 100,
+      "duelliConFusione": 7,
+      "percentualeDuelli": 7,
+      "evocazioniPerFusione": {
+        "Gaia il Campione dei Draghi": 7,
+        "Drago Nero Meteora": 0
+      }
+    },
+    {
+      "duellante": "highMageKepura",
+      "livello": "hard",
+      "duelli": 100,
+      "duelliConFusione": 12,
+      "percentualeDuelli": 12,
+      "evocazioniPerFusione": {
+        "Gaia il Campione dei Draghi": 7,
+        "Drago Nero Meteora": 5
+      }
+    },
+    {
+      "duellante": "heishin",
+      "livello": "medium",
+      "duelli": 100,
+      "duelliConFusione": 9,
+      "percentualeDuelli": 9,
+      "evocazioniPerFusione": {
+        "Drago Nero del Teschio": 9
+      }
+    },
+    {
+      "duellante": "heishin",
+      "livello": "hard",
+      "duelli": 100,
+      "duelliConFusione": 12,
+      "percentualeDuelli": 12,
+      "evocazioniPerFusione": {
+        "Drago Nero del Teschio": 12
+      }
+    },
+    {
+      "duellante": "darkNite",
+      "livello": "medium",
+      "duelli": 100,
+      "duelliConFusione": 7,
+      "percentualeDuelli": 7,
+      "evocazioniPerFusione": {
+        "Drago Nero Meteora": 3,
+        "Drago Nero del Teschio": 4
+      }
+    },
+    {
+      "duellante": "darkNite",
+      "livello": "hard",
+      "duelli": 100,
+      "duelliConFusione": 4,
+      "percentualeDuelli": 4,
+      "evocazioniPerFusione": {
+        "Drago Nero Meteora": 3,
+        "Drago Nero del Teschio": 1
+      }
+    }
+  ]
+}

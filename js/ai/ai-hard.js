@@ -127,6 +127,28 @@
                 }
             });
         }
+        if (personaggio === 'labyrinthMage') {
+            const mano = Tavolo.mano(io, gameState);
+            const preparaWallShadow = mano.some((card) => card.id === 364);
+            return AI_MEDIUM.chooseSummon(gameState, io, {
+                scoreMonster(card) {
+                    // Con Labirinto Magico pronto, Muro è il vero inizio
+                    // della combo identitaria e non un semplice difensore.
+                    if (preparaWallShadow && card.id === 337) return 10000;
+                    return card.attack || 0;
+                },
+                decidePosture(card) {
+                    if (preparaWallShadow && card.id === 337) {
+                        return { position: 'defense', faceDown: false };
+                    }
+                    return AI_SHARED.decideMonsterPosture(card, gameState, io);
+                },
+                isTributeSummonWorthwhile(card, sacrificedValue) {
+                    if (preparaWallShadow && card.id === 337) return true;
+                    return AI_SHARED.isTributeSummonWorthwhile(card, sacrificedValue, gameState, io);
+                }
+            });
+        }
         return AI_MEDIUM.chooseSummon(gameState, io);
     }
 
@@ -263,6 +285,22 @@
                 const offerIndex = st.findIndex((slot, index) => slot && slot.card.id === 559
                     && window.DuelEngine && DuelEngine.canActivate(io, 'st', index));
                 if (offerIndex !== -1) return { zone: 'st', index: offerIndex, card: st[offerIndex].card };
+            }
+        }
+        // Alcune Magie/Trappole scoperte espongono un secondo effetto
+        // volontario durante la Main Phase (repeatableWhileContinuous):
+        // per esempio Labirinto Magico prima si equipaggia, poi sacrifica
+        // Muro del Labirinto per Wall Shadow. Il riconoscimento passa dal
+        // contratto della definizione, non da una lista di ID, così vale
+        // anche per carte custom e future che dichiarano lo stesso hook.
+        const retrocampo = Tavolo.magieTrappole(io, gameState);
+        for (let index = 0; index < retrocampo.length; index++) {
+            const slot = retrocampo[index];
+            if (!slot || slot.isFaceDown || !window.DuelEngine) continue;
+            const definizione = DuelEngine.getDefinition(slot.card.id);
+            if (!definizione || !definizione.repeatableWhileContinuous) continue;
+            if (DuelEngine.canActivate(io, 'st', index)) {
+                return { zone: 'st', index, card: slot.card };
             }
         }
         // Prima il piano di controllo di Pegasus: lasciare inutilizzato un
