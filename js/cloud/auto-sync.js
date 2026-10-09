@@ -81,8 +81,47 @@
             // avviso a ogni sbalzo di rete sarebbe rumore su qualcosa che
             // si sistema da sé al tentativo successivo. Il segno resta, ed
             // è quello che conta.
-            .catch(() => false)
+            // TRANNE quando il cloud ha già un salvataggio più recente
+            // (pushSave si rifiuta di sovrascriverlo, vedi cloud-sync.js):
+            // lì non c'è niente di nuovo da mandare, e tenere il segno
+            // vorrebbe dire ritentare all'infinito. Ci pensa la
+            // riconciliazione a portare qui la copia buona.
+            .catch((e) => {
+                if (e && e.code === 'CLOUD_PIU_RECENTE') segna(false);
+                return false;
+            })
             .then((esito) => { inCorso = false; return esito; });
+    }
+
+    /**
+     * Ogni quanto, al massimo, si riguarda il cloud quando si torna sul
+     * gioco. Abbastanza da non fare una richiesta a ogni cambio pagina,
+     * abbastanza poco da accorgersi di una partita fatta su un altro
+     * dispositivo mentre questo era in tasca.
+     */
+    const INTERVALLO_RICONCILIAZIONE_MS = 2 * 60 * 1000;
+
+    /**
+     * Riallinea questo dispositivo al cloud (CloudSync.riconcilia) quando si
+     * torna sul gioco dopo un po'. L'APK resta spesso aperto in sottofondo
+     * per giorni: senza questo, chi gioca su desktop e poi riprende il
+     * telefono troverebbe i dati di prima finché non chiude l'app.
+     *
+     * Se sono arrivati dati più nuovi, la pagina li sta ancora MOSTRANDO
+     * vecchi: si ricarica. Mai durante un duello (gameState esiste solo lì):
+     * una partita interrotta di colpo è peggio di un menu da aggiornare, e i
+     * dati sotto sono comunque già quelli nuovi — le scritture di fine
+     * duello partono da lì.
+     */
+    function riguardaIlCloud() {
+        if (!pronto() || typeof CloudSync.riconcilia !== 'function') return;
+        if (CloudSync.msDallUltimaRiconciliazione() < INTERVALLO_RICONCILIAZIONE_MS) return;
+        CloudSync.riconcilia({ attesaMassimaMs: 8000 }).then((r) => {
+            if (!r || r.esito !== 'scaricato') return;
+            if (typeof gameState !== 'undefined') return;
+            try { sessionStorage.setItem('ygoAvvisoSync', 'scaricato'); } catch (e) { /* noop */ }
+            location.reload();
+        });
     }
 
     function programma() {
@@ -116,6 +155,7 @@
 
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'hidden' && (timer || inSospeso())) caricaOra();
+        if (document.visibilityState === 'visible') riguardaIlCloud();
     });
     window.addEventListener('pagehide', () => {
         if (timer || inSospeso()) caricaOra();
@@ -126,9 +166,14 @@
     // commento su initialSessionPromise in cloud-sync.js) perché senza
     // sessione non c'è niente da caricare e si concluderebbe subito un
     // "non pronto" che nessuno riproverebbe.
+    // Poi si riguarda il cloud — dopo il tentativo di caricamento, non
+    // insieme, così si parte da una situazione già assestata. Il menu
+    // (index.html) lo fa da sé al proprio avvio, PRIMA di aprirsi, e
+    // dichiara RICONCILIA_DA_SE: qui si salterebbe solo un doppione.
     if (window.CloudSync && typeof CloudSync.waitForUser === 'function') {
         CloudSync.waitForUser().then(() => {
-            if (inSospeso()) caricaOra();
+            const prima = inSospeso() ? caricaOra() : Promise.resolve();
+            return prima.then(() => { if (!window.RICONCILIA_DA_SE) riguardaIlCloud(); });
         }).catch(() => { /* nessuna sessione: si riproverà al prossimo avvio */ });
     }
 

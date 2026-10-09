@@ -5246,6 +5246,10 @@
     <script src="js/vendor/supabase.min.js"></script>
     <script src="js/cloud/supabase-config.js"></script>
     <script src="js/cloud/cloud-sync.js"></script>
+<!-- Il menu allinea il salvataggio al cloud da sé, al proprio avvio e PRIMA
+     di aprirsi (vedi initGate più sotto): auto-sync.js non deve farlo una
+     seconda volta in parallelo. Va dichiarato prima di caricarlo. -->
+<script>window.RICONCILIA_DA_SE = true;</script>
 <script src="js/cloud/auto-sync.js"></script>
     <!-- Catalogo Sfide + motore di tracking + banner: servono alla vista
          fusa "Sfide" (prima sfide.html a sé stante, vedi il blocco
@@ -5957,22 +5961,74 @@
             let gatePassed = false;
             try { gatePassed = sessionStorage.getItem(GATE_SESSION_KEY) === '1'; } catch (e) { /* noop */ }
             const cloudUsable = !!(window.CloudSync && CloudSync.available);
+            /** Una data leggibile per i messaggi, o un trattino. */
+            function quandoBreve(ms) {
+                if (!ms || isNaN(ms)) return '—';
+                return new Date(ms).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+            }
+            /** Dice cosa ha fatto la riconciliazione col cloud, solo quando c'è qualcosa da dire. */
+            function annunciaRiconciliazione(sync) {
+                if (!sync) return;
+                if (sync.esito === 'scaricato') showMenuToast(`⬇️ Caricati i progressi più recenti dal cloud (${quandoBreve(sync.quandoCloud)}).`);
+                else if (sync.esito === 'caricato') showMenuToast('⬆️ I progressi di questo dispositivo erano i più recenti: salvati sul cloud.');
+                else if (sync.esito === 'offline') showMenuToast('📴 Cloud non raggiungibile: uso il salvataggio di questo dispositivo.');
+            }
+            /** Il messaggio lasciato da auto-sync.js prima di ricaricare la pagina per dati arrivati da un altro dispositivo. */
+            function annunciaAvvisoInSospeso() {
+                let avviso = null;
+                try { avviso = sessionStorage.getItem('ygoAvvisoSync'); sessionStorage.removeItem('ygoAvvisoSync'); } catch (e) { /* noop */ }
+                if (avviso === 'scaricato') showMenuToast('⬇️ Arrivati i progressi più recenti da un altro dispositivo.');
+            }
             function decide() {
-                hideSplashThen(() => {
-                    if (!cloudUsable) { showGateUnavailable(); return; }
-                    if (gatePassed) { showMenu(); return; }
-                    CloudSync.waitForUser().then((user) => {
-                        if (!user) { showGate(); return; }
-                        CloudSync.ensureApprovedSession().then((approved) => {
-                            if (approved) { passGate(); return; }
-                            const profile = CloudSync.getProfile();
-                            const message = profile && profile.status === 'rejected'
-                                ? 'La tua registrazione non è stata approvata.'
-                                : 'Il tuo account è in attesa di approvazione da parte di un amministratore.';
-                            CloudSync.signOut().catch(() => { /* noop */ }).then(() => showGate(`⚠️ ${message}`));
+                // La parte di rete — chi sei, sei approvato, e ALLINEAMENTO
+                // COL CLOUD — parte SUBITO, mentre lo splash è ancora a
+                // schermo, e il menu si apre solo dopo. Prima, con la sessione
+                // già attiva (il caso normale dell'APK), si entrava dritti nel
+                // menu col salvataggio di QUESTO dispositivo senza guardare il
+                // cloud: progressi fatti su desktop, telefono fermo ai dati
+                // vecchi (segnalato dall'utente). La riconciliazione ha un
+                // tetto di tempo: senza rete si entra lo stesso, e lo si dice.
+                // Ritorno al menu da un'altra pagina, nella stessa sessione:
+                // l'accesso è già verificato, ma il cloud si riguarda se
+                // l'ultima volta è stata più di due minuti fa (stesso
+                // intervallo di auto-sync.js) — nel frattempo si può aver
+                // giocato su un altro dispositivo.
+                const daRiguardare = cloudUsable && gatePassed
+                    && CloudSync.msDallUltimaRiconciliazione() > 2 * 60 * 1000;
+                const verdetto = !cloudUsable ? Promise.resolve(null)
+                    : gatePassed ? (daRiguardare
+                        ? CloudSync.waitForUser().then(() => CloudSync.riconcilia({ attesaMassimaMs: 6000 })).then((sync) => ({ azione: 'entra', sync: sync }))
+                        : Promise.resolve(null))
+                    : CloudSync.waitForUser().then((user) => {
+                        if (!user) return { azione: 'gate' };
+                        return CloudSync.ensureApprovedSession().then((approved) => {
+                            if (!approved) return { azione: 'bloccato' };
+                            return CloudSync.riconcilia({ attesaMassimaMs: 6000 })
+                                .then((sync) => ({ azione: 'entra', sync: sync }));
                         });
-                    });
-                });
+                    }).catch(() => ({ azione: 'gate' }));
+                verdetto.then((v) => hideSplashThen(() => {
+                    if (!cloudUsable) { showGateUnavailable(); return; }
+                    if (gatePassed) {
+                        showMenu();
+                        annunciaAvvisoInSospeso();
+                        // Solo se qualcosa è cambiato davvero: tornare al menu
+                        // non deve far comparire un messaggio ogni volta.
+                        if (v && v.sync && v.sync.esito === 'scaricato') annunciaRiconciliazione(v.sync);
+                        return;
+                    }
+                    if (v.azione === 'gate') { showGate(); return; }
+                    if (v.azione === 'bloccato') {
+                        const profile = CloudSync.getProfile();
+                        const message = profile && profile.status === 'rejected'
+                            ? 'La tua registrazione non è stata approvata.'
+                            : 'Il tuo account è in attesa di approvazione da parte di un amministratore.';
+                        CloudSync.signOut().catch(() => { /* noop */ }).then(() => showGate(`⚠️ ${message}`));
+                        return;
+                    }
+                    passGate();
+                    annunciaRiconciliazione(v.sync);
+                }));
             }
             // Recupero da backup nativo (vedi js/native/native-save-backup.js):
             // SOLO se localStorage non ha ALCUN salvataggio (altrimenti

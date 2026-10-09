@@ -970,12 +970,21 @@
      * Lancia un Error con messaggio parlante se `parsed` non è un
      * salvataggio valido, così chi chiama può mostrarlo com'è.
      */
-    function applyExternalSave(parsed) {
+    function applyExternalSave(parsed, opzioni) {
         if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.decks)) {
             throw new Error('Il file non è un salvataggio valido.');
         }
         parsed.player = parsed.player || { name: 'Giocatore' };
-        parsed.player.lastSaved = new Date().toISOString();
+        // `mantieniData`: chi scarica dal CLOUD tiene la data vera di quel
+        // salvataggio (l'ultima modifica, fatta su un altro dispositivo).
+        // Marcarlo "adesso" lo faceva sembrare più nuovo di quanto fosse, e
+        // il confronto fra dispositivi (CloudSync.confrontaSalvataggi) si
+        // basa proprio su questa data. Un file importato a mano invece resta
+        // "adesso": è una scelta fatta ora, e deve vincere.
+        const dataOriginale = parsed.player.lastSaved && !isNaN(Date.parse(parsed.player.lastSaved));
+        if (!(opzioni && opzioni.mantieniData && dataOriginale)) {
+            parsed.player.lastSaved = new Date().toISOString();
+        }
         parsed.records = parsed.records || {};
         parsed.currency = parsed.currency || makeDefaultCurrency();
         parsed.ownedPacks = parsed.ownedPacks || [];

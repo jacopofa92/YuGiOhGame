@@ -476,18 +476,39 @@
      * le due date servono comunque a chi mostra il messaggio di cosa è
      * stato caricato.
      */
+    /**
+     * QUANDO è stato MODIFICATO un salvataggio: la data scritta dentro il
+     * salvataggio stesso (player.lastSaved, aggiornata da SaveManager a ogni
+     * modifica), NON quella della riga sul cloud.
+     *
+     * È il cuore di un difetto vero, segnalato dall'utente ("progressi su
+     * desktop, poi sul telefono vedo dati vecchi"): `updated_at` della riga
+     * vale il momento del CARICAMENTO. Un telefono che caricava la sua copia
+     * vecchia la marcava così come "la più recente", e al confronto
+     * successivo vinceva lei, cancellando i progressi fatti sull'altro
+     * dispositivo. La data di modifica viaggia col salvataggio e non cambia
+     * caricandolo. `updated_at` resta come ripiego per una riga così vecchia
+     * da non avere la data dentro.
+     */
+    function dataModifica(save, ripiego) {
+        const dentro = save && save.player && save.player.lastSaved ? Date.parse(save.player.lastSaved) : NaN;
+        if (!isNaN(dentro)) return dentro;
+        return ripiego ? Date.parse(ripiego) : NaN;
+    }
+
     function confrontaSalvataggi(cloud) {
         const locale = window.SaveManager ? SaveManager.load() : null;
-        const quandoLocale = locale && locale.player && locale.player.lastSaved
-            ? Date.parse(locale.player.lastSaved) : NaN;
-        const quandoCloud = cloud && cloud.updatedAt ? Date.parse(cloud.updatedAt) : NaN;
+        const quandoLocale = dataModifica(locale);
+        const quandoCloud = cloud ? dataModifica(cloud.data, cloud.updatedAt) : NaN;
 
         if (!cloud) return { scelta: 'locale', quandoCloud: null, quandoLocale: quandoLocale };
         if (!locale) return { scelta: 'cloud', quandoCloud: quandoCloud, quandoLocale: null };
         const vLocale = isNaN(quandoLocale) ? -Infinity : quandoLocale;
         const vCloud = isNaN(quandoCloud) ? -Infinity : quandoCloud;
         return {
-            scelta: vCloud >= vLocale ? 'cloud' : 'locale',
+            // 'uguali': stessa data di modifica, quindi lo stesso salvataggio
+            // (tipicamente uno appena scaricato): niente da spostare.
+            scelta: vCloud === vLocale ? 'uguali' : (vCloud > vLocale ? 'cloud' : 'locale'),
             quandoCloud: quandoCloud,
             quandoLocale: quandoLocale
         };
@@ -496,11 +517,40 @@
     // ------------------------------------------------------------------
     // Salvataggio (public.saves — una riga per utente)
     // ------------------------------------------------------------------
-    function pushSave() {
+    /**
+     * Carica il salvataggio locale sul cloud — MA MAI sopra uno più recente.
+     *
+     * Prima caricava sempre, e i caricamenti automatici (auto-sync.js,
+     * cloud-autosync.js) partono da soli: all'avvio se era rimasto qualcosa
+     * in sospeso, e a ogni salvataggio. Un telefono con la copia vecchia
+     * finiva così per scrivere sopra i progressi fatti nel frattempo su un
+     * altro dispositivo, senza che nessuno avesse scelto niente. Ora si
+     * guarda prima cosa c'è sul cloud: se è stato modificato DOPO la copia
+     * di qui, il caricamento si ferma con un errore riconoscibile
+     * (code 'CLOUD_PIU_RECENTE') e la copia buona resta dov'è. Costa una
+     * lettura in più per caricamento, che è il prezzo giusto per un
+     * salvataggio che non si può recuperare.
+     *
+     * `opzioni.forza`: carica comunque (nessun chiamante lo usa oggi; esiste
+     * per un'azione esplicita dell'utente, mai per un automatismo).
+     */
+    function pushSave(opzioni) {
         if (!available) return rejectUnavailable();
         if (!cachedUser) return Promise.reject(new Error('Devi accedere prima di sincronizzare.'));
         const base = window.SaveManager ? SaveManager.load() : null;
         if (!base) return Promise.reject(new Error('Nessun salvataggio locale da caricare.'));
+        if (opzioni && opzioni.forza) return scriviSalvataggio(base);
+        return fetchCloudSave().then((cloud) => {
+            if (cloud && dataModifica(cloud.data, cloud.updatedAt) > dataModifica(base)) {
+                const e = new Error('Sul cloud c\'è un salvataggio più recente di quello di questo dispositivo: non lo sovrascrivo.');
+                e.code = 'CLOUD_PIU_RECENTE';
+                throw e;
+            }
+            return scriviSalvataggio(base);
+        });
+    }
+
+    function scriviSalvataggio(base) {
         // Provenienze/Tipi Mostro/terminologia personalizzati viaggiano
         // DENTRO il salvataggio invece che in una tabella propria: non
         // richiede alcuna modifica allo schema Supabase (che l'utente
@@ -546,8 +596,75 @@
             if (taxonomy && window.CustomTaxonomy && typeof CustomTaxonomy.importAll === 'function') {
                 CustomTaxonomy.importAll(taxonomy);
             }
-            return SaveManager.applyExternalSave(data);
+            // La data di modifica resta quella del cloud (vedi dataModifica):
+            // la copia di qui diventa IDENTICA a quella, non "più nuova".
+            return SaveManager.applyExternalSave(data, { mantieniData: true });
         });
+    }
+
+    // ------------------------------------------------------------------
+    // Riconciliazione: allinea questo dispositivo al cloud
+    // ------------------------------------------------------------------
+    const CHIAVE_ULTIMA_RICONCILIAZIONE = 'ygoUltimaRiconciliazione';
+    let riconciliazioneInCorso = null;
+
+    /**
+     * Confronta il salvataggio di qui con quello sul cloud e tiene il PIÙ
+     * RECENTE (per data di modifica, vedi dataModifica): scarica se il cloud
+     * è più nuovo, carica se lo è questo dispositivo, non fa nulla se sono
+     * lo stesso. Le carte personalizzate seguono il salvataggio.
+     *
+     * Prima questo confronto avveniva SOLO quando si faceva l'accesso a
+     * mano. Con la sessione già attiva (il caso normale dell'APK, che resta
+     * collegato) il gioco si apriva sul salvataggio del dispositivo senza
+     * guardare il cloud: progressi fatti su desktop, telefono fermo ai dati
+     * vecchi. Ora la chiamano l'avvio del menu e il ritorno in primo piano.
+     *
+     * `opzioni.attesaMassimaMs`: oltre questo tempo si rinuncia e si gioca
+     * col salvataggio di qui (esito 'offline'); un risultato che arrivasse
+     * dopo NON viene applicato, per non cambiare i dati sotto i piedi a chi
+     * ha già cominciato a giocare.
+     *
+     * Torna { esito: 'scaricato'|'caricato'|'uguale'|'nessuno'|'offline',
+     * quandoCloud, quandoLocale }. Due chiamate ravvicinate condividono la
+     * stessa richiesta.
+     */
+    function riconcilia(opzioni) {
+        if (!available || !cachedUser || !window.SaveManager) return Promise.resolve({ esito: 'offline' });
+        if (riconciliazioneInCorso) return riconciliazioneInCorso;
+        let scaduto = false;
+        const lavoro = fetchCloudSave().then((cloud) => {
+            if (scaduto) return { esito: 'offline' };
+            const haLocale = SaveManager.hasSave();
+            if (!cloud && !haLocale) return { esito: 'nessuno' };
+            const verdetto = confrontaSalvataggi(cloud);
+            const base = { quandoCloud: verdetto.quandoCloud, quandoLocale: verdetto.quandoLocale };
+            if (verdetto.scelta === 'uguali') return Object.assign({ esito: 'uguale' }, base);
+            if (verdetto.scelta === 'cloud') {
+                return Promise.all([pullSave(), pullCustomCards().catch(() => null)])
+                    .then(() => Object.assign({ esito: 'scaricato' }, base));
+            }
+            return Promise.all([pushSave(), pushCustomCards().catch(() => null)])
+                .then(() => Object.assign({ esito: 'caricato' }, base));
+        }).then((r) => {
+            if (r.esito !== 'offline') {
+                try { sessionStorage.setItem(CHIAVE_ULTIMA_RICONCILIAZIONE, String(Date.now())); } catch (e) { /* noop */ }
+            }
+            return r;
+        }).catch(() => ({ esito: 'offline' }));
+        const attesa = opzioni && opzioni.attesaMassimaMs;
+        const conTetto = attesa
+            ? Promise.race([lavoro, new Promise((ok) => setTimeout(() => { scaduto = true; ok({ esito: 'offline' }); }, attesa))])
+            : lavoro;
+        riconciliazioneInCorso = conTetto.then((r) => { riconciliazioneInCorso = null; return r; });
+        return riconciliazioneInCorso;
+    }
+
+    /** Millisecondi dall'ultima riconciliazione riuscita in questa sessione (Infinity se mai). */
+    function msDallUltimaRiconciliazione() {
+        let t = NaN;
+        try { t = Number(sessionStorage.getItem(CHIAVE_ULTIMA_RICONCILIAZIONE)); } catch (e) { /* noop */ }
+        return t ? Date.now() - t : Infinity;
     }
 
     // ------------------------------------------------------------------
@@ -611,6 +728,8 @@
         deleteAccount: deleteAccount,
         resetAccount: resetAccount,
         confrontaSalvataggi: confrontaSalvataggi,
+        riconcilia: riconcilia,
+        msDallUltimaRiconciliazione: msDallUltimaRiconciliazione,
         adminListProfiles: adminListProfiles,
         adminSetProfileStatus: adminSetProfileStatus,
         adminPendingCount: adminPendingCount,
