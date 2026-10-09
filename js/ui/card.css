@@ -25,10 +25,52 @@
  * il resto si adatta da solo.
  */
 
+/* ============================================================
+   Valori condivisi da TUTTE le pagine e da tutti i file che disegnano o
+   dimensionano una carta (anche i CSS del Negozio, dello sbustamento,
+   delle animazioni, e le misure scritte da JS). Prima erano copiati a
+   mano in una trentina di punti: una copia sbagliata deformava quella
+   carta e nessuno se ne accorgeva.
+   ============================================================ */
+:root {
+    /* Larghezza / altezza di una carta vera (59 x 86 mm). Per l'altezza da
+       una larghezza: calc(<larghezza> / var(--card-ratio)). */
+    --card-ratio: 0.685;
+    /* Colore per tipo di carta, come le carte vere: Mostro oro, Magia
+       verde, Trappola magenta, Rituale blu, Fusione viola; i Mostri con
+       effetto più arancioni, i Normali più gialli. Li usano anche i
+       bollini colorati delle pagine (Regole, Cartoteca...). */
+    --carta-mostro: #f39c12;
+    --carta-mostro-normale: #f5c53a;
+    --carta-mostro-effetto: #e0740a;
+    --carta-rituale: #4a90d9;
+    --carta-fusione: #a855d9;
+    --carta-magia: #1abc9c;
+    --carta-trappola: #d162a4;
+}
+
+/* ============================================================
+   COME È FATTA UNA CARTA: una scatola e un corpo.
+   ============================================================
+   .card è solo la SCATOLA: misura, posizione, interazione (hover,
+   trascinamento, rotazione in Difesa) e contenitore delle container query.
+   Il CORPO visibile (sfondo colorato per tipo, bordo, angoli arrotondati)
+   lo disegna il suo ::before, e il contenuto (.card-frame / .card-back-
+   frame) gli sta sopra, rientrato del padding della scatola (la cornice
+   colorata che si vede tutt'intorno).
+
+   Perché così e non tutto su .card: una container query cambia lo stile
+   di ciò che sta DENTRO il contenitore, mai del contenitore stesso — e la
+   carta deve cambiare aspetto in base alla PROPRIA larghezza (vedi
+   "Carta compatta" in fondo al file). Lo pseudo-elemento invece interroga
+   la propria carta (verificato in Chromium), quindi corpo e contenuto
+   possono cambiare con la misura senza toccare il markup né il JS.
+   Chi vuole un bagliore o un'ombra attorno alla carta può continuare a
+   metterli su .card: restano fuori dal corpo, come prima. */
 .card {
     width: var(--card-w, 100px);
-    height: var(--card-h, calc(var(--card-w, 100px) / 0.685));
-    aspect-ratio: 0.685;
+    height: var(--card-h, calc(var(--card-w, 100px) / var(--card-ratio)));
+    aspect-ratio: var(--card-ratio);
     /* Il container query container è .card, MA il suo padding NON può
        essere in cqw/%: in Chromium, un padding percentuale (o cqw, che è
        percentuale della propria dimensione) applicato ALLO STESSO
@@ -39,14 +81,21 @@
        cornice" è qui fisso in px, mentre .card-frame (un figlio, non un
        container) può usare cqw tranquillamente per il proprio padding. */
     container-type: inline-size;
+    /* Il corpo (::before, z-index -1) deve restare DENTRO la carta, sotto
+       il contenuto ma sopra ciò che sta dietro la carta: serve un contesto
+       di impilamento proprio. */
+    isolation: isolate;
     flex: 0 0 auto;
-    /* Questo è l'UNICO punto che arrotonda davvero l'angolo visibile di
-       una carta: .card-frame (il fallback CSS disegnato dentro) è già a
-       3px, e comunque .card ha overflow:hidden, quindi è questo raggio a
-       ritagliare tutto il resto, illustrazione compresa.
-       Su MOBILE resta 6px — invariato, richiesta esplicita; su desktop
-       scende a 3px, vedi la regola in fondo al file. */
-    border-radius: 6px;
+    /* Angolo del corpo della carta: 6px su mobile (richiesta esplicita),
+       2px su desktop (regola in fondo al file), 1px sulla carta compatta.
+       Lo leggono il corpo (::before) e l'illustrazione a piena carta. */
+    --card-raggio: 6px;
+    /* La scatola ritaglia ancora quello che sborda (testi lunghissimi su
+       carte minuscole), ma col raggio più piccolo possibile: gli angoli
+       veri li disegnano corpo e illustrazione, che sanno quanto vale il
+       raggio alla misura attuale. Un ritaglio a 6px qui taglierebbe gli
+       angoli della carta compatta, che li vuole a 1px. */
+    border-radius: 1px;
     cursor: pointer;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     position: relative;
@@ -54,29 +103,35 @@
     box-shadow: 0 6px 18px rgba(0,0,0,0.28);
     display: flex;
     flex-direction: column;
+    /* La cornice colorata attorno al riquadro interno. Resta un padding
+       della scatola, e non un margine del contenuto, per un motivo preciso:
+       le unità cqw di tutta la carta si calcolano sulla larghezza INTERNA
+       della scatola (al netto di questo padding). Spostarlo cambierebbe la
+       base di ogni misura interna e sposterebbe nome, stelle e
+       illustrazione di un paio di pixel — misurato. Il corpo (::before,
+       assoluto) copre comunque anche il padding. */
     padding: 3px;
-    border: 0px solid rgba(255,255,255,0.2);
+    border: 0;
     touch-action: none;
+}
+.card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: var(--card-raggio);
+    background: var(--card-sfondo, none);
+    pointer-events: none;
 }
 .card:hover { transform: translateY(-8px) scale(1.06); box-shadow: 0 12px 28px rgba(0,0,0,0.34); }
 
-/* Su mobile (schermo stretto + touch) il bordo colorato attorno a ogni
-   carta, moltiplicato per tante carte piccole in griglia/mano, appesantisce
-   troppo la resa — via anche il border-color per tipo qui sotto, non solo
-   quello base. Stesso identico criterio "è mobile" già usato altrove in
-   duelMonstersCore.html (pointer:coarse + max-width:900px), qui in card.css
-   perché .card è condivisa da Cartoteca/Creazione Deck/duello. */
-@media (pointer: coarse) and (max-width: 900px) {
-    .card, .card[data-type="monster"], .card[data-type="spell"], .card[data-type="trap"] {
-        border: none;
-    }
-}
-
 /* Colori per tipo di carta, come le vere carte Yu-Gi-Oh: Mostro = oro,
-   Magia = verde, Trappola = magenta. */
-.card[data-type="monster"] { background: linear-gradient(145deg, #ffdf8c, #c96f03); border-color: #f39c12; }
-.card[data-type="spell"]   { background: linear-gradient(145deg, #53e8c2, #118f72); border-color: #1abc9c; }
-.card[data-type="trap"]    { background: linear-gradient(145deg, #e08fc0, #8e3d75); border-color: #d162a4; }
+   Magia = verde, Trappola = magenta. Ogni regola dice solo QUALI colori
+   usare (--card-sfondo per il corpo, --card-tinta per il filo della carta
+   compatta): li applica il corpo. */
+.card[data-type="monster"] { --card-sfondo: linear-gradient(145deg, #ffdf8c, #c96f03); --card-tinta: var(--carta-mostro); }
+.card[data-type="spell"]   { --card-sfondo: linear-gradient(145deg, #53e8c2, #118f72); --card-tinta: var(--carta-magia); }
+.card[data-type="trap"]    { --card-sfondo: linear-gradient(145deg, #e08fc0, #8e3d75); --card-tinta: var(--carta-trappola); }
 /* Ovunque venga mostrata una carta (Cartoteca, Creazione Deck, duello —
    data-has-effect è impostato da js/card-renderer.js in base al campo
    card.vanilla di js/cards-db.js): una sfumatura in più, volutamente
@@ -84,8 +139,8 @@
    arancione) da un vero Normal Monster/"vanilla" (più giallo) — a
    prescindere dal fatto che l'effetto sia già stato programmato in questo
    motore o resti data-only. */
-.card[data-type="monster"][data-has-effect="false"] { background: linear-gradient(145deg, #fff0a8, #d68000); border-color: #f5c53a; }
-.card[data-type="monster"][data-has-effect="true"]  { background: linear-gradient(145deg, #ffb85c, #b8540a); border-color: #e0740a; }
+.card[data-type="monster"][data-has-effect="false"] { --card-sfondo: linear-gradient(145deg, #fff0a8, #d68000); --card-tinta: var(--carta-mostro-normale); }
+.card[data-type="monster"][data-has-effect="true"]  { --card-sfondo: linear-gradient(145deg, #ffb85c, #b8540a); --card-tinta: var(--carta-mostro-effetto); }
 /* Rituale (blu) e Fusione (viola), come sulle vere carte Yu-Gi-Oh: una
    categoria strutturale a sé, non partecipa alla distinzione
    arancione/giallo qui sopra (vedi il "!card.category" in
@@ -93,8 +148,8 @@
    carta). Stessa specificità delle regole has-effect: arrivando DOPO nel
    foglio di stile vincono comunque su un mostro che avesse entrambi gli
    attributi. */
-.card[data-type="monster"][data-category="ritual"] { background: linear-gradient(145deg, #8fc7ff, #1f5fa8); border-color: #4a90d9; }
-.card[data-type="monster"][data-category="fusion"] { background: linear-gradient(145deg, #d9a8f0, #6b2f8f); border-color: #a855d9; }
+.card[data-type="monster"][data-category="ritual"] { --card-sfondo: linear-gradient(145deg, #8fc7ff, #1f5fa8); --card-tinta: var(--carta-rituale); }
+.card[data-type="monster"][data-category="fusion"] { --card-sfondo: linear-gradient(145deg, #d9a8f0, #6b2f8f); --card-tinta: var(--carta-fusione); }
 
 /* ============================================================
    Immagine reale della carta (images/cards/<id>.jpg). Se manca o non
@@ -107,7 +162,10 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    border-radius: 4px;
+    /* Copre tutta la carta, quindi il suo angolo è quello visibile: mai
+       meno di 4px, ma quanto il corpo quando il corpo è più tondo (6px su
+       mobile) — prima ci pensava il ritaglio della scatola. */
+    border-radius: max(4px, var(--card-raggio));
     z-index: 2;
     pointer-events: none;
     /* Dissolvenza invece di un pop istantaneo appena l'immagine finisce di
@@ -337,10 +395,13 @@
    sapesse leggerlo). "Coperta" deve vincere SEMPRE su "che tipo è",
    qualunque altra regola esista oggi o si aggiunga in futuro. */
 .card.face-down {
-    background: linear-gradient(160deg, #4a2f16 0%, #2b1a0a 55%, #3d2610 100%) !important;
-    border-color: #c99a4a !important;
-    box-shadow: inset 0 0 0 2px rgba(201,154,74,0.35), 0 8px 20px rgba(0,0,0,0.28);
+    --card-sfondo: linear-gradient(160deg, #4a2f16 0%, #2b1a0a 55%, #3d2610 100%) !important;
+    --card-tinta: #c99a4a !important;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.28);
 }
+/* L'anello dorato interno del dorso: sta sul corpo, perché un'ombra
+   interna sulla scatola resterebbe SOTTO il corpo e non si vedrebbe. */
+.card.face-down::before { box-shadow: inset 0 0 0 2px rgba(201,154,74,0.35); }
 .card.face-down.has-image .card-back-frame { opacity: 0; transition: opacity 0.25s ease; }
 .card.face-down .card-back-frame {
     position: relative;
@@ -381,11 +442,14 @@
    ============================================================ */
 .card.card-flip-outer {
     padding: 0;
-    border: none;
     box-shadow: none;
     overflow: visible;
     perspective: 900px;
 }
+/* Il contenitore del flip non ha un corpo suo: lo mostrano già le due
+   facce dentro di lui, e un secondo corpo dietro si vedrebbe durante la
+   rotazione. */
+.card.card-flip-outer::before { content: none; }
 .card-flip-inner {
     position: relative;
     width: 100%;
@@ -522,6 +586,65 @@ body[data-card-badges] .card { overflow: visible; }
    Creazione Deck, Crea Carta), non solo per l'arena. */
 @media (pointer: fine) {
     .card {
-        border-radius: 2px;
+        --card-raggio: 2px;
     }
+}
+
+/* ============================================================
+   CARTA COMPATTA: decide la misura della carta, non il dispositivo.
+   ============================================================
+   Richiesta esplicita: sotto una certa larghezza la carta perde barra del
+   nome, stelle e riga Razza/Tipo, e la cornice si assottiglia, così resta
+   quasi solo illustrazione + ATK/DEF — a quelle misure il resto non si
+   legge comunque. Quando la stessa carta si ingrandisce (dettaglio carta,
+   pannello info, Cartoteca) torna da sola la cornice completa.
+
+   Prima questo stile stava in duelMonstersCore.html, scattava con la
+   larghezza della FINESTRA (<= 900px) ed elencava a mano ogni posto in
+   cui compare una carta piccola (Terreno, mano, carta trascinata, carta
+   in volo, flip, anteprima del modale, picker): ogni posto nuovo andava
+   aggiunto alla lista, e una finestra desktop stretta prendeva lo stile
+   del telefono anche con carte grandi. Qui conta solo la carta.
+
+   LA SOGLIA (72px) È STATA MISURATA, non scelta a occhio: le carte
+   compatte di oggi vanno da 28px (Terreno, telefono in orizzontale) a
+   70px (picker, telefono in verticale); le classiche più piccole sono le
+   miniature del Negozio su telefono (74px) e il Terreno su un desktop
+   1400x900 (79px). Spostarla cambia lo stile di tutte le carte vicine
+   alla soglia: misurarle di nuovo prima di farlo.
+   ATTENZIONE al numero scritto qui sotto: la query misura la larghezza
+   INTERNA della carta, cioè senza i 3px di padding per lato. 66px qui
+   vogliono dire una carta larga 72px. Scrivendo 72 le miniature del
+   Negozio (74px, interno 68) diventavano compatte — preso misurando.
+
+   Le carte COPERTE restano come sono: il dorso non ha nulla da togliere,
+   e deve restare uguale a ogni misura. */
+@container (max-width: 66px) {
+    .card:not(.face-down)::before {
+        --card-raggio: 1px;
+        /* Un filo del colore del tipo, molto tenue: separa la carta dal
+           Terreno senza pesare. Sotto 1px Chromium arrotonda comunque a
+           1px, quindi per alleggerirlo si agisce sulla trasparenza. */
+        border: 1px solid color-mix(in srgb, var(--card-tinta, transparent) 15%, transparent);
+    }
+    .card:not(.face-down) > * { --card-raggio: 1px; }
+    .card:not(.face-down) > .card-frame {
+        /* Cornice più sottile: 1px di filo + 1px di respiro dal bordo,
+           invece dei 3px della carta classica. Il padding della scatola
+           non si può cambiare da qui (una container query non tocca il
+           proprio contenitore), quindi è il riquadro ad allargarsi di 1px
+           per lato dentro quel padding. */
+        margin: -1px;
+        width: calc(100% + 2px);
+        height: calc(100% + 2px);
+        padding: 0.5cqw;
+        gap: 0.5cqw;
+        border-width: 0;
+    }
+    .card:not(.face-down) .card-frame-top,
+    .card:not(.face-down) .card-frame-stars,
+    .card:not(.face-down) .card-frame-typeline {
+        display: none;
+    }
+    .card:not(.face-down) .card-frame-art { border-width: 0; }
 }
