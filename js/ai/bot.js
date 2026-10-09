@@ -78,6 +78,12 @@ function turnoIA(io = 'bot') {
                 // (Hard in generale; Media solo per boss esplicitamente
                 // gestiti, vedi ai-medium.js).
                 .then(() => attemptBotActivateSetCards(io))
+                // Offerta Suprema e future carte equivalenti possono aver
+                // riaperto l'Evocazione Normale: sfruttala nello stesso
+                // turno, senza concedere una seconda mossa gratuitamente.
+                .then(() => (!gameState.hasNormalSummoned && Tavolo.mano(io).length > 0)
+                    ? attemptBotSummon(io) : Promise.resolve())
+                .then(waitForSummonCinematics)
                 // Una Magia Terreno del GIOCATORE che "il giocatore di turno"
                 // può usare (Cancello di Fusione id 887): nel suo turno il
                 // bot la sfrutta come farebbe con la propria.

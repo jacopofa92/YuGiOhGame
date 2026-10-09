@@ -35,7 +35,8 @@
         const candidates = [...Tavolo.mano(io, gameState)]
             .filter((card) => card.type === 'monster'
                 && (!window.AI_SHARED || AI_SHARED.canNormalSummonNow(card, gameState, io))
-                && !(window.AI_SHARED && AI_SHARED.shouldHoldForExodia(card)))
+                && !(window.AI_SHARED && AI_SHARED.shouldHoldForExodia(card))
+                && (typeof options.allowCandidate !== 'function' || options.allowCandidate(card)))
             .sort((a, b) => scoreMonster(b) - scoreMonster(a));
 
         for (const card of candidates) {

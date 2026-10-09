@@ -4015,6 +4015,20 @@ Normale/Difficile è quindi qualitativa ma reale; nessuna lista è stata
 alterata per inseguire il rumore di un singolo matchup. Guardrail:
 `kaiba-marik-deck-ai.spec.js`.
 
+Secondo passaggio, su matrice più affidabile: cinque avversari Hard
+(Yami Yugi, Joey, Pegasus, Mako, Bakura) × 50 semi × tre livelli per ogni
+personaggio, 1.500 duelli totali. Prima dei playbook: Kaiba 24,4%/46%/50%,
+Marik 27,2%/56%/65,2%; quindi la progressione esisteva già ed era il singolo
+matchup a nasconderla. Hard ora preserva i corpi deboli quando ha una
+Divinità in mano invece di consumarli per un altro Tributo; Kaiba dà priorità
+a Signore dei D. con Flauto+Drago e al pezzo che completa X/Y/Z; Marik usa
+Offerta Suprema solo se ha un secondo mostro senza Tributi e il flusso bot
+sfrutta davvero l'Evocazione riaperta. Dopo: Kaiba 25,2%/46%/50,4%, con
+Cannoni in 14/250 Hard e Obelisk in 10/250; Marik 27,2%/55,2%/62,8%, con Ra
+in 28/250 Hard. Il piccolo calo di Marik è accettato: resta nettamente sopra
+Normale e usa più spesso la linea anime rischiosa, senza barare né alterare
+le liste.
+
 Sotto carico (headless + CPU condivisa) un `page.waitForTimeout(N)`
 fisso può far leggere lo stato PRIMA che l'animazione/timeout nel
 motore sia davvero completato — trovato e corretto concretamente in

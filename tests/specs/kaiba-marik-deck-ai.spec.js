@@ -48,6 +48,14 @@ module.exports = {
             gameState.playerMonsterField = [null, null, null, null, null];
             const sceltaObelisk = AI_HARD.chooseSummon(gameState, 'bot');
 
+            gameState.botMonsterField = [slot(copia(22, 'ok-1')), slot(copia(22, 'ok-2')), null, null, null];
+            gameState.botHand = [copia(30, 'obelisk-wait'), copia(1, 'blue-eyes-wait'), copia(510, 'x-build')];
+            const sceltaPreparazioneObelisk = AI_HARD.chooseSummon(gameState, 'bot');
+
+            gameState.botMonsterField = [slot(copia(513, 'y-build')), null, null, null, null];
+            gameState.botHand = [copia(510, 'x-complete'), copia(502, 'vorse-alternative')];
+            const sceltaCompletaXY = AI_HARD.chooseSummon(gameState, 'bot');
+
             // Ra: 0/0 è soltanto il valore stampato. A campo nemico libero
             // Marik deve stimare il pagamento LP e scegliere i tre Tributi.
             gameState.personaggioPerPosto.bot = 'marik';
@@ -58,6 +66,16 @@ module.exports = {
             const pagaRaSicuro = AI_SHARED.shouldPayRaLp(gameState, 'bot');
             gameState.playerMonsterField[0] = slot(copia(4, 'threat'));
             const pagaRaConMinaccia = AI_SHARED.shouldPayRaLp(gameState, 'bot');
+
+            gameState.botMonsterField = [slot(copia(22, 'ra-build-1')), null, null, null, null];
+            gameState.botHand = [copia(472, 'ra-wait'), copia(1123, 'helpoemer-wait'), copia(265, 'gil-build')];
+            const sceltaPreparazioneRa = AI_HARD.chooseSummon(gameState, 'bot');
+
+            gameState.turn = 2;
+            gameState.hasNormalSummoned = true;
+            gameState.botSTField = [{ card: copia(559, 'offerta'), isFaceDown: true, setOnTurn: 1 }, null, null, null, null];
+            gameState.botHand = [copia(265, 'gil-follow-up')];
+            const sceltaOfferta = AI_HARD.chooseSetCardActivation(gameState, 'bot');
 
             return {
                 totaliKaiba: ['easy', 'medium', 'hard'].map((l) => totale('kaiba', l)),
@@ -70,8 +88,12 @@ module.exports = {
                 sceltaCannone: sceltaCannone && sceltaCannone.card.id,
                 sceltaObelisk: sceltaObelisk && sceltaObelisk.card.id,
                 tributiObelisk: sceltaObelisk && sceltaObelisk.tributeIndices.length,
+                sceltaPreparazioneObelisk: sceltaPreparazioneObelisk && sceltaPreparazioneObelisk.card.id,
+                sceltaCompletaXY: sceltaCompletaXY && sceltaCompletaXY.card.id,
                 sceltaRa: sceltaRa && sceltaRa.card.id,
                 tributiRa: sceltaRa && sceltaRa.tributeIndices.length,
+                sceltaPreparazioneRa: sceltaPreparazioneRa && sceltaPreparazioneRa.card.id,
+                sceltaOfferta: sceltaOfferta && sceltaOfferta.card.id,
                 pagaRaSicuro,
                 pagaRaConMinaccia
             };
@@ -88,8 +110,12 @@ module.exports = {
             `La IA deve combinare X/Y e poi usare la rimozione del Cannone: ${JSON.stringify(risultato)}`);
         t.assert(risultato.sceltaObelisk === 30 && risultato.tributiObelisk === 3,
             `Kaiba Difficile deve poter Evocare Obelisk con tre Tributi: ${JSON.stringify(risultato)}`);
+        t.assert(risultato.sceltaPreparazioneObelisk === 510 && risultato.sceltaCompletaXY === 510,
+            `Kaiba deve preservare i Tributi e completare intenzionalmente X/Y: ${JSON.stringify(risultato)}`);
         t.assert(risultato.sceltaRa === 472 && risultato.tributiRa === 3,
             `Marik Difficile deve poter Evocare Ra con tre Tributi: ${JSON.stringify(risultato)}`);
+        t.assert(risultato.sceltaPreparazioneRa === 265 && risultato.sceltaOfferta === 559,
+            `Marik deve preservare il campo per Ra e sfruttare Offerta Suprema: ${JSON.stringify(risultato)}`);
         t.assert(risultato.pagaRaSicuro && !risultato.pagaRaConMinaccia,
             `Il pagamento LP di Ra deve essere aggressivo ma non suicida: ${JSON.stringify(risultato)}`);
     }

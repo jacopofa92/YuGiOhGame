@@ -31,6 +31,32 @@
 
     function chooseSummon(gameState, io = 'bot') {
         const personaggio = gameState.personaggioPerPosto && gameState.personaggioPerPosto[io];
+        if (personaggio === 'kaiba') {
+            const hand = Tavolo.mano(io, gameState);
+            const field = Tavolo.mostri(io, gameState);
+            const fieldCount = field.filter(Boolean).length;
+            const hasObelisk = hand.some((card) => card.id === 30);
+            const hasFlutePlan = hand.some((card) => card.id === 578)
+                && hand.some((card) => card.type === 'monster' && card.race === 'Drago');
+            const fieldIds = new Set(field.filter(Boolean).map((slot) => slot.card.id));
+            return AI_MEDIUM.chooseSummon(gameState, io, {
+                allowCandidate(card) {
+                    // A due corpi dal completamento, non consumare tutto per
+                    // un altro mostro da Tributo: Kaiba prepara Obelisk.
+                    return !(hasObelisk && fieldCount >= 2 && fieldCount < 3
+                        && card.id !== 30 && getTributesRequired(card) > 0);
+                },
+                scoreMonster(card) {
+                    if (card.id === 30) return 10000;
+                    if (card.id === 353 && hasFlutePlan) return 7000;
+                    const completaXY = (card.id === 510 && fieldIds.has(513))
+                        || (card.id === 513 && fieldIds.has(510));
+                    const completaXYZ = card.id === 515 && fieldIds.has(511);
+                    if (completaXY || completaXYZ) return 6000;
+                    return card.attack || 0;
+                }
+            });
+        }
         if (personaggio === 'seeker') {
             return AI_MEDIUM.chooseSummon(gameState, io, {
                 // Il Cacciatore di Exodia non cerca pressione immediata:
@@ -58,6 +84,9 @@
             });
         }
         if (personaggio === 'marik') {
+            const hand = Tavolo.mano(io, gameState);
+            const fieldCount = Tavolo.mostri(io, gameState).filter(Boolean).length;
+            const hasRa = hand.some((card) => card.id === 472);
             return AI_MEDIUM.chooseSummon(gameState, io, {
                 // Come Slifer, Ra ha 0/0 stampato. Quando il campo nemico è
                 // libero Marik può pagare fino a 100 LP e trasformarlo nel
@@ -66,6 +95,10 @@
                 scoreMonster(card) {
                     if (card.id !== 472 || !window.AI_SHARED) return card.attack || 0;
                     return AI_SHARED.estimateSummonedStats(card, gameState, io).atk;
+                },
+                allowCandidate(card) {
+                    return !(hasRa && fieldCount >= 1 && fieldCount < 3
+                        && card.id !== 472 && getTributesRequired(card) > 0);
                 }
             });
         }
@@ -195,6 +228,17 @@
     // la regola disponibile anche a future carte custom equivalenti.
     function chooseSetCardActivation(gameState, io = 'bot') {
         const campo = Tavolo.mostri(io, gameState);
+        const personaggio = gameState.personaggioPerPosto && gameState.personaggioPerPosto[io];
+        if (personaggio === 'marik' && gameState.hasNormalSummoned) {
+            const hasFollowUp = Tavolo.mano(io, gameState).some((card) => card.type === 'monster'
+                && getTributesRequired(card) === 0);
+            if (hasFollowUp) {
+                const st = Tavolo.magieTrappole(io, gameState);
+                const offerIndex = st.findIndex((slot, index) => slot && slot.card.id === 559
+                    && window.DuelEngine && DuelEngine.canActivate(io, 'st', index));
+                if (offerIndex !== -1) return { zone: 'st', index: offerIndex, card: st[offerIndex].card };
+            }
+        }
         // Prima il piano di controllo di Pegasus: lasciare inutilizzato un
         // Abbandonato/Mille Occhi scoperto vanificherebbe Ritual/Fusione.
         for (let index = 0; index < campo.length; index++) {
