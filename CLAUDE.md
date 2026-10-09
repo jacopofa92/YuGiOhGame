@@ -3150,6 +3150,40 @@ priorità o richiedono un refactor ampio):
   dritti. Perché il bordo arrivi a zero il raggio deve restare poco sopra
   il 50%.
 
+- ✅ **Carte "vive" e parallasse del menu** (richiesta dell'utente,
+  "grafiche simil 3D"). `CartaViva.rendi(el, card, { modo, bersaglio,
+  area })` in `js/ui/card-renderer.js` (CSS "Carta viva" in fondo a
+  `card.css`): la carta si inclina e la luce ci scorre sopra, con un
+  riflesso che dice la RARITÀ (comune solo luce, rara bordo lucido,
+  super/ultra arcobaleno sull'illustrazione, leggendaria/mitica oro,
+  segreta/mitica grana di scintille). Modi: 'griglia' (Cartoteca, si
+  solleva sotto il mouse), 'fila' (Negozio, buste), 'grande' (scheda carta,
+  premio: segue anche il giroscopio, a riposo ondeggia). **Mai nel duello**,
+  e nei modi griglia/fila l'inclinazione vale solo sotto il mouse: fuori,
+  il transform resta della pagina (le animazioni delle buste muovono la
+  carta). La fonte dell'inclinazione è UNA, `js/ui/inclinazione.js` (mouse
+  + giroscopio con ricentratura lenta, spenta con "riduci movimento"); la
+  usa anche la parallasse del menu in `index.html` (`--par-x/--par-y`,
+  proprietà `translate` per sommarsi ai transform animati di raggi e
+  scintille). Ogni pagina che carica il renderer deve caricare prima
+  `inclinazione.js`: lo sorveglia `guardrail-pagine-con-carte`. **Insidie
+  prese guardandolo**: nella Cartoteca le carte non possedute sono
+  ingrigite da un filtro che copre anche i riflessi (per fotografarle
+  togliere `card--not-owned`), e su una cornice dorata una fusione
+  "screen" non si vede affatto — il bordo lucido è dipinto senza fusione.
+  Spec `carte-vive-e-parallasse`.
+  **Poi, su richiesta dell'utente**: la parallasse è un'impostazione
+  ("Profondità del menu", `Inclinazione.parallasseMenuAttiva`/
+  `impostaParallasseMenu`, setting `menuParallax`, accesa di default) in
+  entrambe le copie delle Impostazioni (pagina e vista di `index.html`); e
+  i **Dettagli video partono da "Alti"**. Siccome "Normali" era scritto in
+  cache e nel salvataggio anche per chi non l'aveva mai scelto, vale solo
+  se c'è il segno `videoDetailScelto` (`ygoVideoDetailScelto`), che solo
+  `VideoQuality.set` accende: chi aveva scelto "Normali" prima del segno
+  torna ad "Alti" una volta. L'harness dei test fissa "Normali" come
+  scelta, perché la suite è nata con gli effetti ambientali spenti. Spec
+  `impostazioni-default-alti-e-profondita-menu`.
+
 - 🔴 **POSSO APPLICARE MIGRAZIONI SUPABASE DA SOLO, e più sopra in questo
   file c'è scritto il contrario.** La voce sull'accesso con approvazione
   admin dice «L'utente deve eseguire questo script nell'SQL Editor
@@ -3205,6 +3239,11 @@ priorità o richiedono un refactor ampio):
   **Il gancio è deliberatamente generico**: `save-manager.js` non deve
   sapere che esiste una sincronizzazione, e chi sincronizza non deve
   rincorrere gli oltre cento punti che scrivono.
+  **È l'UNICO caricamento automatico**: le carte personalizzate e la loro
+  terminologia passano dalla stessa coda (`AutoSync.cartePersonalizzateCambiate`,
+  segno a parte `ygoSyncCarteInSospeso`). Il vecchio `cloud-autosync.js`,
+  che caricava salvataggio e carte con un timer suo, è stato eliminato:
+  non reintrodurre un secondo meccanismo. Spec `sync-carte-personalizzate`.
   `auto-sync.js` si aggancia in modo INDIPENDENTE DALL'ORDINE dei tag
   `<script>` (riprova su `DOMContentLoaded`/`load`): sta in cima con gli
   altri di `js/cloud/`, mentre `save-manager.js` è molto più in basso, e
@@ -3226,6 +3265,21 @@ priorità o richiedono un refactor ampio):
   `index.html` sia `profilo.html`, cioè due copie che sono già andate
   alla deriva in passato.
 
+- ✅ **Azzeramento delle storie per TUTTI i giocatori** (2026-10-09,
+  richiesta dell'utente, premi finali compresi): `AZZERAMENTO_STORIE` in
+  `js/save-manager.js`. Ogni salvataggio senza il segno `storieAzzerate`
+  uguale a quel valore svuota `save.story` (avanzamento, livelli,
+  premio finale) leggendolo — in `load()` e in `applyExternalSave`, quindi
+  anche la copia del cloud e un backup importato. Resta tutto il resto,
+  compreso il registro di `card-acquisition.js`. La data NON si sposta
+  (writeRaw), e la copia azzerata va sul cloud tramite `onSaved` senza
+  toccare la data. **Fatto nel codice e non sul database apposta**: un
+  azzeramento solo sul cloud verrebbe ricoperto dal primo dispositivo con
+  la copia vecchia. Per un altro azzeramento basta cambiare la costante.
+  Insieme: `auto-sync.js` tiene da parte un salvataggio arrivato prima di
+  sapere chi è l'utente (`richiestaPrimaDellUtente`). Spec
+  `azzeramento-storie-per-tutti`.
+
 - ✅ **Reset del profilo (`CloudSync.resetAccount`)**: azzera il
   progresso QUI e SUL CLOUD ma **non** cancella l'account, che resta
   approvato — differenza netta da `deleteAccount()`, che invece fa
@@ -3240,6 +3294,16 @@ priorità o richiedono un refactor ampio):
   seconda copia di quella logica. La conferma è "scrivi **azzera**" —
   parola DIVERSA da "elimina" dell'eliminazione account, che sta a due
   centimetri di distanza e fa una cosa molto diversa.
+  **Vale anche sugli altri dispositivi** (`leggiCloud`/"Generazione del
+  profilo" in cloud-sync.js): la riga del cloud non si cancella ma diventa
+  un segno `{ azzeratoIl }`. Ogni lettura del cloud passa da `leggiCloud`,
+  che toglie i dati di un dispositivo nati in una generazione precedente
+  PRIMA di qualunque confronto per data (un telefono offline che gioca col
+  profilo vecchio ha una data più recente, ma va tolto lo stesso). Il
+  salvataggio nuovo eredita la generazione dal registro del dispositivo
+  (`ygoGenerazioneProfilo`, per utente) e la porta sul cloud. `deleteSave`
+  toglie anche il backup nativo dell'APK, che altrimenti index.html
+  ripristinerebbe. Spec `azzeramento-profilo-tra-dispositivi`.
 
 - ✅ **L'amministratore ha 999999 di ogni valuta**, calcolate al momento
   della LETTURA in `SaveManager.getCurrency()` e mai scritte nel

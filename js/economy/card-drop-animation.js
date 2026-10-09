@@ -91,10 +91,15 @@
         back.appendChild(window.createCardElement(null));
         card.appendChild(back);
         const face = make('div', 'cdrop-card-front');
-        face.appendChild(cardNode(entry));
+        const fronte = cardNode(entry);
+        face.appendChild(fronte);
         card.appendChild(face);
         stage.appendChild(make('div', 'cdrop-beam'));
         stage.appendChild(card);
+        // La carta vinta si inclina e brilla secondo la sua rarità. Si
+        // inclina il PALCO e non la carta: la carta sta dentro una faccia
+        // che si gira e ne ritaglia i bordi.
+        if (window.CartaViva) CartaViva.rendi(fronte, cardById(entry.cardId), { modo: 'grande', bersaglio: stage, area: overlay });
         content.appendChild(stage);
         content.appendChild(make('div', 'cdrop-name', entry.nome || `Carta #${entry.cardId}`));
         content.appendChild(make('div', 'cdrop-rarity', label(r)));

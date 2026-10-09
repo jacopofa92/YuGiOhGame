@@ -45,6 +45,20 @@ async function openDuel(page, urlOverride, opzioni) {
     // esistesse) e non devono cliccare una schermata in più prima di ogni
     // singolo test. Un utente vero non imposta mai questo flag.
     await page.addInitScript(() => { window.DUEL_RPS_SKIP = true; });
+    // Dettagli video "Normali", come un giocatore che li abbia scelti: il
+    // default del gioco è diventato "Alti" (js/ui/video-quality.js), ma la
+    // suite è nata e misurata con gli effetti ambientali spenti, e
+    // accenderli in ogni duello di prova ne cambierebbe i tempi. Solo se
+    // nessuno ha già scelto: uno spec che prova gli effetti alti
+    // (VideoQuality.set('alti')) li ritrova dopo un ricaricamento.
+    await page.addInitScript(() => {
+        try {
+            if (localStorage.getItem('ygoVideoDetailScelto') !== '1') {
+                localStorage.setItem('ygoVideoDetail', 'normali');
+                localStorage.setItem('ygoVideoDetailScelto', '1');
+            }
+        } catch (e) { /* senza storage resta il default */ }
+    });
     // Comprime intro della telecamera e distribuzione della mano iniziale
     // (vedi playCameraIntro/FAST_DEAL in js/engine/game-flow.js). Serve
     // perché ogni spec deve comunque aspettare che la sequenza di

@@ -274,7 +274,35 @@
             return { completate: 0, finita: false, premiata: progress.premiata, sotto: {}, laterali: {} };
         }
         applicaSeparazioni(campaignId, progress, salvato.separazioni || []);
-        return saltaPercorsiGiaFiniti(campaignId, progress);
+        return riempiAreeSuperate(campaignId, saltaPercorsiGiaFiniti(campaignId, progress));
+    }
+
+    /**
+     * Un'AREA che la campagna ha già superato è finita per intero: la
+     * campagna va oltre un'area solo completandola (avanzaTorneo scrive il
+     * tabellone pieno nella stessa scrittura). Se il salvataggio dice
+     * altro, è un danno, e lo si ripara leggendo.
+     *
+     * Il danno vero che ha fatto nascere questa funzione: fino alla beta
+     * del 2026-10-09, rigiocare un duello già vinto dentro un'area FINITA
+     * azzerava l'avanzamento di quell'area (era trattato come la rivincita
+     * di un torneo, vedi consumaEsitoDuello). Chi l'ha fatto si ritrova le
+     * tappe dell'area da rifare pur avendola chiusa — segnalato
+     * dall'utente. Vale per ogni livello, perché passa da leggiProgresso.
+     *
+     * Solo le AREE: un TORNEO superato può legittimamente essere a zero
+     * (rientrandoci per rifarlo, il tabellone riparte dal primo incontro).
+     * Pura come le altre migrazioni di lettura: la forma riparata arriva
+     * sul disco alla prossima scrittura.
+     */
+    function riempiAreeSuperate(campaignId, progress) {
+        const tappe = getTappe(campaignId);
+        tappe.slice(0, progress.completate).forEach((t) => {
+            if (t.kind !== 'area') return;
+            const totali = (t.tappe || []).filter((prova) => prova.parallelo !== true).length;
+            if ((progress.sotto[t.id] || 0) < totali) progress.sotto[t.id] = totali;
+        });
+        return progress;
     }
 
     /**
@@ -670,6 +698,18 @@
                 // tutta la differenza fra una punizione capita e una
                 // mappa che si è misteriosamente svuotata.
                 return Object.assign(base, { perso: true, torneoAzzerato: quante });
+            }
+            // In un'AREA "rigiocata" vuol dire UNA tappa già superata, non
+            // l'intero percorso (in un'area le tappe fatte restano
+            // cliccabili, in un torneo no). Non deve far salire niente:
+            // prima saliva di un passo — saltando la tappa ancora da giocare
+            // — e in un'area già finita andava oltre la fine, azzerava l'area
+            // e la dichiarava vinta, rimandando alla mappa grande
+            // (segnalato dall'utente: "fatto un nodo, mi riporta alla mappa
+            // principale"). Stesso difetto già chiuso per le scene rilette,
+            // vedi apriProva in storia.html.
+            if (rigiocato && getTorneo(campaignId, esito.torneoId).kind === 'area') {
+                return Object.assign(base, { vinta: true });
             }
             const salita = avanzaTorneo(campaignId, esito.torneoId, rigiocato);
             return Object.assign(base, {

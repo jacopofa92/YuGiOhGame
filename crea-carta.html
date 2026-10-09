@@ -23,13 +23,11 @@
 <script src="js/vendor/supabase.min.js"></script>
 <script src="js/cloud/supabase-config.js"></script>
 <script src="js/cloud/cloud-sync.js"></script>
+<!-- auto-sync.js manda sul cloud anche carte e categorie appena
+     modificate (custom-cards.js/custom-taxonomy.js lo avvisano a ogni
+     scrittura): questa è la pagina in cui si creano, e chiudere l'app
+     subito dopo è la cosa più naturale del mondo. -->
 <script src="js/cloud/auto-sync.js"></script>
-<!-- Manda sul cloud carte e categorie appena modificate, senza aspettare
-     una sincronizzazione manuale: questa è la pagina in cui si creano, e
-     chiudere l'app subito dopo è la cosa più naturale del mondo. Va DOPO
-     cloud-sync.js (che usa) e PRIMA di custom-cards.js/custom-taxonomy.js
-     (che la avvisano ad ogni scrittura). -->
-<script src="js/cloud/cloud-autosync.js"></script>
 <script src="js/cloud/auth-gate.js"></script>
 <script src="js/pwa-register.js"></script>
 <link rel="stylesheet" href="js/ui/page-loader.css">
@@ -758,6 +756,7 @@
     <script src="js/engine/card-effects-7.js"></script>
     <script src="js/engine/card-effects-8.js"></script>
     <!-- /gruppo-script:motore -->
+    <script src="js/ui/inclinazione.js"></script>
     <script src="js/ui/card-renderer.js"></script>
     <script src="js/ui/icon-library.js"></script>
     <script src="js/ui/deck-switcher.js"></script>

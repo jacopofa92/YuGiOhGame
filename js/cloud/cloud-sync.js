@@ -431,26 +431,93 @@
      * Non tocca il marcatore di approvazione: l'account resta quello di
      * prima, approvato come prima. Ed è irreversibile — la conferma
      * "scrivi AZZERA" vive nella pagina, non qui.
+     *
+     * Il salvataggio sul cloud NON si cancella: lo si sostituisce con un
+     * SEGNO DI AZZERAMENTO ({ azzeratoIl }, vedi "Generazione del profilo"
+     * più sotto). Cancellando la riga, un altro dispositivo con i dati di
+     * prima trovava il cloud vuoto e alla riconciliazione successiva ci
+     * rimetteva sopra il profilo appena azzerato. Il segno invece dice a
+     * ogni dispositivo che i dati nati prima di quel momento appartengono a
+     * un profilo che non esiste più.
      */
     function resetAccount() {
         if (!available) return rejectUnavailable();
         if (!cachedUser) return Promise.reject(new Error('Devi accedere prima di azzerare il profilo.'));
         const uid = cachedUser.id;
-        return client.from('saves').delete().eq('user_id', uid)
+        const adesso = new Date().toISOString();
+        return client.from('saves').upsert({ user_id: uid, data: { azzeratoIl: adesso }, updated_at: adesso })
             .then(({ error }) => { if (error) throw error; })
             .then(() => client.from('custom_cards').delete().eq('user_id', uid))
             .then(({ error }) => { if (error) throw error; })
             .then(() => {
-                // Il locale: salvataggio, carte custom e terminologia
-                // personalizzata. Le ultime due NON stanno dentro il
-                // salvataggio (vedi pushSave), quindi cancellare solo
-                // quello lascerebbe in giro le carte inventate e i nomi
-                // dei Tipi Mostro di prima.
-                if (window.SaveManager && typeof SaveManager.deleteSave === 'function') SaveManager.deleteSave();
-                if (window.CustomCards && typeof CustomCards.replaceAll === 'function') CustomCards.replaceAll([]);
-                if (window.CustomTaxonomy && typeof CustomTaxonomy.importAll === 'function') CustomTaxonomy.importAll({});
+                svuotaQuestoDispositivo();
+                // Questo dispositivo sa già dell'azzeramento: il profilo
+                // nuovo che si creerà qui dopo il rientro gli appartiene.
+                ricordaGenerazione(adesso);
                 return client.auth.signOut();
             });
+    }
+
+    // ------------------------------------------------------------------
+    // Generazione del profilo: cosa resta di un azzeramento
+    // ------------------------------------------------------------------
+    /**
+     * Ogni azzeramento apre una nuova GENERAZIONE del profilo, identificata
+     * dal suo istante (`azzeratoIl`, scritto dentro il salvataggio). Un
+     * salvataggio appartiene alla generazione in cui è nato; quello di una
+     * generazione precedente non vince MAI, qualunque sia la sua data di
+     * modifica — un telefono rimasto offline che gioca col profilo vecchio
+     * dopo l'azzeramento ha una data più recente, ma i suoi dati sono
+     * proprio quelli che l'azzeramento doveva togliere.
+     *
+     * Perché un registro sul DISPOSITIVO oltre al campo nel salvataggio:
+     * il salvataggio nuovo lo crea index.html (SaveManager.createNew), che
+     * non sa nulla del cloud. Il dispositivo invece sa a quale generazione
+     * è arrivato: la registra quando l'ha appena vista sul cloud senza avere
+     * dati più vecchi (o dopo averli tolti), quindi tutto ciò che crea DOPO
+     * appartiene a quella. Un salvataggio di prima non può ereditarla per
+     * sbaglio: quando il dispositivo la impara, quel salvataggio è già stato
+     * tolto (svuotaQuestoDispositivo). Per utente, perché sullo stesso
+     * dispositivo si può cambiare account.
+     */
+    const CHIAVE_GENERAZIONE = 'ygoGenerazioneProfilo';
+
+    function generazioneDi(save) {
+        const t = save && save.azzeratoIl ? Date.parse(save.azzeratoIl) : NaN;
+        return isNaN(t) ? 0 : t;
+    }
+    function registroGenerazioni() {
+        try { return JSON.parse(localStorage.getItem(CHIAVE_GENERAZIONE)) || {}; } catch (e) { return {}; }
+    }
+    /** La generazione a cui è arrivato QUESTO dispositivo per l'utente collegato (stringa ISO), o null. */
+    function generazioneNota() {
+        return cachedUser ? (registroGenerazioni()[cachedUser.id] || null) : null;
+    }
+    function ricordaGenerazione(iso) {
+        if (!cachedUser || !iso || generazioneDi({ azzeratoIl: iso }) <= generazioneDi({ azzeratoIl: generazioneNota() })) return;
+        const registro = registroGenerazioni();
+        registro[cachedUser.id] = iso;
+        try { localStorage.setItem(CHIAVE_GENERAZIONE, JSON.stringify(registro)); } catch (e) { /* noop */ }
+    }
+    /** La generazione di un salvataggio di QUESTO dispositivo: la sua, o quella a cui il dispositivo è arrivato. */
+    function generazioneLocale(save) {
+        return Math.max(generazioneDi(save), generazioneDi({ azzeratoIl: generazioneNota() }));
+    }
+
+    /**
+     * Toglie da questo dispositivo il profilo: salvataggio (compreso il
+     * backup nativo dell'APK, che altrimenti lo ripristinerebbe al primo
+     * avvio senza dati), carte custom e terminologia personalizzata. Le
+     * ultime due NON stanno dentro il salvataggio (vedi pushSave), quindi
+     * cancellare solo quello lascerebbe in giro le carte inventate e i nomi
+     * dei Tipi Mostro di prima.
+     */
+    function svuotaQuestoDispositivo() {
+        if (window.SaveManager && typeof SaveManager.deleteSave === 'function') SaveManager.deleteSave();
+        if (window.CustomCards && typeof CustomCards.replaceAll === 'function') CustomCards.replaceAll([]);
+        if (window.CustomTaxonomy && typeof CustomTaxonomy.importAll === 'function') CustomTaxonomy.importAll({});
+        // Un caricamento rimasto in sospeso (auto-sync.js) riguardava i dati appena tolti.
+        try { localStorage.removeItem('ygoSyncInSospeso'); } catch (e) { /* noop */ }
     }
 
     /**
@@ -476,18 +543,39 @@
      * le due date servono comunque a chi mostra il messaggio di cosa è
      * stato caricato.
      */
+    /**
+     * QUANDO è stato MODIFICATO un salvataggio: la data scritta dentro il
+     * salvataggio stesso (player.lastSaved, aggiornata da SaveManager a ogni
+     * modifica), NON quella della riga sul cloud.
+     *
+     * È il cuore di un difetto vero, segnalato dall'utente ("progressi su
+     * desktop, poi sul telefono vedo dati vecchi"): `updated_at` della riga
+     * vale il momento del CARICAMENTO. Un telefono che caricava la sua copia
+     * vecchia la marcava così come "la più recente", e al confronto
+     * successivo vinceva lei, cancellando i progressi fatti sull'altro
+     * dispositivo. La data di modifica viaggia col salvataggio e non cambia
+     * caricandolo. `updated_at` resta come ripiego per una riga così vecchia
+     * da non avere la data dentro.
+     */
+    function dataModifica(save, ripiego) {
+        const dentro = save && save.player && save.player.lastSaved ? Date.parse(save.player.lastSaved) : NaN;
+        if (!isNaN(dentro)) return dentro;
+        return ripiego ? Date.parse(ripiego) : NaN;
+    }
+
     function confrontaSalvataggi(cloud) {
         const locale = window.SaveManager ? SaveManager.load() : null;
-        const quandoLocale = locale && locale.player && locale.player.lastSaved
-            ? Date.parse(locale.player.lastSaved) : NaN;
-        const quandoCloud = cloud && cloud.updatedAt ? Date.parse(cloud.updatedAt) : NaN;
+        const quandoLocale = dataModifica(locale);
+        const quandoCloud = cloud ? dataModifica(cloud.data, cloud.updatedAt) : NaN;
 
         if (!cloud) return { scelta: 'locale', quandoCloud: null, quandoLocale: quandoLocale };
         if (!locale) return { scelta: 'cloud', quandoCloud: quandoCloud, quandoLocale: null };
         const vLocale = isNaN(quandoLocale) ? -Infinity : quandoLocale;
         const vCloud = isNaN(quandoCloud) ? -Infinity : quandoCloud;
         return {
-            scelta: vCloud >= vLocale ? 'cloud' : 'locale',
+            // 'uguali': stessa data di modifica, quindi lo stesso salvataggio
+            // (tipicamente uno appena scaricato): niente da spostare.
+            scelta: vCloud === vLocale ? 'uguali' : (vCloud > vLocale ? 'cloud' : 'locale'),
             quandoCloud: quandoCloud,
             quandoLocale: quandoLocale
         };
@@ -496,11 +584,47 @@
     // ------------------------------------------------------------------
     // Salvataggio (public.saves — una riga per utente)
     // ------------------------------------------------------------------
-    function pushSave() {
+    /**
+     * Carica il salvataggio locale sul cloud — MA MAI sopra uno più recente.
+     *
+     * Prima caricava sempre, e i caricamenti automatici (auto-sync.js)
+     * partono da soli: all'avvio se era rimasto qualcosa
+     * in sospeso, e a ogni salvataggio. Un telefono con la copia vecchia
+     * finiva così per scrivere sopra i progressi fatti nel frattempo su un
+     * altro dispositivo, senza che nessuno avesse scelto niente. Ora si
+     * guarda prima cosa c'è sul cloud: se è stato modificato DOPO la copia
+     * di qui, il caricamento si ferma con un errore riconoscibile
+     * (code 'CLOUD_PIU_RECENTE') e la copia buona resta dov'è. Costa una
+     * lettura in più per caricamento, che è il prezzo giusto per un
+     * salvataggio che non si può recuperare.
+     *
+     * `opzioni.forza`: carica comunque (nessun chiamante lo usa oggi; esiste
+     * per un'azione esplicita dell'utente, mai per un automatismo).
+     */
+    function pushSave(opzioni) {
         if (!available) return rejectUnavailable();
         if (!cachedUser) return Promise.reject(new Error('Devi accedere prima di sincronizzare.'));
-        const base = window.SaveManager ? SaveManager.load() : null;
-        if (!base) return Promise.reject(new Error('Nessun salvataggio locale da caricare.'));
+        if (!window.SaveManager || !SaveManager.hasSave()) return Promise.reject(new Error('Nessun salvataggio locale da caricare.'));
+        if (opzioni && opzioni.forza) return scriviSalvataggio(SaveManager.load());
+        return leggiCloud().then(({ cloud, azzerato }) => {
+            // Il salvataggio si rilegge DOPO aver guardato il cloud: se il
+            // profilo è stato azzerato altrove, leggiCloud l'ha appena tolto.
+            if (azzerato || !SaveManager.hasSave()) {
+                const e = new Error('Il profilo è stato azzerato da un altro dispositivo: non ricarico i dati di prima.');
+                e.code = 'PROFILO_AZZERATO';
+                throw e;
+            }
+            const base = SaveManager.load();
+            if (cloud && dataModifica(cloud.data, cloud.updatedAt) > dataModifica(base)) {
+                const e = new Error('Sul cloud c\'è un salvataggio più recente di quello di questo dispositivo: non lo sovrascrivo.');
+                e.code = 'CLOUD_PIU_RECENTE';
+                throw e;
+            }
+            return scriviSalvataggio(base);
+        });
+    }
+
+    function scriviSalvataggio(base) {
         // Provenienze/Tipi Mostro/terminologia personalizzati viaggiano
         // DENTRO il salvataggio invece che in una tabella propria: non
         // richiede alcuna modifica allo schema Supabase (che l'utente
@@ -513,6 +637,10 @@
         if (window.CustomTaxonomy && typeof CustomTaxonomy.exportAll === 'function') {
             data.customTaxonomy = CustomTaxonomy.exportAll();
         }
+        // La generazione viaggia col salvataggio: è il modo in cui gli altri
+        // dispositivi sanno che questo profilo è nato dopo un azzeramento.
+        const generazione = generazioneLocale(base);
+        if (generazione) data.azzeratoIl = new Date(generazione).toISOString();
         return client.from('saves')
             .upsert({ user_id: cachedUser.id, data, updated_at: new Date().toISOString() })
             .then(({ error }) => { if (error) throw error; return data; });
@@ -520,12 +648,45 @@
 
     /** Scarica il salvataggio cloud SENZA applicarlo — usata da profilo.html per decidere se c'è un conflitto prima di sovrascrivere il locale. Torna null se l'utente non ha ancora nessun salvataggio sul cloud. */
     function fetchCloudSave() {
+        return leggiCloud().then((r) => r.cloud);
+    }
+
+    /**
+     * L'unico punto da cui si legge il salvataggio cloud, e quindi l'unico
+     * punto in cui un dispositivo scopre un azzeramento fatto altrove: ogni
+     * percorso (gate, riconciliazione, caricamenti automatici, Profilo)
+     * passa di qui prima di decidere cosa fare. Se il cloud porta una
+     * generazione più nuova di quella dei dati di questo dispositivo, quei
+     * dati appartengono al profilo azzerato e si tolgono SUBITO — prima che
+     * qualcuno li confronti per data o li carichi.
+     *
+     * Torna { cloud, azzerato }: `cloud` è null anche quando sul cloud c'è
+     * solo il segno di azzeramento (nessun profilo ancora: per chi chiama è
+     * esattamente un account senza salvataggio, e si chiede il nome come la
+     * prima volta); `azzerato` dice se i dati di qui sono appena stati tolti.
+     */
+    function leggiCloud() {
         if (!available) return rejectUnavailable();
         if (!cachedUser) return Promise.reject(new Error('Devi accedere prima di sincronizzare.'));
         return client.from('saves').select('data, updated_at').eq('user_id', cachedUser.id).maybeSingle()
             .then(({ data, error }) => {
                 if (error) throw error;
-                return data ? { data: data.data, updatedAt: data.updated_at } : null;
+                if (!data) return { cloud: null, azzerato: false };
+                let azzerato = false;
+                const generazioneCloud = generazioneDi(data.data);
+                if (generazioneCloud) {
+                    const locale = window.SaveManager && SaveManager.hasSave() ? SaveManager.load() : null;
+                    if (locale && generazioneLocale(locale) < generazioneCloud) {
+                        svuotaQuestoDispositivo();
+                        azzerato = true;
+                        try { sessionStorage.setItem('ygoAvvisoSync', 'azzerato'); } catch (e) { /* noop */ }
+                    }
+                    // Solo DOPO il confronto: imparata prima, la generazione
+                    // nuova sarebbe stata attribuita anche ai dati di prima.
+                    ricordaGenerazione(data.data.azzeratoIl);
+                }
+                const soloSegno = !data.data || !data.data.player;
+                return { cloud: soloSegno ? null : { data: data.data, updatedAt: data.updated_at }, azzerato: azzerato };
             });
     }
 
@@ -546,8 +707,79 @@
             if (taxonomy && window.CustomTaxonomy && typeof CustomTaxonomy.importAll === 'function') {
                 CustomTaxonomy.importAll(taxonomy);
             }
-            return SaveManager.applyExternalSave(data);
+            // La data di modifica resta quella del cloud (vedi dataModifica):
+            // la copia di qui diventa IDENTICA a quella, non "più nuova".
+            return SaveManager.applyExternalSave(data, { mantieniData: true });
         });
+    }
+
+    // ------------------------------------------------------------------
+    // Riconciliazione: allinea questo dispositivo al cloud
+    // ------------------------------------------------------------------
+    const CHIAVE_ULTIMA_RICONCILIAZIONE = 'ygoUltimaRiconciliazione';
+    let riconciliazioneInCorso = null;
+
+    /**
+     * Confronta il salvataggio di qui con quello sul cloud e tiene il PIÙ
+     * RECENTE (per data di modifica, vedi dataModifica): scarica se il cloud
+     * è più nuovo, carica se lo è questo dispositivo, non fa nulla se sono
+     * lo stesso. Le carte personalizzate seguono il salvataggio.
+     *
+     * Prima questo confronto avveniva SOLO quando si faceva l'accesso a
+     * mano. Con la sessione già attiva (il caso normale dell'APK, che resta
+     * collegato) il gioco si apriva sul salvataggio del dispositivo senza
+     * guardare il cloud: progressi fatti su desktop, telefono fermo ai dati
+     * vecchi. Ora la chiamano l'avvio del menu e il ritorno in primo piano.
+     *
+     * `opzioni.attesaMassimaMs`: oltre questo tempo si rinuncia e si gioca
+     * col salvataggio di qui (esito 'offline'); un risultato che arrivasse
+     * dopo NON viene applicato, per non cambiare i dati sotto i piedi a chi
+     * ha già cominciato a giocare.
+     *
+     * Torna { esito: 'scaricato'|'caricato'|'uguale'|'nessuno'|'offline'|'azzerato',
+     * quandoCloud, quandoLocale }. Due chiamate ravvicinate condividono la
+     * stessa richiesta.
+     */
+    function riconcilia(opzioni) {
+        if (!available || !cachedUser || !window.SaveManager) return Promise.resolve({ esito: 'offline' });
+        if (riconciliazioneInCorso) return riconciliazioneInCorso;
+        let scaduto = false;
+        const lavoro = leggiCloud().then(({ cloud, azzerato }) => {
+            // Il profilo è stato azzerato da un altro dispositivo e i dati di
+            // qui sono appena stati tolti: anche oltre il tetto di tempo, perché
+            // tenerli in vita sarebbe peggio che cambiarli sotto i piedi.
+            if (azzerato) return { esito: 'azzerato' };
+            if (scaduto) return { esito: 'offline' };
+            const haLocale = SaveManager.hasSave();
+            if (!cloud && !haLocale) return { esito: 'nessuno' };
+            const verdetto = confrontaSalvataggi(cloud);
+            const base = { quandoCloud: verdetto.quandoCloud, quandoLocale: verdetto.quandoLocale };
+            if (verdetto.scelta === 'uguali') return Object.assign({ esito: 'uguale' }, base);
+            if (verdetto.scelta === 'cloud') {
+                return Promise.all([pullSave(), pullCustomCards().catch(() => null)])
+                    .then(() => Object.assign({ esito: 'scaricato' }, base));
+            }
+            return Promise.all([pushSave(), pushCustomCards().catch(() => null)])
+                .then(() => Object.assign({ esito: 'caricato' }, base));
+        }).then((r) => {
+            if (r.esito !== 'offline') {
+                try { sessionStorage.setItem(CHIAVE_ULTIMA_RICONCILIAZIONE, String(Date.now())); } catch (e) { /* noop */ }
+            }
+            return r;
+        }).catch(() => ({ esito: 'offline' }));
+        const attesa = opzioni && opzioni.attesaMassimaMs;
+        const conTetto = attesa
+            ? Promise.race([lavoro, new Promise((ok) => setTimeout(() => { scaduto = true; ok({ esito: 'offline' }); }, attesa))])
+            : lavoro;
+        riconciliazioneInCorso = conTetto.then((r) => { riconciliazioneInCorso = null; return r; });
+        return riconciliazioneInCorso;
+    }
+
+    /** Millisecondi dall'ultima riconciliazione riuscita in questa sessione (Infinity se mai). */
+    function msDallUltimaRiconciliazione() {
+        let t = NaN;
+        try { t = Number(sessionStorage.getItem(CHIAVE_ULTIMA_RICONCILIAZIONE)); } catch (e) { /* noop */ }
+        return t ? Date.now() - t : Infinity;
     }
 
     // ------------------------------------------------------------------
@@ -557,7 +789,16 @@
         if (!available) return rejectUnavailable();
         if (!cachedUser) return Promise.reject(new Error('Devi accedere prima di sincronizzare.'));
         if (!window.CustomCards) return Promise.reject(new Error('js/data/custom-cards.js non caricato in questa pagina.'));
-        const cards = CustomCards.list();
+        // Prima si guarda il cloud: se il profilo è stato azzerato altrove,
+        // le carte di qui sono del profilo di prima e non vanno ricaricate
+        // (leggiCloud le ha appena tolte).
+        return leggiCloud().then(({ azzerato }) => {
+            if (azzerato) return [];
+            return sostituisciCarteSulCloud(CustomCards.list());
+        });
+    }
+
+    function sostituisciCarteSulCloud(cards) {
         // Sostituzione completa: cancella tutte le righe di questo utente
         // e reinserisce lo stato locale attuale — evita la complessità di
         // far combaciare id locali (100000+) con gli id auto-generati di
@@ -611,6 +852,8 @@
         deleteAccount: deleteAccount,
         resetAccount: resetAccount,
         confrontaSalvataggi: confrontaSalvataggi,
+        riconcilia: riconcilia,
+        msDallUltimaRiconciliazione: msDallUltimaRiconciliazione,
         adminListProfiles: adminListProfiles,
         adminSetProfileStatus: adminSetProfileStatus,
         adminPendingCount: adminPendingCount,

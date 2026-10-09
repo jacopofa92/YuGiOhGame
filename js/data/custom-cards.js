@@ -51,11 +51,10 @@
         if (applyingRemote) return;
         // Unico punto da cui passa OGNI scrittura di questo modulo, quindi
         // l'unico posto dove serve avvisare il cloud: una funzione futura
-        // che salvi carte è coperta da sola. Il modulo può non essere
-        // caricato (le pagine che si limitano a leggere le carte non lo
-        // includono) — in quel caso non succede nulla, il salvataggio
+        // che salvi carte è coperta da sola (vedi js/cloud/auto-sync.js).
+        // Se la pagina non lo carica non succede nulla: il salvataggio
         // locale qui sopra è comunque già avvenuto.
-        if (window.CloudAutoSync) CloudAutoSync.schedule();
+        if (window.AutoSync) AutoSync.cartePersonalizzateCambiate();
     }
 
     function nextId(existing) {

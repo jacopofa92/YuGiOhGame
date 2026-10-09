@@ -508,6 +508,151 @@
         oldEl.replaceWith(outer);
     }
 
+    // ------------------------------------------------------------------
+    // CARTA VIVA: si inclina seguendo il mouse o il telefono, e la luce ci
+    // scorre sopra con un riflesso che dice la RARITÀ a colpo d'occhio.
+    // ------------------------------------------------------------------
+    // Fuori dal duello, e solo dove una pagina lo chiede (CartaViva.rendi):
+    // la scheda di una carta, la Cartoteca, il Negozio, le buste, la carta
+    // in premio. Nel duello no: il Terreno si ridisegna di continuo e le
+    // carte lì devono restare leggibili, non brillare.
+    //
+    // Tre modi, perché "inclinarsi" vuol dire cose diverse a seconda di
+    // quanto è grande la carta e di cosa le sta attorno:
+    //   'griglia'  una carta fra tante (Cartoteca): si inclina e si solleva
+    //              sotto il mouse, ferma al tocco (il dito lì scorre);
+    //   'fila'     come sopra ma senza sollevarsi (Negozio, buste: hanno
+    //              già un loro modo di presentare la carta);
+    //   'grande'   la carta protagonista (scheda, premio): segue il mouse
+    //              su tutta la sua area e, sul telefono, il GIROSCOPIO
+    //              (js/ui/inclinazione.js); se nessuno dei due arriva,
+    //              ondeggia piano da sola.
+    //
+    // I riflessi per rarità (js/ui/card.css, "Carta viva"):
+    //   comune          solo la luce che passa, nessun lucido;
+    //   rara            un filo lucido sul bordo;
+    //   super / ultra   più un arcobaleno sull'illustrazione (ultra più
+    //                   acceso); leggendaria lo fa dorato;
+    //   segreta         più una grana scintillante attorno alla luce;
+    //   mitica          (le Divinità) tutto quanto, sull'intera carta.
+    const RARITA_CON_BORDO = new Set(['rare', 'super', 'ultra', 'legendary', 'secret', 'mythic']);
+    const RARITA_ARCOBALENO = new Set(['super', 'ultra', 'legendary', 'secret', 'mythic']);
+    const RARITA_GRANA = new Set(['secret', 'mythic']);
+    /** Inclinazione massima per modo: più grande la carta, più si può osare. */
+    const GRADI_MASSIMI = { griglia: 10, fila: 9, grande: 14 };
+
+    function strato(classe) {
+        const s = document.createElement('span');
+        s.className = classe;
+        s.setAttribute('aria-hidden', 'true');
+        return s;
+    }
+
+    /**
+     * Rende "viva" una carta già costruita da createCardElement.
+     * opzioni: { modo, bersaglio, area }
+     *   bersaglio: l'elemento che si inclina (default la carta stessa). La
+     *              carta in premio inclina il suo palco, perché la carta lì
+     *              sta dentro una faccia che si gira e ritaglia i bordi;
+     *   area:      dove il mouse viene ascoltato (default il bersaglio): la
+     *              scheda ascolta tutta l'anteprima, non solo la carta.
+     * Una carta coperta resta com'è: il dorso non ha rarità da mostrare.
+     */
+    function rendiCartaViva(el, card, opzioni) {
+        if (!el || !card || el.classList.contains('face-down') || el.classList.contains('carta-viva')) return el;
+        const o = opzioni || {};
+        const modo = GRADI_MASSIMI[o.modo] ? o.modo : 'griglia';
+        const bersaglio = o.bersaglio || el;
+        const area = o.area || bersaglio;
+        const rarita = (window.CardRarity && typeof CardRarity.of === 'function' && card.id != null)
+            ? (CardRarity.of(card.id) || 'common') : 'common';
+
+        el.classList.add('carta-viva');
+        el.dataset.rarita = rarita;
+        bersaglio.classList.add('cv-inclina');
+        bersaglio.dataset.viva = modo;
+        el.appendChild(strato('cv-riflesso'));
+        if (RARITA_CON_BORDO.has(rarita)) el.appendChild(strato('cv-bordo'));
+        if (RARITA_ARCOBALENO.has(rarita)) {
+            // Sull'illustrazione, dove c'è la sua finestra; su uno scan a
+            // carta intera (raro: di regola si usa il solo ritaglio) copre
+            // tutta la carta, più tenue.
+            const finestra = !el.querySelector('.card-image') && el.querySelector('.card-frame-art');
+            (finestra || el).appendChild(strato(finestra && rarita !== 'mythic' ? 'cv-olo' : 'cv-olo cv-olo--intera'));
+        }
+        if (RARITA_GRANA.has(rarita)) el.appendChild(strato('cv-grana'));
+
+        const ridotto = window.Inclinazione
+            ? Inclinazione.movimentoRidotto()
+            : (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+        if (ridotto) {
+            // Niente movimento, ma il lucido resta visibile: è un'informazione
+            // (la rarità), non solo una decorazione.
+            bersaglio.classList.add('cv-ferma');
+            return el;
+        }
+
+        const gradi = GRADI_MASSIMI[modo];
+        const stile = bersaglio.style;
+        function imposta(x, y) {
+            stile.setProperty('--inc-x', (-y * gradi).toFixed(2) + 'deg');
+            stile.setProperty('--inc-y', (x * gradi).toFixed(2) + 'deg');
+            stile.setProperty('--luce-x', (50 + x * 50).toFixed(1) + '%');
+            stile.setProperty('--luce-y', (50 + y * 50).toFixed(1) + '%');
+            stile.setProperty('--forza', Math.min(1, Math.hypot(x, y)).toFixed(3));
+        }
+        function riposa() {
+            bersaglio.classList.remove('cv-attiva');
+            ['--inc-x', '--inc-y', '--luce-x', '--luce-y', '--forza'].forEach((v) => stile.removeProperty(v));
+            if (modo === 'grande') bersaglio.classList.add('cv-ozio');
+        }
+
+        // Il riquadro si misura all'ingresso e non a ogni movimento: la
+        // carta inclinata cambia il proprio riquadro, e rimisurarlo mentre
+        // si inclina la farebbe tremare.
+        let riquadro = null;
+        let puntatoreDentro = false;
+        area.addEventListener('pointerenter', (e) => {
+            if (e.pointerType === 'touch') return;
+            riquadro = area.getBoundingClientRect();
+            puntatoreDentro = true;
+        });
+        area.addEventListener('pointermove', (e) => {
+            if (e.pointerType === 'touch') return;
+            if (!riquadro) riquadro = area.getBoundingClientRect();
+            puntatoreDentro = true;
+            const x = ((e.clientX - riquadro.left) / (riquadro.width || 1)) * 2 - 1;
+            const y = ((e.clientY - riquadro.top) / (riquadro.height || 1)) * 2 - 1;
+            bersaglio.classList.remove('cv-ozio');
+            bersaglio.classList.add('cv-attiva');
+            imposta(Math.max(-1, Math.min(1, x)), Math.max(-1, Math.min(1, y)));
+        });
+        area.addEventListener('pointerleave', () => {
+            riquadro = null;
+            puntatoreDentro = false;
+            riposa();
+        });
+
+        if (modo === 'grande') {
+            bersaglio.classList.add('cv-ozio');
+            if (window.Inclinazione) {
+                // Si smette di ascoltare da soli quando la carta non è più
+                // nella pagina (scheda chiusa, premio passato): nessuno deve
+                // ricordarsi di farlo.
+                const smetti = Inclinazione.ascolta((l) => {
+                    if (!el.isConnected) { smetti(); return; }
+                    if (l.fonte !== 'sensore' || puntatoreDentro) return;
+                    bersaglio.classList.remove('cv-ozio');
+                    bersaglio.classList.add('cv-attiva');
+                    imposta(l.x, l.y);
+                });
+            }
+        }
+        return el;
+    }
+
+    window.CartaViva = { rendi: rendiCartaViva };
+
     window.CardRenderer = {
         TYPE_ICON,
         ATTRIBUTE_ICON,
@@ -515,7 +660,8 @@
         createCardElement,
         renderCardBack,
         appendDeckPile,
-        playFlipReveal
+        playFlipReveal,
+        rendiCartaViva
     };
     // Alias globali: così le pagine/i file esistenti che già chiamano
     // createCardElement(...)/getCardImagePath(...) senza prefisso

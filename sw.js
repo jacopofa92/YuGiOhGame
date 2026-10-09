@@ -415,7 +415,13 @@
 // v172: unione col fix degli stream Range/HTTP 206 e il player persistente.
 // v173: dettaglio carta landscape compatto e strumenti admin per le Storie.
 // v174: rework completo dei Toon e bilanciamento dei deck Pegasus.
-const CACHE_NAME = 'ygo-duel-arena-v183';
+// v185: l'azzeramento del profilo vale anche sugli altri dispositivi.
+// v186: un solo caricamento automatico sul cloud (cloud-autosync.js assorbito da auto-sync.js).
+// v187: carte "vive" (inclinazione e riflessi per rarità) e parallasse del menu.
+// v188: Dettagli video "Alti" di default; "Profondità del menu" attivabile dalle Impostazioni.
+// v189: Storia, ritorno nell'area dopo un duello rigiocato e riparazione delle aree azzerate.
+// v190: azzeramento delle storie per tutti (save-manager.js, AZZERAMENTO_STORIE).
+const CACHE_NAME = 'ygo-duel-arena-v190';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -521,6 +527,7 @@ const APP_SHELL = [
     'js/data/custom-cards.js',
     'js/data/custom-taxonomy.js',
     'js/data/starter-structure-decks.js',
+    'js/ui/inclinazione.js',
     'js/ui/card-renderer.js',
     'js/ui/fx-gsap.js',
     'js/ui/challenge-banner.js',
@@ -545,7 +552,6 @@ const APP_SHELL = [
     'js/multiplayer/multiplayer.js',
     'js/multiplayer/network.js',
     'js/cloud/auth-gate.js',
-    'js/cloud/cloud-autosync.js',
     'js/cloud/cloud-sync.js',
     'js/cloud/auto-sync.js',
     'js/cloud/supabase-config.js',

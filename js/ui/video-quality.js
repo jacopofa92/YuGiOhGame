@@ -2,8 +2,18 @@
  * video-quality.js — Livello di DETTAGLI VIDEO scelto dal giocatore.
  * ------------------------------------------------------------------
  * Due soli livelli, deliberatamente:
- *   'normali' (default) — il gioco come è sempre stato;
- *   'alti'              — effetti aggiuntivi sul Terreno di gioco.
+ *   'normali'           — il gioco più leggero, per i dispositivi lenti;
+ *   'alti' (default)    — effetti aggiuntivi sul Terreno di gioco.
+ *
+ * DEFAULT "ALTI", su richiesta esplicita dell'utente (prima era
+ * "Normali"). Il cambio di default doveva valere anche per chi c'era già,
+ * ma "Normali" stava scritto ovunque — nel salvataggio e nella cache —
+ * anche per chi non l'aveva mai scelto, perché era il default. Da qui il
+ * segno CHIAVE_SCELTA: solo una scelta fatta davvero dal giocatore (set)
+ * lo accende, e senza quel segno vale il default. Chi aveva scelto
+ * "Normali" a mano prima che il segno esistesse non si distingue da chi
+ * non aveva mai scelto: torna ad "Alti" una volta, e può rimettere
+ * "Normali" dalle Impostazioni.
  *
  * Questo file NON disegna e NON anima nulla: si limita a ricordare la
  * scelta e a scriverla sul documento come `data-dettagli` sull'elemento
@@ -29,18 +39,21 @@
     'use strict';
 
     const CHIAVE = 'ygoVideoDetail';
+    /** '1' quando il livello l'ha scelto il giocatore (vedi in cima al file). */
+    const CHIAVE_SCELTA = 'ygoVideoDetailScelto';
     const NORMALI = 'normali';
     const ALTI = 'alti';
-    /** Il livello di partenza per chi non ha mai scelto: il gioco di sempre. */
-    const DEFAULT = NORMALI;
+    /** Il livello di partenza per chi non ha mai scelto. */
+    const DEFAULT = ALTI;
 
     const LIVELLI = [
-        { valore: NORMALI, nome: 'Normali', descrizione: 'Il gioco come sempre: massima fluidità, consigliato su telefono.' },
+        { valore: NORMALI, nome: 'Normali', descrizione: 'Il gioco più leggero: massima fluidità sui dispositivi meno potenti.' },
         { valore: ALTI, nome: 'Alti', descrizione: 'Effetti aggiuntivi sul Terreno di gioco. Può pesare sui dispositivi meno potenti.' }
     ];
 
     function leggi() {
         try {
+            if (localStorage.getItem(CHIAVE_SCELTA) !== '1') return DEFAULT;
             const salvato = localStorage.getItem(CHIAVE);
             // Un valore sconosciuto (salvataggio di una versione futura,
             // o manomesso) non deve lasciare il gioco in uno stato che
@@ -63,8 +76,12 @@
         const valido = (livello === ALTI) ? ALTI : NORMALI;
         try {
             localStorage.setItem(CHIAVE, valido);
+            localStorage.setItem(CHIAVE_SCELTA, '1');
         } catch (e) { /* come sopra: la scelta non si salva, ma vale per questa sessione */ }
-        if (window.SaveManager && SaveManager.setSetting) SaveManager.setSetting('videoDetail', valido);
+        if (window.SaveManager && SaveManager.setSetting) {
+            SaveManager.setSetting('videoDetailScelto', true);
+            SaveManager.setSetting('videoDetail', valido);
+        }
         if (document.documentElement) document.documentElement.dataset.dettagli = valido;
         // I moduli JS continui (oggi FieldAmbience) devono potersi
         // spegnere subito, non soltanto al prossimo caricamento pagina.

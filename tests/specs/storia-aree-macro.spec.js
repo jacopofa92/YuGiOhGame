@@ -309,6 +309,80 @@ module.exports = {
             }));
             t.assert(dopoRilettura.regno === regnoPrima && dopoRilettura.completate === 1 && dopoRilettura.ancoraDentro,
                 `Rileggere una scena già letta non deve far avanzare niente: ${JSON.stringify(dopoRilettura)}`);
+            // --- RIGIOCARE UN DUELLO GIÀ VINTO NON FA SALIRE L'AREA ---------
+            // Lo stesso difetto delle scene, sui duelli (segnalato di nuovo
+            // dall'utente: "fatto un nodo, mi riporta alla mappa principale").
+            // In un'area le tappe fatte sono cliccabili e si rigiocano; al
+            // ritorno l'esito veniva trattato come la rivincita di un intero
+            // torneo: a metà area saliva di un passo (saltando la tappa da
+            // giocare), in un'area finita la azzerava e la dichiarava vinta,
+            // rimandando alla mappa grande. Si passa dalla pagina vera, come
+            // al ritorno da un duello.
+            const timbri = await page.evaluate(() => storyCampaignsDatabase.find((c) => c.id === 'anime').separazioni.map((s) => s.id));
+            const principaliRegno = await page.evaluate(() => StoryProgress.getTappe('anime').find((x) => x.id === 'anime-area-regno')
+                .tappe.filter((x) => x.parallelo !== true).length);
+            for (const caso of [
+                { nome: 'a metà area', completate: 1, regno: 3 },
+                { nome: 'in un\'area già finita', completate: 2, regno: principaliRegno }
+            ]) {
+                await page.evaluate(({ caso, timbri }) => {
+                    SaveManager.setStoryState('anime', {
+                        completate: caso.completate, finita: false, premiata: false,
+                        sotto: { 'anime-area-prologo': 7, 'anime-area-regno': caso.regno }, separazioni: timbri
+                    });
+                    sessionStorage.setItem('ygoLastDuelOutcome', JSON.stringify({
+                        mode: 'story', campaignId: 'anime', torneoId: 'anime-area-regno', rigiocata: true,
+                        playerWon: true, opponentId: 'joey', timestamp: Date.now()
+                    }));
+                }, { caso, timbri });
+                await page.goto(url('?campaign=anime&torneo=' + AREA));
+                await page.waitForSelector('.nm-node', { timeout: 20000 });
+                const dopo = await page.evaluate(() => ({
+                    regno: StoryProgress.getProgress('anime').sotto['anime-area-regno'],
+                    completate: StoryProgress.getProgress('anime').completate,
+                    ancoraDentro: /torneo=anime-area-regno/.test(location.search)
+                        && document.getElementById('btnRicomincia').hidden,
+                    avviso: document.getElementById('avvisoMount').textContent
+                }));
+                t.assert(dopo.regno === caso.regno && dopo.completate === caso.completate,
+                    `Rigiocare un duello già vinto ${caso.nome} non deve muovere l'area né la campagna: ${JSON.stringify(dopo)}`);
+                t.assert(dopo.ancoraDentro, `Rigiocato un duello ${caso.nome}, si resta sulla mappa dell'area: ${JSON.stringify(dopo)}`);
+                t.assert(/tappa già superata/.test(dopo.avviso), `E lo si dice: "${dopo.avviso}"`);
+            }
+
+            // --- E CHI L'AVEVA GIÀ SUBITO VIENE RIPARATO ------------------
+            // Il difetto qui sopra azzerava l'area FINITA nel salvataggio.
+            // Un'area che la campagna ha già superato non può che essere
+            // piena: la si ripara leggendo. Quella corrente invece resta
+            // dov'è, e un TORNEO superato può legittimamente essere a zero.
+            const riparata = await page.evaluate(({ timbri, principaliRegno }) => {
+                SaveManager.setStoryState('anime', {
+                    completate: 2, finita: false, premiata: false,
+                    sotto: { 'anime-area-prologo': 0, 'anime-area-regno': 0, 'anime-area-battlecity1': 2 }, separazioni: timbri
+                });
+                const p = StoryProgress.getProgress('anime');
+                const principaliPrologo = StoryProgress.getTappe('anime').find((x) => x.id === 'anime-area-prologo')
+                    .tappe.filter((x) => x.parallelo !== true).length;
+                const fm = StoryProgress.getTappe('forbiddenMemories');
+                const iTorneo = fm.findIndex((x) => x.kind === 'torneo');
+                let torneo = null;
+                if (iTorneo !== -1) {
+                    SaveManager.setStoryState('forbiddenMemories', { completate: iTorneo + 1, finita: false, premiata: false, sotto: {} });
+                    torneo = StoryProgress.getProgress('forbiddenMemories').sotto[fm[iTorneo].id] || 0;
+                }
+                return {
+                    prologo: p.sotto['anime-area-prologo'], principaliPrologo,
+                    regno: p.sotto['anime-area-regno'], principaliRegno,
+                    corrente: p.sotto['anime-area-battlecity1'], completate: p.completate, torneo
+                };
+            }, { timbri, principaliRegno });
+            t.assert(riparata.prologo === riparata.principaliPrologo && riparata.regno === riparata.principaliRegno,
+                `Le aree già superate tornano piene: ${JSON.stringify(riparata)}`);
+            t.assert(riparata.corrente === 2 && riparata.completate === 2,
+                `L'area corrente e la campagna restano dove sono: ${JSON.stringify(riparata)}`);
+            t.assert(riparata.torneo === null || riparata.torneo === 0,
+                `Un TORNEO superato non viene riempito (si rifà da capo): ${JSON.stringify(riparata)}`);
+
             t.assert(JSON.stringify(migrazione.timbro) === JSON.stringify(migrazione.attese),
                 `Ogni scrittura deve timbrare tutte le separazioni del catalogo: ${JSON.stringify(migrazione.timbro)}`);
 

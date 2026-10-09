@@ -28,20 +28,26 @@
     const LEGACY_RECORD_PREFIX = 'duelArenaRecord_';
     const EXPORT_FILENAME = 'save_yugioh.json';
 
+    // videoDetail parte da 'alti' (richiesta dell'utente; prima 'normali'),
+    // e vale solo se `videoDetailScelto`: vedi in cima a js/ui/video-quality.js
+    // perché serve il segno. menuParallax: la profondità del menu principale
+    // (index.html), accesa di default.
     const DEFAULT_SETTINGS = {
-        videoDetail: 'normali', hologram: true, haptics: true,
+        videoDetail: 'alti', videoDetailScelto: false, hologram: true, haptics: true,
+        menuParallax: true,
         musicVolume: 0.55, musicMuted: false,
         sfxVolume: 0.6, sfxMuted: false
     };
     const SETTINGS_CACHE_KEYS = {
-        videoDetail: 'ygoVideoDetail', hologram: 'ygoHologram', haptics: 'ygoHapticsEnabled',
+        videoDetail: 'ygoVideoDetail', videoDetailScelto: 'ygoVideoDetailScelto',
+        hologram: 'ygoHologram', haptics: 'ygoHapticsEnabled', menuParallax: 'ygoParallasseMenu',
         musicVolume: 'duelArenaMusicVolume', musicMuted: 'duelArenaMusicMuted',
         sfxVolume: 'duelArenaSfxVolume', sfxMuted: 'duelArenaSfxMuted'
     };
 
     function normalizeSetting(key, value) {
         const fallback = DEFAULT_SETTINGS[key];
-        if (key === 'videoDetail') return value === 'alti' ? 'alti' : 'normali';
+        if (key === 'videoDetail') return value === 'normali' ? 'normali' : 'alti';
         if (key === 'musicVolume' || key === 'sfxVolume') {
             const numero = Number(value);
             return Number.isFinite(numero) ? Math.min(1, Math.max(0, numero)) : fallback;
@@ -52,10 +58,13 @@
     function readCachedSettings() {
         const settings = { ...DEFAULT_SETTINGS };
         try {
+            settings.videoDetailScelto = localStorage.getItem(SETTINGS_CACHE_KEYS.videoDetailScelto) === '1';
             const video = localStorage.getItem(SETTINGS_CACHE_KEYS.videoDetail);
-            if (video === 'normali' || video === 'alti') settings.videoDetail = video;
+            if (settings.videoDetailScelto && (video === 'normali' || video === 'alti')) settings.videoDetail = video;
             const hologram = localStorage.getItem(SETTINGS_CACHE_KEYS.hologram);
             if (hologram === 'on' || hologram === 'off') settings.hologram = hologram === 'on';
+            const parallasse = localStorage.getItem(SETTINGS_CACHE_KEYS.menuParallax);
+            if (parallasse === 'on' || parallasse === 'off') settings.menuParallax = parallasse === 'on';
             const haptics = localStorage.getItem(SETTINGS_CACHE_KEYS.haptics);
             if (haptics === '0' || haptics === '1') settings.haptics = haptics === '1';
             ['musicVolume', 'sfxVolume'].forEach((key) => {
@@ -77,12 +86,18 @@
         Object.keys(DEFAULT_SETTINGS).forEach((key) => {
             normalized[key] = normalizeSetting(key, input[key] === undefined ? DEFAULT_SETTINGS[key] : input[key]);
         });
+        // Un livello mai scelto dal giocatore è solo il default di un tempo:
+        // vale quello di oggi.
+        if (!normalized.videoDetailScelto) normalized.videoDetail = DEFAULT_SETTINGS.videoDetail;
         return normalized;
     }
 
     function syncSettingsCache(settings) {
         try {
             localStorage.setItem(SETTINGS_CACHE_KEYS.videoDetail, settings.videoDetail);
+            if (settings.videoDetailScelto) localStorage.setItem(SETTINGS_CACHE_KEYS.videoDetailScelto, '1');
+            else localStorage.removeItem(SETTINGS_CACHE_KEYS.videoDetailScelto);
+            localStorage.setItem(SETTINGS_CACHE_KEYS.menuParallax, settings.menuParallax ? 'on' : 'off');
             localStorage.setItem(SETTINGS_CACHE_KEYS.hologram, settings.hologram ? 'on' : 'off');
             localStorage.setItem(SETTINGS_CACHE_KEYS.haptics, settings.haptics ? '1' : '0');
             localStorage.setItem(SETTINGS_CACHE_KEYS.musicVolume, String(settings.musicVolume));
@@ -247,6 +262,43 @@
         return { credits: 0, starChips: 0, locatorCards: 0, millenniumCards: 0 };
     }
 
+    /**
+     * AZZERAMENTO DELLE STORIE PER TUTTI (richiesta dell'utente, 2026-10-09:
+     * "resettare tutte le storie a tutti e salvare su cloud, così si
+     * riparte per bene", premi finali compresi).
+     *
+     * Un salvataggio che non porta questo segno ha le storie scritte prima
+     * dell'azzeramento: `save.story` si svuota per intero — avanzamento di
+     * ogni campagna a ogni livello, livelli Normale/Difficile sbloccati e
+     * premio finale già ritirato (si può riscuotere di nuovo). Tutto il
+     * resto resta: carte, crediti, mazzi, Sfide, e il registro delle carte
+     * ottenute dai capitoli (js/economy/card-acquisition.js), che fa anche
+     * da lucchetto a carte del Negozio.
+     *
+     * Perché nel codice e non sul database: ogni copia del salvataggio —
+     * quella del telefono, del computer, del cloud, perfino un backup
+     * importato da file — si azzera da sé quando viene letta, quindi le
+     * copie non possono rimettersi a vicenda le storie vecchie. Un
+     * azzeramento fatto solo sul cloud verrebbe invece ricoperto dal primo
+     * dispositivo che carica la sua copia.
+     *
+     * La data del salvataggio NON si sposta (writeRaw, non touch): la
+     * regola "vince il più recente" del cloud resta quella di prima, e un
+     * dispositivo rimasto indietro non diventa "il più recente" solo perché
+     * si è azzerato. Per un ALTRO azzeramento in futuro basta cambiare il
+     * valore qui sotto.
+     */
+    const AZZERAMENTO_STORIE = '2026-10-09';
+    /** Il salvataggio è appena stato azzerato e va detto a chi sincronizza (vedi onSaved). */
+    let azzeramentoDaComunicare = false;
+
+    function azzeraStorieSeVecchie(save) {
+        if (save.storieAzzerate === AZZERAMENTO_STORIE) return false;
+        save.story = {};
+        save.storieAzzerate = AZZERAMENTO_STORIE;
+        return true;
+    }
+
     function load() {
         let save = readRaw();
         if (!save) save = migrateLegacyIfNeeded();
@@ -312,6 +364,14 @@
         // getStoryState piu' sotto. Assente in ogni salvataggio
         // precedente alla Modalita' Storia.
         if (!save.story) { save.story = {}; dirty = true; }
+        if (azzeraStorieSeVecchie(save)) {
+            dirty = true;
+            azzeramentoDaComunicare = true;
+            // Chi sincronizza è già in ascolto (di solito sì, a pagina
+            // avviata): gli si dice subito, dopo la scrittura qui sotto.
+            // Se non c'è ancora, glielo dirà onSaved quando si registra.
+            setTimeout(comunicaAzzeramento, 0);
+        }
         if (!save.settings) {
             save.settings = readCachedSettings();
             dirty = true;
@@ -370,6 +430,8 @@
             tournamentStats: {},
         millenniumItems: {},
         story: {},
+            // Nato dopo l'azzeramento delle storie: non c'è niente da azzerare.
+            storieAzzerate: AZZERAMENTO_STORIE,
             settings: readCachedSettings(),
             // Un giocatore nuovo non possiede NESSUNA carta, tranne quelle
             // del mazzo iniziale che il gioco stesso gli mette in mano
@@ -401,7 +463,28 @@
      */
     const savedListeners = [];
     function onSaved(fn) {
-        if (typeof fn === 'function') savedListeners.push(fn);
+        if (typeof fn !== 'function') return;
+        savedListeners.push(fn);
+        // Un azzeramento delle storie avvenuto prima che chi sincronizza
+        // si registrasse (load() gira presto, auto-sync si aggancia dopo).
+        if (azzeramentoDaComunicare) setTimeout(comunicaAzzeramento, 0);
+    }
+
+    /**
+     * Dice a chi ascolta che il salvataggio è cambiato per l'azzeramento
+     * delle storie, SENZA toccarne la data: così auto-sync lo porta sul
+     * cloud (la richiesta dell'utente era anche "salvare su cloud"), ma il
+     * caricamento si ferma da solo se sul cloud c'è un salvataggio più
+     * recente — che a sua volta si azzera leggendolo.
+     */
+    function comunicaAzzeramento() {
+        if (!azzeramentoDaComunicare || !savedListeners.length) return;
+        azzeramentoDaComunicare = false;
+        const save = readRaw();
+        if (!save) return;
+        savedListeners.forEach((fn) => {
+            try { fn(save); } catch (e) { /* un ascoltatore rotto non rompe niente */ }
+        });
     }
 
     function touch(save) {
@@ -970,12 +1053,21 @@
      * Lancia un Error con messaggio parlante se `parsed` non è un
      * salvataggio valido, così chi chiama può mostrarlo com'è.
      */
-    function applyExternalSave(parsed) {
+    function applyExternalSave(parsed, opzioni) {
         if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.decks)) {
             throw new Error('Il file non è un salvataggio valido.');
         }
         parsed.player = parsed.player || { name: 'Giocatore' };
-        parsed.player.lastSaved = new Date().toISOString();
+        // `mantieniData`: chi scarica dal CLOUD tiene la data vera di quel
+        // salvataggio (l'ultima modifica, fatta su un altro dispositivo).
+        // Marcarlo "adesso" lo faceva sembrare più nuovo di quanto fosse, e
+        // il confronto fra dispositivi (CloudSync.confrontaSalvataggi) si
+        // basa proprio su questa data. Un file importato a mano invece resta
+        // "adesso": è una scelta fatta ora, e deve vincere.
+        const dataOriginale = parsed.player.lastSaved && !isNaN(Date.parse(parsed.player.lastSaved));
+        if (!(opzioni && opzioni.mantieniData && dataOriginale)) {
+            parsed.player.lastSaved = new Date().toISOString();
+        }
         parsed.records = parsed.records || {};
         parsed.currency = parsed.currency || makeDefaultCurrency();
         parsed.ownedPacks = parsed.ownedPacks || [];
@@ -1003,6 +1095,14 @@
         if (parsed.activeDeckId == null || !parsed.decks.some((d) => d.id === parsed.activeDeckId)) {
             parsed.activeDeckId = parsed.decks[0] ? parsed.decks[0].id : null;
         }
+        // Una copia scritta prima dell'azzeramento delle storie (il cloud,
+        // un backup su file) si azzera come quella del dispositivo: è il
+        // pezzo che impedisce al cloud di riportare indietro le storie
+        // vecchie. E si rimanda su, così anche il cloud resta azzerato.
+        if (azzeraStorieSeVecchie(parsed)) {
+            azzeramentoDaComunicare = true;
+            setTimeout(comunicaAzzeramento, 0);
+        }
         writeRaw(parsed);
         syncSettingsCache(parsed.settings);
         window.dispatchEvent(new CustomEvent('ygo:settings-applied', { detail: { settings: { ...parsed.settings } } }));
@@ -1027,6 +1127,9 @@
 
     function deleteSave() {
         try { localStorage.removeItem(SAVE_KEY); } catch (e) { /* noop */ }
+        // Anche il backup nativo dell'APK: index.html lo ripristina quando
+        // non trova un salvataggio, e riporterebbe in vita quello appena tolto.
+        if (window.NativeSaveBackup && typeof NativeSaveBackup.clear === 'function') NativeSaveBackup.clear();
     }
 
     window.SaveManager = {

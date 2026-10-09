@@ -869,7 +869,12 @@
                 return Promise.all([CloudSync.pushSave(), CloudSync.pushCustomCards()]).then(() => {
                     syncStatusEl.textContent = `⬆️ Questo dispositivo aveva il salvataggio più recente (${formatSaveDate(verdetto.quandoLocale)}): caricato sul cloud.`;
                 });
-            }).catch((e) => showToast(`⚠️ ${e.message}`));
+            }).catch((e) => {
+                // Profilo azzerato da un altro dispositivo: i dati di qui sono
+                // già stati tolti, e si riparte dal menu (che chiede il nome).
+                if (e && e.code === 'PROFILO_AZZERATO') { location.href = 'index.html'; return; }
+                showToast(`⚠️ ${e.message}`);
+            });
         }
 
         // "Esci dall'account": prima mette in sicurezza il progresso di

@@ -58,5 +58,16 @@
             .catch(() => null);
     }
 
-    window.NativeSaveBackup = { mirror: mirror, tryRecover: tryRecover };
+    /**
+     * Toglie il backup. Serve all'azzeramento del profilo
+     * (SaveManager.deleteSave): senza, al primo avvio senza salvataggio
+     * index.html ripristinerebbe da qui proprio i dati appena azzerati.
+     */
+    function clear() {
+        const plugin = getPlugin();
+        if (!plugin || typeof plugin.remove !== 'function') return;
+        try { plugin.remove({ key: KEY }).catch(() => {}); } catch (e) { /* noop */ }
+    }
+
+    window.NativeSaveBackup = { mirror: mirror, tryRecover: tryRecover, clear: clear };
 })();

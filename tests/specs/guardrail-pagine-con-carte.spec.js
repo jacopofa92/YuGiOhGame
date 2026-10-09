@@ -17,6 +17,10 @@ const path = require('path');
 const RADICE = path.join(__dirname, '..', '..');
 const RENDERER = 'js/ui/card-renderer.js';
 const STILE = 'js/ui/card.css';
+// La carta "viva" (CartaViva in card-renderer.js) segue il giroscopio
+// tramite js/ui/inclinazione.js: senza, non dà errore ma sul telefono la
+// carta grande smette di seguire l'inclinazione.
+const INCLINAZIONE = 'js/ui/inclinazione.js';
 
 function caricatiDa(html) {
     const percorsi = new Set();
@@ -43,7 +47,7 @@ module.exports = {
             });
             if (!disegnano.length) continue;
             controllate++;
-            const mancano = [RENDERER, STILE].filter((p) => !caricati.has(p));
+            const mancano = [RENDERER, STILE, INCLINAZIONE].filter((p) => !caricati.has(p));
             if (mancano.length) problemi.push(`${pagina}: disegna carte (${disegnano.join(', ')}) ma non carica ${mancano.join(' e ')}`);
         }
         // Erano 7 quando il controllo è nato (duello, Cartoteca, Creazione

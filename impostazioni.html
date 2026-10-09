@@ -342,12 +342,24 @@
             <div class="settings-row">
                 <div>
                     <div class="settings-row-label">Dettagli video</div>
-                    <div class="settings-row-sub" id="videoDetailSub">Con "Alti" il Terreno di gioco mostra effetti aggiuntivi. Su un dispositivo meno potente conviene restare su "Normali".</div>
+                    <div class="settings-row-sub" id="videoDetailSub">Con "Alti" il Terreno di gioco mostra effetti aggiuntivi. Su un dispositivo meno potente conviene passare a "Normali".</div>
                 </div>
                 <div class="seg" id="videoDetailSeg" role="group" aria-label="Dettagli video">
-                    <button type="button" class="seg-btn" data-livello="normali" aria-pressed="true">Normali</button>
-                    <button type="button" class="seg-btn" data-livello="alti" aria-pressed="false">Alti</button>
+                    <button type="button" class="seg-btn" data-livello="normali" aria-pressed="false">Normali</button>
+                    <button type="button" class="seg-btn" data-livello="alti" aria-pressed="true">Alti</button>
                 </div>
+            </div>
+
+            <div class="settings-row">
+                <div>
+                    <div class="settings-row-label">Profondità del menu</div>
+                    <div class="settings-row-sub">Lo sfondo del menu principale si muove a strati seguendo il mouse o l'inclinazione del telefono.</div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="parallaxToggleInput">
+                    <span class="switch-track"></span>
+                    <span class="switch-thumb"></span>
+                </label>
             </div>
 
             <div class="settings-row">
@@ -399,6 +411,8 @@
 <script src="js/ui/video-quality.js"></script>
 <script src="js/ui/bot-speed.js"></script>
 <script src="js/ui/hologram-setting.js"></script>
+<!-- Per l'impostazione "Profondità del menu" (Inclinazione.parallasseMenuAttiva). -->
+<script src="js/ui/inclinazione.js"></script>
 <script src="js/ui/deck-switcher.js"></script>
 <script src="js/ui/topbar.js"></script>
 <script>
@@ -522,6 +536,18 @@
         hologramToggle.checked = HologramSetting.isAttivo();
         hologramToggle.addEventListener('change', () => {
             HologramSetting.set(hologramToggle.checked);
+            if (window.NativeHaptics) NativeHaptics.light();
+        });
+    }
+
+    // --- Profondità del menu ----------------------------------------
+    // La parallasse del menu principale (js/ui/inclinazione.js), accesa
+    // di default. Acceso = il menu si muove a strati.
+    const parallaxToggle = document.getElementById('parallaxToggleInput');
+    if (parallaxToggle && window.Inclinazione) {
+        parallaxToggle.checked = Inclinazione.parallasseMenuAttiva();
+        parallaxToggle.addEventListener('change', () => {
+            Inclinazione.impostaParallasseMenu(parallaxToggle.checked);
             if (window.NativeHaptics) NativeHaptics.light();
         });
     }

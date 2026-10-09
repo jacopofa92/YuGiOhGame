@@ -724,3 +724,129 @@ body[data-card-badges] .card { overflow: visible; }
     }
     .card:not(.face-down) .card-frame-art { border-width: 0; }
 }
+
+/* ============================================================
+   CARTA VIVA — inclinazione e riflessi per rarità
+   (js/ui/card-renderer.js, CartaViva.rendi; fonte dell'inclinazione
+   in js/ui/inclinazione.js)
+   ============================================================
+   Il JS scrive cinque variabili sull'elemento che si inclina: --inc-x e
+   --inc-y (gradi), --luce-x e --luce-y (dove cade la luce, in % della
+   carta) e --forza (0 = ferma, 1 = inclinazione piena). Tutto il resto è
+   qui. Le variabili sono REGISTRATE (@property): così possono essere
+   animate dall'ondeggiare a riposo e passano ai figli (i riflessi stanno
+   dentro la carta, il palco del premio che si inclina sta fuori). */
+@property --inc-x { syntax: '<angle>'; inherits: true; initial-value: 0deg; }
+@property --inc-y { syntax: '<angle>'; inherits: true; initial-value: 0deg; }
+@property --luce-x { syntax: '<percentage>'; inherits: true; initial-value: 50%; }
+@property --luce-y { syntax: '<percentage>'; inherits: true; initial-value: 30%; }
+@property --forza { syntax: '<number>'; inherits: true; initial-value: 0; }
+
+/* L'inclinazione. Nei modi 'griglia' e 'fila' vale solo SOTTO IL MOUSE:
+   fuori di lì il transform resta quello della pagina, così le animazioni
+   delle buste e del Negozio che muovono la carta non vengono toccate.
+   Il !important serve perché diverse pagine fermano l'hover della carta
+   con un loro `transform: none` più specifico: sotto il mouse, una carta
+   viva si inclina comunque. */
+.cv-inclina[data-viva="griglia"]:hover,
+.cv-inclina[data-viva="fila"]:hover,
+.cv-inclina[data-viva="grande"] {
+    transform: perspective(900px) var(--cv-base, translateZ(0)) rotateX(var(--inc-x)) rotateY(var(--inc-y)) !important;
+}
+.cv-inclina[data-viva="griglia"]:hover { --cv-base: translateY(-8px) scale(1.06); }
+.cv-inclina[data-viva="grande"] { will-change: transform; }
+/* Il ritorno al centro è morbido; mentre il mouse o il telefono si
+   muovono la carta segue quasi subito, altrimenti sembrerebbe trascinarsi
+   dietro. Mai un rimbalzo: arriva e si ferma. */
+.cv-inclina { transition: transform 0.5s cubic-bezier(0.22, 0.7, 0.25, 1), box-shadow 0.3s ease; }
+.cv-inclina.cv-attiva { transition: transform 0.12s linear, box-shadow 0.3s ease; }
+
+/* A riposo la carta grande ondeggia piano da sola, così la luce passa
+   anche su un telefono senza giroscopio o su un computer col mouse fermo. */
+.cv-inclina.cv-ozio { animation: cvOzio 7s ease-in-out infinite; }
+@keyframes cvOzio {
+    0%, 100% { --inc-x: 3deg;  --inc-y: -7deg; --luce-x: 22%; --luce-y: 30%; --forza: 0.45; }
+    50%      { --inc-x: -3deg; --inc-y: 7deg;  --luce-x: 78%; --luce-y: 62%; --forza: 0.45; }
+}
+/* Movimento ridotto: nessuna inclinazione, il lucido resta a metà forza. */
+.cv-inclina.cv-ferma { --forza: 0.35; }
+@media (prefers-reduced-motion: reduce) {
+    .cv-inclina.cv-ozio { animation: none; }
+}
+
+/* I riflessi: livelli sopra l'illustrazione e sotto i distintivi
+   (copie possedute, limite: z-index 4), mai cliccabili. */
+.carta-viva > .cv-riflesso,
+.carta-viva > .cv-bordo,
+.carta-viva > .cv-grana,
+.carta-viva .cv-olo {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    border-radius: var(--card-raggio);
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+}
+
+/* La luce che passa: c'è su ogni carta, comuni comprese, ma solo quando
+   la carta si inclina. */
+.carta-viva > .cv-riflesso {
+    background: radial-gradient(circle at var(--luce-x) var(--luce-y),
+        rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0.2) 28%, transparent 60%);
+    mix-blend-mode: soft-light;
+    opacity: calc(var(--forza) * 0.9);
+}
+
+/* Rara e superiori: un filo lucido sul bordo, che scorre con la luce. Un
+   anello ottenuto togliendo il riquadro interno (padding) da quello
+   esterno con una maschera. */
+.carta-viva > .cv-bordo {
+    padding: 5%;
+    /* Una banda di luce che scorre sul bordo, dipinta SENZA fusione: su
+       una cornice già dorata (i mostri) una fusione "schiarisci" non si
+       vedeva affatto (verificato guardandola). Sotto, un velo chiaro
+       sottile che resta anche a carta ferma. */
+    background:
+        linear-gradient(115deg, transparent 30%, rgba(255, 253, 240, 0.9) 50%, transparent 70%)
+            var(--luce-x) var(--luce-y) / 220% 220% no-repeat,
+        linear-gradient(135deg, rgba(255, 250, 225, 0.32), rgba(255, 236, 170, 0.08) 50%, rgba(255, 250, 225, 0.32));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+    opacity: calc(0.55 + var(--forza) * 0.45);
+}
+
+/* Super e superiori: l'arcobaleno sull'illustrazione. Si vede anche a
+   carta ferma (poco), e si accende quando si inclina. */
+.carta-viva .cv-olo {
+    border-radius: inherit;
+    background: repeating-linear-gradient(115deg,
+        #ff5a85 0%, #ffd166 7%, #5ef0b0 14%, #5cc8ff 21%, #b98cff 28%, #ff5a85 35%);
+    background-size: 240% 240%;
+    background-position: var(--luce-x) var(--luce-y);
+    mix-blend-mode: color-dodge;
+    opacity: calc(0.14 + var(--forza) * 0.3);
+}
+.carta-viva .cv-olo--intera { border-radius: var(--card-raggio); opacity: calc(0.08 + var(--forza) * 0.2); }
+.carta-viva[data-rarita="ultra"] .cv-olo { opacity: calc(0.22 + var(--forza) * 0.4); }
+/* Leggendaria e mitica: lo stesso arcobaleno, ma nell'oro del gioco. */
+.carta-viva[data-rarita="legendary"] .cv-olo,
+.carta-viva[data-rarita="mythic"] .cv-olo {
+    background-image: repeating-linear-gradient(115deg,
+        #fff3c4 0%, #f7d774 8%, #f39c12 16%, #fff8df 24%, #e0b04a 32%, #fff3c4 40%);
+    mix-blend-mode: overlay;
+    opacity: calc(0.3 + var(--forza) * 0.45);
+}
+
+/* Segreta e mitica: una grana di scintille, accesa solo attorno alla luce. */
+.carta-viva > .cv-grana {
+    background-image:
+        radial-gradient(circle, rgba(255, 255, 255, 0.95) 0 0.6px, transparent 1.2px),
+        radial-gradient(circle, rgba(255, 240, 200, 0.85) 0 0.5px, transparent 1px);
+    background-size: 9px 9px, 13px 13px;
+    background-position: 0 0, 4px 6px;
+    -webkit-mask-image: radial-gradient(circle at var(--luce-x) var(--luce-y), #000 0%, rgba(0, 0, 0, 0.35) 35%, transparent 70%);
+    mask-image: radial-gradient(circle at var(--luce-x) var(--luce-y), #000 0%, rgba(0, 0, 0, 0.35) 35%, transparent 70%);
+    mix-blend-mode: color-dodge;
+    opacity: calc(0.35 + var(--forza) * 0.6);
+}
