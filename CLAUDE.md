@@ -3240,6 +3240,16 @@ priorità o richiedono un refactor ampio):
   seconda copia di quella logica. La conferma è "scrivi **azzera**" —
   parola DIVERSA da "elimina" dell'eliminazione account, che sta a due
   centimetri di distanza e fa una cosa molto diversa.
+  **Vale anche sugli altri dispositivi** (`leggiCloud`/"Generazione del
+  profilo" in cloud-sync.js): la riga del cloud non si cancella ma diventa
+  un segno `{ azzeratoIl }`. Ogni lettura del cloud passa da `leggiCloud`,
+  che toglie i dati di un dispositivo nati in una generazione precedente
+  PRIMA di qualunque confronto per data (un telefono offline che gioca col
+  profilo vecchio ha una data più recente, ma va tolto lo stesso). Il
+  salvataggio nuovo eredita la generazione dal registro del dispositivo
+  (`ygoGenerazioneProfilo`, per utente) e la porta sul cloud. `deleteSave`
+  toglie anche il backup nativo dell'APK, che altrimenti index.html
+  ripristinerebbe. Spec `azzeramento-profilo-tra-dispositivi`.
 
 - ✅ **L'amministratore ha 999999 di ogni valuta**, calcolate al momento
   della LETTURA in `SaveManager.getCurrency()` e mai scritte nel

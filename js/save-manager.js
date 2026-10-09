@@ -1036,6 +1036,9 @@
 
     function deleteSave() {
         try { localStorage.removeItem(SAVE_KEY); } catch (e) { /* noop */ }
+        // Anche il backup nativo dell'APK: index.html lo ripristina quando
+        // non trova un salvataggio, e riporterebbe in vita quello appena tolto.
+        if (window.NativeSaveBackup && typeof NativeSaveBackup.clear === 'function') NativeSaveBackup.clear();
     }
 
     window.SaveManager = {

@@ -5978,6 +5978,9 @@
                 let avviso = null;
                 try { avviso = sessionStorage.getItem('ygoAvvisoSync'); sessionStorage.removeItem('ygoAvvisoSync'); } catch (e) { /* noop */ }
                 if (avviso === 'scaricato') showMenuToast('⬇️ Arrivati i progressi più recenti da un altro dispositivo.');
+                // Lasciato da CloudSync quando toglie i dati di un profilo
+                // azzerato altrove (in qualunque pagina sia successo).
+                if (avviso === 'azzerato') showMenuToast('🧹 Il profilo è stato azzerato da un altro dispositivo: si riparte da zero.');
             }
             function decide() {
                 // La parte di rete — chi sei, sei approvato, e ALLINEAMENTO
@@ -6028,6 +6031,7 @@
                     }
                     passGate();
                     annunciaRiconciliazione(v.sync);
+                    annunciaAvvisoInSospeso();
                 }));
             }
             // Recupero da backup nativo (vedi js/native/native-save-backup.js):

@@ -87,7 +87,9 @@
             // vorrebbe dire ritentare all'infinito. Ci pensa la
             // riconciliazione a portare qui la copia buona.
             .catch((e) => {
-                if (e && e.code === 'CLOUD_PIU_RECENTE') segna(false);
+                // Stesso discorso se il profilo è stato azzerato altrove:
+                // i dati da mandare non esistono più.
+                if (e && (e.code === 'CLOUD_PIU_RECENTE' || e.code === 'PROFILO_AZZERATO')) segna(false);
                 return false;
             })
             .then((esito) => { inCorso = false; return esito; });
@@ -117,8 +119,13 @@
         if (!pronto() || typeof CloudSync.riconcilia !== 'function') return;
         if (CloudSync.msDallUltimaRiconciliazione() < INTERVALLO_RICONCILIAZIONE_MS) return;
         CloudSync.riconcilia({ attesaMassimaMs: 8000 }).then((r) => {
-            if (!r || r.esito !== 'scaricato') return;
+            if (!r || (r.esito !== 'scaricato' && r.esito !== 'azzerato')) return;
             if (typeof gameState !== 'undefined') return;
+            // Profilo azzerato da un altro dispositivo: qui non c'è più un
+            // salvataggio, e una pagina qualunque non sa ripartire da zero.
+            // Si torna al menu, che chiede il nome come la prima volta (e
+            // dice perché: l'avviso l'ha lasciato CloudSync).
+            if (r.esito === 'azzerato') { location.href = 'index.html'; return; }
             try { sessionStorage.setItem('ygoAvvisoSync', 'scaricato'); } catch (e) { /* noop */ }
             location.reload();
         });
