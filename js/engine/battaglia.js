@@ -37,6 +37,53 @@ function graveyardOfOwner(owner) {
 }
 
 /**
+ * Il mostro in `attackerIndex` di `attackerOwner` può attaccare
+ * DIRETTAMENTE adesso? Una risposta sola per chi deve saperlo PRIMA di
+ * dichiarare l'attacco — l'interfaccia, che mostra le bande "ATTACCO
+ * DIRETTO" e aggancia la freccia alla mano avversaria quando la mossa è
+ * davvero disponibile, anche con mostri avversari in campo.
+ *
+ * Due condizioni: il permesso, poi i divieti.
+ *  - Permesso: l'avversario non ha mostri, oppure questo mostro ha un
+ *    permesso speciale per il turno (gameState.directAttackAllowedFor, es.
+ *    Golem Meccanico dopo il suo costo) o continuo
+ *    (gameState.directAttackAllowedUids, es. i Toon, ricalcolato dagli
+ *    effetti continui).
+ *  - Divieti: gli stessi che resolveAttack applica a un attacco diretto
+ *    (def.cannotAttackDirectly, il bersaglio obbligato di Anello
+ *    Magnetico, def.attacksEachEnemyOnce dopo aver già attaccato un
+ *    mostro, def.mustTargetFilterIfPresent). Se se ne aggiunge uno là,
+ *    va aggiunto anche qui, o l'interfaccia prometterebbe un attacco che
+ *    poi viene rifiutato.
+ * Non ripete i controlli che valgono per OGNI attacco (Posizione, già
+ * attaccato, Spada Rivelatrice...): chi chiede ha già un mostro che può
+ * attaccare, e quei controlli restano comunque in resolveAttack.
+ */
+function puoAttaccareDirettamente(attackerOwner, attackerIndex) {
+    const attackerSlot = fieldOfOwner(attackerOwner)[attackerIndex];
+    if (!attackerSlot || !attackerSlot.card) return false;
+    const uid = attackerSlot.card.uid;
+    const defenderOwner = Tavolo.avversario(attackerOwner);
+    const defenderField = fieldOfOwner(defenderOwner);
+    const difensoreHaMostri = defenderField.some((slot) => slot !== null);
+    const permesso = !difensoreHaMostri
+        || !!(gameState.directAttackAllowedFor && gameState.directAttackAllowedFor[uid])
+        || !!(gameState.directAttackAllowedUids && gameState.directAttackAllowedUids[uid]);
+    if (!permesso) return false;
+    const def = window.DuelEngine && DuelEngine.getDefinition(attackerSlot.card.id);
+    if (def && def.cannotAttackDirectly) return false;
+    const obbligati = window.DuelEngine && DuelEngine.forcedAttackTargetIndexes
+        ? DuelEngine.forcedAttackTargetIndexes(defenderOwner) : [];
+    if (obbligati.length > 0) return false;
+    if (def && def.attacksEachEnemyOnce && attackedEnemyUidsOf(attackerSlot).size > 0) return false;
+    if (def && typeof def.mustTargetFilterIfPresent === 'function'
+        && defenderField.some((slot) => slot && !slot.isFaceDown && def.mustTargetFilterIfPresent(slot.card, attackerOwner))) {
+        return false;
+    }
+    return true;
+}
+
+/**
  * Risolve un'intera battaglia, chiunque l'abbia dichiarata (giocatore,
  * bot, o la sua replica in multiplayer). Sequenza:
  *   1) apre la finestra di risposta ON_ATTACK_DECLARE (Forza Riflessa /

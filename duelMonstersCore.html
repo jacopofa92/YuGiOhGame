@@ -316,6 +316,20 @@
             0%, 100% { box-shadow: 0 0 18px 4px rgba(231, 76, 60, 0.55), inset 0 0 22px rgba(231, 76, 60, 0.3); }
             50% { box-shadow: 0 0 28px 9px rgba(231, 76, 60, 0.78), inset 0 0 32px rgba(231, 76, 60, 0.4); }
         }
+        /* Attacco diretto "agganciato": la freccia si è attaccata alla mano
+           dell'avversario (vedi aggiornaAggancioDiretto in game-flow.js), e
+           la mano si accende come un bersaglio — stesso rosso del mostro
+           agganciato, perché è la stessa informazione: "rilascia qui e
+           colpisci questo". Giallo come le bande sarebbe stato più "a
+           tema", ma confonderebbe un bersaglio con un avviso. */
+        /* Si accendono le CARTE della mano, non il contenitore: la fila
+           della mano è larga quanto lo schermo, e un bordo su di lei
+           tagliava tutta la parte alta (visto in foto). */
+        .hand--bot.attack-target-hover .card {
+            outline: 2px solid rgba(231, 76, 60, 0.95);
+            outline-offset: 1px;
+            animation: attackTargetPulse 0.7s ease-in-out infinite;
+        }
         .game-container {
             /* Prima era bloccato a 1400px: su monitor grandi/ultrawide
                lasciava il campo "isolato" in un'isola centrale con tutto
@@ -1469,6 +1483,20 @@
         .daw-bar--right.daw-bar--hint {
             animation: dawSlideRightHold 220ms ease-out forwards, dawStripeScroll 650ms linear infinite reverse;
         }
+        /* Attacco diretto POSSIBILE ma non ancora scelto (l'avversario ha
+           mostri, ma questo mostro può comunque colpire i Life Point): le
+           bande ci sono — dicono "puoi farlo" — ma più tenui. Tornano piene
+           quando la freccia si aggancia alla mano (.daw-agganciato tolto
+           l'attesa). La transizione è sul contenitore, così non disturba le
+           animazioni d'ingresso delle due barre. */
+        #directAttackHint { transition: opacity 160ms ease-out; }
+        #directAttackHint .daw-bar { transition: width 160ms ease-out; }
+        #directAttackHint.daw-in-attesa { opacity: 0.42; }
+        /* In attesa anche più strette: su un telefono le bande piene
+           coprono le colonne laterali del campo, e finché non hai scelto
+           l'attacco diretto quei mostri ti servono ancora (visto in foto). */
+        #directAttackHint.daw-in-attesa .daw-bar { width: clamp(26px, 3.6vw, 56px); }
+        #directAttackHint.daw-in-attesa .daw-bar-text { font-size: clamp(0.62rem, 1.4vw, 0.95rem); }
         @keyframes dawSlideLeftHold {
             0%   { opacity: 0; transform: translateX(-100%); }
             100% { opacity: 1; transform: translateX(0); }

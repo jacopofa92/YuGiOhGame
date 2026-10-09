@@ -1278,6 +1278,9 @@ function startAttackDrag(event, attackerIndex) {
     }
     attackArrowSVG.style.display = 'block';
 
+    // Può attaccare direttamente? La regola è una sola (puoAttaccareDirettamente,
+    // battaglia.js), la stessa per le bande e per l'aggancio della freccia.
+    attackDragStart.directPossible = puoAttaccareDirettamente('player', attackerIndex);
     // Il bot non ha mostri: qualunque punto tu rilasci, l'attacco sarà per
     // forza diretto. Invece di farti mirare con precisione, la freccia si
     // blocca subito verso la MANO del bot (il bersaglio concettuale di un
@@ -1285,15 +1288,18 @@ function startAttackDrag(event, attackerIndex) {
     // la conseguenza, non il "cosa" stai colpendo) e mostra il warning
     // laterale in anteprima, così è chiaro fin da subito cosa sta per
     // succedere.
-    attackDragStart.forcedDirect = !gameState.botMonsterField.some((monster) => monster !== null);
+    attackDragStart.forcedDirect = attackDragStart.directPossible
+        && !gameState.botMonsterField.some((monster) => monster !== null);
     if (attackDragStart.forcedDirect) {
-        const botHandEl = document.getElementById('botHand');
-        if (botHandEl) {
-            const botRect = botHandEl.getBoundingClientRect();
-            attackArrowLine.setAttribute('x2', botRect.left + botRect.width / 2);
-            attackArrowLine.setAttribute('y2', botRect.top + botRect.height / 2);
-        }
+        agganciaFrecciaAllaMano(true);
         showDirectAttackHint();
+    } else if (attackDragStart.directPossible) {
+        // DUE opzioni (richiesta esplicita): l'avversario ha mostri, ma
+        // questo mostro può comunque colpire i Life Point. Le bande compaiono
+        // subito, tenui, per dire che la mossa c'è; la freccia resta libera
+        // e si aggancia alla mano solo se la porti oltre i mostri avversari
+        // (vedi aggiornaAggancioDiretto).
+        showDirectAttackHint(true);
     }
 
     document.addEventListener('pointermove', dragAttackArrow);
@@ -1306,9 +1312,55 @@ function dragAttackArrow(event) {
     // Con l'attacco forzatamente diretto (vedi startAttackDrag) la freccia
     // resta ancorata al bot: non segue il puntatore.
     if (attackDragStart.forcedDirect) return;
+    if (aggiornaAggancioDiretto(event.clientX, event.clientY)) return;
     attackArrowLine.setAttribute('x2', event.clientX);
     attackArrowLine.setAttribute('y2', event.clientY);
     updateAttackTargetHighlight(event.clientX, event.clientY);
+}
+
+/**
+ * Il punto (x, y) chiede un attacco DIRETTO? Sì sopra la mano o il box
+ * dell'avversario, e sì OLTRE la sua fila di mostri (più in alto del loro
+ * bordo superiore: la sua fila Magie/Trappole e tutto ciò che sta dietro).
+ * È il gesto naturale "passo sopra i suoi mostri e vado dritto a lui", e
+ * non si sovrappone mai al bersaglio di un mostro, che sta sotto quel bordo.
+ * Usata sia durante il trascinamento sia al rilascio, così l'aggancio
+ * mostrato è sempre l'attacco che parte davvero.
+ */
+function puntaAllaManoAvversaria(x, y) {
+    const el = document.elementFromPoint(x, y);
+    if (el && (el.closest('#botHand') || el.closest('#botInfo'))) return true;
+    let bordoMostri = Infinity;
+    document.querySelectorAll('#botFieldBoard .field-slot[data-owner="bot"][data-type="monster"]').forEach((slot) => {
+        bordoMostri = Math.min(bordoMostri, slot.getBoundingClientRect().top);
+    });
+    return bordoMostri !== Infinity && y < bordoMostri;
+}
+
+/** Punta la freccia al centro della mano dell'avversario (o la libera) e accende/spegne la mano come bersaglio. */
+function agganciaFrecciaAllaMano(attivo) {
+    const botHandEl = document.getElementById('botHand');
+    if (botHandEl) botHandEl.classList.toggle('attack-target-hover', !!attivo);
+    if (!attivo || !botHandEl) return;
+    const botRect = botHandEl.getBoundingClientRect();
+    attackArrowLine.setAttribute('x2', botRect.left + botRect.width / 2);
+    attackArrowLine.setAttribute('y2', botRect.top + botRect.height / 2);
+}
+
+/**
+ * Con un attacco diretto possibile ma non obbligato (richiesta esplicita:
+ * l'avversario ha mostri, ma questo mostro può colpire i Life Point), la
+ * freccia si AGGANCIA alla mano avversaria appena il puntatore va oltre i
+ * suoi mostri, e le bande passano da tenui a piene. Torna true se la
+ * freccia è agganciata (chi chiama non deve più farle seguire il puntatore).
+ */
+function aggiornaAggancioDiretto(x, y) {
+    const agganciato = !!attackDragStart.directPossible && puntaAllaManoAvversaria(x, y);
+    agganciaFrecciaAllaMano(agganciato);
+    const bande = document.getElementById('directAttackHint');
+    if (bande) bande.classList.toggle('daw-in-attesa', !agganciato);
+    if (agganciato) clearAttackTargetHighlight();
+    return agganciato;
 }
 
 // Mostro del bot (o riga vuota) evidenziato mentre si trascina la freccia
@@ -1347,6 +1399,7 @@ function endAttackDrag(event) {
     attackArrowSVG.style.display = 'none';
     hideDirectAttackHint();
     clearAttackTargetHighlight();
+    agganciaFrecciaAllaMano(false);
     document.removeEventListener('pointermove', dragAttackArrow);
     document.removeEventListener('pointerup', endAttackDrag);
     document.removeEventListener('pointercancel', endAttackDrag);
@@ -1361,30 +1414,19 @@ function endAttackDrag(event) {
     const targetElement = document.elementFromPoint(event.clientX, event.clientY);
     const targetSlot = targetElement ? targetElement.closest('.field-slot') : null;
     const hasBotMonsters = gameState.botMonsterField.some(monster => monster !== null);
-    // Riconosce come "voglio un attacco diretto" sia il rilascio sul box LP
-    // del bot sia sulla sua mano (il nuovo bersaglio verso cui punta la
-    // freccia, vedi startAttackDrag) — non solo il primo, altrimenti
-    // rilasciare esattamente dove la freccia stessa punta non funzionerebbe.
-    const isBotInfoTarget = !!targetElement && (
-        targetElement.closest('#botInfo') || targetElement.id === 'botInfo' || targetElement.closest('.player-info#botInfo') ||
-        targetElement.closest('#botHand') || targetElement.id === 'botHand'
-    );
-    // Un mostro con il permesso speciale di attaccare direttamente in
-    // questo turno (es. Golem Meccanico la Fortezza Mobile, dopo aver
-    // pagato 800 LP tramite il suo effetto Ignition — vedi
-    // gameState.directAttackAllowedFor) può farlo anche se il bot
-    // controlla dei mostri, non solo quando il suo campo è vuoto.
-    const attackerSlot = gameState.playerMonsterField[attackDragStart.attackerIndex];
-    const hasDirectAttackPermit = !!(attackerSlot && (
-        (gameState.directAttackAllowedFor && gameState.directAttackAllowedFor[attackerSlot.card.uid])
-        || (gameState.directAttackAllowedUids && gameState.directAttackAllowedUids[attackerSlot.card.uid])
-    ));
 
     if (targetSlot && targetSlot.dataset.owner === 'bot' && targetSlot.dataset.type === 'monster' && gameState.botMonsterField[parseInt(targetSlot.dataset.index, 10)]) {
         executeAttack(attackDragStart.attackerIndex, parseInt(targetSlot.dataset.index, 10));
         return;
     }
-    if (isBotInfoTarget && (!hasBotMonsters || hasDirectAttackPermit)) {
+    // Attacco diretto: rilascio sulla mano o sul box dell'avversario, o
+    // oltre la sua fila di mostri — la stessa zona in cui la freccia si
+    // aggancia durante il trascinamento (puntaAllaManoAvversaria), quindi
+    // parte esattamente l'attacco che l'aggancio mostrava. Se il mostro
+    // può attaccare direttamente lo dice puoAttaccareDirettamente
+    // (battaglia.js): anche con mostri avversari in campo, se ha un
+    // permesso (Golem Meccanico, i Toon...).
+    if (attackDragStart.directPossible && puntaAllaManoAvversaria(event.clientX, event.clientY)) {
         executeAttack(attackDragStart.attackerIndex, -1);
         return;
     }
@@ -1405,9 +1447,12 @@ function endAttackDrag(event) {
 
     // Nessun bersaglio valido nemmeno per approssimazione: invece di non
     // fare nulla in silenzio, si spiega perché l'attacco non è partito.
+    const attaccante = gameState.playerMonsterField[attackDragStart.attackerIndex];
     addToLog(hasBotMonsters
         ? '❌ Rilascia l\'attacco su un mostro del bot per colpirlo.'
-        : '❌ Rilascia l\'attacco sulla mano del Bot per un attacco diretto.');
+        : (attackDragStart.directPossible
+            ? '❌ Rilascia l\'attacco sulla mano del Bot per un attacco diretto.'
+            : `🚫 ${attaccante ? attaccante.card.name : 'Questo mostro'} non può attaccare direttamente.`));
 }
 
 /**
@@ -1632,11 +1677,16 @@ function showDirectAttackWarning() {
  * (vedi startAttackDrag): a differenza di showDirectAttackWarning(), che
  * scompare da sola dopo l'impatto, questa resta finché non viene chiusa a
  * mano con hideDirectAttackHint() (il rilascio del trascinamento).
+ *
+ * `inAttesa`: l'attacco diretto è possibile ma non ancora scelto (la
+ * freccia non è agganciata alla mano): le bande restano più tenui finché
+ * aggiornaAggancioDiretto() non toglie la classe.
  */
-function showDirectAttackHint() {
+function showDirectAttackHint(inAttesa) {
     hideDirectAttackHint();
     const el = document.createElement('div');
     el.id = 'directAttackHint';
+    if (inAttesa) el.classList.add('daw-in-attesa');
     el.innerHTML = `
         <div class="daw-bar daw-bar--left daw-bar--hint"><span class="daw-bar-text">ATTACCO DIRETTO</span></div>
         <div class="daw-bar daw-bar--right daw-bar--hint"><span class="daw-bar-text">ATTACCO DIRETTO</span></div>
