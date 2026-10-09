@@ -4070,3 +4070,18 @@ Autore singolo, storia pulita. Pattern osservato in sessione: commit
 mirati per singolo cambiamento logico, push subito dopo ogni commit
 (non accumulare commit locali non pushati) — a meno di istruzione
 esplicita diversa dell'utente.
+
+### Audit degli altri duellanti anime (2026-10-09)
+
+Il riferimento completo è `MAIN_DUELISTS_AUDIT.md`: 31 personaggi, cinque
+deck campione, 50 semi, 23.250 duelli. Non usare una singola coppia come
+misura di bilanciamento. Dopo gli interventi, 30 curve su 31 sono monotone;
+Umbra ha soltanto −0,8 punti Facile→Medio ed è stato lasciato invariato.
+
+Correzioni identitarie: Strings valuta e prepara Slifer e possiede davvero
+Fusione per Drago Verme Umanoide; Gozaburo usa Sepoltura Sciocca sui pezzi
+ancora mancanti nel Cimitero per arrivare a Exodia Necross; Odion può Settare
+1/2/3 Trappole per turno a Facile/Medio/Difficile. Starter e Structure non
+sono stati modificati. Due semi dell'audit sono diventati regressioni per Il
+Guardiano Affidabile (slot senza carta) e Ninja d'Assalto (fonte sparita
+prima della risoluzione).

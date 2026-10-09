@@ -1,0 +1,256 @@
+{
+  "generatoIl": "2026-10-09T13:25:13.218Z",
+  "metodo": "cinque personaggi campione con IA Hard; stessi semi ai tre livelli; vittoria = esito del posto bot",
+  "opzioni": {
+    "gruppo": "amici",
+    "duellanti": [
+      "tristan",
+      "tea",
+      "serenity",
+      "solomonMuto"
+    ],
+    "partite": 50,
+    "turni": 80,
+    "seme": 91000,
+    "output": "MAIN_DUELISTS_AUDIT_AMICI.json"
+  },
+  "campioni": [
+    "yamiYugi",
+    "joey",
+    "pegasus",
+    "mako",
+    "bakura"
+  ],
+  "risultati": [
+    {
+      "duellante": "tristan",
+      "livello": "easy",
+      "partite": 250,
+      "vittorie": 19,
+      "vittoriePct": 7.6,
+      "turniMedi": 18.1,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 14,
+        "joey": 4,
+        "pegasus": 14,
+        "mako": 0,
+        "bakura": 6
+      }
+    },
+    {
+      "duellante": "tristan",
+      "livello": "medium",
+      "partite": 250,
+      "vittorie": 79,
+      "vittoriePct": 31.6,
+      "turniMedi": 20,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 44,
+        "joey": 34,
+        "pegasus": 44,
+        "mako": 14,
+        "bakura": 22
+      }
+    },
+    {
+      "duellante": "tristan",
+      "livello": "hard",
+      "partite": 250,
+      "vittorie": 118,
+      "vittoriePct": 47.2,
+      "turniMedi": 17.9,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 42,
+        "joey": 50,
+        "pegasus": 62,
+        "mako": 38,
+        "bakura": 44
+      }
+    },
+    {
+      "duellante": "tea",
+      "livello": "easy",
+      "partite": 250,
+      "vittorie": 31,
+      "vittoriePct": 12.4,
+      "turniMedi": 25.4,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 12,
+        "joey": 16,
+        "pegasus": 12,
+        "mako": 14,
+        "bakura": 8
+      }
+    },
+    {
+      "duellante": "tea",
+      "livello": "medium",
+      "partite": 250,
+      "vittorie": 90,
+      "vittoriePct": 36,
+      "turniMedi": 23.7,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 46,
+        "joey": 32,
+        "pegasus": 44,
+        "mako": 18,
+        "bakura": 40
+      }
+    },
+    {
+      "duellante": "tea",
+      "livello": "hard",
+      "partite": 250,
+      "vittorie": 121,
+      "vittoriePct": 48.4,
+      "turniMedi": 20.6,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 64,
+        "joey": 52,
+        "pegasus": 52,
+        "mako": 30,
+        "bakura": 44
+      }
+    },
+    {
+      "duellante": "serenity",
+      "livello": "easy",
+      "partite": 250,
+      "vittorie": 28,
+      "vittoriePct": 11.2,
+      "turniMedi": 27,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 18,
+        "joey": 4,
+        "pegasus": 18,
+        "mako": 8,
+        "bakura": 8
+      }
+    },
+    {
+      "duellante": "serenity",
+      "livello": "medium",
+      "partite": 250,
+      "vittorie": 89,
+      "vittoriePct": 35.6,
+      "turniMedi": 29.6,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 48,
+        "joey": 20,
+        "pegasus": 42,
+        "mako": 22,
+        "bakura": 46
+      }
+    },
+    {
+      "duellante": "serenity",
+      "livello": "hard",
+      "partite": 250,
+      "vittorie": 139,
+      "vittoriePct": 55.6,
+      "turniMedi": 24,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 64,
+        "joey": 60,
+        "pegasus": 58,
+        "mako": 34,
+        "bakura": 62
+      }
+    },
+    {
+      "duellante": "solomonMuto",
+      "livello": "easy",
+      "partite": 250,
+      "vittorie": 45,
+      "vittoriePct": 18,
+      "turniMedi": 20.5,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 18,
+        "joey": 24,
+        "pegasus": 28,
+        "mako": 2,
+        "bakura": 18
+      }
+    },
+    {
+      "duellante": "solomonMuto",
+      "livello": "medium",
+      "partite": 250,
+      "vittorie": 94,
+      "vittoriePct": 37.6,
+      "turniMedi": 20,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 40,
+        "joey": 34,
+        "pegasus": 58,
+        "mako": 16,
+        "bakura": 40
+      }
+    },
+    {
+      "duellante": "solomonMuto",
+      "livello": "hard",
+      "partite": 250,
+      "vittorie": 137,
+      "vittoriePct": 54.8,
+      "turniMedi": 19.8,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 62,
+        "joey": 56,
+        "pegasus": 68,
+        "mako": 22,
+        "bakura": 66
+      }
+    }
+  ],
+  "analisi": [
+    {
+      "duellante": "tristan",
+      "easy": 7.6,
+      "medium": 31.6,
+      "hard": 47.2,
+      "monotono": true,
+      "saltoEasyMedium": 24,
+      "saltoMediumHard": 15.6
+    },
+    {
+      "duellante": "tea",
+      "easy": 12.4,
+      "medium": 36,
+      "hard": 48.4,
+      "monotono": true,
+      "saltoEasyMedium": 23.6,
+      "saltoMediumHard": 12.4
+    },
+    {
+      "duellante": "serenity",
+      "easy": 11.2,
+      "medium": 35.6,
+      "hard": 55.6,
+      "monotono": true,
+      "saltoEasyMedium": 24.4,
+      "saltoMediumHard": 20
+    },
+    {
+      "duellante": "solomonMuto",
+      "easy": 18,
+      "medium": 37.6,
+      "hard": 54.8,
+      "monotono": true,
+      "saltoEasyMedium": 19.6,
+      "saltoMediumHard": 17.2
+    }
+  ]
+}

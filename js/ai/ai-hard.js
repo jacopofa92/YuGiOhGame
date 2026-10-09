@@ -83,6 +83,31 @@
                 }
             });
         }
+        if (personaggio === 'strings') {
+            const hand = Tavolo.mano(io, gameState);
+            const fieldCount = Tavolo.mostri(io, gameState).filter(Boolean).length;
+            const hasSlifer = hand.some((card) => card.id === 31);
+            return AI_MEDIUM.chooseSummon(gameState, io, {
+                // Strings è il tramite con cui Marik schiera Slifer. Senza
+                // questo playbook il valore stampato 0/0 lo faceva ignorare
+                // e i corpi della Melma venivano consumati da altri Tributi.
+                scoreMonster(card) {
+                    if (card.id !== 31) return card.attack || 0;
+                    const remainingCards = Math.max(0, hand.length - 1);
+                    return remainingCards * 1000 + (remainingCards > 0 ? 2000 : 0);
+                },
+                allowCandidate(card) {
+                    return !(hasSlifer && fieldCount >= 1 && fieldCount < 3
+                        && card.id !== 31 && getTributesRequired(card) > 0);
+                },
+                isTributeSummonWorthwhile(card, sacrificedValue) {
+                    // Il valore stampato 0/0 non rappresenta Slifer: con i
+                    // tre Tributi disponibili il piano identitario prevale.
+                    if (card.id === 31) return true;
+                    return AI_SHARED.isTributeSummonWorthwhile(card, sacrificedValue, gameState, io);
+                }
+            });
+        }
         if (personaggio === 'marik') {
             const hand = Tavolo.mano(io, gameState);
             const fieldCount = Tavolo.mostri(io, gameState).filter(Boolean).length;
@@ -209,7 +234,8 @@
         usedThisTurn = usedThisTurn || {};
         const statoMedia = {
             activateDone: (usedThisTurn.activateCount || 0) > 0,
-            setDone: (usedThisTurn.setCount || 0) > 0
+            setDone: (usedThisTurn.setCount || 0) > 0,
+            setCount: usedThisTurn.setCount || 0
         };
         // Hard conserva la personalità del duellante ma non il +0,15 di
         // prudenza proprio della Media: a parità di candidate tende quindi

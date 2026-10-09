@@ -1,0 +1,546 @@
+{
+  "generatoIl": "2026-10-09T13:54:24.923Z",
+  "metodo": "cinque personaggi campione con IA Hard; stessi semi ai tre livelli; vittoria = esito del posto bot",
+  "opzioni": {
+    "gruppo": "battleCity",
+    "duellanti": [
+      "odion",
+      "ishizu",
+      "espaRoba",
+      "arkana",
+      "seeker",
+      "strings",
+      "lumis",
+      "umbra",
+      "duke"
+    ],
+    "partite": 50,
+    "turni": 80,
+    "seme": 91000,
+    "output": "MAIN_DUELISTS_AUDIT_BATTLE_CITY.json"
+  },
+  "campioni": [
+    "yamiYugi",
+    "joey",
+    "pegasus",
+    "mako",
+    "bakura"
+  ],
+  "risultati": [
+    {
+      "duellante": "odion",
+      "livello": "easy",
+      "partite": 250,
+      "vittorie": 41,
+      "vittoriePct": 16.4,
+      "turniMedi": 21.7,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 24,
+        "joey": 26,
+        "pegasus": 18,
+        "mako": 6,
+        "bakura": 8
+      }
+    },
+    {
+      "duellante": "odion",
+      "livello": "medium",
+      "partite": 250,
+      "vittorie": 56,
+      "vittoriePct": 22.4,
+      "turniMedi": 21.4,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 36,
+        "joey": 28,
+        "pegasus": 22,
+        "mako": 8,
+        "bakura": 18
+      }
+    },
+    {
+      "duellante": "odion",
+      "livello": "hard",
+      "partite": 250,
+      "vittorie": 93,
+      "vittoriePct": 37.2,
+      "turniMedi": 20.2,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 56,
+        "joey": 44,
+        "pegasus": 36,
+        "mako": 20,
+        "bakura": 30
+      }
+    },
+    {
+      "duellante": "ishizu",
+      "livello": "easy",
+      "partite": 250,
+      "vittorie": 31,
+      "vittoriePct": 12.4,
+      "turniMedi": 26.2,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 20,
+        "joey": 4,
+        "pegasus": 12,
+        "mako": 12,
+        "bakura": 14
+      }
+    },
+    {
+      "duellante": "ishizu",
+      "livello": "medium",
+      "partite": 250,
+      "vittorie": 81,
+      "vittoriePct": 32.4,
+      "turniMedi": 20.6,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 40,
+        "joey": 26,
+        "pegasus": 38,
+        "mako": 10,
+        "bakura": 48
+      }
+    },
+    {
+      "duellante": "ishizu",
+      "livello": "hard",
+      "partite": 250,
+      "vittorie": 126,
+      "vittoriePct": 50.4,
+      "turniMedi": 19.3,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 62,
+        "joey": 48,
+        "pegasus": 60,
+        "mako": 26,
+        "bakura": 56
+      }
+    },
+    {
+      "duellante": "espaRoba",
+      "livello": "easy",
+      "partite": 250,
+      "vittorie": 60,
+      "vittoriePct": 24,
+      "turniMedi": 20.5,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 26,
+        "joey": 20,
+        "pegasus": 30,
+        "mako": 12,
+        "bakura": 32
+      }
+    },
+    {
+      "duellante": "espaRoba",
+      "livello": "medium",
+      "partite": 250,
+      "vittorie": 128,
+      "vittoriePct": 51.2,
+      "turniMedi": 19.8,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 58,
+        "joey": 52,
+        "pegasus": 56,
+        "mako": 36,
+        "bakura": 54
+      }
+    },
+    {
+      "duellante": "espaRoba",
+      "livello": "hard",
+      "partite": 250,
+      "vittorie": 155,
+      "vittoriePct": 62,
+      "turniMedi": 19.1,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 72,
+        "joey": 64,
+        "pegasus": 76,
+        "mako": 32,
+        "bakura": 66
+      }
+    },
+    {
+      "duellante": "arkana",
+      "livello": "easy",
+      "partite": 250,
+      "vittorie": 41,
+      "vittoriePct": 16.4,
+      "turniMedi": 19.6,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 20,
+        "joey": 12,
+        "pegasus": 22,
+        "mako": 8,
+        "bakura": 20
+      }
+    },
+    {
+      "duellante": "arkana",
+      "livello": "medium",
+      "partite": 250,
+      "vittorie": 60,
+      "vittoriePct": 24,
+      "turniMedi": 17.8,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 28,
+        "joey": 30,
+        "pegasus": 22,
+        "mako": 12,
+        "bakura": 28
+      }
+    },
+    {
+      "duellante": "arkana",
+      "livello": "hard",
+      "partite": 250,
+      "vittorie": 122,
+      "vittoriePct": 48.8,
+      "turniMedi": 18.9,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 60,
+        "joey": 54,
+        "pegasus": 46,
+        "mako": 34,
+        "bakura": 50
+      }
+    },
+    {
+      "duellante": "seeker",
+      "livello": "easy",
+      "partite": 250,
+      "vittorie": 93,
+      "vittoriePct": 37.2,
+      "turniMedi": 37,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 18,
+        "joey": 26,
+        "pegasus": 30,
+        "mako": 66,
+        "bakura": 46
+      }
+    },
+    {
+      "duellante": "seeker",
+      "livello": "medium",
+      "partite": 250,
+      "vittorie": 116,
+      "vittoriePct": 46.4,
+      "turniMedi": 32.2,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 38,
+        "joey": 34,
+        "pegasus": 58,
+        "mako": 60,
+        "bakura": 42
+      }
+    },
+    {
+      "duellante": "seeker",
+      "livello": "hard",
+      "partite": 250,
+      "vittorie": 125,
+      "vittoriePct": 50,
+      "turniMedi": 26.4,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 70,
+        "joey": 52,
+        "pegasus": 44,
+        "mako": 42,
+        "bakura": 42
+      }
+    },
+    {
+      "duellante": "strings",
+      "livello": "easy",
+      "partite": 250,
+      "vittorie": 17,
+      "vittoriePct": 6.8,
+      "turniMedi": 22.6,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 8,
+        "joey": 6,
+        "pegasus": 10,
+        "mako": 0,
+        "bakura": 10
+      }
+    },
+    {
+      "duellante": "strings",
+      "livello": "medium",
+      "partite": 250,
+      "vittorie": 20,
+      "vittoriePct": 8,
+      "turniMedi": 22.2,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 8,
+        "joey": 12,
+        "pegasus": 6,
+        "mako": 2,
+        "bakura": 12
+      }
+    },
+    {
+      "duellante": "strings",
+      "livello": "hard",
+      "partite": 250,
+      "vittorie": 60,
+      "vittoriePct": 24,
+      "turniMedi": 21.1,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 24,
+        "joey": 22,
+        "pegasus": 32,
+        "mako": 14,
+        "bakura": 28
+      }
+    },
+    {
+      "duellante": "lumis",
+      "livello": "easy",
+      "partite": 250,
+      "vittorie": 20,
+      "vittoriePct": 8,
+      "turniMedi": 24.1,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 10,
+        "joey": 6,
+        "pegasus": 18,
+        "mako": 2,
+        "bakura": 4
+      }
+    },
+    {
+      "duellante": "lumis",
+      "livello": "medium",
+      "partite": 250,
+      "vittorie": 23,
+      "vittoriePct": 9.2,
+      "turniMedi": 22.7,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 10,
+        "joey": 6,
+        "pegasus": 20,
+        "mako": 6,
+        "bakura": 4
+      }
+    },
+    {
+      "duellante": "lumis",
+      "livello": "hard",
+      "partite": 250,
+      "vittorie": 52,
+      "vittoriePct": 20.8,
+      "turniMedi": 20.1,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 20,
+        "joey": 28,
+        "pegasus": 36,
+        "mako": 4,
+        "bakura": 16
+      }
+    },
+    {
+      "duellante": "umbra",
+      "livello": "easy",
+      "partite": 250,
+      "vittorie": 33,
+      "vittoriePct": 13.2,
+      "turniMedi": 25.4,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 14,
+        "joey": 6,
+        "pegasus": 30,
+        "mako": 8,
+        "bakura": 8
+      }
+    },
+    {
+      "duellante": "umbra",
+      "livello": "medium",
+      "partite": 250,
+      "vittorie": 31,
+      "vittoriePct": 12.4,
+      "turniMedi": 24.3,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 14,
+        "joey": 10,
+        "pegasus": 32,
+        "mako": 2,
+        "bakura": 4
+      }
+    },
+    {
+      "duellante": "umbra",
+      "livello": "hard",
+      "partite": 250,
+      "vittorie": 57,
+      "vittoriePct": 22.8,
+      "turniMedi": 23.2,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 22,
+        "joey": 36,
+        "pegasus": 30,
+        "mako": 6,
+        "bakura": 20
+      }
+    },
+    {
+      "duellante": "duke",
+      "livello": "easy",
+      "partite": 250,
+      "vittorie": 58,
+      "vittoriePct": 23.2,
+      "turniMedi": 17.3,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 26,
+        "joey": 32,
+        "pegasus": 28,
+        "mako": 10,
+        "bakura": 20
+      }
+    },
+    {
+      "duellante": "duke",
+      "livello": "medium",
+      "partite": 250,
+      "vittorie": 93,
+      "vittoriePct": 37.2,
+      "turniMedi": 15.1,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 48,
+        "joey": 38,
+        "pegasus": 48,
+        "mako": 20,
+        "bakura": 32
+      }
+    },
+    {
+      "duellante": "duke",
+      "livello": "hard",
+      "partite": 250,
+      "vittorie": 144,
+      "vittoriePct": 57.6,
+      "turniMedi": 14.6,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 76,
+        "joey": 54,
+        "pegasus": 58,
+        "mako": 42,
+        "bakura": 58
+      }
+    }
+  ],
+  "analisi": [
+    {
+      "duellante": "odion",
+      "easy": 16.4,
+      "medium": 22.4,
+      "hard": 37.2,
+      "monotono": true,
+      "saltoEasyMedium": 6,
+      "saltoMediumHard": 14.8
+    },
+    {
+      "duellante": "ishizu",
+      "easy": 12.4,
+      "medium": 32.4,
+      "hard": 50.4,
+      "monotono": true,
+      "saltoEasyMedium": 20,
+      "saltoMediumHard": 18
+    },
+    {
+      "duellante": "espaRoba",
+      "easy": 24,
+      "medium": 51.2,
+      "hard": 62,
+      "monotono": true,
+      "saltoEasyMedium": 27.2,
+      "saltoMediumHard": 10.8
+    },
+    {
+      "duellante": "arkana",
+      "easy": 16.4,
+      "medium": 24,
+      "hard": 48.8,
+      "monotono": true,
+      "saltoEasyMedium": 7.6,
+      "saltoMediumHard": 24.8
+    },
+    {
+      "duellante": "seeker",
+      "easy": 37.2,
+      "medium": 46.4,
+      "hard": 50,
+      "monotono": true,
+      "saltoEasyMedium": 9.2,
+      "saltoMediumHard": 3.6
+    },
+    {
+      "duellante": "strings",
+      "easy": 6.8,
+      "medium": 8,
+      "hard": 24,
+      "monotono": true,
+      "saltoEasyMedium": 1.2,
+      "saltoMediumHard": 16
+    },
+    {
+      "duellante": "lumis",
+      "easy": 8,
+      "medium": 9.2,
+      "hard": 20.8,
+      "monotono": true,
+      "saltoEasyMedium": 1.2,
+      "saltoMediumHard": 11.6
+    },
+    {
+      "duellante": "umbra",
+      "easy": 13.2,
+      "medium": 12.4,
+      "hard": 22.8,
+      "monotono": false,
+      "saltoEasyMedium": -0.8,
+      "saltoMediumHard": 10.4
+    },
+    {
+      "duellante": "duke",
+      "easy": 23.2,
+      "medium": 37.2,
+      "hard": 57.6,
+      "monotono": true,
+      "saltoEasyMedium": 14,
+      "saltoMediumHard": 20.4
+    }
+  ]
+}

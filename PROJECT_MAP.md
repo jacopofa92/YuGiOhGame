@@ -54,6 +54,18 @@ valido `CLAUDE.md`; per la separazione e il possibile riuso del motore vedere
 
 ## Bilanciamento deck nella Storia
 
+L'audit esteso degli altri 31 duellanti anime è documentato in
+`MAIN_DUELISTS_AUDIT.md` e nei report `MAIN_DUELISTS_AUDIT_*.json`: cinque
+deck campione, 50 semi e 250 duelli per livello, per un totale di 23.250
+duelli. Dopo le correzioni 30/31 curve sono monotone; Umbra ha soltanto uno
+scarto di −0,8 punti Facile→Medio, trattato come rumore e non come permesso
+per aggiungere carte fuori lore. Corretti i piani identitari di Strings
+(Slifer e Fusione), Gozaburo (pezzi di Exodia nel Cimitero per Necross) e
+Odion (1/2/3 Trappole Set per difficoltà). L'audit ha inoltre trovato due
+bug reali ora coperti da regressioni: slot di transito per Il Guardiano
+Affidabile e fonte sparita per Ninja d'Assalto. Starter e Structure Deck
+sono rimasti invariati.
+
 `tools/simula-storia-deck.js` esegue con il motore senza testa tutti i duelli
 del percorso principale della campagna anime, per ogni Starter/Structure Deck
 Yu-Gi-Oh e per Facile, Normale e Difficile. I rami paralleli non bloccano il

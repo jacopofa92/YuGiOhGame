@@ -686,6 +686,9 @@
      * precondizioni dipendenti dal tempo (es. uno slot Mostro libero)
      * DENTRO `onChosen`, mai prima di chiamare questa funzione, esattamente
      * come già fa id 35 per il proprio slot/Cimitero.
+     * `options.pickForBot(candidates)` è facoltativo: permette a un piano
+     * tematico di scegliere con criterio senza cambiare il comportamento
+     * storico delle altre carte, che resta il primo candidato mescolato.
      */
     function searchZoneWithChoice(ctx, zoneArray, filterFn, options, onChosen) {
         if (!Array.isArray(zoneArray)) return false;
@@ -705,6 +708,8 @@
             candidati: candidates,
             titolo: (options && options.title) || '🔍 Scegli una carta',
             testo: (options && options.text) || 'Scegli quale carta.',
+            automatica: (elenco) => ((options && typeof options.pickForBot === 'function')
+                ? options.pickForBot(elenco) : elenco[0]) || elenco[0],
             automaticaSeUnica: true
         }, (card) => { if (card) takeCard(card); });
         return true;

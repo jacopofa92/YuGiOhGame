@@ -70,9 +70,11 @@
                 // ma DEF più alta a meno che l'avversario non abbia
                 // davvero un mostro che lo giustifichi (richiesta
                 // esplicita dell'utente).
-                const tributeOk = window.AI_SHARED
-                    ? AI_SHARED.isTributeSummonWorthwhile(card, sacrificedValue, gameState, io)
-                    : Math.max(card.attack, card.defense) > sacrificedValue;
+                const tributeOk = typeof options.isTributeSummonWorthwhile === 'function'
+                    ? options.isTributeSummonWorthwhile(card, sacrificedValue, tributeIndices)
+                    : window.AI_SHARED
+                        ? AI_SHARED.isTributeSummonWorthwhile(card, sacrificedValue, gameState, io)
+                        : Math.max(card.attack, card.defense) > sacrificedValue;
                 if (!tributeOk) continue;
                 return { card: card, tributeIndices: tributeIndices, emptySlotHint: -1, position: posture.position, faceDown: posture.faceDown };
             }
@@ -185,6 +187,14 @@
         options = options || {};
         const hand = Tavolo.mano(io, gameState);
         const emptySlot = Tavolo.magieTrappole(io, gameState).some((s) => s === null);
+        const personaggio = gameState.personaggioPerPosto && gameState.personaggioPerPosto[io];
+        const livello = gameState.livelloIA && gameState.livelloIA[io]
+            ? gameState.livelloIA[io] : gameState.botDifficulty;
+        // Il retrocampo è il vero piano di Odion, non un supporto generico:
+        // Facile conserva il limite didattico di un Set, Medio ne prepara
+        // due e Difficile tre. Per ogni altro personaggio resta uno.
+        const maxSet = personaggio === 'odion' ? (livello === 'hard' ? 3 : livello === 'easy' ? 1 : 2) : 1;
+        const setCount = usedThisTurn.setCount || (usedThisTurn.setDone ? 1 : 0);
         const worthwhile = (card) => {
             if (!window.AI_SHARED) return true;
             // Una carta-combo che Evoca Specialmente dalla mano (es.
@@ -228,7 +238,7 @@
                 return { handIndex: chosen.handIndex, card: chosen.card, action: 'activate' };
             }
         }
-        if (!usedThisTurn.setDone && emptySlot) {
+        if (setCount < maxSet && emptySlot) {
             // Stesso principio per la Trappola da Settare (una Trappola Set
             // non ha ancora un bersaglio scelto, quindi qui non serve il
             // controllo "worthwhile").
@@ -238,6 +248,7 @@
             const chosen = pickWeighted(traps);
             if (chosen) {
                 usedThisTurn.setDone = true;
+                usedThisTurn.setCount = setCount + 1;
                 return { handIndex: chosen.handIndex, card: chosen.card, action: 'set' };
             }
         }

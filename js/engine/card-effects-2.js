@@ -849,7 +849,20 @@
         activate(ctx) {
             searchDeckWithChoice(ctx, (c) => c.type === 'monster', {
                 title: '⚰️ Sepoltura Sciocca',
-                text: 'Scegli quale mostro mandare al Cimitero dal Deck.'
+                text: 'Scegli quale mostro mandare al Cimitero dal Deck.',
+                pickForBot(candidates) {
+                    const identita = ctx.gameState.personaggioPerPosto
+                        && ctx.gameState.personaggioPerPosto[ctx.owner];
+                    if (identita !== 'gozaburo' || typeof EXODIA_PIECE_IDS === 'undefined') {
+                        return candidates[0];
+                    }
+                    const giaNelCimitero = new Set(ctx.graveyard(ctx.owner).map((card) => card.id));
+                    // Gozaburo non cerca la vittoria in mano di Exodia: nel
+                    // suo duello anime deve seppellirne i cinque pezzi per
+                    // attivare Patto con Exodia ed evocare Exodia Necross.
+                    return candidates.find((card) => EXODIA_PIECE_IDS.includes(card.id)
+                        && !giaNelCimitero.has(card.id)) || candidates[0];
+                }
             }, (card) => {
                 ctx.graveyard(ctx.owner).push(card);
                 ctx.log(`⚰️ Sepoltura Sciocca manda ${card.name} al Cimitero!`);
@@ -2544,6 +2557,12 @@
             return ctx.graveyard(ctx.owner).filter((c) => c.attribute === 'OSCURITÀ').length >= 2;
         },
         activate(ctx) {
+            // Un Effetto Veloce può essere già in Catena quando la sua carta
+            // lascia il Terreno. In quel caso non si paga inutilmente il
+            // costo: la fonte non esiste più e l'effetto si risolve a vuoto.
+            const field = ctx.field(ctx.owner);
+            const sourceSlot = field[ctx.index];
+            if (!sourceSlot || !sourceSlot.card || sourceSlot.card.uid !== ctx.card.uid) return;
             const grave = ctx.graveyard(ctx.owner);
             let removed = 0;
             for (let i = grave.length - 1; i >= 0 && removed < 2; i--) {
@@ -2555,8 +2574,7 @@
             // Cimitero) non è stato pagato per intero — l'effetto non si
             // risolve, niente auto-bando fino alla End Phase.
             if (removed < 2) return;
-            const field = ctx.field(ctx.owner);
-            const banished = field[ctx.index].card;
+            const banished = sourceSlot.card;
             if (blockBanishFromField(ctx, banished)) return;
             field[ctx.index] = null;
             ctx.banishTemporarily(ctx.owner, banished, 'endphase');

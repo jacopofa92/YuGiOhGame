@@ -6614,8 +6614,8 @@ characterDeckDatabase.strings = {
     flagship: 1089,
     easy: { main: [
         { id: 1089, qty: 3 }, { id: 302, qty: 3 }, { id: 509, qty: 3 }, { id: 765, qty: 3 },
-        { id: 582, qty: 3 }, { id: 96, qty: 3 }, { id: 391, qty: 2 }, { id: 433, qty: 2 }, { id: 602, qty: 2 },
-        { id: 8, qty: 2 }, { id: 750, qty: 2 }, { id: 503, qty: 2 }, { id: 143, qty: 2 },
+        { id: 582, qty: 3 }, { id: 96, qty: 3 }, { id: 391, qty: 3 }, { id: 433, qty: 2 }, { id: 602, qty: 2 },
+        { id: 8, qty: 1 }, { id: 750, qty: 2 }, { id: 503, qty: 2 }, { id: 143, qty: 2 },
         { id: 141, qty: 2 }, { id: 307, qty: 2 }, { id: 36, qty: 1 }, { id: 272, qty: 1 },
         { id: 35, qty: 1 }, { id: 820, qty: 1 }
     ], extra: [] },
@@ -6623,15 +6623,15 @@ characterDeckDatabase.strings = {
         { id: 1089, qty: 3 }, { id: 302, qty: 3 }, { id: 509, qty: 3 }, { id: 765, qty: 2 },
         { id: 582, qty: 2 }, { id: 96, qty: 2 }, { id: 391, qty: 2 }, { id: 433, qty: 2 }, { id: 602, qty: 2 },
         { id: 8, qty: 1 }, { id: 750, qty: 2 }, { id: 503, qty: 2 }, { id: 143, qty: 1 },
-        { id: 141, qty: 3 }, { id: 307, qty: 2 }, { id: 36, qty: 2 }, { id: 272, qty: 2 },
-        { id: 35, qty: 1 }, { id: 820, qty: 1 }, { id: 6, qty: 1 }, { id: 143, qty: 1 }
+        { id: 141, qty: 3 }, { id: 307, qty: 1 }, { id: 36, qty: 2 }, { id: 272, qty: 2 },
+        { id: 35, qty: 1 }, { id: 820, qty: 1 }, { id: 38, qty: 2 }, { id: 6, qty: 1 }
     ], extra: [{ id: 303, qty: 2 }] },
     hard: { main: [
         { id: 31, qty: 1 }, { id: 1089, qty: 3 }, { id: 302, qty: 3 }, { id: 509, qty: 3 },
         { id: 765, qty: 2 }, { id: 582, qty: 2 }, { id: 96, qty: 2 }, { id: 433, qty: 2 }, { id: 602, qty: 2 },
         { id: 8, qty: 1 }, { id: 750, qty: 2 }, { id: 503, qty: 1 }, { id: 141, qty: 3 },
         { id: 307, qty: 3 }, { id: 36, qty: 2 }, { id: 272, qty: 2 }, { id: 35, qty: 1 },
-        { id: 820, qty: 1 }, { id: 6, qty: 2 }, { id: 7, qty: 1 }, { id: 10, qty: 1 }
+        { id: 820, qty: 1 }, { id: 38, qty: 1 }, { id: 6, qty: 1 }, { id: 7, qty: 1 }, { id: 10, qty: 1 }
     ], extra: [{ id: 303, qty: 3 }] }
 };
 
