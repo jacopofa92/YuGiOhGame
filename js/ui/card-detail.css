@@ -59,7 +59,7 @@
    cui si è aperta questa scheda. Non cliccabile: qui si legge. */
 .cd-preview .card {
     --card-w: clamp(140px, 34vw, 190px);
-    --card-h: calc(clamp(140px, 34vw, 190px) / 0.685);
+    --card-h: calc(clamp(140px, 34vw, 190px) / var(--card-ratio));
     cursor: default;
 }
 

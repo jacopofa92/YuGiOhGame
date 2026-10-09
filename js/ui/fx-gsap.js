@@ -1246,7 +1246,7 @@
             wrapper.className = 'fx-activate-center-card';
             const cardEl = window.createCardElement(card);
             cardEl.style.setProperty('--card-w', 'clamp(160px, 22vw, 260px)');
-            cardEl.style.setProperty('--card-h', 'calc(clamp(160px, 22vw, 260px) / 0.685)');
+            cardEl.style.setProperty('--card-h', 'calc(clamp(160px, 22vw, 260px) / var(--card-ratio))');
             wrapper.appendChild(cardEl);
             document.body.appendChild(wrapper);
 

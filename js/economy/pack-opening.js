@@ -86,7 +86,7 @@
         if (!carta || typeof window.createCardElement !== 'function') return el('div', 'po-carta-mancante', '?');
         const nodo = window.createCardElement(carta);
         nodo.style.setProperty('--card-w', larghezza);
-        nodo.style.setProperty('--card-h', `calc(${larghezza} / 0.685)`);
+        nodo.style.setProperty('--card-h', `calc(${larghezza} / var(--card-ratio))`);
         return nodo;
     }
 

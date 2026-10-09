@@ -83,7 +83,7 @@
 
     :root {
         --card-w: 168px;
-        --card-h: calc(var(--card-w) / 0.685);
+        --card-h: calc(var(--card-w) / var(--card-ratio));
         --gold: #f7d774;
         --gold-strong: #f39c12;
         --blue: #3498db;
@@ -454,7 +454,7 @@
         justify-content: center;
     }
     .card-modal-preview { flex: 0 0 auto; margin: 0 auto; }
-    .card-modal-preview .card { width: min(46vh, clamp(180px, 26vw, 280px)); height: calc(min(46vh, clamp(180px, 26vw, 280px)) / 0.685); cursor: default; }
+    .card-modal-preview .card { width: min(46vh, clamp(180px, 26vw, 280px)); height: calc(min(46vh, clamp(180px, 26vw, 280px)) / var(--card-ratio)); cursor: default; }
     .card-modal-preview .card:hover { transform: none; }
     .card-modal-info { flex: 1 1 260px; min-width: 220px; }
     .card-modal-name { font-size: 1.4rem; font-weight: 900; color: #fff; margin-bottom: 6px; }

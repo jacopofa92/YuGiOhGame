@@ -95,7 +95,7 @@
                schermi grandi/ultrawide il campo può crescere ben oltre i
                vecchi 1400px e sfruttare davvero tutto lo spazio disponibile. */
             --card-w: clamp(46px, min(8.8vh, 7.6vw), 148px);
-            --card-h: calc(var(--card-w) / 0.685);
+            --card-h: calc(var(--card-w) / var(--card-ratio));
             --hand-lift: clamp(4px, 1vh, 12px);
             /* Distanza di #botInfo/#playerInfo dal proprio angolo schermo
                (position:fixed, vedi più sotto) — condivisa con il
@@ -108,7 +108,7 @@
 
             /* Carte in mano: più grandi delle carte sul campo, solo qui */
             --hand-card-w: clamp(58px, min(11.4vh, 10vw), 186px);
-            --hand-card-h: calc(var(--hand-card-w) / 0.685);
+            --hand-card-h: calc(var(--hand-card-w) / var(--card-ratio));
 
             /* Mano dell'AVVERSARIO: solo dorsi, per far vedere quante carte
                ha senza rivelarne il contenuto — carte volutamente più
@@ -117,7 +117,7 @@
                si divide tra tre righe invece di due (mano bot + campo +
                mano giocatore). */
             --bot-hand-card-w: clamp(24px, min(4.4vh, 3.8vw), 68px);
-            --bot-hand-card-h: calc(var(--bot-hand-card-w) / 0.685);
+            --bot-hand-card-h: calc(var(--bot-hand-card-w) / var(--card-ratio));
 
             /* Slot del Terreno: più spazio intorno alla carta + più gap */
             --field-slot-pad: clamp(6px, min(1.4vh, 1.2vw), 20px);
@@ -884,7 +884,7 @@
         .field-slot.deck-slot .deck-preview {
             width: 86%;
             height: auto;
-            aspect-ratio: 0.685;
+            aspect-ratio: var(--card-ratio);
             pointer-events: none;
             position: absolute;
             left: 0;
@@ -2386,7 +2386,7 @@
             /* Allineata all'altezza della MINIATURA (non del nome sotto):
                la catena collega le carte fra loro, quindi resta a metà
                della loro altezza. */
-            margin-top: calc((var(--chain-card-w) / 0.685) / 2 - clamp(7px, 1.4vw, 10px) / 2);
+            margin-top: calc((var(--chain-card-w) / var(--card-ratio)) / 2 - clamp(7px, 1.4vw, 10px) / 2);
             transform-style: preserve-3d;
         }
         .chain-link-ring i {
@@ -2746,11 +2746,11 @@
             display: flex;
             justify-content: center;
             margin-bottom: 10px;
-            min-height: calc(var(--info-card-w) / 0.685);
+            min-height: calc(var(--info-card-w) / var(--card-ratio));
         }
         .card-info-preview .card {
             width: var(--info-card-w);
-            height: calc(var(--info-card-w) / 0.685);
+            height: calc(var(--info-card-w) / var(--card-ratio));
             cursor: default;
         }
         .card-info-preview .card:hover {
@@ -2932,7 +2932,7 @@
                ospitare carte comode invece di stiparle. */
             --card-w: clamp(92px, 20vw, 170px);
             /* --card-h va ridichiarata qui insieme a --card-w: non basta
-               che :root la definisca come calc(var(--card-w)/0.685) (riga
+               che :root la definisca come calc(var(--card-w)/ var(--card-ratio)) (riga
                ~37) — quel var(--card-w) annidato viene risolto con la
                larghezza di :root al momento in cui --card-h viene
                dichiarata, non con quella (più grande) impostata qui sotto,
@@ -2940,7 +2940,7 @@
                larghezza giusta ma l'altezza piccola del campo — "carte
                schiacciate", verificato via Playwright (rapporto w/h
                invertito, quasi il doppio del previsto). */
-            --card-h: calc(var(--card-w) / 0.685);
+            --card-h: calc(var(--card-w) / var(--card-ratio));
             flex: 0 0 auto;
             scroll-snap-align: center;
             cursor: pointer;
@@ -3628,135 +3628,10 @@
             }
             .sandbox-field-tools { top: 82px; right: 6px; width: min(210px, calc(100vw - 12px)); }
 
-            /* Carte scoperte sul campo (entrambi i lati), carte in mano al
-               giocatore, e le loro copie temporanee create al volo da JS
-               (fantasma del trascinamento .drag-preview, fantasma del
-               "volo" mano->campo .card-fly-ghost, la faccia scoperta della
-               rivelazione flip .card-flip-face-front, l'anteprima nel
-               modale "Attiva/Set" .modal-preview-card, le carte elencate
-               nel modale di scelta multipla .card-list-item .card — tutte
-               appese fuori da .field-slot/#playerHand, quindi elencate a
-               parte): bordo più sottile ovunque, e via SOLO la barra del
-               nome (poco leggibile a queste dimensioni comunque) per far
-               "respirare" di più l'illustrazione — il resto della cornice
-               (stelle Livello, finestra immagine, riga tipo, ATK/DEF)
-               resta come su desktop. Il COLORE del bordo non è impostato
-               qui apposta: risalendo solo width/style (mai border-color)
-               lasciamo vincere la regola per tipo già in js/ui/card.css
-               (.card[data-type="monster"] ecc, oro/verde/magenta) — la
-               stessa identità cromatica della carta, solo più sottile. Le
-               carte coperte (retro) restano invariate — :not(.face-down)
-               le esclude. */
-            .field-slot .card:not(.face-down),
-            #playerHand .card:not(.face-down),
-            .card.drag-preview,
-            .card.card-fly-ghost,
-            .card-flip-face-front,
-            .modal-preview-card,
-            .card-list-item .card {
-                border-radius: 1px;
-                border-width: 1px;
-                border-style: solid;
-            }
-            /* border-width sotto 1px non è affidabile (Chromium lo
-               arrotonda comunque a 1px, verificato) — per un bordo che
-               PESA meno visivamente si agisce sulla TRASPARENZA invece
-               che sullo spessore: stessa tinta per tipo di
-               js/ui/card.css, solo più tenue. Replica qui i colori
-               invece di lasciarli scendere dalla cascata perché servono
-               in rgba() con alpha, non nell'esadecimale pieno di lì. */
-            .field-slot .card[data-type="monster"]:not(.face-down),
-            #playerHand .card[data-type="monster"]:not(.face-down),
-            .card.drag-preview[data-type="monster"],
-            .card.card-fly-ghost[data-type="monster"] { border-color: rgba(243,156,18,0.15); }
-            .field-slot .card[data-type="monster"][data-has-effect="false"]:not(.face-down),
-            #playerHand .card[data-type="monster"][data-has-effect="false"]:not(.face-down) { border-color: rgba(245,197,58,0.15); }
-            .field-slot .card[data-type="monster"][data-has-effect="true"]:not(.face-down),
-            #playerHand .card[data-type="monster"][data-has-effect="true"]:not(.face-down) { border-color: rgba(224,116,10,0.15); }
-            .field-slot .card[data-type="monster"][data-category="ritual"]:not(.face-down),
-            #playerHand .card[data-type="monster"][data-category="ritual"]:not(.face-down) { border-color: rgba(74,144,217,0.15); }
-            .field-slot .card[data-type="monster"][data-category="fusion"]:not(.face-down),
-            #playerHand .card[data-type="monster"][data-category="fusion"]:not(.face-down) { border-color: rgba(168,85,217,0.15); }
-            .field-slot .card[data-type="spell"]:not(.face-down),
-            #playerHand .card[data-type="spell"]:not(.face-down),
-            .card.drag-preview[data-type="spell"],
-            .card.card-fly-ghost[data-type="spell"] { border-color: rgba(26,188,156,0.15); }
-            .field-slot .card[data-type="trap"]:not(.face-down),
-            #playerHand .card[data-type="trap"]:not(.face-down),
-            .card.drag-preview[data-type="trap"],
-            .card.card-fly-ghost[data-type="trap"] { border-color: rgba(209,98,164,0.15); }
-            .field-slot .card:not(.face-down) .card-frame-top,
-            #playerHand .card:not(.face-down) .card-frame-top,
-            .card.drag-preview .card-frame-top,
-            .card.card-fly-ghost .card-frame-top,
-            .card-flip-face-front .card-frame-top,
-            .modal-preview-card .card-frame-top,
-            .card-list-item .card .card-frame-top {
-                display: none;
-            }
-            /* Sul campo/in mano l'illustrazione restava comunque piccola
-               (misurato: su una carta di 46x67px l'immagine occupava solo
-               ~65% dell'area) perché, tolta la barra nome, restavano ANCORA
-               la riga stelle Livello e la riga Razza/Tipo sopra e sotto la
-               finestra immagine, più TRE bordi annidati (carta, .card-frame,
-               .card-frame-art) — la somma è quello che si percepiva come
-               "più bordo che contenuto". Via anche stelle e riga Razza/Tipo
-               (l'informazione essenziale in battaglia resta l'immagine +
-               ATK/DEF, che restano), padding ridotto al minimo, e i due
-               bordi interni azzerati: resta solo il bordo esterno sottile
-               e trasparente per tipo già impostato sopra. Il modale di
-               selezione (.card-list-item) NON è incluso: lì le carte sono
-               volutamente più grandi per essere ispezionate, quindi
-               mantengono la cornice completa. */
-            .field-slot .card:not(.face-down) .card-frame-stars,
-            #playerHand .card:not(.face-down) .card-frame-stars,
-            .card.drag-preview .card-frame-stars,
-            .card.card-fly-ghost .card-frame-stars,
-            .card-flip-face-front .card-frame-stars,
-            .modal-preview-card .card-frame-stars,
-            .field-slot .card:not(.face-down) .card-frame-typeline,
-            #playerHand .card:not(.face-down) .card-frame-typeline,
-            .card.drag-preview .card-frame-typeline,
-            .card.card-fly-ghost .card-frame-typeline,
-            .card-flip-face-front .card-frame-typeline,
-            .modal-preview-card .card-frame-typeline {
-                display: none;
-            }
-            .field-slot .card:not(.face-down),
-            #playerHand .card:not(.face-down),
-            .card.drag-preview,
-            .card.card-fly-ghost,
-            .card-flip-face-front,
-            .modal-preview-card {
-                padding: 1px;
-            }
-            .field-slot .card:not(.face-down) .card-frame,
-            #playerHand .card:not(.face-down) .card-frame,
-            .card.drag-preview .card-frame,
-            .card.card-fly-ghost .card-frame,
-            .card-flip-face-front .card-frame,
-            .modal-preview-card .card-frame {
-                padding: 0.5cqw;
-                gap: 0.5cqw;
-                border-width: 0;
-            }
-            .field-slot .card:not(.face-down) .card-frame-art,
-            #playerHand .card:not(.face-down) .card-frame-art,
-            .card.drag-preview .card-frame-art,
-            .card.card-fly-ghost .card-frame-art,
-            .card-flip-face-front .card-frame-art,
-            .modal-preview-card .card-frame-art {
-                border-width: 0;
-            }
-            /* .card-flip-outer (il contenitore 3D del flip, vedi card.css)
-               ha anche lui la classe .card e verrebbe preso dal selettore
-               qui sopra — ma il suo bordo deve restare "none" (lo mostra
-               già .card-flip-face-front dentro di lui): un bordo anche
-               sul contenitore esterno raddoppierebbe visibilmente il
-               bordo durante l'animazione. */
-            .field-slot .card-flip-outer {
-                border-style: none;
-            }
+            /* La carta "compatta" (senza barra del nome, stelle e riga
+               Razza/Tipo, cornice sottile) che si vedeva qui su mobile ora
+               la decide la MISURA della carta, non la larghezza della
+               finestra: vedi "CARTA COMPATTA" in fondo a js/ui/card.css. */
         }
 
         /* ============================================================
@@ -3831,7 +3706,6 @@
             .remote-choice-wait { top: calc(var(--duelist-box-offset) + 54px); }
             .duelist-avatar--corner { width: 48px; height: 48px; font-size: 0.55rem; }
             .life-points { font-size: 0.6rem; padding: 2px 8px 2px 6px; }
-            .card { border: 0px; }
         }
 
         /* Telefono in orizzontale: conserva il cassetto stretto che non
@@ -3859,7 +3733,7 @@
             }
             .card-info-preview .card {
                 width: var(--info-card-w);
-                height: calc(var(--info-card-w) / 0.685);
+                height: calc(var(--info-card-w) / var(--card-ratio));
             }
             .card-info-content {
                 flex: 1 1 auto;

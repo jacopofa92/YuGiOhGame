@@ -871,7 +871,7 @@ function renderChainStack(resolvingLink) {
         if (typeof createCardElement === 'function') {
             const mini = createCardElement(link.card);
             mini.style.setProperty('--card-w', 'var(--chain-card-w)');
-            mini.style.setProperty('--card-h', 'calc(var(--chain-card-w) / 0.685)');
+            mini.style.setProperty('--card-h', 'calc(var(--chain-card-w) / var(--card-ratio))');
             thumb.appendChild(mini);
         }
 
