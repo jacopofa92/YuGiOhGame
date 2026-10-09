@@ -3205,6 +3205,11 @@ priorità o richiedono un refactor ampio):
   **Il gancio è deliberatamente generico**: `save-manager.js` non deve
   sapere che esiste una sincronizzazione, e chi sincronizza non deve
   rincorrere gli oltre cento punti che scrivono.
+  **È l'UNICO caricamento automatico**: le carte personalizzate e la loro
+  terminologia passano dalla stessa coda (`AutoSync.cartePersonalizzateCambiate`,
+  segno a parte `ygoSyncCarteInSospeso`). Il vecchio `cloud-autosync.js`,
+  che caricava salvataggio e carte con un timer suo, è stato eliminato:
+  non reintrodurre un secondo meccanismo. Spec `sync-carte-personalizzate`.
   `auto-sync.js` si aggancia in modo INDIPENDENTE DALL'ORDINE dei tag
   `<script>` (riprova su `DOMContentLoaded`/`load`): sta in cima con gli
   altri di `js/cloud/`, mentre `save-manager.js` è molto più in basso, e
