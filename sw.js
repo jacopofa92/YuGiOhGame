@@ -432,7 +432,8 @@
 // v207: battute dei duellanti come sottotitoli.
 // v208: alone delle battute sfumato su tutti i lati.
 // v209: Regno dei Duellanti con sfidanti visibili e vicoli ciechi.
-const CACHE_NAME = 'ygo-duel-arena-v212';
+// v213: lezione guidata col nonno (js/tutorial/).
+const CACHE_NAME = 'ygo-duel-arena-v213';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -475,6 +476,7 @@ const APP_SHELL = [
     'js/ui/duel-cinematics.css',
     'js/ui/duel-rps.css',
     'js/ui/duel-dialogues.css',
+    'js/tutorial/tutorial-duel.css',
     'js/ui/topbar.css',
     'js/ui/challenge-banner.css',
     'js/ui/page-loader.css',
@@ -547,6 +549,7 @@ const APP_SHELL = [
     'js/ui/duel-cinematics.js',
     'js/ui/duel-rps.js',
     'js/ui/duel-dialogues.js',
+    'js/tutorial/tutorial-duel.js',
     'js/ui/effects.js',
     'js/ui/error-recovery.js',
     'js/ui/icon-library.js',

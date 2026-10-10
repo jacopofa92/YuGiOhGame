@@ -55,7 +55,11 @@
         // storia senza campagna nell'URL.
         story: 'storia.html',
         multiplayer: 'index.html',
-        sandbox: 'duello-sandbox.html'
+        sandbox: 'duello-sandbox.html',
+        // La lezione guidata col nonno (js/tutorial/tutorial-duel.js):
+        // finita, si torna al menu, che al primo avvio è ancora tutto da
+        // scoprire.
+        tutorial: 'index.html'
         // 'tournament' non è qui: il ritorno dipende da QUALE torneo
         // (?tournament=...), vedi TOURNAMENT_RETURN_URLS più sotto.
     };
@@ -552,11 +556,15 @@
         const beginMatch = () => {
             if (mode === 'sandbox') {
                 if (typeof initSandboxGame === 'function') initSandboxGame();
+            } else if (mode === 'tutorial' && window.TutorialDuel) {
+                // Mani, mazzi e Life Point preparati, poi il nonno che
+                // spiega passo per passo (js/tutorial/tutorial-duel.js).
+                TutorialDuel.avvia();
             } else if (typeof initGame === 'function') {
                 initGame();
             }
             if (typeof setupPhaseStepper === 'function') setupPhaseStepper();
-            if (mode !== 'sandbox' && window.DuelDialogues) {
+            if (mode !== 'sandbox' && mode !== 'tutorial' && window.DuelDialogues) {
                 setTimeout(() => DuelDialogues.battleStart(), 900);
             }
         };
@@ -578,6 +586,13 @@
         // su un thread libero.
         const beginWithCoinToss = () => {
             if (mode === 'sandbox' || mode === 'multiplayer' || !window.DuelRPS) {
+                beginMatch();
+                return null;
+            }
+            // Nella lezione comincia sempre il giocatore: è lui che deve
+            // imparare a evocare e a mettere la Trappola nel primo turno.
+            if (mode === 'tutorial') {
+                window.DUEL_STARTING_ROLE = 'player';
                 beginMatch();
                 return null;
             }
@@ -612,6 +627,24 @@
         // SOLO i premi: il record V/S e la schermata finale restano quelli
         // di una sconfitta, che è ciò che un abbandono è.
         const abbandono = !!(opzioni && opzioni.abbandono);
+
+        // La lezione non è una partita: niente record contro il nonno,
+        // niente Sfide, sblocchi o premi normali. Solo il premio della
+        // prima lezione completata, che decide il tutorial stesso.
+        if (mode === 'tutorial') {
+            const premi = window.TutorialDuel ? TutorialDuel.chiudi(playerWon === true, abbandono) : [];
+            if (window.SaveManager) {
+                const save = SaveManager.load();
+                if (save) SaveManager.touch(save);
+            }
+            const torna = () => window.location.replace(session.returnUrl);
+            if (window.DuelCinematics) {
+                DuelCinematics.showOutcome({ playerWon: playerWon, session: session, record: null, rewards: premi, onContinue: torna });
+            } else {
+                torna();
+            }
+            return;
+        }
 
         let record = null;
         if (playerWon !== 'draw' && session.opponent.id && typeof recordCharacterResult === 'function') {

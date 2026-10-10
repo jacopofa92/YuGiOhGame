@@ -881,6 +881,28 @@
     }
 
     /**
+     * La lezione guidata col nonno (js/tutorial/tutorial-duel.js):
+     * { daFare, completata, premiata }, mai null.
+     * `daFare` la scrive SOLO il primo avvio (index.html, dopo la bottega
+     * del nonno), non createNew(): un salvataggio creato in qualunque altro
+     * modo (un backup importato, un test) non deve finire chiuso dentro
+     * una lezione obbligatoria. Un salvataggio senza il campo — tutti
+     * quelli nati prima del tutorial — vale "niente da fare".
+     */
+    function getTutorial() {
+        const save = load();
+        const t = (save && save.tutorial) || {};
+        return { daFare: !!t.daFare, completata: !!t.completata, premiata: !!t.premiata };
+    }
+
+    function setTutorial(campi) {
+        const save = load() || createNew();
+        save.tutorial = Object.assign({}, save.tutorial || {}, campi);
+        touch(save);
+        return getTutorial();
+    }
+
+    /**
      * Avanzamento di UNA campagna della Modalità Storia (storia.html):
      * { [campaignId]: <forma libera decisa dalla campagna> }, null se
      * non è mai stata iniziata.
@@ -1213,6 +1235,8 @@
         getTournamentState: getTournamentState,
         setTournamentState: setTournamentState,
         getTournamentStats: getTournamentStats,
+        getTutorial: getTutorial,
+        setTutorial: setTutorial,
         getStoryState: getStoryState,
         setStoryState: setStoryState,
         getMillenniumItems: getMillenniumItems,
