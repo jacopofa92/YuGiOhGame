@@ -29,9 +29,13 @@
     background: #090b16;
     transform: rotate(45deg);
 }
-.duel-speech--bot { top: calc(100% + 12px); right: 3px; }
-.duel-speech--bot::after { top: -7px; transform: rotate(225deg); }
-.duel-speech--player { bottom: calc(100% + 12px); right: 3px; }
+/* Ancorati al lato del pannello che sta sul BORDO dello schermo: il bot è
+   in alto a sinistra, quindi il suo fumetto si apre verso destra a partire
+   dal bordo sinistro (prima era ancorato a destra e, più largo del
+   pannello, usciva dallo schermo); il giocatore è in basso a destra. */
+.duel-speech--bot { top: calc(100% + 16px); left: 0; }
+.duel-speech--bot::after { top: -7px; left: 18px; right: auto; transform: rotate(225deg); }
+.duel-speech--player { bottom: calc(100% + 16px); right: 0; }
 .duel-speech--player::after { bottom: -7px; }
 .duel-speech.is-visible { opacity: 1; transform: none; }
 .duel-speech.is-special {
@@ -47,6 +51,19 @@
         border-radius: 10px;
         font-size: .72rem;
     }
+}
+
+/* Telefono in verticale: sopra la plancia del giocatore c'è la sua mano e
+   sotto quella del bot la mano avversaria, quindi lì il fumetto coprirebbe
+   le carte. Va invece DI LATO al pannello, nella stessa riga, dove lo
+   spazio è vuoto (a sinistra della plancia del giocatore, a destra di
+   quella del bot). La freccia si sposta sul lato corrispondente. */
+@media (orientation: portrait) and (max-width: 600px) {
+    .duel-speech { max-width: calc(100vw - 210px); min-width: 120px; }
+    .duel-speech--player { bottom: 0; right: calc(100% + 16px); }
+    .duel-speech--player::after { bottom: 14px; right: -7px; transform: rotate(-45deg); }
+    .duel-speech--bot { top: 0; left: calc(100% + 16px); z-index: 16; }
+    .duel-speech--bot::after { top: 14px; left: -7px; transform: rotate(135deg); }
 }
 
 @media (prefers-reduced-motion: reduce) {

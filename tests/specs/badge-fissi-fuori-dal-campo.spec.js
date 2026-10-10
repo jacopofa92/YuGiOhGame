@@ -26,11 +26,16 @@ module.exports = {
             const campo = document.querySelector('.game-container');
             return ids.map((id) => {
                 const el = document.getElementById(id);
+                // Dal pannello d'angolo (.hud-sistema) i tre stanno in fila
+                // dentro un contenitore fisso: conta che sia fisso LUI o il
+                // primo antenato posizionato, non per forza l'elemento.
+                let fisso = el;
+                while (fisso && fisso !== document.body && getComputedStyle(fisso).position !== 'fixed') fisso = fisso.parentElement;
                 return {
                     id,
                     esiste: !!el,
                     dentroIlCampo: !!(el && campo && campo.contains(el)),
-                    posizione: el ? getComputedStyle(el).position : null
+                    posizione: fisso && fisso !== document.body ? 'fixed' : (el ? getComputedStyle(el).position : null)
                 };
             });
         }, ID_BADGE);
@@ -38,7 +43,7 @@ module.exports = {
         struttura.forEach((b) => {
             t.assert(b.esiste, `Il badge #${b.id} deve esistere nella pagina`);
             t.assert(b.posizione === 'fixed',
-                `#${b.id} deve essere position:fixed (rilevato: ${b.posizione}) — se un giorno non lo fosse più, questo spec va ripensato`);
+                `#${b.id} deve essere position:fixed, lui o il pannello che lo contiene (rilevato: ${b.posizione}) — se un giorno non lo fosse più, questo spec va ripensato`);
             t.assert(!b.dentroIlCampo,
                 `#${b.id} è position:fixed e NON deve stare dentro .game-container: quel contenitore riceve un transform ` +
                 `(intro camera-3D, annuncio TURNO, scossa di battaglia) e in quei momenti diventerebbe il suo punto di ` +

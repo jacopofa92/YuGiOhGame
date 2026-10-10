@@ -424,7 +424,8 @@
 // v191: ritocchi dell'Editor Mappa in un file proprio (js/data/story-ritocchi.js + js/story/story-ritocchi.js) ed editor rinnovato.
 // v192: riscontri del duello (duel-feedback.js), ologrammi giusti su carte scoperte e in Difesa, moneta e dado senza rimbalzo.
 // v193: caselle del campo ridotte a un'ombra tonda col colore dell'arena (tinta-campo.js, tinte-campi.js), contorno solo durante la zoomata d'ingresso.
-const CACHE_NAME = 'ygo-duel-arena-v193';
+// v194: plance dei duellanti a triangolo sfumato con la pedina scontornata, angolo di sistema (tempo/turno/livello/Abbandona) in un solo pannello.
+const CACHE_NAME = 'ygo-duel-arena-v194';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

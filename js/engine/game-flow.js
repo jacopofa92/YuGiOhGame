@@ -2435,7 +2435,10 @@ function updateDuelTimer() {
     const elapsed = Math.max(0, Math.floor((Date.now() - duelStartTime) / 1000));
     const mm = String(Math.floor(elapsed / 60)).padStart(2, '0');
     const ss = String(elapsed % 60).padStart(2, '0');
-    el.textContent = `⏱ ${mm}:${ss} · Turno ${gameState.turn}`;
+    // Due pezzi separati, stilati diversamente nel pannello d'angolo in
+    // alto a destra (.hud-sistema): solo numeri, niente da sanificare.
+    el.innerHTML = `<span class="hud-stat hud-tempo"><span class="hud-lab">Tempo</span><span class="hud-val">${mm}:${ss}</span></span>`
+        + `<span class="hud-stat hud-turno"><span class="hud-lab">Turno</span><span class="hud-val">${Number(gameState.turn) || 1}</span></span>`;
 }
 
 function updatePhaseIndicator() {

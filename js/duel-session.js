@@ -370,7 +370,7 @@
             }
         }
 
-        box.appendChild(buildAvatar(duelist, 'duelist-avatar--corner'));
+        box.appendChild(buildAvatar(duelist, 'duelist-avatar--corner', { pedina: true }));
         box.appendChild(details);
 
         // Sostituisce il segnaposto <span data-icon="crown"> (statico
@@ -392,7 +392,8 @@
      * (stessa convenzione usata in duello-libero.html — la cartella
      * images/characters/ può non esistere ancora).
      */
-    function buildAvatar(duelist, extraClass) {
+    function buildAvatar(duelist, extraClass, options) {
+        options = options || {};
         const wrap = document.createElement('span');
         wrap.className = 'duelist-avatar' + (extraClass ? ' ' + extraClass : '');
 
@@ -405,11 +406,32 @@
             const img = document.createElement('img');
             img.alt = duelist.name;
             img.onload = () => { wrap.classList.add('has-image'); };
-            img.onerror = () => { img.remove(); };
-            img.src = duelist.image;
+            // Con `pedina` si prova prima il ritratto SCONTORNATO della
+            // stessa persona (images/characters/pedine/<nome-file>.png, lo
+            // stesso usato dalle pedine di Battle City: il nome è quello del
+            // FILE del ritratto, non l'id del personaggio), che sulla plancia
+            // ad angolo sta senza cornice. Se manca si ripiega sul ritratto
+            // normale, e la plancia lo sfuma ai bordi invece di ritagliarlo.
+            const pedina = options.pedina ? percorsoPedina(duelist.image) : null;
+            img.onerror = () => {
+                if (pedina && img.dataset.ripiego !== '1') {
+                    img.dataset.ripiego = '1';
+                    wrap.classList.remove('is-pedina');
+                    img.src = duelist.image;
+                    return;
+                }
+                img.remove();
+            };
+            if (pedina) wrap.classList.add('is-pedina');
+            img.src = pedina || duelist.image;
             wrap.appendChild(img);
         }
         return wrap;
+    }
+
+    function percorsoPedina(immagine) {
+        const nome = String(immagine).split(/[\\/]/).pop().replace(/\.[a-z0-9]+(\?.*)?$/i, '');
+        return nome ? 'images/characters/pedine/' + nome + '.png' : null;
     }
 
     /**

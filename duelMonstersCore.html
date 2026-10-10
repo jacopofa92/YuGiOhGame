@@ -643,6 +643,171 @@
             70% { color: #2ecc71; text-shadow: 0 0 14px rgba(46,204,113,0.8); }
             100% { color: #e74c3c; transform: scale(1); text-shadow: none; }
         }
+        /* ============================================================
+           PLANCIA A TRIANGOLO SFUMATO (richiesta dell'utente, dopo una
+           fascia e un pannello col bordo: "più a triangolo sfumato, e
+           senza bordo").
+           - Dietro avatar, nome e LP c'è solo un'ombra triangolare: scura
+             nell'angolo VERO dello schermo e trasparente man mano che si va
+             verso la diagonale. Nessun bordo, nessun lato netto.
+           - È un ::before che parte dall'angolo dello schermo (scavalca
+             l'offset del pannello con margini negativi) e sborda oltre il
+             contenuto, in percentuale del pannello stesso: un nome lungo
+             allarga anche l'ombra.
+           - Il gradiente è "to bottom right" e non un angolo fisso: così la
+             linea di metà sfumatura va sempre da un vertice all'altro del
+             riquadro, qualunque sia la sua forma, e il risultato resta un
+             triangolo anche quando il pannello è largo e basso.
+           - Col turno attivo l'angolo prende un velo caldo d'oro (oltre
+             alla corona accanto al nome).
+           - Il ritratto è quello scontornato delle pedine (vedi buildAvatar
+             in js/duel-session.js), senza anello. Le misure del riquadro del
+             ritratto NON cambiano (altri elementi si allineano a loro:
+             l'attesa Multiplayer, la mano su telefono in verticale).
+           Bot in alto a sinistra, giocatore in basso a destra, l'angolo di
+           sistema in alto a destra (.hud-sistema): stessa ombra, specchiata.
+           ============================================================ */
+        .player-info.side-player {
+            --plancia-x: clamp(8px, 2vw, 22px);
+            isolation: isolate;
+        }
+        /* Il giocatore sta APPOGGIATO al bordo basso dello schermo (richiesta
+           dell'utente): la pedina parte dal bordo, nome e LP restano sollevati
+           della solita distanza. L'avversario resta staccato dal bordo alto
+           di --duelist-box-offset, perché la sua pedina non venga troncata. */
+        #playerInfo.player-info.side-player {
+            bottom: 0;
+            align-items: flex-end;
+        }
+        #playerInfo.player-info.side-player .duelist-details {
+            padding-bottom: var(--duelist-box-offset);
+        }
+        .player-info.side-player::before {
+            content: '';
+            position: absolute;
+            pointer-events: none;
+            z-index: -1;
+            transition: background 0.5s ease;
+        }
+        /* Molte tappe nel gradiente invece di tre o quattro: la sfumatura
+           diventa una curva morbida, senza la "riga" che si vede dove due
+           tratti dritti si incontrano. Il colore di fondo ha un filo di
+           tinta per lato, la stessa della cinematica VS: rosso per
+           l'avversario, blu per il giocatore. */
+        #botInfo.player-info.side-player::before {
+            top: calc(-1 * var(--duelist-box-offset));
+            left: calc(-1 * var(--plancia-x));
+            right: -80%;
+            bottom: -75%;
+            background:
+                radial-gradient(circle at 0 0, var(--plancia-velo, transparent), transparent 55%),
+                linear-gradient(to bottom right,
+                    rgba(16, 5, 9, 0.95) 0%,
+                    rgba(16, 5, 9, 0.9) 16%,
+                    rgba(14, 5, 9, 0.76) 30%,
+                    rgba(12, 5, 9, 0.52) 42%,
+                    rgba(10, 5, 9, 0.26) 52%,
+                    rgba(10, 5, 9, 0.08) 59%,
+                    rgba(10, 5, 9, 0) 64%);
+        }
+        #playerInfo.player-info.side-player::before {
+            bottom: 0;
+            right: calc(-1 * var(--plancia-x));
+            left: -80%;
+            top: -75%;
+            background:
+                radial-gradient(circle at 100% 100%, var(--plancia-velo, transparent), transparent 55%),
+                linear-gradient(to top left,
+                    rgba(4, 8, 18, 0.95) 0%,
+                    rgba(4, 8, 18, 0.9) 16%,
+                    rgba(4, 8, 18, 0.76) 30%,
+                    rgba(4, 8, 18, 0.52) 42%,
+                    rgba(4, 8, 18, 0.26) 52%,
+                    rgba(4, 8, 18, 0.08) 59%,
+                    rgba(4, 8, 18, 0) 64%);
+        }
+        .player-info.side-player.active-turn {
+            --plancia-velo: rgba(247, 205, 96, 0.24);
+        }
+        /* Telefono in verticale: la mano ha una riga sua subito sopra (per
+           il giocatore) e subito sotto (per il bot) la riga dell'avatar.
+           L'ombra lì non deve allungarsi in verticale fino alle carte: si
+           allarga di lato, dove la riga è vuota. */
+        @media (orientation: portrait) and (max-width: 900px) {
+            #botInfo.player-info.side-player::before { bottom: -10px; right: -95%; }
+            #playerInfo.player-info.side-player::before { top: -10px; left: -95%; }
+        }
+        /* Il ritratto: niente anello, niente ritaglio, niente fondo. */
+        .player-info.side-player .duelist-avatar--corner {
+            border: none;
+            border-radius: 0;
+            background: none;
+            box-shadow: none;
+            clip-path: none;
+            overflow: visible;
+        }
+        /* Pedina scontornata, più larga del riquadro (le figure hanno spalle
+           e mantelli). Le due sono ancorate a lati opposti:
+           - il GIOCATORE in piedi sul fondo, quindi sul bordo dello schermo,
+             con la testa che sborda sopra il riquadro;
+           - l'AVVERSARIO appeso alla cima del riquadro e cresciuto verso il
+             basso: ancorato in fondo come l'altro, la testa usciva sopra il
+             riquadro e quindi fuori dallo schermo (Kaiba tagliato). */
+        .player-info.side-player .duelist-avatar--corner.is-pedina img {
+            width: 136%;
+            object-fit: contain;
+            filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.7)) drop-shadow(0 0 1px rgba(247, 215, 116, 0.6));
+        }
+        #playerInfo .duelist-avatar--corner.is-pedina img {
+            inset: auto -18% 0 -18%;
+            height: 128%;
+            object-position: 50% 100%;
+        }
+        #botInfo .duelist-avatar--corner.is-pedina img {
+            inset: 0 -18% auto -18%;
+            height: 118%;
+            object-position: 50% 0;
+        }
+        /* Ripiego (nessuna pedina per quel personaggio): il ritratto normale
+           si sfuma ai bordi, così non torna a sembrare una cornice. */
+        .player-info.side-player .duelist-avatar--corner:not(.is-pedina) img {
+            -webkit-mask-image: radial-gradient(closest-side, #000 62%, transparent 100%);
+            mask-image: radial-gradient(closest-side, #000 62%, transparent 100%);
+        }
+        /* Nome e LP: la fascia scura dietro basta a renderli leggibili, la
+           pillola dei LP diventa una cifra grande con l'etichetta "LP". */
+        .player-info.side-player .duelist-name {
+            font-family: Georgia, 'Times New Roman', serif;
+            letter-spacing: 0.03em;
+            color: #fbefd0;
+        }
+        .player-info.side-player .life-points {
+            background: none;
+            border: none;
+            box-shadow: none;
+            padding: 0 2px;
+            /* font-size 0 nasconde il ❤️ dell'HTML, che è un nodo di testo
+               nudo e non si può selezionare: la cifra (lo span) e
+               l'etichetta "LP" qui sotto hanno la loro misura. */
+            font-size: 0;
+            gap: 5px;
+            letter-spacing: 0.02em;
+            font-variant-numeric: tabular-nums;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85);
+            border-radius: 6px;
+        }
+        .player-info.side-player .life-points > span {
+            font-size: clamp(0.95rem, 1.9vw, 1.55rem);
+        }
+        .player-info.side-player .life-points::before {
+            content: 'LP';
+            font-size: clamp(0.55rem, 0.95vw, 0.8rem);
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            color: #f7d774;
+            margin-right: 2px;
+            align-self: center;
+        }
         /* Tag Zona Bandite: stesso "pill" del Cimitero/LP ma viola, sotto
            i LP nella colonna dei dettagli — vedi renderBanishedBadge() in
            game-flow.js. Nascosto finché nessuna carta è bandita (nessun
@@ -1978,55 +2143,205 @@
             .phase-step .step-badge { transition: none; animation: none !important; }
             .phase-step.active::before { display: none; }
         }
-        /* Tempo di duello trascorso + numero turno, aggiornato ogni
-           secondo (vedi startDuelTimer()/updateDuelTimer() in game-flow.js).
-           Fissato in alto a destra, come le altre icone di sistema in
-           alto a sinistra (home/audio) — fuori dal flusso del campo,
-           quindi non porta via spazio verticale al terreno di gioco. */
-        .duel-timer-badge {
+        /* ============================================================
+           ANGOLO DI SISTEMA in alto a destra: tempo, turno, difficoltà e
+           Abbandona in UN pannello, con la stessa ombra a triangolo sfumato
+           delle plance dei duellanti. Prima erano tre pillole impilate con
+           posizioni in pixel ripetute a mano per ogni misura di schermo — ed
+           era lì che si scontravano.
+           - Tempo, Turno e Livello sono tre "letture": etichetta piccola in
+             oro sopra, valore sotto. La difficoltà la scrive duel-session.js
+             (testo + classe diff--facile/medio/difficile): l'etichetta
+             "Livello" arriva da un ::before, che quel testo non tocca.
+           - Abbandona è un pulsante tondo con la bandiera. Su desktop la
+             scritta si apre al passaggio del mouse/al focus; su telefono
+             resta solo l'icona, con un'area di tocco più grande del disegno.
+           - Su telefono le etichette spariscono (restano i valori) e in
+             verticale il pannello va su due righe, per restare stretto e mai
+             più alto della riga dell'avatar.
+           Il pannello è fisso e fuori da .game-container (vedi il commento
+           sul markup). z-index 15: sopra il campo, sotto plance (20),
+           ologrammi (30), linee Equip (40) e freccia d'attacco (10000).
+           ============================================================ */
+        .hud-sistema {
+            --hud-pad-y: clamp(8px, 1.2vh, 14px);
+            --hud-pad-x: clamp(12px, 1.4vw, 22px);
             position: fixed;
-            top: 12px;
-            right: 12px;
-            /* 15 e non 10080: vedi il commento sul markup di questi tre
-               badge, in fondo al body — riproduce l'ordine di
-               impilamento che avevano da dentro .game-container. */
+            top: 0;
+            right: 0;
             z-index: 15;
-            text-align: center;
-            font-size: clamp(0.62rem, 1.3vw, 0.8rem);
-            font-weight: 700;
-            letter-spacing: 0.04em;
-            color: #dfe7f7;
-            background: linear-gradient(135deg, rgba(20,20,30,0.85), rgba(35,30,20,0.75));
-            border: 1px solid rgba(247,215,116,0.4);
-            border-radius: 999px;
-            padding: 7px 14px;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.35);
-            font-variant-numeric: tabular-nums;
-            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: clamp(12px, 1.4vw, 22px);
+            padding: var(--hud-pad-y) var(--hud-pad-x);
+            isolation: isolate;
         }
-        /* Pulsante Abbandona: stessa pillola del contatore turni/tempo,
-           impilato subito sotto (vedi #surrenderBtn in fondo al body). Un
-           colore rosso spento la distingue a colpo d'occhio come azione
-           distruttiva, senza essere così acceso da sembrare un allarme. */
-        .surrender-btn {
-            position: fixed;
-            top: 46px;
-            right: 12px;
-            z-index: 15; /* vedi .duel-timer-badge qui sopra */
-            font-size: clamp(0.6rem, 1.2vw, 0.76rem);
+        .hud-sistema::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            left: -55%;
+            bottom: -130%;
+            z-index: -1;
+            pointer-events: none;
+            background: linear-gradient(to bottom left,
+                rgba(6, 6, 12, 0.95) 0%,
+                rgba(6, 6, 12, 0.9) 16%,
+                rgba(6, 6, 12, 0.76) 30%,
+                rgba(6, 6, 12, 0.52) 42%,
+                rgba(6, 6, 12, 0.26) 52%,
+                rgba(6, 6, 12, 0.08) 59%,
+                rgba(6, 6, 12, 0) 64%);
+        }
+        .duel-timer-badge {
+            display: flex;
+            align-items: center;
+            gap: clamp(12px, 1.4vw, 22px);
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
+        }
+        /* Una "lettura": etichetta sopra, valore sotto. Allineate a destra,
+           verso il bordo dello schermo. */
+        .hud-stat,
+        #difficultyBadge.duelist-difficulty {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            line-height: 1.05;
+        }
+        .hud-lab,
+        #difficultyBadge.duelist-difficulty::before {
+            font-family: inherit;
+            font-size: clamp(0.46rem, 0.7vw, 0.58rem);
+            font-weight: 800;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: rgba(247, 215, 116, 0.8);
+            margin-bottom: 3px;
+        }
+        .hud-val {
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: clamp(0.9rem, 1.6vw, 1.3rem);
+            font-weight: 700;
+            color: #fbefd0;
+            letter-spacing: 0.03em;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85);
+        }
+        /* Una sottile linea fra una lettura e l'altra, non un bordo: fa da
+           separatore senza chiudere niente in un riquadro. */
+        .hud-turno,
+        #difficultyBadge.duelist-difficulty {
+            position: relative;
+        }
+        .hud-turno::before,
+        #difficultyBadge.duelist-difficulty::after {
+            content: '';
+            position: absolute;
+            left: calc(-1 * clamp(6px, 0.7vw, 11px));
+            top: 15%;
+            bottom: 10%;
+            width: 1px;
+            background: linear-gradient(180deg, rgba(247, 215, 116, 0), rgba(247, 215, 116, 0.45), rgba(247, 215, 116, 0));
+        }
+        /* Difficoltà come lettura: niente pillola (i colori per livello di
+           duel-cinematics.css restano solo sul testo). Vuota (Duello Demo)
+           sparisce. */
+        #difficultyBadge.duelist-difficulty {
+            margin: 0;
+            padding: 0;
+            background: none;
+            border: none;
+            border-radius: 0;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: clamp(0.82rem, 1.35vw, 1.1rem);
             font-weight: 700;
             letter-spacing: 0.03em;
+            text-transform: none;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85);
+        }
+        #difficultyBadge.duelist-difficulty::before { content: 'Livello'; }
+        #difficultyBadge.duelist-difficulty:empty { display: none; }
+        /* Abbandona: tondo, rosso spento (un'azione distruttiva, non un
+           allarme). La scritta si apre allargando il pulsante verso sinistra. */
+        .surrender-btn {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0;
+            height: clamp(30px, 3.2vw, 38px);
+            min-width: clamp(30px, 3.2vw, 38px);
+            padding: 0 clamp(7px, 0.75vw, 10px);
             color: #ffb4a8;
-            background: linear-gradient(135deg, rgba(60,20,20,0.85), rgba(40,14,14,0.8));
-            border: 1px solid rgba(231,76,60,0.45);
+            background: radial-gradient(circle at 70% 35%, rgba(120, 34, 28, 0.95), rgba(42, 10, 12, 0.95));
+            border: 1px solid rgba(231, 76, 60, 0.45);
             border-radius: 999px;
-            padding: 6px 13px;
-            box-shadow: 0 6px 16px rgba(0,0,0,0.35);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
             cursor: pointer;
             white-space: nowrap;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            transition: transform 0.2s ease, border-color 0.2s ease, gap 0.25s ease;
         }
-        .surrender-btn:hover { transform: scale(1.05); box-shadow: 0 8px 20px rgba(231,76,60,0.35); }
+        .surrender-btn .hud-icona { width: clamp(14px, 1.4vw, 18px); height: clamp(14px, 1.4vw, 18px); flex-shrink: 0; order: 2; }
+        .surrender-btn .hud-etichetta {
+            order: 1;
+            max-width: 0;
+            overflow: hidden;
+            opacity: 0;
+            font-size: clamp(0.62rem, 0.9vw, 0.74rem);
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            transition: max-width 0.3s ease, opacity 0.2s ease;
+        }
+        .surrender-btn:hover,
+        .surrender-btn:focus-visible { border-color: rgba(255, 130, 110, 0.8); gap: 7px; }
+        .surrender-btn:hover .hud-etichetta,
+        .surrender-btn:focus-visible .hud-etichetta { max-width: 120px; opacity: 1; }
+        .surrender-btn:active { transform: scale(0.94); }
+        .surrender-btn:focus-visible { outline: 2px solid #f7d774; outline-offset: 2px; }
+        @media (max-width: 900px), (hover: none) {
+            .surrender-btn:hover .hud-etichetta { max-width: 0; opacity: 0; }
+            .surrender-btn:hover { gap: 0; }
+            /* Area di tocco più grande del disegno (vicina ai 44px
+               consigliati) senza allargare il pannello. */
+            .surrender-btn::before {
+                content: '';
+                position: absolute;
+                inset: -8px;
+            }
+        }
+        /* Telefono: niente etichette, valori più piccoli. */
+        @media (max-width: 900px) {
+            .hud-sistema { --hud-pad-y: 6px; --hud-pad-x: 10px; gap: 10px; }
+            .duel-timer-badge { gap: 10px; }
+            .hud-lab, #difficultyBadge.duelist-difficulty::before { display: none; }
+            .hud-turno::before, #difficultyBadge.duelist-difficulty::after { left: -6px; }
+            .hud-val { font-size: 0.82rem; }
+            .hud-turno .hud-val::before { content: 'T'; font-size: 0.7em; color: rgba(247, 215, 116, 0.85); margin-right: 1px; }
+            #difficultyBadge.duelist-difficulty { font-size: 0.72rem; }
+            .surrender-btn { height: 28px; min-width: 28px; padding: 0 6px; }
+        }
+        /* Verticale stretto: due righe (tempo e turno sopra, livello e
+           Abbandona sotto). */
+        @media (orientation: portrait) and (max-width: 600px) {
+            .hud-sistema {
+                flex-wrap: wrap;
+                max-width: 140px;
+                row-gap: 5px;
+            }
+            .duel-timer-badge { width: 100%; justify-content: flex-end; }
+        }
+        /* Telefono in orizzontale (schermi molto bassi): ancora più compatto. */
+        @media (max-height: 420px) {
+            .hud-sistema { --hud-pad-y: 4px; --hud-pad-x: 8px; gap: 8px; }
+            .duel-timer-badge { gap: 8px; }
+            .hud-val { font-size: 0.72rem; }
+            #difficultyBadge.duelist-difficulty { font-size: 0.64rem; }
+            .surrender-btn { height: 24px; min-width: 24px; padding: 0 5px; }
+            .surrender-btn .hud-icona { width: 13px; height: 13px; }
+        }
         .sandbox-field-tools {
             position: fixed;
             top: 82px;
@@ -2075,37 +2390,7 @@
                 --camera-intro-scale: 1;
                 --camera-intro-tilt: 28deg;
             }
-            /* Area di tocco allargata SOLO su mobile (richiesta esplicita:
-               il pulsante era troppo piccolo per un dito, fino a ~19px di
-               altezza reale sui breakpoint più stretti) — uno pseudo-
-               elemento invisibile e assoluto (non sposta né ridimensiona
-               nulla intorno, i badge Tempo/Difficoltà restano esattamente
-               dove sono) allarga la zona CLICCABILE di 10px per lato
-               attorno alla pillola visiva, portandola a un'area di tocco
-               vicina ai 44px consigliati anche quando la pillola stessa
-               resta piccola per non rompere l'impilamento verticale con
-               gli altri badge negli schermi più bassi. */
-            .surrender-btn::before {
-                content: '';
-                position: absolute;
-                inset: -10px;
-            }
-            .surrender-btn:active { transform: scale(0.94); }
         }
-        /* Badge Difficoltà: spostato via dal riquadro info avversario,
-           impilato insieme a tempo/turno e Abbandona (stesso angolo, stesso
-           linguaggio visivo a pillola) invece che dentro .duelist-details —
-           vuoto (nessun duello con difficoltà scelta, es. Duello Demo)
-           resta invisibile grazie a :empty, senza bisogno di toggle da JS. */
-        #difficultyBadge.duelist-difficulty {
-            position: fixed;
-            top: 80px;
-            right: 12px;
-            z-index: 15; /* vedi .duel-timer-badge qui sopra */
-            margin: 0;
-            font-size: clamp(0.58rem, 1.1vw, 0.7rem);
-        }
-        #difficultyBadge.duelist-difficulty:empty { display: none; }
         .phase-step.clickable {
             background: linear-gradient(135deg, rgba(52, 152, 219, 0.18), rgba(41, 128, 185, 0.18));
             border-color: rgba(52, 152, 219, 0.35);
@@ -3660,28 +3945,8 @@
 
             .hand { margin-top: clamp(4px, 1.4vh, 12px); gap: 4px; }
 
-            .duel-timer-badge {
-                top: 6px;
-                right: 6px;
-                padding: 4px 9px;
-                font-size: 0.6rem;
-            }
-            /* Ordine richiesto su mobile: Tempo/Turno in alto, poi
-               Difficoltà, poi Abbandona in fondo — diverso dall'ordine
-               desktop (Tempo, Abbandona, Difficoltà), quindi qui vanno
-               impilati a mano invece di ereditare le posizioni base. */
-            #difficultyBadge.duelist-difficulty {
-                top: 30px;
-                right: 6px;
-                padding: 2px 7px;
-                font-size: 0.52rem;
-            }
-            .surrender-btn {
-                top: 54px;
-                right: 6px;
-                padding: 5px 10px;
-                font-size: 0.6rem;
-            }
+            /* Tempo/Difficoltà/Abbandona: vedi .hud-sistema, che si adatta
+               da solo. */
             .sandbox-field-tools { top: 82px; right: 6px; width: min(210px, calc(100vw - 12px)); }
 
             /* La carta "compatta" (senza barra del nome, stelle e riga
@@ -3714,8 +3979,11 @@
            dedicata nello spazio vuoto tra l'inizio del campo e l'avatar,
            non più in competizione con esso per lo stesso spazio. */
         @media (orientation: portrait) and (max-width: 900px) {
-            .hand--bot { margin-top: calc(var(--duelist-box-offset) + 48px + 6px); }
-            .hand { margin-bottom: calc(var(--duelist-box-offset) + 48px + 6px); }
+            /* + 12px e non più + 6px: il pannello d'angolo della plancia
+               sborda di qualche pixel oltre il riquadro dell'avatar
+               (--plancia-pad), e non deve arrivare sopra la mano. */
+            .hand--bot { margin-top: calc(var(--duelist-box-offset) + 48px + 12px); }
+            .hand { margin-bottom: calc(var(--duelist-box-offset) + 48px + 12px); }
         }
 
         /* Schermi mobile ESTREMAMENTE bassi (es. telefoni piccoli in
@@ -3739,19 +4007,7 @@
             .field-row { gap: var(--field-gap); }
             /*.battlefield-main { gap: 1px; }*/
             .hand--bot { margin-bottom: 2px; gap: 2px; }
-            /* Prima veniva nascosto del tutto qui (schermi bassissimi):
-               ma tempo/turno restano informazioni utili anche in
-               landscape stretto, quindi ora resta visibile, solo
-               compatto e impilato sopra Abbandona invece che nascosto. */
-            .duel-timer-badge { top: 4px; right: 4px; padding: 2px 6px; font-size: 0.5rem; }
-            /* Qui sotto mancava un impilamento per #difficultyBadge: senza
-               una posizione propria per questo breakpoint ricadeva sul
-               top:30px del blocco mobile generale qui sopra, che si
-               sovrapponeva ad Abbandona (spostato a top:22px proprio in
-               QUESTO blocco) — verificato: la Difficoltà finiva sopra al
-               pulsante invece che impilata sotto. */
-            #difficultyBadge.duelist-difficulty { top: 23px; right: 4px; padding: 1px 6px; font-size: 0.46rem; }
-            .surrender-btn { top: 39px; right: 4px; padding: 2px 6px; font-size: 0.5rem; }
+            /* Tempo/Difficoltà/Abbandona: compattati in .hud-sistema. */
             .phase-stepper { width: min(100%, calc(var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-gap) + var(--field-gap) + var(--field-gap) + var(--field-gap) + var(--field-gap) + var(--field-gap))); margin-top: 0; margin-bottom: 0; gap: 2px; padding: 2px 4px; }
             .phase-step { flex-basis: 34px; max-width: 36px; padding: 2px; border-radius: 7px; }
             .phase-step .step-badge { width: 21px; height: 21px; border-radius: 6px; }
@@ -4181,9 +4437,15 @@
          freccia d'attacco (10000). Fuori dal contenitore 10080 li
          porterebbe invece SOPRA a tutto quello: 15 riproduce esattamente
          l'ordine di prima. -->
-    <div class="duel-timer-badge" id="duelTimerBadge">⏱ 00:00 · Turno 1</div>
-    <button type="button" class="surrender-btn" id="surrenderBtn">🏳️ Abbandona</button>
-    <div class="duelist-difficulty" id="difficultyBadge"></div>
+    <!-- I tre stanno ora in UN pannello d'angolo (.hud-sistema, fisso e
+         fuori da .game-container per lo stesso motivo detto sopra), nello
+         stesso stile delle plance dei duellanti. Il contenuto del tempo lo
+         scrive updateDuelTimer() in game-flow.js. -->
+    <div class="hud-sistema" id="hudSistema">
+        <div class="duel-timer-badge" id="duelTimerBadge"><span class="hud-stat hud-tempo"><span class="hud-lab">Tempo</span><span class="hud-val">00:00</span></span><span class="hud-stat hud-turno"><span class="hud-lab">Turno</span><span class="hud-val">1</span></span></div>
+        <div class="duelist-difficulty" id="difficultyBadge"></div>
+        <button type="button" class="surrender-btn" id="surrenderBtn" aria-label="Abbandona il duello" title="Abbandona il duello"><svg class="hud-icona" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4m0 0h11l-2 4 2 4H5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="hud-etichetta">Abbandona</span></button>
+    </div>
 
 <!-- Librerie generiche di animazione/grafica, scaricate in locale (nessun
      CDN esterno in questo progetto — vedi js/vendor/): a disposizione di
