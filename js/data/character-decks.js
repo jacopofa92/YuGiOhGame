@@ -327,7 +327,7 @@ const characterDeckDatabase = {
         medium: {
             main: [
                 { id: 1, qty: 3 }, // Drago Bianco Occhi Blu
-                { id: 353, qty: 1 }, // Signore dei D.
+                { id: 353, qty: 2 }, // Signore dei D.
                 { id: 502, qty: 2 }, // Predone Vorse
                 { id: 431, qty: 1 }, // Saggi il Pagliaccio Oscuro
                 { id: 335, qty: 1 }, // La Jinn il Genio Mistico della Lampada
@@ -341,7 +341,7 @@ const characterDeckDatabase = {
                 { id: 298, qty: 1 }, // Gigante Un Occhio
                 { id: 389, qty: 1 }, // Cavaliere Mistico
                 { id: 317, qty: 1 }, // Uomo Giudice
-                { id: 578, qty: 1 }, // Il Flauto per Evocare Draghi
+                { id: 578, qty: 2 }, // Il Flauto per Evocare Draghi
                 { id: 38, qty: 1 }, // Fusione
                 { id: 35, qty: 1 }, // Rinascita del Mostro
                 { id: 36, qty: 2 }, // Vaso dell'Avidità
@@ -737,7 +737,7 @@ const characterDeckDatabase = {
                 { id: 306, qty: 1 }, // Mago Senza Volto Illusionista
                 { id: 487, qty: 3 }, // Mondo dei Toon
                 { id: 482, qty: 2 }, // Maschera Toon
-                { id: 485, qty: 1 }, // Riavvolgimento Toon
+                { id: 485, qty: 2 }, // Riavvolgimento Toon
                 { id: 116, qty: 1 }, // Rito dell'Illusione Nera
                 { id: 206, qty: 1 }, // Vaso Cattura-Drago
                 { id: 35, qty: 1 }, // Rinascita del Mostro
@@ -749,7 +749,7 @@ const characterDeckDatabase = {
                 { id: 272, qty: 1 }, // Carità Aggraziata
                 { id: 646, qty: 1 }, // Tempesta Pesante
                 { id: 466, qty: 1 }, // L'Occhio della Verità
-                { id: 382, qty: 2 } // Forza dello Specchio
+                { id: 382, qty: 1 } // Forza dello Specchio
             ],
             extra: [
                 { id: 476, qty: 1 } // Restrizione dai Mille Occhi
