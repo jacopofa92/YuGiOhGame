@@ -180,10 +180,12 @@
         return lines[index];
     }
 
-    // Il fumetto ha tre parti: chi parla (nome in oro), la battuta e una
-    // barra sottile che si consuma mentre il fumetto resta a schermo — così
-    // si capisce quanto manca prima che sparisca. Costruito una volta per
-    // lato e riusato: testo e durata cambiano a ogni battuta.
+    // Il fumetto è una targa: la lastra scura dentro la cornice d'oro (un
+    // elemento a sé, perché la cornice è il ::before e la codina il ::after),
+    // chi parla e la battuta. Costruito una volta per lato e riusato: il
+    // testo cambia a ogni battuta.
+    // Niente barra del tempo: l'utente l'ha tolta, faceva "popup da
+    // gestionale".
     function bubble(owner) {
         const box = document.getElementById(owner === 'bot' ? 'botInfo' : 'playerInfo');
         if (!box) return null;
@@ -193,9 +195,9 @@
             el.className = 'duel-speech duel-speech--' + owner;
             el.setAttribute('role', 'status');
             el.setAttribute('aria-live', 'polite');
-            el.innerHTML = '<span class="duel-speech__nome"></span>'
-                + '<span class="duel-speech__testo"></span>'
-                + '<i class="duel-speech__tempo" aria-hidden="true"></i>';
+            el.innerHTML = '<i class="duel-speech__lastra" aria-hidden="true"></i>'
+                + '<span class="duel-speech__nome"></span>'
+                + '<span class="duel-speech__testo"></span>';
             box.appendChild(el);
         }
         return el;
@@ -223,15 +225,11 @@
             s.textContent = parola + (i < tutte.length - 1 ? ' ' : '');
             testo.appendChild(s);
         });
-        el.style.setProperty('--durata', durata + 'ms');
         el.classList.toggle('is-special', !!special);
         // Se il fumetto era già aperto (una battuta che ne sostituisce
-        // un'altra) resta aperto: riparte solo la barra del tempo, da piena.
-        // Chiudere e riaprire il fumetto lo farebbe sparire per un istante.
-        const tempo = el.querySelector('.duel-speech__tempo');
-        tempo.style.animation = 'none';
-        void tempo.offsetWidth;
-        tempo.style.animation = '';
+        // un'altra) resta aperto: le parole nuove sono elementi nuovi, quindi
+        // ricompaiono da sole una alla volta. Chiudere e riaprire il fumetto
+        // lo farebbe sparire per un istante.
         if (!el.classList.contains('is-visible')) requestAnimationFrame(() => el.classList.add('is-visible'));
         lastShown[owner] = Date.now();
         timers[owner] = setTimeout(() => el.classList.remove('is-visible'), durata);

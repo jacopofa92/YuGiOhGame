@@ -1,37 +1,37 @@
 /* =====================================================================
    Fumetti delle battute dei duellanti (js/ui/duel-dialogues.js).
-   - In testa il NOME di chi parla, in oro: con due fumetti a schermo
-     insieme (inizio duello) si capisce subito chi dice cosa.
-   - Un filo di colore per lato, lo stesso delle plance: rosso per
-     l'avversario, blu per il giocatore.
-   - In fondo una barra sottile che si consuma per la durata del fumetto
-     (--durata, scritta da show()): dice quanto manca prima che sparisca.
-   - Le battute "speciali" (Evocazione della carta simbolo) sono dorate e
-     un riflesso le attraversa una volta.
+   Una TARGA, non un popup (richiesta dell'utente: "più epico e meno da
+   popup da gestionale"):
+   - cornice d'oro con due angoli smussati (::before), lastra scura dentro
+     (.duel-speech__lastra) tinta dal lato del colore di chi parla: rosso
+     l'avversario, blu il giocatore, come le plance;
+   - il nome in serif spaziato con un filetto d'oro che sfuma, la battuta in
+     serif con una virgoletta d'apertura dorata;
+   - all'entrata la targa si "apre" e un riflesso di luce la attraversa.
+   La forma la dà clip-path, quindi l'ombra è un filter drop-shadow sul
+   contenitore (una box-shadow verrebbe tagliata insieme alla forma).
+   Gli angoli smussati sono in alto a destra e in basso a sinistra apposta:
+   la codina sta sempre su uno degli altri due angoli (bot in alto a
+   sinistra, giocatore in basso a destra, anche in verticale).
    ===================================================================== */
 .duel-speech {
     --lato: #e46a5a;
-    --lato-tenue: rgba(228, 106, 90, .16);
+    --lato-tenue: rgba(228, 106, 90, .3);
+    --smusso: 11px;
+    --forma: polygon(0 0, calc(100% - var(--smusso)) 0, 100% var(--smusso), 100% 100%, var(--smusso) 100%, 0 calc(100% - var(--smusso)));
+    --ombra: drop-shadow(0 10px 18px rgba(0, 0, 0, .6));
     position: absolute;
     z-index: 4;
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 4px;
     width: max-content;
-    max-width: min(300px, 38vw);
-    padding: 9px 15px 12px;
-    border-radius: 14px;
-    color: #fbf1d8;
-    background:
-        linear-gradient(135deg, var(--lato-tenue), transparent 55%),
-        linear-gradient(160deg, rgba(22, 18, 30, .97), rgba(7, 8, 15, .97));
-    box-shadow:
-        inset 0 0 0 1px rgba(247, 215, 116, .32),
-        inset 3px 0 0 var(--lato),
-        0 12px 30px rgba(0, 0, 0, .55);
+    max-width: min(320px, 38vw);
+    padding: 10px 19px 13px 17px;
+    color: #f8ecd0;
     text-align: left;
     pointer-events: none;
-    overflow: visible;
+    filter: var(--ombra);
     opacity: 0;
     transform: translateY(8px) scale(.94);
     transform-origin: left top;
@@ -39,86 +39,135 @@
 }
 .duel-speech--player {
     --lato: #5aa8ff;
-    --lato-tenue: rgba(90, 168, 255, .16);
+    --lato-tenue: rgba(90, 168, 255, .3);
     transform-origin: right bottom;
     transform: translateY(-8px) scale(.94);
 }
+/* Cornice: oro brunito con un punto di luce, come il bordo di una carta. */
+.duel-speech::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    clip-path: var(--forma);
+    background: linear-gradient(125deg, #fff0b8 0%, #c79a3c 22%, #6f4f18 46%, #d8b05a 70%, #8a6422 86%, #f5dc8e 100%);
+}
+.duel-speech__lastra {
+    position: absolute;
+    inset: 1.5px;
+    clip-path: var(--forma);
+    background:
+        radial-gradient(130% 150% at 0% 0%, var(--lato-tenue), transparent 58%),
+        linear-gradient(180deg, rgba(255, 236, 190, .08), transparent 38%),
+        repeating-linear-gradient(115deg, rgba(255, 255, 255, .018) 0 2px, transparent 2px 6px),
+        linear-gradient(160deg, #1d1626, #0a090f 70%);
+    box-shadow: inset 0 -2px 0 var(--lato), inset 0 0 18px rgba(0, 0, 0, .55);
+    overflow: hidden;
+}
+.duel-speech--player .duel-speech__lastra {
+    background:
+        radial-gradient(130% 150% at 100% 100%, var(--lato-tenue), transparent 58%),
+        linear-gradient(180deg, rgba(255, 236, 190, .08), transparent 38%),
+        repeating-linear-gradient(115deg, rgba(255, 255, 255, .018) 0 2px, transparent 2px 6px),
+        linear-gradient(160deg, #1d1626, #0a090f 70%);
+}
+/* Riflesso che attraversa la targa a ogni battuta nuova. */
+.duel-speech__lastra::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(105deg, transparent 38%, rgba(255, 236, 170, .2) 50%, transparent 62%);
+    background-size: 260% 100%;
+    background-position: 130% 0;
+}
+.duel-speech.is-visible .duel-speech__lastra::after { animation: duelSpeechRiflesso .9s ease .12s 1 both; }
+@keyframes duelSpeechRiflesso {
+    from { background-position: 130% 0; }
+    to { background-position: -40% 0; }
+}
+
 .duel-speech__nome {
-    font-size: .58rem;
-    font-weight: 900;
-    letter-spacing: .16em;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif;
+    font-size: .64rem;
+    font-weight: 700;
+    letter-spacing: .2em;
     text-transform: uppercase;
     color: #f7d774;
+    text-shadow: 0 0 8px rgba(247, 215, 116, .35), 0 1px 0 rgba(0, 0, 0, .8);
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+}
+.duel-speech__nome::before {
+    content: '';
+    flex: none;
+    width: 6px;
+    height: 6px;
+    background: var(--lato);
+    box-shadow: 0 0 6px var(--lato);
+    transform: rotate(45deg);
+}
+.duel-speech__nome::after {
+    content: '';
+    flex: 1 1 auto;
+    min-width: 28px;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(247, 215, 116, .65), transparent);
 }
 .duel-speech__testo {
-    font-size: clamp(.78rem, 1.15vw, .95rem);
-    font-weight: 650;
-    line-height: 1.34;
+    position: relative;
+    font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif;
+    font-size: clamp(.82rem, 1.2vw, 1rem);
+    font-weight: 600;
+    line-height: 1.32;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, .9);
     text-wrap: pretty;
 }
-/* Barra del tempo: parte piena e si svuota da sinistra a destra. */
-.duel-speech__tempo {
-    position: absolute;
-    left: 15px;
-    right: 15px;
-    bottom: 5px;
-    height: 2px;
-    border-radius: 2px;
-    background: linear-gradient(90deg, var(--lato), rgba(247, 215, 116, .7));
-    opacity: .7;
-    transform-origin: left center;
-    transform: scaleX(0);
+.duel-speech__testo::before {
+    content: '\201C';
+    display: inline-block;
+    margin-right: 3px;
+    font-size: 1.9em;
+    line-height: 0;
+    vertical-align: -.36em;
+    color: #e2b553;
+    text-shadow: 0 0 10px rgba(247, 215, 116, .4);
 }
-.duel-speech.is-visible .duel-speech__tempo {
-    animation: duelSpeechTempo var(--durata, 3000ms) linear forwards;
-}
-@keyframes duelSpeechTempo {
-    from { transform: scaleX(1); }
-    to { transform: scaleX(0); }
-}
-/* Codina verso la plancia: un quadratino ruotato con lo stesso fondo. */
+
+/* Codina d'oro verso la plancia. */
 .duel-speech::after {
     content: '';
     position: absolute;
-    width: 12px;
-    height: 12px;
-    background: #110f19;
-    box-shadow: inset 1px 1px 0 rgba(247, 215, 116, .32);
+    background: linear-gradient(180deg, #f5dc8e, #a87b2c);
 }
-/* Ancorati al lato del pannello che sta sul BORDO dello schermo: il bot è
-   in alto a sinistra, quindi il suo fumetto si apre verso destra a partire
-   dal bordo sinistro (agganciato a destra e più largo del pannello usciva
-   dallo schermo); il giocatore è in basso a destra. */
 .duel-speech--bot { top: calc(100% + 16px); left: 0; }
-.duel-speech--bot::after { top: -6px; left: 22px; transform: rotate(45deg); }
+.duel-speech--bot::after { top: -8px; left: 20px; width: 16px; height: 9px; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
 .duel-speech--player { bottom: calc(100% + 16px); right: 0; }
-.duel-speech--player::after { bottom: -6px; right: 22px; transform: rotate(225deg); }
+.duel-speech--player::after { bottom: -8px; right: 20px; width: 16px; height: 9px; clip-path: polygon(0 0, 100% 0, 50% 100%); }
 
 .duel-speech.is-visible { opacity: 1; transform: none; }
 
-/* --- Animazioni (richiesta dell'utente: "animarlo di più") -----------
-   Entrata: il fumetto "esce" dalla plancia con un piccolo scatto elastico
-   (un velo di sovra-elongazione, poi fermo). È un fumetto 2D: niente a che
-   vedere con gli atterraggi 3D, dove il rimbalzo è escluso.
-   Poi resta sospeso con una fluttuazione leggerissima — su `translate`,
-   proprietà separata da `transform`, così non litiga con l'entrata.
-   Le parole compaiono una alla volta (--i, scritto da show()).
-   L'uscita resta la transizione di opacità/scala definita sopra. */
+/* --- Animazioni ------------------------------------------------------
+   Entrata: la targa si apre dal lato della codina (larghezza e altezza che
+   crescono insieme, decisa, senza rimbalzo). Poi resta sospesa con una
+   fluttuazione leggerissima, su `translate` per non litigare col
+   `transform` dell'entrata. Le parole compaiono una alla volta (--i,
+   scritto da show()). L'uscita è la transizione definita sopra. */
 .duel-speech.is-visible {
     animation:
-        duelSpeechEntra .42s cubic-bezier(.3, 1.45, .55, 1) both,
-        duelSpeechFluttua 3.2s ease-in-out .5s infinite;
+        duelSpeechEntra .38s cubic-bezier(.16, .9, .3, 1) both,
+        duelSpeechFluttua 3.4s ease-in-out .5s infinite;
 }
 @keyframes duelSpeechEntra {
-    0% { opacity: 0; transform: translateY(10px) scale(.72); }
+    0% { opacity: 0; transform: translateY(6px) scale(.55, .35); }
+    55% { opacity: 1; }
     100% { opacity: 1; transform: none; }
 }
 .duel-speech--player.is-visible { animation-name: duelSpeechEntraSu, duelSpeechFluttua; }
 @keyframes duelSpeechEntraSu {
-    0% { opacity: 0; transform: translateY(-10px) scale(.72); }
+    0% { opacity: 0; transform: translateY(-6px) scale(.55, .35); }
+    55% { opacity: 1; }
     100% { opacity: 1; transform: none; }
 }
 @keyframes duelSpeechFluttua {
@@ -131,97 +180,89 @@
     opacity: 0;
 }
 .duel-speech.is-visible .duel-speech__parola {
-    animation: duelSpeechParola .28s ease-out both;
-    animation-delay: calc(140ms + var(--i, 0) * 55ms);
+    animation: duelSpeechParola .3s ease-out both;
+    animation-delay: calc(170ms + var(--i, 0) * 55ms);
 }
 @keyframes duelSpeechParola {
     from { opacity: 0; transform: translateY(5px); filter: blur(2px); }
     to { opacity: 1; transform: none; filter: none; }
 }
-/* Il nome scivola dentro un istante prima del testo. */
-.duel-speech.is-visible .duel-speech__nome { animation: duelSpeechNome .3s ease-out .06s both; }
+.duel-speech.is-visible .duel-speech__nome { animation: duelSpeechNome .34s ease-out .08s both; }
 @keyframes duelSpeechNome {
-    from { opacity: 0; transform: translateX(-8px); letter-spacing: .3em; }
+    from { opacity: 0; transform: translateX(-8px); letter-spacing: .34em; }
     to { opacity: 1; transform: none; }
 }
-/* Battuta speciale: il bagliore dorato respira finché resta a schermo. */
-.duel-speech.is-special.is-visible {
-    animation:
-        duelSpeechEntra .5s cubic-bezier(.3, 1.45, .55, 1) both,
-        duelSpeechFluttua 3.2s ease-in-out .5s infinite,
-        duelSpeechBagliore 1.6s ease-in-out .5s infinite;
-}
-.duel-speech--player.is-special.is-visible { animation-name: duelSpeechEntraSu, duelSpeechFluttua, duelSpeechBagliore; }
-@keyframes duelSpeechBagliore {
-    0%, 100% { filter: drop-shadow(0 0 0 rgba(255, 211, 75, 0)); }
-    50% { filter: drop-shadow(0 0 10px rgba(255, 211, 75, .45)); }
-}
 
+/* Battuta speciale (Evocazione della carta simbolo): lastra dorata,
+   cornice più accesa, testo più grande e un bagliore che respira. */
 .duel-speech.is-special {
     --lato: #f7d774;
-    --lato-tenue: rgba(247, 215, 116, .22);
+    --lato-tenue: rgba(247, 215, 116, .32);
     color: #fff8dc;
-    box-shadow:
-        inset 0 0 0 1px rgba(255, 236, 160, .75),
-        inset 3px 0 0 var(--lato),
-        0 0 26px rgba(255, 211, 75, .32),
-        0 12px 30px rgba(0, 0, 0, .6);
+    max-width: min(360px, 42vw);
 }
-.duel-speech.is-special .duel-speech__testo { font-family: Georgia, 'Times New Roman', serif; font-size: clamp(.85rem, 1.3vw, 1.05rem); }
-/* Riflesso che attraversa la battuta speciale una volta. */
 .duel-speech.is-special::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: linear-gradient(105deg, transparent 35%, rgba(255, 240, 180, .28) 50%, transparent 65%);
-    background-size: 250% 100%;
-    background-position: 120% 0;
-    pointer-events: none;
+    background: linear-gradient(125deg, #fffbe0 0%, #f1c95a 25%, #9a6d1e 48%, #ffe08a 72%, #b8862a 88%, #fff4c4 100%);
 }
-.duel-speech.is-special.is-visible::before { animation: duelSpeechRiflesso 1.1s ease .15s 1 both; }
-@keyframes duelSpeechRiflesso {
-    from { background-position: 120% 0; }
-    to { background-position: -40% 0; }
+.duel-speech.is-special .duel-speech__testo { font-size: clamp(.9rem, 1.35vw, 1.1rem); }
+.duel-speech.is-special .duel-speech__lastra::after {
+    background-image: linear-gradient(105deg, transparent 36%, rgba(255, 240, 180, .38) 50%, transparent 64%);
+}
+.duel-speech.is-special.is-visible {
+    animation:
+        duelSpeechEntra .46s cubic-bezier(.16, .9, .3, 1) both,
+        duelSpeechFluttua 3.4s ease-in-out .5s infinite,
+        duelSpeechBagliore 1.7s ease-in-out .5s infinite;
+}
+.duel-speech--player.is-special.is-visible { animation-name: duelSpeechEntraSu, duelSpeechFluttua, duelSpeechBagliore; }
+/* Il filter qui sostituisce quello di base: l'ombra va ripetuta. */
+@keyframes duelSpeechBagliore {
+    0%, 100% { filter: var(--ombra) drop-shadow(0 0 4px rgba(255, 211, 75, .25)); }
+    50% { filter: var(--ombra) drop-shadow(0 0 14px rgba(255, 211, 75, .6)); }
 }
 
 @media (max-width: 600px) {
     .duel-speech {
-        max-width: min(230px, 58vw);
-        padding: 7px 12px 10px;
-        border-radius: 11px;
+        --smusso: 9px;
+        max-width: min(240px, 60vw);
+        padding: 8px 14px 10px 12px;
     }
-    .duel-speech__testo { font-size: .74rem; }
-    .duel-speech__nome { font-size: .52rem; }
+    .duel-speech__testo { font-size: .78rem; }
+    .duel-speech.is-special .duel-speech__testo { font-size: .84rem; }
+    .duel-speech__nome { font-size: .56rem; }
 }
 
-/* Telefono in verticale: sopra la plancia del giocatore c'è la sua mano e
-   sotto quella del bot la mano avversaria, quindi lì il fumetto coprirebbe
-   le carte. Va invece DI LATO al pannello, nella stessa riga, dove lo
-   spazio è vuoto (a sinistra della plancia del giocatore, a destra di
-   quella del bot). La codina si sposta sul lato corrispondente. */
+/* Telefono in verticale.
+   - Giocatore: sopra la sua plancia c'è la sua mano, che il fumetto
+     coprirebbe proprio mentre si sceglie cosa giocare. Va DI LATO, a
+     sinistra della plancia, dove la riga è vuota; codina a destra.
+   - Bot: di lato non c'è più posto, l'angolo in alto a destra è occupato da
+     tempo, turno e livello (misurato: il fumetto ci finiva sopra per 80px).
+     Va quindi SOTTO la plancia, sopra la mano avversaria: per qualche
+     secondo copre carte coperte, che non dicono nulla. Codina in alto. */
 @media (orientation: portrait) and (max-width: 600px) {
-    .duel-speech { max-width: calc(100vw - 210px); min-width: 120px; }
+    .duel-speech--player,
+    .duel-speech--player.is-special { max-width: calc(100vw - 210px); min-width: 120px; }
     .duel-speech--player { bottom: 0; right: calc(100% + 16px); transform: translateX(-8px) scale(.94); }
-    .duel-speech--player::after { bottom: 14px; right: -6px; transform: rotate(135deg); }
-    .duel-speech--bot { top: 0; left: calc(100% + 16px); z-index: 16; transform: translateX(8px) scale(.94); }
-    .duel-speech--bot::after { top: 14px; left: -6px; transform: rotate(-45deg); }
+    .duel-speech--player::after { bottom: 12px; right: -8px; width: 9px; height: 16px; clip-path: polygon(0 0, 100% 50%, 0 100%); }
+    .duel-speech--bot,
+    .duel-speech--bot.is-special { max-width: min(300px, calc(100vw - 32px)); }
+    .duel-speech--bot { top: calc(100% + 12px); left: 0; z-index: 16; }
     .duel-speech.is-visible { transform: none; }
-    /* La riga dell'avatar è bassa (~60px): oltre, il fumetto del bot
-       scende sulla sua mano. Niente nome (la tinta del lato basta a dire chi
-       parla) e al massimo tre righe di testo. */
-    .duel-speech { padding: 6px 10px 9px; }
+    /* Niente nome (la tinta del lato basta a dire chi parla) e al massimo
+       tre righe di testo: il fumetto del giocatore sta in una riga bassa. */
+    .duel-speech { padding: 6px 11px 8px 10px; }
     .duel-speech__nome { display: none; }
     .duel-speech__testo,
     .duel-speech.is-special .duel-speech__testo {
-        font-size: .7rem;
+        font-size: .72rem;
         line-height: 1.25;
         display: -webkit-box;
         -webkit-line-clamp: 3;
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
-    .duel-speech__tempo { left: 10px; right: 10px; bottom: 4px; }
+    .duel-speech__testo::before { font-size: 1.6em; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -229,7 +270,6 @@
     .duel-speech.is-visible,
     .duel-speech.is-special.is-visible,
     .duel-speech.is-visible .duel-speech__nome,
-    .duel-speech.is-visible .duel-speech__tempo,
-    .duel-speech.is-special.is-visible::before { animation: none; }
+    .duel-speech.is-visible .duel-speech__lastra::after { animation: none; }
     .duel-speech.is-visible .duel-speech__parola { animation: none; opacity: 1; }
 }
