@@ -1712,6 +1712,13 @@
     // ================================================================
     CardEffects.register(382, {
         onAttackDeclare(ctx) {
+            if (window.FX && typeof FX.playMirrorForce === 'function') {
+                const attackIndices = [];
+                ctx.field(ctx.opponent).forEach((slot, index) => {
+                    if (slot && !slot.isFaceDown && slot.position === 'attack') attackIndices.push(index);
+                });
+                FX.playMirrorForce(ctx.opponent, attackIndices);
+            }
             let count = 0;
             ctx.field(ctx.opponent).forEach((slot, index) => {
                 if (slot && !slot.isFaceDown && slot.position === 'attack') {
@@ -2853,6 +2860,9 @@
     // ================================================================
     CardEffects.register(490, {
         onOpponentSummon(ctx) {
+            if (window.FX && typeof FX.playTorrentialTribute === 'function') {
+                FX.playTorrentialTribute();
+            }
             ctx.destroyAllMonsters();
             ctx.log(`🌊 Tributo Torrenziale distrugge tutti i mostri sul Terreno!`);
         }

@@ -1243,6 +1243,13 @@
     // ================================================================
     CardEffects.register(10, {
         onAttackDeclare(ctx) {
+            // La regola resta sincrona: resolveAttack deve vedere subito
+            // l'attacco annullato. La scena usa soltanto le coordinate già
+            // presenti e può terminare mentre il motore è correttamente
+            // fermo sul risultato della Trappola.
+            if (window.FX && typeof FX.playMagicCylinder === 'function') {
+                FX.playMagicCylinder(ctx.opponent, ctx.attackerIndex, ctx.opponent, ctx.attackerAtk);
+            }
             ctx.cancelAttack();
             ctx.dealDamage(ctx.opponent, ctx.attackerAtk);
             ctx.log(`🌀 Cilindro Magico rimanda l'attacco al mittente: ${ctx.attackerAtk} danni!`);
@@ -1357,6 +1364,9 @@
             ctx.declareTargetWaiting(ctx.opponent, ctx.summonedSlotIndex, { totalTargetCount: 1 }, (decl) => {
                 if (!decl.allowed) return;
                 const target = ctx.field(decl.targetOwner)[decl.targetIndex];
+                if (window.FX && typeof FX.playTrapHole === 'function') {
+                    FX.playTrapHole(decl.targetOwner, decl.targetIndex, target && target.card);
+                }
                 ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
                 ctx.log(`🕳️ Buco Trappola distrugge ${target ? target.card.name : ctx.summonedCard.name}!`);
             });
@@ -1432,19 +1442,26 @@
                     ctx.log('⚠️ Il Terreno è pieno: impossibile eseguire la Special Summon.');
                     return;
                 }
-                // Ritrova la carta per uid: la scelta è asincrona, l'array
-                // del Cimitero potrebbe essere cambiato nel frattempo.
-                const gy = ctx.graveyard(choice.graveyardOwner);
-                const realIndex = gy.findIndex((c) => c.uid === choice.card.uid);
-                if (realIndex === -1) return;
-                // Controllo qui e non solo in specialSummon: quello guarda il
-                // Cimitero di chi EVOCA, e qui la carta può venire da quello
-                // dell'avversario (lì, bloccata, finirebbe nel Cimitero
-                // sbagliato).
-                if (ctx.graveyardMoveNegated(choice.graveyardOwner)) return;
-                gy.splice(realIndex, 1);
-                ctx.specialSummon(owner, choice.card, slotIndex, position, 'graveyard');
-                ctx.log(`🌟 Rinascita del Mostro riporta in campo ${choice.card.name} in Posizione di ${position === 'attack' ? 'Attacco' : 'Difesa'}!`);
+                const resolveRevival = () => {
+                    // Ritrova la carta per uid DOPO la cinematica: durante
+                    // una scelta asincrona il Cimitero può essere cambiato.
+                    const gy = ctx.graveyard(choice.graveyardOwner);
+                    const realIndex = gy.findIndex((c) => c.uid === choice.card.uid);
+                    if (realIndex === -1) return;
+                    // Controllo qui e non solo in specialSummon: quello guarda il
+                    // Cimitero di chi EVOCA, e qui la carta può venire da quello
+                    // dell'avversario (lì, bloccata, finirebbe nel Cimitero
+                    // sbagliato).
+                    if (ctx.graveyardMoveNegated(choice.graveyardOwner)) return;
+                    gy.splice(realIndex, 1);
+                    ctx.specialSummon(owner, choice.card, slotIndex, position, 'graveyard');
+                    ctx.log(`🌟 Rinascita del Mostro riporta in campo ${choice.card.name} in Posizione di ${position === 'attack' ? 'Attacco' : 'Difesa'}!`);
+                };
+                if (window.FX && typeof FX.playMonsterReborn === 'function') {
+                    FX.playMonsterReborn(choice.graveyardOwner, choice.card, owner, slotIndex, resolveRevival);
+                } else {
+                    resolveRevival();
+                }
             };
             if (!Decisioni.rispondeUnaPersona(owner)) {
                 let best = candidates[0];

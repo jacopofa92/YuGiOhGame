@@ -847,6 +847,24 @@ Rifinitura successiva:
   risucchio piu' lungo, frequenze discendenti e impatto finale;
 - guardrail: `tests/specs/dark-hole-vortex-revamp.spec.js`.
 
+## Cinematiche delle carte iconiche
+
+- Forza dello Specchio (`382`) innalza uno specchio in prospettiva e riflette
+  raggi esclusivamente verso gli slot dei mostri in Attacco che la regola
+  distrugge; la distruzione resta sincrona per fermare subito la battaglia;
+- Cilindro Magico (`10`) apre due cilindri viola, assorbe il colpo e lo devia
+  verso i Life Point dell'attaccante mostrando il danno restituito;
+- Rinascita del Mostro (`35`) è sincronizzata alla regola: il mostro rimane
+  davvero nel Cimitero mentre emerge dal portale sotto un Ankh verde e viene
+  Special Summonato soltanto alla callback d'impatto;
+- Buco Trappola (`40`) apre una voragine prospettica nello slot bersaglio e
+  vi lascia cadere una copia grafica del mostro; Tributo Torrenziale (`490`)
+  attraversa entrambi i Terreni con due fronti d'acqua e schiuma;
+- tutte le scene sono puramente DOM/CSS, bloccano transizioni e bot tramite
+  `FX.isCinematicPlaying()`, rispettano `prefers-reduced-motion` e liberano
+  sempre il contatore al termine. La cache visibile è `v198`;
+- guardrail: `tests/specs/cinematiche-carte-iconiche.spec.js`.
+
 ## Cinematica Evocazione Fusione
 
 - `DuelEngine.actions.fusionSummon()` fotografa i materiali realmente scelti

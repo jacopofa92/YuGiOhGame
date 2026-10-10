@@ -20,6 +20,11 @@
  *   FX.playSwordsOfRevealingLight(owner)
  *   FX.playRaigeki(owner, onImpact)
  *   FX.playDarkHoleVortex(sucked)
+ *   FX.playMirrorForce(attackerOwner)
+ *   FX.playMagicCylinder(attackerOwner, attackerIndex, damagedOwner, damage)
+ *   FX.playMonsterReborn(graveyardOwner, card, targetOwner, targetIndex, onImpact)
+ *   FX.playTrapHole(owner, index, card)
+ *   FX.playTorrentialTribute()
  *   FX.playTributeSacrifice(cardElement)
  *   FX.spawnParticles(x, y, opts)
  */
@@ -737,6 +742,181 @@
         };
         setTimeout(impact, 1050);
         return 1570;
+    }
+
+    /**
+     * Forza dello Specchio: una lastra in prospettiva nasce davanti al
+     * difensore e rimanda cinque raggi verso i mostri in Attacco. La
+     * regola distrugge le carte subito: qui si usano solo rettangoli DOM
+     * fotografati all'inizio, quindi il disegno non può alterare il duello.
+     */
+    function playMirrorForce(attackerOwner, attackIndices) {
+        const boardId = attackerOwner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+        const allowed = Array.isArray(attackIndices) ? new Set(attackIndices.map(Number)) : null;
+        const targets = Array.from(document.querySelectorAll(`#${boardId} .field-slot[data-owner="${attackerOwner}"][data-type="monster"]`))
+            .filter((slot) => !allowed || allowed.has(Number(slot.dataset.index)))
+            .map((slot) => slot.querySelector('.card')).filter(Boolean)
+            .map((el) => el.getBoundingClientRect()).filter((rect) => rect.width);
+        if (!targets.length) return 0;
+        beginSummonCinematic();
+        const scene = document.createElement('div');
+        scene.className = 'fx-mirror-force' + (attackerOwner === 'player' ? ' fx-mirror-force--bottom' : '');
+        scene.setAttribute('aria-hidden', 'true');
+        scene.innerHTML = '<div class="fx-mirror-force-shade"></div><div class="fx-mirror-disc"><i></i><b></b></div>';
+        document.body.appendChild(scene);
+        const mirrorX = window.innerWidth / 2;
+        const mirrorY = attackerOwner === 'player' ? window.innerHeight * 0.69 : window.innerHeight * 0.31;
+        targets.forEach((rect, index) => {
+            const ray = document.createElement('span');
+            ray.className = 'fx-mirror-ray';
+            const x = rect.left + rect.width / 2;
+            const y = rect.top + rect.height / 2;
+            const dx = x - mirrorX;
+            const dy = y - mirrorY;
+            ray.style.setProperty('--ray-length', `${Math.hypot(dx, dy)}px`);
+            ray.style.setProperty('--ray-angle', `${Math.atan2(dy, dx) * 180 / Math.PI}deg`);
+            ray.style.setProperty('--ray-delay', `${360 + index * 55}ms`);
+            scene.appendChild(ray);
+        });
+        if (window.SFX && typeof SFX.activateTrap === 'function') SFX.activateTrap();
+        setTimeout(() => {
+            scene.remove();
+            endSummonCinematic();
+        }, 1550);
+        return 1550;
+    }
+
+    /** Cilindro Magico: due portali inclinati deviano il colpo verso i LP. */
+    function playMagicCylinder(attackerOwner, attackerIndex, damagedOwner, damage) {
+        const boardId = attackerOwner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+        const attacker = document.querySelector(`#${boardId} .field-slot[data-owner="${attackerOwner}"][data-type="monster"][data-index="${attackerIndex}"] .card`);
+        const damageAnchor = document.querySelector(damagedOwner === 'player' ? '#playerInfo' : '#botInfo');
+        if (!attacker || !damageAnchor) return 0;
+        beginSummonCinematic();
+        const from = centerOf(attacker);
+        const to = centerOf(damageAnchor);
+        const scene = document.createElement('div');
+        scene.className = 'fx-magic-cylinder';
+        scene.setAttribute('aria-hidden', 'true');
+        scene.innerHTML = '<i class="fx-cylinder fx-cylinder--in"></i><i class="fx-cylinder fx-cylinder--out"></i><b class="fx-cylinder-beam fx-cylinder-beam--in"></b><b class="fx-cylinder-beam fx-cylinder-beam--out"></b><strong></strong>';
+        const entrance = { x: from.x + (to.x - from.x) * 0.34, y: from.y + (to.y - from.y) * 0.22 };
+        const exit = { x: from.x + (to.x - from.x) * 0.68, y: from.y + (to.y - from.y) * 0.66 };
+        const placeBeam = (el, a, b) => {
+            const dx = b.x - a.x;
+            const dy = b.y - a.y;
+            Object.assign(el.style, { left: `${a.x}px`, top: `${a.y}px`, width: `${Math.hypot(dx, dy)}px`, transform: `rotate(${Math.atan2(dy, dx) * 180 / Math.PI}deg)` });
+        };
+        const cylinders = scene.querySelectorAll('.fx-cylinder');
+        Object.assign(cylinders[0].style, { left: `${entrance.x}px`, top: `${entrance.y}px` });
+        Object.assign(cylinders[1].style, { left: `${exit.x}px`, top: `${exit.y}px` });
+        placeBeam(scene.querySelector('.fx-cylinder-beam--in'), { x: from.x, y: from.y }, entrance);
+        placeBeam(scene.querySelector('.fx-cylinder-beam--out'), exit, { x: to.x, y: to.y });
+        const label = scene.querySelector('strong');
+        label.textContent = damage ? `-${damage} LP` : '';
+        Object.assign(label.style, { left: `${to.x}px`, top: `${to.y}px` });
+        document.body.appendChild(scene);
+        if (window.SFX && typeof SFX.directHit === 'function') setTimeout(() => SFX.directHit(), 620);
+        setTimeout(() => {
+            scene.remove();
+            endSummonCinematic();
+        }, 1700);
+        return 1700;
+    }
+
+    /**
+     * Rinascita del Mostro è l'unica delle cinque che precede davvero la
+     * mutazione: onImpact inserisce il mostro solo quando l'Ankh ha finito
+     * di estrarlo dal Cimitero. La callback è idempotente e ha una rete di
+     * sicurezza interna, così un errore decorativo non blocca l'Evocazione.
+     */
+    function playMonsterReborn(graveyardOwner, card, targetOwner, targetIndex, onImpact) {
+        const targetBoard = targetOwner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+        const target = document.querySelector(`#${targetBoard} .field-slot[data-owner="${targetOwner}"][data-type="monster"][data-index="${targetIndex}"]`);
+        if (!target || typeof window.createCardElement !== 'function') {
+            if (typeof onImpact === 'function') onImpact();
+            return 0;
+        }
+        beginSummonCinematic();
+        const targetRect = target.getBoundingClientRect();
+        const graveRect = zoneRect(graveyardOwner, 'graveyard');
+        const startX = graveRect ? graveRect.left + graveRect.width / 2 : window.innerWidth / 2;
+        const startY = graveRect ? graveRect.top + graveRect.height / 2 : window.innerHeight / 2;
+        const endX = targetRect.left + targetRect.width / 2;
+        const endY = targetRect.top + targetRect.height / 2;
+        const scene = document.createElement('div');
+        scene.className = 'fx-monster-reborn';
+        scene.setAttribute('aria-hidden', 'true');
+        scene.innerHTML = '<div class="fx-reborn-darkness"></div><div class="fx-reborn-ankh"><i></i><b></b></div><div class="fx-reborn-portal"></div>';
+        const ankh = scene.querySelector('.fx-reborn-ankh');
+        Object.assign(ankh.style, { left: `${endX}px`, top: `${endY}px` });
+        const portal = scene.querySelector('.fx-reborn-portal');
+        Object.assign(portal.style, { left: `${startX}px`, top: `${startY}px` });
+        const ghost = createCardElement(card);
+        ghost.classList.add('fx-reborn-card');
+        Object.assign(ghost.style, {
+            '--reborn-x': `${startX}px`, '--reborn-y': `${startY}px`,
+            '--reborn-end-x': `${endX}px`, '--reborn-end-y': `${endY}px`,
+            width: `${Math.max(52, targetRect.width)}px`
+        });
+        scene.appendChild(ghost);
+        document.body.appendChild(scene);
+        if (window.SFX && typeof SFX.summon === 'function') SFX.summon('attack');
+        let resolved = false;
+        const impact = () => {
+            if (resolved) return;
+            resolved = true;
+            if (typeof onImpact === 'function') onImpact();
+        };
+        setTimeout(impact, 1120);
+        setTimeout(() => {
+            impact();
+            scene.remove();
+            endSummonCinematic();
+        }, 1900);
+        return 1900;
+    }
+
+    /** Buco Trappola: lo slot si inclina e il mostro cade in una voragine. */
+    function playTrapHole(owner, index, card) {
+        const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+        const slot = document.querySelector(`#${boardId} .field-slot[data-owner="${owner}"][data-type="monster"][data-index="${index}"]`);
+        const rect = slot && slot.getBoundingClientRect();
+        if (!rect || !rect.width) return 0;
+        beginSummonCinematic();
+        const pit = document.createElement('div');
+        pit.className = 'fx-trap-hole';
+        Object.assign(pit.style, { left: `${rect.left + rect.width / 2}px`, top: `${rect.top + rect.height * 0.72}px`, width: `${rect.width * 1.65}px`, height: `${rect.height * 0.62}px` });
+        pit.innerHTML = '<i></i><b></b>';
+        document.body.appendChild(pit);
+        if (card && typeof window.createCardElement === 'function') {
+            const ghost = createCardElement(card);
+            ghost.classList.add('fx-trap-hole-card');
+            Object.assign(ghost.style, { left: `${rect.left}px`, top: `${rect.top}px`, width: `${rect.width}px`, height: `${rect.height}px` });
+            document.body.appendChild(ghost);
+            setTimeout(() => ghost.remove(), 1350);
+        }
+        if (window.SFX && typeof SFX.destroy === 'function') setTimeout(() => SFX.destroy(), 570);
+        setTimeout(() => {
+            pit.remove();
+            endSummonCinematic();
+        }, 1450);
+        return 1450;
+    }
+
+    /** Tributo Torrenziale: un fronte d'acqua attraversa entrambi i campi. */
+    function playTorrentialTribute() {
+        beginSummonCinematic();
+        const scene = document.createElement('div');
+        scene.className = 'fx-torrential';
+        scene.setAttribute('aria-hidden', 'true');
+        scene.innerHTML = '<div class="fx-torrential-dim"></div><div class="fx-torrential-wave fx-torrential-wave--back"></div><div class="fx-torrential-wave fx-torrential-wave--front"></div><div class="fx-torrential-foam"></div>';
+        document.body.appendChild(scene);
+        if (window.SFX && typeof SFX.destroy === 'function') setTimeout(() => SFX.destroy(), 720);
+        setTimeout(() => {
+            scene.remove();
+            endSummonCinematic();
+        }, 1800);
+        return 1800;
     }
 
     /**
@@ -1730,6 +1910,11 @@
         playDrawEffect: viaBackend('playDrawEffect', playDrawEffect),
         playRaigeki: raigekiWithSafetyNet,
         playDarkHoleVortex: viaBackend('playDarkHoleVortex', playDarkHoleVortex),
+        playMirrorForce,
+        playMagicCylinder,
+        playMonsterReborn,
+        playTrapHole,
+        playTorrentialTribute,
         playCoinFlip: viaBackend('playCoinFlip', playCoinFlip),
         playDiceRoll: viaBackend('playDiceRoll', playDiceRoll),
         // ATTENZIONE per chi scrivera' un backend per questa: i chiamanti

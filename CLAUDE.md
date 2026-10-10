@@ -4219,3 +4219,14 @@ genericamente gli effetti continui ripetibili, il playbook di Labyrinth
 prepara Muro scoperto in Difesa e Giltia è stato rimosso soltanto dai tre
 deck di Labyrinth Mage. Il futuro set di regole PS1 resta un'attività
 separata: questo audit riguarda i deck dentro l'attuale Duel Monsters.
+
+### Cinque cinematiche di carte iconiche (2026-10-10)
+
+`js/ui/effects.js` e `effects.css` espongono ora scene dedicate per Forza
+dello Specchio, Cilindro Magico, Rinascita del Mostro, Buco Trappola e
+Tributo Torrenziale. Le Trappole applicano la regola subito e animano una
+fotografia DOM: ritardarle romperebbe la continuazione di dichiarazione
+d'attacco/Evocazione. Rinascita è l'eccezione deliberata: la callback
+dell'Ankh precede la vera rimozione dal Cimitero e la Special Summon, con
+fallback immediato quando FX/UI non esistono. Lo spec
+`cinematiche-carte-iconiche` verifica regola, DOM e rilascio del lock.
