@@ -180,12 +180,9 @@
         return lines[index];
     }
 
-    // Il fumetto è una targa: la lastra scura dentro la cornice d'oro (un
-    // elemento a sé, perché la cornice è il ::before e la codina il ::after),
-    // chi parla e la battuta. Costruito una volta per lato e riusato: il
-    // testo cambia a ogni battuta.
-    // Niente barra del tempo: l'utente l'ha tolta, faceva "popup da
-    // gestionale".
+    // La battuta è un sottotitolo: chi parla e cosa dice, su una fascia
+    // scura che sfuma (vedi duel-dialogues.css). Costruito una volta per
+    // lato e riusato: il testo cambia a ogni battuta.
     function bubble(owner) {
         const box = document.getElementById(owner === 'bot' ? 'botInfo' : 'playerInfo');
         if (!box) return null;
@@ -195,8 +192,7 @@
             el.className = 'duel-speech duel-speech--' + owner;
             el.setAttribute('role', 'status');
             el.setAttribute('aria-live', 'polite');
-            el.innerHTML = '<i class="duel-speech__lastra" aria-hidden="true"></i>'
-                + '<span class="duel-speech__nome"></span>'
+            el.innerHTML = '<span class="duel-speech__nome"></span>'
                 + '<span class="duel-speech__testo"></span>';
             box.appendChild(el);
         }
