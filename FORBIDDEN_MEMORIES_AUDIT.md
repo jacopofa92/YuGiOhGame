@@ -90,4 +90,3 @@ Su 100 duelli per livello, il registro completo conferma che l'IA realizza:
 Sono linee secondarie rare, come è corretto per combinazioni che richiedono
 più carte specifiche; non sono carte morte. Labyrinth Mage non viene contato
 qui perché Wall Shadow è una Special Summon dal Deck, non una Fusione.
-
