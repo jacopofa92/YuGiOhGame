@@ -1802,13 +1802,70 @@
 @keyframes fxTorrentialWave { 0% { transform:translateY(110vh) rotateX(52deg) scaleY(.25); } 58% { transform:translateY(24vh) rotateX(34deg) scaleY(1.1); } 100% { transform:translateY(-62vh) rotateX(16deg) scaleY(.7); opacity:0; } }
 @keyframes fxTorrentialFoam { 0% { transform:translateY(105%); opacity:0; } 35% { opacity:1; } 100% { transform:translateY(-80%); opacity:0; } }
 
+/* Anello della Distruzione */
+.fx-destruction-ring { position:fixed; inset:0; z-index:10061; pointer-events:none; overflow:hidden; }
+.fx-ring-dim { position:absolute; inset:0; background:radial-gradient(circle,transparent,rgba(22,0,0,.72)); animation:fxIconicShade 1.7s ease-in-out forwards; }
+.fx-ring-collar {
+    position:absolute; transform:translate(-50%,-50%) rotateX(64deg) scale(.08);
+    border:clamp(8px,1vw,15px) solid #4a3b36; border-radius:50%;
+    box-shadow:inset 0 0 15px #000,0 0 8px #ffb36c,0 0 34px rgba(255,49,28,.86);
+    background:radial-gradient(circle,transparent 48%,rgba(255,68,32,.22) 52%,transparent 67%);
+    animation:fxRingClamp 1.65s cubic-bezier(.16,.8,.24,1) forwards;
+}
+.fx-ring-collar i { position:absolute; left:50%; top:50%; width:19%; aspect-ratio:.82; transform-origin:50% 220%; border-radius:45% 45% 28% 28%; background:linear-gradient(90deg,#351817,#c75b32 45%,#ffd17e 52%,#59201a); border:2px solid #2a1110; box-shadow:0 0 10px #ff4a25; }
+.fx-ring-collar i:nth-child(1){transform:translate(-50%,-220%) rotate(0)} .fx-ring-collar i:nth-child(2){transform:translate(-50%,-220%) rotate(60deg)} .fx-ring-collar i:nth-child(3){transform:translate(-50%,-220%) rotate(120deg)} .fx-ring-collar i:nth-child(4){transform:translate(-50%,-220%) rotate(180deg)} .fx-ring-collar i:nth-child(5){transform:translate(-50%,-220%) rotate(240deg)} .fx-ring-collar i:nth-child(6){transform:translate(-50%,-220%) rotate(300deg)}
+.fx-ring-collar b { position:absolute; inset:31%; border-radius:50%; background:#fff1c7; box-shadow:0 0 18px #fff,0 0 48px 22px #ff4328; opacity:0; animation:fxRingCore .55s ease-out .62s forwards; }
+.fx-ring-damage { position:absolute; top:18%; color:#ffd6bb; font:900 clamp(1rem,2.5vw,2rem) Georgia,serif; text-shadow:0 0 8px #fff,0 0 24px #ff4328,0 3px 7px #000; opacity:0; animation:fxRingDamage .8s ease-out .78s forwards; }
+.fx-ring-damage--player{right:8%}.fx-ring-damage--bot{left:8%}
+@keyframes fxRingClamp { 0%{opacity:0;transform:translate(-50%,-50%) rotateX(76deg) scale(.08)} 30%,62%{opacity:1;transform:translate(-50%,-50%) rotateX(56deg) scale(1)} 68%{filter:brightness(3)} 100%{opacity:0;transform:translate(-50%,-50%) rotateX(68deg) scale(1.5)} }
+@keyframes fxRingCore { 0%{opacity:0;scale:.1} 30%{opacity:1;scale:1} 100%{opacity:0;scale:2.4} }
+@keyframes fxRingDamage { 0%{opacity:0;transform:scale(.4)} 30%{opacity:1;transform:scale(1.2)} 100%{opacity:0;transform:translateY(-25px)} }
+
+/* Tempesta Pesante */
+.fx-heavy-storm { position:fixed; inset:0; z-index:10060; pointer-events:none; overflow:hidden; background:linear-gradient(180deg,rgba(5,10,18,.78),rgba(37,31,27,.34),rgba(5,10,18,.72)); animation:fxHeavyDim 1.8s ease-in-out forwards; }
+.fx-heavy-clouds { position:absolute; inset:-30% -20%; background:repeating-radial-gradient(ellipse at 20% 50%,rgba(185,196,205,.62) 0 3%,rgba(32,42,52,.8) 8%,transparent 18% 27%); filter:blur(9px); animation:fxHeavyClouds 1.8s linear forwards; }
+.fx-heavy-gust { position:absolute; left:-30%; width:160%; height:24%; border-radius:50%; border-top:clamp(8px,1.5vw,22px) solid rgba(235,245,247,.84); box-shadow:0 -10px 24px rgba(170,213,230,.65); filter:blur(2px); transform:rotate(-7deg); animation:fxHeavyGust 1.25s cubic-bezier(.22,.7,.22,1) forwards; }
+.fx-heavy-gust--a{top:31%}.fx-heavy-gust--b{top:61%;animation-delay:160ms;transform:rotate(6deg) scaleX(-1)}
+.fx-heavy-debris i { position:absolute; width:clamp(30px,4vw,70px); height:5px; background:linear-gradient(90deg,transparent,#e6f5f8,transparent); box-shadow:0 0 9px #bcecff; animation:fxHeavyDebris 1.35s ease-in forwards; }
+.fx-heavy-debris i:nth-child(1){left:8%;top:35%}.fx-heavy-debris i:nth-child(2){left:24%;top:62%;animation-delay:90ms}.fx-heavy-debris i:nth-child(3){left:43%;top:42%;animation-delay:180ms}.fx-heavy-debris i:nth-child(4){left:59%;top:67%;animation-delay:40ms}.fx-heavy-debris i:nth-child(5){left:74%;top:33%;animation-delay:140ms}.fx-heavy-debris i:nth-child(6){left:88%;top:56%;animation-delay:230ms}
+@keyframes fxHeavyDim{0%,100%{opacity:0}14%,76%{opacity:1}} @keyframes fxHeavyClouds{from{transform:translateX(-18%) rotate(-3deg)}to{transform:translateX(18%) rotate(4deg)}}
+@keyframes fxHeavyGust{0%{opacity:0;translate:-80% 30%;scale:.5}35%{opacity:1}100%{opacity:0;translate:75% -24%;scale:1.25}}
+@keyframes fxHeavyDebris{0%{opacity:0;transform:translate(-20vw,12vh) rotate(0)}20%{opacity:1}100%{opacity:0;transform:translate(45vw,-28vh) rotate(570deg)}}
+
+/* Tifone dello Spazio Mistico: implosione, non la folata marrone di Tornado. */
+.fx-mst-vortex { position:fixed; z-index:10062; pointer-events:none; transform:translate(-50%,-50%) scale(.08); border-radius:50%; background:conic-gradient(from 10deg,#0f0a32,#58c5ff,#fff,#7752eb,#08102f,#58c5ff,#0f0a32); box-shadow:0 0 25px #bff3ff,0 0 70px #5739dd; animation:fxMstCollapse 1.34s cubic-bezier(.16,.78,.2,1) forwards; }
+.fx-mst-vortex::before{content:'';position:absolute;inset:18%;border-radius:50%;background:#02030d;box-shadow:inset 0 0 25px #000,0 0 18px #a9edff}
+.fx-mst-vortex i{position:absolute;inset:7%;border-radius:50%;border:3px solid rgba(198,244,255,.8);border-left-color:transparent;animation:fxMirrorSpin .48s linear infinite}
+.fx-mst-vortex i:nth-child(2){inset:25%;animation-direction:reverse}.fx-mst-vortex i:nth-child(3){inset:-13%;border-style:dashed;animation-duration:.8s}
+.fx-mst-vortex b{position:absolute;inset:42%;border-radius:50%;background:#fff;box-shadow:0 0 22px 12px #72d9ff;animation:fxMstCore .65s ease-in .48s forwards}.fx-mst-vortex span{position:absolute;inset:-40%;background:repeating-conic-gradient(transparent 0 16deg,rgba(123,213,255,.72) 18deg 20deg,transparent 22deg 38deg);animation:fxMirrorSpin 1.1s linear infinite}
+@keyframes fxMstCollapse{0%{opacity:0;transform:translate(-50%,-50%) scale(.08) rotateX(64deg)}25%,58%{opacity:1;transform:translate(-50%,-50%) scale(1) rotateX(58deg)}82%{opacity:1;transform:translate(-50%,-50%) scale(.12) rotateX(72deg);filter:brightness(3)}100%{opacity:0;transform:translate(-50%,-50%) scale(0)}}
+@keyframes fxMstCore{to{scale:3;opacity:0}}
+
+/* Cambio di Cuore / Controllo Mentale */
+.fx-control-mark { position:fixed; z-index:10062; pointer-events:none; transform:translate(-50%,-55%) scale(.1); filter:drop-shadow(0 0 12px #fff) drop-shadow(0 0 30px #da61ff); animation:fxControlMark 1.22s cubic-bezier(.16,.8,.22,1) forwards; }
+.fx-control-mark b{position:absolute;inset:-25%;border-radius:50%;background:repeating-conic-gradient(transparent 0 20deg,rgba(224,122,255,.55) 22deg 25deg,transparent 27deg 48deg);animation:fxMirrorSpin 1.2s linear infinite}
+.fx-heart-half{position:absolute;top:12%;width:50%;height:70%;background:#fff;clip-path:polygon(50% 95%,8% 52%,0 27%,8% 8%,27% 0,50% 13%,73% 0,92% 8%,100% 27%,92% 52%)}
+.fx-heart-half--light{left:8%;background:linear-gradient(135deg,#fff,#ff8fc7);clip-path:polygon(0 0,100% 0,100% 100%,0 100%)}.fx-heart-half--dark{right:8%;background:linear-gradient(225deg,#321052,#a451e0);clip-path:polygon(0 0,100% 0,100% 100%,0 100%)}
+.fx-control-eye{position:absolute;inset:18% 6%;border-radius:55% 8%;transform:rotate(45deg);background:radial-gradient(circle,#fff 0 8%,#ca7dff 10% 22%,#13031f 24% 37%,#ad5be3 39% 58%,transparent 60%);border:3px solid #f2c8ff;box-shadow:0 0 22px #bc57ff}.fx-control-orbit{position:absolute;inset:2%;border:2px dashed #e8c4ff;border-radius:50%;animation:fxMirrorSpin .8s linear infinite}
+@keyframes fxControlMark{0%{opacity:0;transform:translate(-50%,-55%) scale(.1) rotateY(80deg)}28%,68%{opacity:1;transform:translate(-50%,-55%) scale(1) rotateY(0)}100%{opacity:0;transform:translate(-50%,-55%) scale(1.25) rotateY(-35deg)}}
+
+/* Richiamo degli Infestati: emersione e legame persistente sul campo. */
+.fx-call-haunted{position:fixed;inset:0;z-index:10061;pointer-events:none;overflow:hidden}.fx-haunted-fog{position:absolute;inset:0;background:radial-gradient(circle,rgba(153,86,213,.24),rgba(2,0,8,.78));animation:fxIconicShade 1.7s ease-in-out forwards}.fx-haunted-grave{position:absolute;width:clamp(100px,14vw,210px);aspect-ratio:1.8;transform:translate(-50%,-50%) rotateX(68deg) scale(.1);border-radius:50%;background:radial-gradient(ellipse,#020006 0 23%,#834eb2 31%,rgba(84,35,117,.32) 50%,transparent 70%);box-shadow:0 0 34px #a669d5;animation:fxRebornPortal 1.55s ease-out forwards}.fx-haunted-chain{position:absolute;top:5%;width:12px;height:110%;background:repeating-linear-gradient(180deg,#e8d4ef 0 5px,#4b3158 6px 11px,transparent 12px 18px);box-shadow:0 0 10px #bf79eb;animation:fxHauntedChain 1.6s ease-out forwards}.fx-haunted-chain--left{left:36%;transform:rotate(16deg)}.fx-haunted-chain--right{right:36%;transform:rotate(-16deg)}
+.fx-haunted-card{position:fixed!important;left:var(--haunted-x)!important;top:var(--haunted-y)!important;height:auto!important;margin:0!important;z-index:2;pointer-events:none!important;opacity:0;transform:translate(-50%,-50%) rotateX(70deg) scale(.12);filter:grayscale(.5) drop-shadow(0 0 18px #be70ea);animation:fxHauntedCard 1.4s cubic-bezier(.16,.75,.22,1) forwards}
+@keyframes fxHauntedCard{0%,16%{opacity:0}34%{opacity:1}78%{left:var(--haunted-end-x);top:var(--haunted-end-y);opacity:1;transform:translate(-50%,-50%) rotateX(0) scale(1.06);filter:grayscale(0) drop-shadow(0 0 22px #d095f4)}100%{left:var(--haunted-end-x);top:var(--haunted-end-y);opacity:0;transform:translate(-50%,-50%) scale(1)}}
+@keyframes fxHauntedChain{0%{opacity:0;scale:1 0}35%,78%{opacity:1;scale:1 1}100%{opacity:0;scale:1 1}}
+.call-haunted-link{position:absolute;left:50%;width:clamp(16px,2vw,28px);height:150%;z-index:4;pointer-events:none;transform-origin:50% 0;background:repeating-linear-gradient(180deg,rgba(239,217,247,.92) 0 5px,rgba(80,48,94,.88) 6px 12px,transparent 13px 19px);filter:drop-shadow(0 0 5px #b967dc);animation:callHauntedBreathe 2.1s ease-in-out infinite}.call-haunted-link::before{content:'⚰';position:absolute;left:50%;top:-12px;transform:translateX(-50%);color:#e6c8ef;text-shadow:0 0 8px #b451dd;font-size:clamp(13px,1.5vw,21px)}.call-haunted-link--player{top:58%;transform:translateX(-50%) rotate(calc(2deg + var(--haunted-link-angle, 0deg)))}.call-haunted-link--bot{bottom:58%;transform:translateX(-50%) rotate(calc(182deg - var(--haunted-link-angle, 0deg)))}
+@keyframes callHauntedBreathe{0%,100%{opacity:.48;filter:drop-shadow(0 0 4px #8d42ad)}50%{opacity:1;filter:drop-shadow(0 0 10px #d692f0)}}
+
 @media (prefers-reduced-motion: reduce) {
     .waboku-field-shield,
     .waboku-shield-ring,
     .waboku-shield-spark { animation: none !important; }
     .waboku-field-shield { opacity: .82; transform: translate(-50%, -51%) rotateX(7deg); }
     .fx-mirror-force *, .fx-magic-cylinder *, .fx-monster-reborn *,
-    .fx-trap-hole, .fx-trap-hole *, .fx-torrential * {
+    .fx-trap-hole, .fx-trap-hole *, .fx-torrential *,
+    .fx-destruction-ring *, .fx-heavy-storm *, .fx-mst-vortex *,
+    .fx-control-mark *, .fx-call-haunted *, .call-haunted-link {
         animation-duration: .01ms !important;
         animation-delay: 0ms !important;
     }

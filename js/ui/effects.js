@@ -25,6 +25,11 @@
  *   FX.playMonsterReborn(graveyardOwner, card, targetOwner, targetIndex, onImpact)
  *   FX.playTrapHole(owner, index, card)
  *   FX.playTorrentialTribute()
+ *   FX.playRingOfDestruction(owner, index, damage)
+ *   FX.playHeavyStorm(onImpact)
+ *   FX.playMysticalSpaceTyphoon(owner, index, onImpact)
+ *   FX.playMindControl(card, owner, index, mode)
+ *   FX.playCallOfTheHaunted(owner, card, targetIndex, onImpact)
  *   FX.playTributeSacrifice(cardElement)
  *   FX.spawnParticles(x, y, opts)
  */
@@ -917,6 +922,153 @@
             endSummonCinematic();
         }, 1800);
         return 1800;
+    }
+
+    /** Anello della Distruzione: collare esplosivo e doppia onda verso i LP. */
+    function playRingOfDestruction(owner, index, damage) {
+        const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+        const cardEl = document.querySelector(`#${boardId} .field-slot[data-owner="${owner}"][data-type="monster"][data-index="${index}"] .card`);
+        if (!cardEl) return 0;
+        beginSummonCinematic();
+        const point = centerOf(cardEl);
+        const scene = document.createElement('div');
+        scene.className = 'fx-destruction-ring';
+        scene.setAttribute('aria-hidden', 'true');
+        scene.innerHTML = '<div class="fx-ring-dim"></div><div class="fx-ring-collar"><i></i><i></i><i></i><i></i><i></i><i></i><b></b></div><span class="fx-ring-damage fx-ring-damage--player"></span><span class="fx-ring-damage fx-ring-damage--bot"></span>';
+        const collar = scene.querySelector('.fx-ring-collar');
+        Object.assign(collar.style, { left: `${point.x}px`, top: `${point.y}px`, width: `${point.rect.width * 1.65}px`, height: `${point.rect.width * 1.65}px` });
+        scene.querySelectorAll('.fx-ring-damage').forEach((label) => { label.textContent = damage ? `-${damage} LP` : ''; });
+        document.body.appendChild(scene);
+        if (window.SFX && typeof SFX.destroy === 'function') setTimeout(() => SFX.destroy(), 650);
+        setTimeout(() => {
+            scene.remove();
+            endSummonCinematic();
+        }, 1750);
+        return 1750;
+    }
+
+    /** Tempesta Pesante investe entrambe le file M/T, poi risolve il lotto. */
+    function playHeavyStorm(onImpact) {
+        beginSummonCinematic();
+        const scene = document.createElement('div');
+        scene.className = 'fx-heavy-storm';
+        scene.setAttribute('aria-hidden', 'true');
+        scene.innerHTML = '<div class="fx-heavy-clouds"></div><div class="fx-heavy-gust fx-heavy-gust--a"></div><div class="fx-heavy-gust fx-heavy-gust--b"></div><div class="fx-heavy-debris"><i></i><i></i><i></i><i></i><i></i><i></i></div>';
+        document.body.appendChild(scene);
+        if (window.SFX && typeof SFX.wind === 'function') SFX.wind();
+        let resolved = false;
+        const impact = () => {
+            if (resolved) return;
+            resolved = true;
+            if (typeof onImpact === 'function') onImpact();
+        };
+        setTimeout(impact, 1050);
+        setTimeout(() => {
+            impact();
+            scene.remove();
+            endSummonCinematic();
+        }, 1800);
+        return 1800;
+    }
+
+    /** Tifone dello Spazio Mistico comprime lo spazio sul singolo slot. */
+    function playMysticalSpaceTyphoon(owner, index, onImpact) {
+        const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+        const slot = document.querySelector(`#${boardId} .field-slot[data-owner="${owner}"][data-type="st"][data-index="${index}"]`);
+        const rect = slot && slot.getBoundingClientRect();
+        if (!rect || !rect.width) {
+            if (typeof onImpact === 'function') onImpact();
+            return 0;
+        }
+        beginSummonCinematic();
+        const vortex = document.createElement('div');
+        vortex.className = 'fx-mst-vortex';
+        Object.assign(vortex.style, { left: `${rect.left + rect.width / 2}px`, top: `${rect.top + rect.height / 2}px`, width: `${rect.width * 2.4}px`, height: `${rect.width * 2.4}px` });
+        vortex.innerHTML = '<i></i><i></i><i></i><b></b><span></span>';
+        document.body.appendChild(vortex);
+        if (window.SFX && typeof SFX.wind === 'function') SFX.wind();
+        let resolved = false;
+        const impact = () => {
+            if (resolved) return;
+            resolved = true;
+            if (typeof onImpact === 'function') onImpact();
+        };
+        setTimeout(impact, 820);
+        setTimeout(() => {
+            impact();
+            vortex.remove();
+            endSummonCinematic();
+        }, 1370);
+        return 1370;
+    }
+
+    /** Occhio/mescolanza di cuori sul bersaglio prima del normale viaggio di controllo. */
+    function playMindControl(card, owner, index, mode) {
+        const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+        const cardEl = document.querySelector(`#${boardId} .field-slot[data-owner="${owner}"][data-type="monster"][data-index="${index}"] .card`);
+        if (!cardEl) return 0;
+        beginSummonCinematic();
+        const point = centerOf(cardEl);
+        const mark = document.createElement('div');
+        mark.className = `fx-control-mark fx-control-mark--${mode === 'heart' ? 'heart' : 'mind'}`;
+        mark.setAttribute('aria-hidden', 'true');
+        Object.assign(mark.style, { left: `${point.x}px`, top: `${point.y}px`, width: `${point.rect.width * 1.65}px`, height: `${point.rect.height * 1.25}px` });
+        mark.innerHTML = mode === 'heart'
+            ? '<i class="fx-heart-half fx-heart-half--light"></i><i class="fx-heart-half fx-heart-half--dark"></i><b></b>'
+            : '<i class="fx-control-eye"></i><i class="fx-control-orbit"></i><b></b>';
+        document.body.appendChild(mark);
+        if (window.SFX && typeof SFX.activateSpell === 'function') SFX.activateSpell();
+        setTimeout(() => {
+            mark.remove();
+            endSummonCinematic();
+        }, 1250);
+        return 1250;
+    }
+
+    /**
+     * Richiamo degli Infestati: il mostro resta fuori dal campo durante
+     * l'emersione. La catena persistente viene invece ricreata dal renderer
+     * leggendo il legame reale targetUid della Trappola Continua.
+     */
+    function playCallOfTheHaunted(owner, card, targetIndex, onImpact) {
+        const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+        const target = document.querySelector(`#${boardId} .field-slot[data-owner="${owner}"][data-type="monster"][data-index="${targetIndex}"]`);
+        const grave = zoneRect(owner, 'graveyard');
+        const targetRect = target && target.getBoundingClientRect();
+        if (!targetRect || !targetRect.width || typeof window.createCardElement !== 'function') {
+            if (typeof onImpact === 'function') onImpact();
+            return 0;
+        }
+        beginSummonCinematic();
+        const startX = grave ? grave.left + grave.width / 2 : window.innerWidth / 2;
+        const startY = grave ? grave.top + grave.height / 2 : window.innerHeight / 2;
+        const endX = targetRect.left + targetRect.width / 2;
+        const endY = targetRect.top + targetRect.height / 2;
+        const scene = document.createElement('div');
+        scene.className = 'fx-call-haunted';
+        scene.setAttribute('aria-hidden', 'true');
+        scene.innerHTML = '<div class="fx-haunted-fog"></div><div class="fx-haunted-grave"></div><div class="fx-haunted-chain fx-haunted-chain--left"></div><div class="fx-haunted-chain fx-haunted-chain--right"></div>';
+        const graveMark = scene.querySelector('.fx-haunted-grave');
+        Object.assign(graveMark.style, { left: `${startX}px`, top: `${startY}px` });
+        const ghost = createCardElement(card);
+        ghost.classList.add('fx-haunted-card');
+        Object.assign(ghost.style, { '--haunted-x': `${startX}px`, '--haunted-y': `${startY}px`, '--haunted-end-x': `${endX}px`, '--haunted-end-y': `${endY}px`, width: `${Math.max(52, targetRect.width)}px` });
+        scene.appendChild(ghost);
+        document.body.appendChild(scene);
+        if (window.SFX && typeof SFX.activateTrap === 'function') SFX.activateTrap();
+        let resolved = false;
+        const impact = () => {
+            if (resolved) return;
+            resolved = true;
+            if (typeof onImpact === 'function') onImpact();
+        };
+        setTimeout(impact, 1060);
+        setTimeout(() => {
+            impact();
+            scene.remove();
+            endSummonCinematic();
+        }, 1750);
+        return 1750;
     }
 
     /**
@@ -1915,6 +2067,11 @@
         playMonsterReborn,
         playTrapHole,
         playTorrentialTribute,
+        playRingOfDestruction,
+        playHeavyStorm,
+        playMysticalSpaceTyphoon,
+        playMindControl,
+        playCallOfTheHaunted,
         playCoinFlip: viaBackend('playCoinFlip', playCoinFlip),
         playDiceRoll: viaBackend('playDiceRoll', playDiceRoll),
         // ATTENZIONE per chi scrivera' un backend per questa: i chiamanti

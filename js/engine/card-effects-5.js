@@ -618,16 +618,23 @@
             return Tavolo.ordine().some((owner) => ctx.stField(owner).some((s) => s));
         },
         activate(ctx) {
-            let count = 0;
-            Tavolo.ordine().forEach((owner) => {
-                ctx.stField(owner).forEach((slot, index) => {
-                    if (!slot) return;
-                    ctx.graveyard(owner).push(slot.card);
-                    ctx.stField(owner)[index] = null;
-                    count++;
+            const resolveStorm = () => {
+                let count = 0;
+                Tavolo.ordine().forEach((owner) => {
+                    ctx.stField(owner).forEach((slot, index) => {
+                        if (!slot) return;
+                        ctx.graveyard(owner).push(slot.card);
+                        ctx.stField(owner)[index] = null;
+                        count++;
+                    });
                 });
-            });
-            ctx.log(`🌪️ Tempesta Pesante distrugge ${count} cart${count === 1 ? 'a' : 'e'} Magia/Trappola!`);
+                ctx.log(`🌪️ Tempesta Pesante distrugge ${count} cart${count === 1 ? 'a' : 'e'} Magia/Trappola!`);
+            };
+            if (window.FX && typeof FX.playHeavyStorm === 'function') {
+                FX.playHeavyStorm(resolveStorm);
+            } else {
+                resolveStorm();
+            }
         }
     });
 

@@ -4230,3 +4230,12 @@ d'attacco/Evocazione. Rinascita è l'eccezione deliberata: la callback
 dell'Ankh precede la vera rimozione dal Cimitero e la Special Summon, con
 fallback immediato quando FX/UI non esistono. Lo spec
 `cinematiche-carte-iconiche` verifica regola, DOM e rilascio del lock.
+
+Secondo gruppo sullo stesso contratto: Anello della Distruzione, Tempesta
+Pesante, Tifone dello Spazio Mistico, Cambio di Cuore/Controllo Mentale e
+Richiamo degli Infestati. Tempesta e Tifone ritardano la rimozione fino alla
+callback; Anello e controllo applicano invece subito la regola perché i loro
+flussi devono proseguire sincronicamente. Richiamo conserva il mostro fuori
+dal campo durante l'emersione e `renderFields()` deriva la catena persistente
+dal `targetUid` reale della Trappola: nessun timer grafico può lasciarla
+appesa dopo la fine del legame.

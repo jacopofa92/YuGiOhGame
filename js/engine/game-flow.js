@@ -1003,6 +1003,25 @@ function renderFields() {
                     cardEl.onpointerdown = (event) => startAttackDrag(event, index);
                 }
                 slotEl.appendChild(cardEl);
+                // Richiamo degli Infestati (id 136): il legame è uno stato
+                // vero della Trappola Continua (targetUid), non una durata
+                // grafica. Ricrearlo da quello stato a ogni render lo fa
+                // sparire automaticamente se mostro o Trappola lasciano il
+                // campo. L'inclinazione punta approssimativamente allo slot
+                // M/T sorgente, evitando una catena verticale generica.
+                if (isMonsterRow) {
+                    const hauntedIndex = Tavolo.magieTrappole(owner).findIndex((stSlot) => stSlot
+                        && !stSlot.isFaceDown
+                        && stSlot.card.id === 136
+                        && stSlot.card.targetUid === slot.card.uid);
+                    if (hauntedIndex !== -1) {
+                        const chain = document.createElement('div');
+                        chain.className = `call-haunted-link call-haunted-link--${owner}`;
+                        chain.style.setProperty('--haunted-link-angle', `${(hauntedIndex - index) * 7}deg`);
+                        chain.setAttribute('aria-hidden', 'true');
+                        slotEl.appendChild(chain);
+                    }
+                }
                 // ATK/DEF sotto la carta, stile Duel Masters: solo per i
                 // mostri SCOPERTI (un mostro coperto non rivela le sue
                 // statistiche, a meno che non sia stato reso visibile da

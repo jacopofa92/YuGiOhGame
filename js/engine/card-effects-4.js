@@ -2521,13 +2521,22 @@
             const destroy = (choice) => {
                 const slot = ctx.stField(choice.owner)[choice.index];
                 if (!slot || slot.card.uid !== choice.card.uid) return;
-                if (slot.isFaceDown) {
-                    slot.isFaceDown = false;
-                    ctx.log(`🔎 Tifone dello Spazio Mistico rivela ${choice.card.name}!`);
+                const resolveTyphoon = () => {
+                    const current = ctx.stField(choice.owner)[choice.index];
+                    if (!current || current.card.uid !== choice.card.uid) return;
+                    if (current.isFaceDown) {
+                        current.isFaceDown = false;
+                        ctx.log(`🔎 Tifone dello Spazio Mistico rivela ${choice.card.name}!`);
+                    }
+                    ctx.stField(choice.owner)[choice.index] = null;
+                    ctx.graveyard(choice.owner).push(choice.card);
+                    ctx.log(`🌪️ Tifone dello Spazio Mistico distrugge ${choice.card.name}!`);
+                };
+                if (window.FX && typeof FX.playMysticalSpaceTyphoon === 'function') {
+                    FX.playMysticalSpaceTyphoon(choice.owner, choice.index, resolveTyphoon);
+                } else {
+                    resolveTyphoon();
                 }
-                ctx.stField(choice.owner)[choice.index] = null;
-                ctx.graveyard(choice.owner).push(choice.card);
-                ctx.log(`🌪️ Tifone dello Spazio Mistico distrugge ${choice.card.name}!`);
             };
             if (!Decisioni.rispondeUnaPersona(ctx.owner)) {
                 const oppCandidate = candidates.find((c) => c.owner === ctx.opponent);

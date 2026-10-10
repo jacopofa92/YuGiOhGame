@@ -865,6 +865,25 @@ Rifinitura successiva:
   sempre il contatore al termine. La cache visibile è `v198`;
 - guardrail: `tests/specs/cinematiche-carte-iconiche.spec.js`.
 
+Secondo gruppo:
+
+- Anello della Distruzione (`419`) serra un collare a sei cariche sul
+  bersaglio e mostra il danno realmente inflitto a entrambi i lati;
+- Tempesta Pesante (`646`) oscura l'arena e investe entrambe le file M/T con
+  due fronti di vento; Tifone dello Spazio Mistico (`607`) usa invece una
+  singolarità blu-viola localizzata, distinta dal Tornado di Polvere;
+- entrambe risolvono la distruzione alla callback d'impatto, lasciando le
+  carte visibili fino al passaggio del fenomeno;
+- Cambio di Cuore (`147`) e Controllo Mentale (`130`) condividono
+  `FX.playMindControl`, ma usano rispettivamente il cuore chiaro/scuro e
+  l'occhio psichico; il normale `takeControl` continua a mostrare il viaggio
+  della carta e conserva le differenti regole temporanea/permanente;
+- Richiamo degli Infestati (`136`) fa emergere il mostro dal Cimitero prima
+  della vera Special Summon. `renderFields()` ricrea poi una catena inclinata
+  fra il mostro e lo slot della Trappola finché il suo `targetUid` è valido;
+- cache PWA `v199`; guardrail:
+  `tests/specs/cinematiche-carte-iconiche-secondo-gruppo.spec.js`.
+
 ## Cinematica Evocazione Fusione
 
 - `DuelEngine.actions.fusionSummon()` fotografa i materiali realmente scelti

@@ -833,6 +833,9 @@
         if (!targetSlot) return;
         const stolen = targetSlot.card;
         const stolenName = targetSlot.isFaceDown ? 'una carta coperta' : stolen.name;
+        if (window.FX && typeof FX.playMindControl === 'function') {
+            FX.playMindControl(stolen, decl.targetOwner, decl.targetIndex, 'mind');
+        }
         if (ctx.takeControl(ctx.owner, decl.targetOwner, decl.targetIndex, true)) {
             gameState.cannotAttackUidsPermanent = gameState.cannotAttackUidsPermanent || new Set();
             gameState.cannotAttackUidsPermanent.add(stolen.uid);
@@ -865,11 +868,23 @@
             }, (revived) => {
                 const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
                 if (slotIndex === -1) { ctx.graveyard(ctx.owner).push(revived); return; }
-                ctx.specialSummon(ctx.owner, revived, slotIndex, 'attack', 'graveyard');
-                ctx.card.targetOwner = ctx.owner;
-                ctx.card.targetIndex = slotIndex;
-                ctx.card.targetUid = revived.uid;
-                ctx.log(`⚰️ Richiamo degli Infestati Special Summona ${revived.name} dal Cimitero!`);
+                const resolveHaunting = () => {
+                    // searchGraveyardWithChoice ha già estratto la carta:
+                    // fino a questa callback non è né nel Cimitero né sul
+                    // Terreno, quindi non può comparire prima della scena.
+                    const freeIndex = ctx.field(ctx.owner)[slotIndex] ? ctx.findEmptyMonsterSlot(ctx.owner) : slotIndex;
+                    if (freeIndex === -1) { ctx.graveyard(ctx.owner).push(revived); return; }
+                    ctx.specialSummon(ctx.owner, revived, freeIndex, 'attack', 'graveyard');
+                    ctx.card.targetOwner = ctx.owner;
+                    ctx.card.targetIndex = freeIndex;
+                    ctx.card.targetUid = revived.uid;
+                    ctx.log(`⚰️ Richiamo degli Infestati Special Summona ${revived.name} dal Cimitero!`);
+                };
+                if (window.FX && typeof FX.playCallOfTheHaunted === 'function') {
+                    FX.playCallOfTheHaunted(ctx.owner, revived, slotIndex, resolveHaunting);
+                } else {
+                    resolveHaunting();
+                }
             });
         },
         static(ctx) {
@@ -1726,6 +1741,9 @@
                 if (!targetSlot) return;
                 const card = targetSlot.card;
                 const damage = card.attack || 0;
+                if (window.FX && typeof FX.playRingOfDestruction === 'function') {
+                    FX.playRingOfDestruction(scelto.owner, scelto.index, damage);
+                }
                 ctx.destroyMonster(scelto.owner, scelto.index);
                 ctx.dealDamage(ctx.owner, damage);
                 ctx.dealDamage(ctx.opponent, damage);

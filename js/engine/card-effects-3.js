@@ -2166,6 +2166,9 @@
                 const targetSlot = ctx.field(scelta.owner)[scelta.index];
                 if (!targetSlot) return;
                 const stolen = targetSlot.card;
+                if (window.FX && typeof FX.playMindControl === 'function') {
+                    FX.playMindControl(stolen, scelta.owner, scelta.index, 'heart');
+                }
                 if (ctx.takeControl(ctx.owner, scelta.owner, scelta.index)) {
                     ctx.log(`💫 ${ctx.owner === 'player' ? 'Hai preso' : 'Il bot ha preso'} il controllo di ${stolen.name} fino alla End Phase!`);
                 }
