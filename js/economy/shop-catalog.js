@@ -203,7 +203,13 @@
         if (typeof starterStructureDeckDatabase !== 'undefined') elenco = starterStructureDeckDatabase;
         else if (Array.isArray(window.starterStructureDeckDatabase)) elenco = window.starterStructureDeckDatabase;
         const posseduti = window.SaveManager ? SaveManager.getOwnedPacks() : [];
-        return elenco.filter((d) => d.kind === kind && posseduti.indexOf(d.packId) !== -1).length;
+        return elenco.filter((d) => d.kind === kind
+            && posseduti.indexOf(d.packId) !== -1
+            // Lo Starter Yugi viene assegnato alla creazione del profilo:
+            // non e' un acquisto e non deve rincarare il primo prodotto
+            // scelto davvero dal giocatore. Contarlo faceva partire lo
+            // scaffale Starter da 30 Stelle invece delle 18 dichiarate.
+            && d.packId !== 'starter_sdy_yugi').length;
     }
 
     /**
@@ -383,7 +389,7 @@
             ['rare', 2, giorno, { credits: PREZZI.cartaRara, starChips: 2 }],
             ['super', 1, String(Math.floor(giorni / 2)), { credits: PREZZI.cartaSuper, starChips: 4 }],
             ['ultra', 1, String(Math.floor(giorni / 7)), { credits: PREZZI.cartaUltra, starChips: 8 }],
-            ['legendary', 1, String(Math.floor(giorni / 14)), { credits: PREZZI.cartaLeggendaria, starChips: 15, millenniumCards: 1 }]
+            ['legendary', 1, String(Math.floor(giorni / 14)), { credits: PREZZI.cartaLeggendaria, starChips: 15, millenniumCards: 2 }]
         ];
         return specs.flatMap(([rarity, count, periodo, costo]) =>
             pesca(pool(rarity), count, rng(hash(`rotazione-${rarity}-${periodo}`))).map((id) => ({
