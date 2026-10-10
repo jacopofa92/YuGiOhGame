@@ -3,12 +3,26 @@
    Scelta dell'utente fra quattro direzioni, dopo aver scartato sia il
    fumetto da finestra ("popup da gestionale") sia la targa d'oro:
    "sottotitolo cinematico, più semplice ma efficace".
-   Quindi niente cornice, niente codina, niente barra del tempo: una fascia
-   scura che sfuma verso il centro dello schermo, il nome piccolo nel
+   Quindi niente cornice, niente codina, niente barra del tempo: un alone
+   scuro che sfuma su TUTTI i lati (richiesta: "sfumato su tutti i lati in
+   modo da non vedere seghettamento"), il nome piccolo nel
    colore del lato (rosso l'avversario, blu il giocatore, come le plance) e
-   la battuta grande e chiara. Il bot è in alto a sinistra, quindi la sua
-   fascia parte dal bordo sinistro e sfuma a destra; il giocatore è in
-   basso a destra, testo allineato a destra e sfumatura opposta.
+   la battuta grande e chiara. Il giocatore è in basso a destra, quindi il
+   suo testo è allineato a destra.
+   L'alone è un livello a parte (::after) che sporge oltre il testo (44px
+   ai lati, 16px sopra e sotto; meno su telefono): è un rettangolo scuro
+   PIENO, sfumato solo dentro
+   quella sporgenza, su tutti e quattro i lati — in alto e in basso dal
+   gradiente dello sfondo, a destra e a sinistra da una maschera. (Due
+   maschere combinate con mask-composite: intersect, provate prima,
+   cancellavano l'alone per intero; e così le variabili CSS dentro i
+   gradienti di questo pseudo-elemento, per questo i pixel sono scritti
+   per esteso e ripetuti nel blocco per telefono.) Così il testo
+   sta sempre sul fondo pieno, fino all'ultima parola, e nessun lato è
+   netto. (Un gradiente radiale, provato prima, sfumava già sotto le
+   estremità del testo e le lasciava senza fondo.) Sta dietro al testo
+   perché il contenitore, con z-index, apre un contesto di impilamento
+   proprio.
    ===================================================================== */
 .duel-speech {
     --lato: #ff7a66;
@@ -19,10 +33,9 @@
     gap: 2px;
     width: max-content;
     max-width: min(420px, 44vw);
-    padding: 7px 46px 8px 14px;
+    padding: 6px 12px 7px;
     color: #fff;
     text-align: left;
-    background: linear-gradient(90deg, rgba(4, 4, 10, .86) 0%, rgba(4, 4, 10, .74) 62%, rgba(4, 4, 10, 0) 100%);
     pointer-events: none;
     opacity: 0;
     transform: translateX(-10px);
@@ -32,21 +45,28 @@
     --lato: #6fb4ff;
     align-items: flex-end;
     text-align: right;
-    padding: 7px 14px 8px 46px;
-    background: linear-gradient(270deg, rgba(4, 4, 10, .86) 0%, rgba(4, 4, 10, .74) 62%, rgba(4, 4, 10, 0) 100%);
     transform: translateX(10px);
 }
-/* Un filo del colore del lato sul bordo alto, che sfuma come la fascia. */
+.duel-speech::after {
+    content: '';
+    position: absolute;
+    inset: -16px -44px;
+    z-index: -1;
+    background: linear-gradient(180deg, rgba(4, 4, 10, 0), rgba(4, 4, 10, .8) 16px, rgba(4, 4, 10, .8) calc(100% - 16px), rgba(4, 4, 10, 0));
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 44px, #000 calc(100% - 44px), transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 44px, #000 calc(100% - 44px), transparent);
+}
+/* Un filo del colore del lato sopra il nome, sfumato alle due estremità. */
 .duel-speech::before {
     content: '';
     position: absolute;
     top: 0;
-    left: 0;
-    right: 0;
+    left: -10px;
+    right: -10px;
     height: 2px;
-    background: linear-gradient(90deg, var(--lato), transparent);
+    background: linear-gradient(90deg, transparent, var(--lato) 30%, var(--lato) 70%, transparent);
+    opacity: .85;
 }
-.duel-speech--player::before { background: linear-gradient(270deg, var(--lato), transparent); }
 
 .duel-speech__nome {
     font-size: .62rem;
@@ -95,8 +115,13 @@
 }
 
 @media (max-width: 600px) {
-    .duel-speech { max-width: min(300px, 70vw); padding: 6px 34px 7px 10px; }
-    .duel-speech--player { padding: 6px 10px 7px 34px; }
+    .duel-speech { max-width: min(300px, 70vw); padding: 5px 10px 6px; }
+    .duel-speech::after {
+        inset: -13px -32px;
+        background: linear-gradient(180deg, rgba(4, 4, 10, 0), rgba(4, 4, 10, .8) 13px, rgba(4, 4, 10, .8) calc(100% - 13px), rgba(4, 4, 10, 0));
+        -webkit-mask-image: linear-gradient(90deg, transparent, #000 32px, #000 calc(100% - 32px), transparent);
+        mask-image: linear-gradient(90deg, transparent, #000 32px, #000 calc(100% - 32px), transparent);
+    }
     .duel-speech__testo { font-size: .82rem; }
     .duel-speech.is-special .duel-speech__testo { font-size: .9rem; }
     .duel-speech__nome { font-size: .56rem; }

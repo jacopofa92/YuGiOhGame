@@ -430,7 +430,8 @@
 // v197: morra cinese rifatta (ritratti, medaglioni, scontro delle mani, tasti 1/2/3).
 // v206: fumetti delle battute a targa d'oro, senza barra del tempo.
 // v207: battute dei duellanti come sottotitoli.
-const CACHE_NAME = 'ygo-duel-arena-v207';
+// v208: alone delle battute sfumato su tutti i lati.
+const CACHE_NAME = 'ygo-duel-arena-v208';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
