@@ -435,7 +435,8 @@
 // v213: carta scoperta col Flip Summon che spariva al passaggio del mouse.
 // v214: Profilo rifatto (testata, riepilogo, portafoglio, mazzi: js/ui/profile-hero.*).
 // v215: Duello Libero con barra di ricerca e filtri, sblocco preciso e medaglie (js/ui/scelta-duellante.*).
-const CACHE_NAME = 'ygo-duel-arena-v215';
+// v216: unita la lezione guidata col nonno (js/tutorial/), sviluppata su un branch a parte.
+const CACHE_NAME = 'ygo-duel-arena-v216';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -478,6 +479,7 @@ const APP_SHELL = [
     'js/ui/duel-cinematics.css',
     'js/ui/duel-rps.css',
     'js/ui/duel-dialogues.css',
+    'js/tutorial/tutorial-duel.css',
     'js/ui/topbar.css',
     'js/ui/challenge-banner.css',
     'js/ui/page-loader.css',
@@ -550,6 +552,7 @@ const APP_SHELL = [
     'js/ui/duel-cinematics.js',
     'js/ui/duel-rps.js',
     'js/ui/duel-dialogues.js',
+    'js/tutorial/tutorial-duel.js',
     'js/ui/effects.js',
     'js/ui/error-recovery.js',
     'js/ui/icon-library.js',

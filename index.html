@@ -5037,6 +5037,29 @@
         // appena ne esiste uno — vedi js/save-manager.js.
         // ============================================================
         const IMPOSTAZIONI_ITEM = { icon: 'settings', label: 'Impostazioni', action: 'view', view: 'impostazioni' };
+        // La lezione col nonno (js/tutorial/tutorial-duel.js) è un duello in
+        // modalità "tutorial": comincia sempre il giocatore, al livello
+        // Facile, contro Solomon Muto.
+        const TUTORIAL_URL = 'duelMonstersCore.html?mode=tutorial&character=solomonMuto&difficulty=Facile';
+        /**
+         * Lezione obbligatoria: se il salvataggio dice che è ancora da fare
+         * (la scrive solo il primo avvio, vedi openNewGameModal), il menu
+         * rimanda lì invece di aprirsi. Rete di sicurezza: al massimo 3
+         * rimandi per sessione, così una pagina del duello che per qualche
+         * motivo non si carica non chiude il giocatore in un giro infinito
+         * fra menu e lezione.
+         */
+        function obbligaLezioneSeDaFare() {
+            if (!window.SaveManager || !SaveManager.hasSave() || !SaveManager.getTutorial) return false;
+            const t = SaveManager.getTutorial();
+            if (!t.daFare || t.completata) return false;
+            let rimandi = 0;
+            try { rimandi = parseInt(sessionStorage.getItem('ygoRimandiLezione') || '0', 10) || 0; } catch (e) { /* noop */ }
+            if (rimandi >= 3) return false;
+            try { sessionStorage.setItem('ygoRimandiLezione', String(rimandi + 1)); } catch (e) { /* noop */ }
+            window.location.href = TUTORIAL_URL;
+            return true;
+        }
         // Voce "Admin" (admin.html — approvazione registrazioni, vedi
         // js/cloud/cloud-sync.js) aggiunta SOLO per chi ha is_admin=true
         // sul proprio profilo — appesa dinamicamente in renderMenu() più
@@ -5073,6 +5096,10 @@
                     // vecchia vista duplicata dentro index.html è stata
                     // rimossa per evitare che le due UI divergano di nuovo.
                     { icon: 'tournament', label: 'Tornei', action: 'link', href: 'tornei.html' },
+                    // La lezione guidata col nonno, rifacibile quando si
+                    // vuole (al primo avvio è obbligatoria, vedi
+                    // obbligaLezioneSeDaFare più sotto).
+                    { icon: 'rules', label: 'Lezione col nonno', action: 'link', href: TUTORIAL_URL },
                     { icon: 'rules', label: 'Regole', action: 'view', view: 'regole' },
                     // Demo Duello Sandbox: campo di prova per testare
                     // singole carte/condizioni di Evocazione a mano, senza
@@ -5152,6 +5179,7 @@
         }
 
         function renderMenu() {
+            if (obbligaLezioneSeDaFare()) return;
             const list = document.getElementById('menuList');
             list.innerHTML = '';
             if (openSubmenu) {
@@ -5178,6 +5206,12 @@
             // sé a scelta conclusa.
             if (window.Onboarding) {
                 Onboarding.avvia().then((esito) => {
+                    // Subito dopo la bottega, la lezione col nonno: è
+                    // obbligatoria per chi comincia adesso.
+                    if (esito && SaveManager.setTutorial) {
+                        SaveManager.setTutorial({ daFare: true });
+                        if (obbligaLezioneSeDaFare()) return;
+                    }
                     renderMenu();
                     showMenuToast(`👋 Benvenuto, ${SaveManager.getPlayerName()}!`);
                     // Il mazzo scelto è già quello attivo (createNew lo
