@@ -374,6 +374,11 @@
                         }
                     }
                 }
+                // `decl` apparteneva alla vecchia implementazione anteriore
+                // al picker ed era fuori scope: la modalità cambio Posizione
+                // esplodeva ogni volta che non c'era un mostro da offrire.
+                // `scelto` è già il bersaglio dichiarato e validato dal
+                // checkpoint condiviso, quindi è l'unica fonte corretta.
                 const targetSlot = ctx.field(scelto.owner)[scelto.index];
                 if (!targetSlot) return;
                 targetSlot.position = targetSlot.position === 'attack' ? 'defense' : 'attack';

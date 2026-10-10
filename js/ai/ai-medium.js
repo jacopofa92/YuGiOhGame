@@ -41,7 +41,9 @@
 
         for (const card of candidates) {
             const tributesNeeded = getTributesRequired(card);
-            const posture = (window.AI_SHARED && AI_SHARED.decideMonsterPosture(card, gameState, io)) || { position: 'attack', faceDown: false };
+            const posture = typeof options.decidePosture === 'function'
+                ? options.decidePosture(card)
+                : (window.AI_SHARED && AI_SHARED.decideMonsterPosture(card, gameState, io)) || { position: 'attack', faceDown: false };
             if (tributesNeeded === 0) {
                 const emptySlot = Tavolo.mostri(io, gameState).findIndex((slot) => slot === null);
                 if (emptySlot !== -1) return { card: card, tributeIndices: [], emptySlotHint: emptySlot, position: posture.position, faceDown: posture.faceDown };

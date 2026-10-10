@@ -40,9 +40,25 @@ const GRUPPI = {
     virtuale: [
         'noah', 'gozaburo', 'gansley', 'johnson', 'nesbitt', 'crump', 'lector'
     ],
-    amici: ['tristan', 'tea', 'serenity', 'solomonMuto']
+    amici: ['tristan', 'tea', 'serenity', 'solomonMuto'],
+    forbiddenMemories: [
+        'simonMuran', 'jono', 'teana', 'priestSeto', 'shadi', 'priestessIsis',
+        'oceanMage', 'highMageSecmeton', 'forestMage', 'highMageAnubisius',
+        'mountainMage', 'highMageAtenza', 'desertMage', 'highMageMartis',
+        'meadowMage', 'highMageKepura', 'labyrinthMage', 'sebek', 'neku',
+        'heishin', 'darkNite'
+    ]
 };
-GRUPPI.tutti = [...new Set(Object.values(GRUPPI).flat())];
+// "tutti" conserva il significato storico di cast anime principale; i
+// roster autonomi (Forbidden Memories e futuri set di regole) si richiedono
+// esplicitamente per non cambiare silenziosamente costo e perimetro degli
+// audit già documentati.
+GRUPPI.tutti = [...new Set([
+    ...GRUPPI.regno,
+    ...GRUPPI.battleCity,
+    ...GRUPPI.virtuale,
+    ...GRUPPI.amici
+])];
 
 function valoreArgomento(nome, fallback) {
     const indice = process.argv.indexOf('--' + nome);

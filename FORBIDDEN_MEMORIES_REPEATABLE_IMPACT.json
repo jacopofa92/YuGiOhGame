@@ -1,0 +1,256 @@
+{
+  "generatoIl": "2026-10-09T19:20:34.809Z",
+  "metodo": "cinque personaggi campione con IA Hard; stessi semi ai tre livelli; vittoria = esito del posto bot",
+  "opzioni": {
+    "gruppo": "tutti",
+    "duellanti": [
+      "shadi",
+      "desertMage",
+      "highMageMartis",
+      "labyrinthMage"
+    ],
+    "partite": 50,
+    "turni": 80,
+    "seme": 91000,
+    "output": "FORBIDDEN_MEMORIES_REPEATABLE_IMPACT.json"
+  },
+  "campioni": [
+    "yamiYugi",
+    "joey",
+    "pegasus",
+    "mako",
+    "bakura"
+  ],
+  "risultati": [
+    {
+      "duellante": "shadi",
+      "livello": "easy",
+      "partite": 250,
+      "vittorie": 49,
+      "vittoriePct": 19.6,
+      "turniMedi": 25.1,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 18,
+        "joey": 18,
+        "pegasus": 30,
+        "mako": 12,
+        "bakura": 20
+      }
+    },
+    {
+      "duellante": "shadi",
+      "livello": "medium",
+      "partite": 250,
+      "vittorie": 86,
+      "vittoriePct": 34.4,
+      "turniMedi": 24.7,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 42,
+        "joey": 48,
+        "pegasus": 36,
+        "mako": 16,
+        "bakura": 30
+      }
+    },
+    {
+      "duellante": "shadi",
+      "livello": "hard",
+      "partite": 250,
+      "vittorie": 120,
+      "vittoriePct": 48,
+      "turniMedi": 21.7,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 64,
+        "joey": 64,
+        "pegasus": 46,
+        "mako": 32,
+        "bakura": 34
+      }
+    },
+    {
+      "duellante": "desertMage",
+      "livello": "easy",
+      "partite": 250,
+      "vittorie": 67,
+      "vittoriePct": 26.8,
+      "turniMedi": 23.9,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 30,
+        "joey": 32,
+        "pegasus": 36,
+        "mako": 6,
+        "bakura": 30
+      }
+    },
+    {
+      "duellante": "desertMage",
+      "livello": "medium",
+      "partite": 250,
+      "vittorie": 127,
+      "vittoriePct": 50.8,
+      "turniMedi": 21.4,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 68,
+        "joey": 58,
+        "pegasus": 56,
+        "mako": 28,
+        "bakura": 44
+      }
+    },
+    {
+      "duellante": "desertMage",
+      "livello": "hard",
+      "partite": 250,
+      "vittorie": 146,
+      "vittoriePct": 58.4,
+      "turniMedi": 20.4,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 68,
+        "joey": 70,
+        "pegasus": 50,
+        "mako": 38,
+        "bakura": 66
+      }
+    },
+    {
+      "duellante": "highMageMartis",
+      "livello": "easy",
+      "partite": 250,
+      "vittorie": 48,
+      "vittoriePct": 19.2,
+      "turniMedi": 22,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 20,
+        "joey": 16,
+        "pegasus": 26,
+        "mako": 10,
+        "bakura": 24
+      }
+    },
+    {
+      "duellante": "highMageMartis",
+      "livello": "medium",
+      "partite": 250,
+      "vittorie": 107,
+      "vittoriePct": 42.8,
+      "turniMedi": 17.3,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 54,
+        "joey": 56,
+        "pegasus": 48,
+        "mako": 22,
+        "bakura": 34
+      }
+    },
+    {
+      "duellante": "highMageMartis",
+      "livello": "hard",
+      "partite": 250,
+      "vittorie": 150,
+      "vittoriePct": 60,
+      "turniMedi": 16.9,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 70,
+        "joey": 66,
+        "pegasus": 54,
+        "mako": 46,
+        "bakura": 64
+      }
+    },
+    {
+      "duellante": "labyrinthMage",
+      "livello": "easy",
+      "partite": 250,
+      "vittorie": 21,
+      "vittoriePct": 8.4,
+      "turniMedi": 28.4,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 8,
+        "joey": 6,
+        "pegasus": 20,
+        "mako": 4,
+        "bakura": 4
+      }
+    },
+    {
+      "duellante": "labyrinthMage",
+      "livello": "medium",
+      "partite": 250,
+      "vittorie": 77,
+      "vittoriePct": 30.8,
+      "turniMedi": 25.4,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 32,
+        "joey": 30,
+        "pegasus": 38,
+        "mako": 18,
+        "bakura": 36
+      }
+    },
+    {
+      "duellante": "labyrinthMage",
+      "livello": "hard",
+      "partite": 250,
+      "vittorie": 112,
+      "vittoriePct": 44.8,
+      "turniMedi": 20.1,
+      "nonFinite": 0,
+      "perCampione": {
+        "yamiYugi": 52,
+        "joey": 56,
+        "pegasus": 40,
+        "mako": 30,
+        "bakura": 46
+      }
+    }
+  ],
+  "analisi": [
+    {
+      "duellante": "shadi",
+      "easy": 19.6,
+      "medium": 34.4,
+      "hard": 48,
+      "monotono": true,
+      "saltoEasyMedium": 14.8,
+      "saltoMediumHard": 13.6
+    },
+    {
+      "duellante": "desertMage",
+      "easy": 26.8,
+      "medium": 50.8,
+      "hard": 58.4,
+      "monotono": true,
+      "saltoEasyMedium": 24,
+      "saltoMediumHard": 7.6
+    },
+    {
+      "duellante": "highMageMartis",
+      "easy": 19.2,
+      "medium": 42.8,
+      "hard": 60,
+      "monotono": true,
+      "saltoEasyMedium": 23.6,
+      "saltoMediumHard": 17.2
+    },
+    {
+      "duellante": "labyrinthMage",
+      "easy": 8.4,
+      "medium": 30.8,
+      "hard": 44.8,
+      "monotono": true,
+      "saltoEasyMedium": 22.4,
+      "saltoMediumHard": 14
+    }
+  ]
+}

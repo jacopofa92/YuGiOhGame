@@ -333,6 +333,9 @@ del protocollo corrente.
 3. I ternari di stato "player ? … : bot …" sono stati portati sugli accessori
    di `Tavolo`; rimangono solo quelli di testo/UI legati al punto di vista.
 4. Più grandi: tutorial; Forbidden Memories come secondo set di regole.
+   I suoi 21 deck avversari nell'attuale Duel Monsters sono già stati
+   misurati e corretti: vedere `FORBIDDEN_MEMORIES_AUDIT.md`. L'audit dei
+   deck non equivale all'implementazione delle regole PS1 dedicate.
 5. Decisioni aperte dell'utente: i 6 avatar PNG non usati; eliminare il branch
    `refactor/posti-al-tavolo` (già unito).
 
