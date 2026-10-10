@@ -20,8 +20,8 @@
  * dai tornei e ognuna apre una porta che i crediti non aprono (vedi
  * makeDefaultCurrency in js/save-manager.js). Cinque freni tengono il
  * ritmo: il bonus giornaliero premia la costanza invece della maratona,
- * i rendimenti calano dopo la quinta vittoria del giorno, i premi dei
- * tornei valgono doppio solo la prima volta, i mazzi si comprano una
+ * i rendimenti calano dopo la quinta vittoria del giorno, la difficolta'
+ * determina davvero il ritmo del farming, i mazzi si comprano una
  * volta sola e la rotazione del Negozio mette comunque un tetto a quanto
  * si può comprare in un giorno.
  */
@@ -43,11 +43,11 @@
      * giocando un duello (il sintomo sarebbe stato silenzioso: nessun
      * errore, solo un premio di vittoria mancante).
      */
-    const WIN_CREDITS = { Facile: 40, Medio: 60, Difficile: 90 };
+    const WIN_CREDITS = { Facile: 30, Medio: 50, Difficile: 80 };
     /** Crediti per un duello PERSO: pochi, ma mai zero — un duello giocato non è tempo buttato. */
-    const LOSS_CREDITS = 20;
+    const LOSS_CREDITS = 15;
     /** Bonus una tantum alla prima vittoria della giornata: premia il tornare ogni giorno, non il giocare venti duelli di fila. */
-    const FIRST_WIN_OF_DAY_BONUS = 150;
+    const FIRST_WIN_OF_DAY_BONUS = 100;
     /** Dalla N-esima vittoria del giorno in poi i crediti valgono la metà (freno al grind). */
     const DIMINISHING_AFTER_WINS = 5;
     const DIMINISHING_FACTOR = 0.5;
@@ -60,8 +60,9 @@
      * Si tirano SOLO su una vittoria, e al massimo uno per duello (vedi
      * rollDrop): due premi rari insieme sembrerebbero un errore.
      */
+    const STAR_DROP_CHANCE = { Facile: 0.02, Medio: 0.05, Difficile: 0.09 };
     const DROPS = [
-        { currency: 'starChips', amount: 1, chance: 0.06, icon: '⭐', nome: 'Stella dell\'Esagono' },
+        { currency: 'starChips', amount: 1, chanceByDifficulty: STAR_DROP_CHANCE, icon: '⭐', nome: 'Stella dell\'Esagono' },
         { currency: 'locatorCards', amount: 1, chance: 0.03, icon: '🃏', nome: 'Carta Locazione' },
         { currency: 'millenniumCards', amount: 1, chance: 0.008, icon: '🔱', nome: 'Carta del Millennio' }
     ];
@@ -84,9 +85,31 @@
         // sempre — un valore scollegato da quel prezzo si disallinea alla
         // prima volta che i mazzi vengono ritoccati (successo esattamente
         // una volta, corretto qui).
-        duelistKingdom: { credits: 1200, starChips: 18 },
-        battleCity: { credits: 1200, locatorCards: 1 },
-        kaibaTournament: { credits: 1200, millenniumCards: 1 }
+        duelistKingdom: {
+            credits: { Facile: 650, Medio: 825, Difficile: 1000 },
+            starChips: { Facile: 14, Medio: 19, Difficile: 24 }
+        },
+        battleCity: {
+            credits: { Facile: 650, Medio: 825, Difficile: 1000 },
+            locatorCards: { Facile: 1, Medio: 2, Difficile: 3 }
+        },
+        kaibaTournament: {
+            credits: { Facile: 650, Medio: 825, Difficile: 1000 },
+            millenniumCards: { Facile: 1, Medio: 1, Difficile: 2 }
+        }
+    };
+
+    /**
+     * Bonus UNA TANTUM alla prima vittoria assoluta del torneo. Non e' un
+     * moltiplicatore: raddoppiare il premio Difficile rendeva proprio la
+     * modalita' piu' redditizia una scorciatoia enorme. Il bonus fisso
+     * conserva il momento speciale e garantisce che il primo Regno a
+     * Facile dia 18 Stelle, cioe' il prezzo del primo Starter acquistabile.
+     */
+    const FIRST_COMPLETION_BONUS = {
+        duelistKingdom: { credits: 500, starChips: 4 },
+        battleCity: { credits: 500, locatorCards: 1 },
+        kaibaTournament: { credits: 500, millenniumCards: 1 }
     };
 
     /**
@@ -152,9 +175,6 @@
     // Millennio, e a colpo d'occhio sembrava un torneo che paga in Stelle
     // come il Regno. L'identità di un premio si legge dai numeri, non
     // dalle intenzioni.
-    /** Moltiplicatore alla PRIMA vittoria in assoluto di quel torneo: rifarlo conviene ancora, ma meno. */
-    const FIRST_COMPLETION_MULTIPLIER = 2;
-
     const CURRENCY_META = {
         credits: { icon: '💰', nome: 'Crediti' },
         starChips: { icon: '⭐', nome: 'Stelle dell\'Esagono' },
@@ -189,9 +209,12 @@
     }
 
     /** Tira i drop rari: al massimo uno per duello, il primo che esce nell'ordine della tabella. */
-    function rollDrop() {
+    function rollDrop(difficulty) {
         for (let i = 0; i < DROPS.length; i++) {
-            if (Math.random() < DROPS[i].chance) return DROPS[i];
+            const chance = DROPS[i].chanceByDifficulty
+                ? (DROPS[i].chanceByDifficulty[difficulty] || 0)
+                : DROPS[i].chance;
+            if (Math.random() < chance) return Object.assign({}, DROPS[i], { chance: chance });
         }
         return null;
     }
@@ -292,7 +315,7 @@
         // Drop raro: solo fuori dai tornei, che hanno già i propri premi
         // grossi garantiti e non devono anche vincere alla lotteria.
         if (!o.inTournament && o.difficulty) {
-            const drop = rollDrop();
+            const drop = rollDrop(o.difficulty);
             if (drop) {
                 SaveManager.addCurrency(drop.currency, drop.amount);
                 rewards.push(voce(drop.currency, drop.amount,
@@ -333,24 +356,31 @@
     }
 
     /**
-     * Premi per un torneo COMPLETATO (vinto fino in fondo). `firstTime`
-     * raddoppia tutto, e il raddoppio viene DETTO nel testo di ogni voce:
-     * un giocatore che vede numeri diversi alla seconda vittoria deve
-     * capire subito perché.
+     * Premi per un torneo COMPLETATO (vinto fino in fondo). Il livello
+     * controlla ogni importo; `firstTime` aggiunge il bonus fisso del
+     * torneo, senza moltiplicare il premio piu' ricco del Difficile.
      */
     function forTournament(tournamentId, firstTime, difficulty) {
         const tabella = TOURNAMENT_COMPLETION[tournamentId];
         const rewards = [];
         if (!tabella || !window.SaveManager) return rewards;
-        const moltiplicatore = firstTime ? FIRST_COMPLETION_MULTIPLIER : 1;
+        const livello = difficulty === 'Facile' || difficulty === 'Difficile' ? difficulty : 'Medio';
         Object.keys(tabella).forEach((currency) => {
-            const importo = tabella[currency] * moltiplicatore;
+            const valori = tabella[currency];
+            const importo = typeof valori === 'number' ? valori : (valori[livello] || 0);
             if (importo <= 0) return;
             SaveManager.addCurrency(currency, importo);
-            rewards.push(voce(currency, importo, firstTime
-                ? 'Torneo vinto · PRIMA VOLTA, premio raddoppiato (×2)'
-                : 'Torneo vinto'));
+            rewards.push(voce(currency, importo, `Torneo vinto a difficolta' ${livello === 'Medio' ? 'Normale' : livello}`));
         });
+        if (firstTime) {
+            const bonus = FIRST_COMPLETION_BONUS[tournamentId] || {};
+            Object.keys(bonus).forEach((currency) => {
+                const importo = bonus[currency];
+                if (importo <= 0) return;
+                SaveManager.addCurrency(currency, importo);
+                rewards.push(voce(currency, importo, 'Prima vittoria assoluta di questo torneo'));
+            });
+        }
         // Poi si DICE cosa questo torneo non paga. Senza questa riga il
         // giocatore vedrebbe solo un premio piu' magro di quanto ricorda,
         // e non saprebbe che e' una regola e non una perdita.
@@ -479,11 +509,11 @@
             { icon: '🤝', titolo: 'Duello perso', testo: `+${LOSS_CREDITS} crediti lo stesso: un duello giocato non è mai tempo buttato.` },
             { icon: '🌅', titolo: 'Prima vittoria del giorno', testo: `+${FIRST_WIN_OF_DAY_BONUS} crediti una volta al giorno. Premia il tornare spesso, non il giocare venti duelli di fila.` },
             { icon: '📉', titolo: 'Rendimenti decrescenti', testo: `Dalla ${DIMINISHING_AFTER_WINS + 1}ª vittoria della giornata i crediti valgono la metà.` },
-            { icon: '🎲', titolo: 'Ritrovamenti fortunati', testo: DROPS.map((d) => `${d.icon} ${d.nome} ${Math.round(d.chance * 1000) / 10}%`).join(' · ') + ' a ogni vittoria fuori dai tornei. Mai più di uno per duello.' },
+            { icon: '🎲', titolo: 'Ritrovamenti fortunati', testo: `⭐ Stella: ${Math.round(STAR_DROP_CHANCE.Facile * 100)}% a Facile, ${Math.round(STAR_DROP_CHANCE.Medio * 100)}% a Normale, ${Math.round(STAR_DROP_CHANCE.Difficile * 100)}% a Difficile · 🃏 Carta Locazione 3% · 🔱 Carta del Millennio 0,8%. Solo fuori dai tornei e mai piu' di uno per duello.` },
             { icon: '🏟️', titolo: 'Duelli di torneo', testo: `+${TOURNAMENT_DUEL_CREDITS} crediti per ogni duello vinto dentro un torneo: lì si rischia l'eliminazione.` },
             { icon: '🏆', titolo: 'Torneo completato', testo: 'Premio grosso e garantito, e ogni torneo paga SOLO la propria valuta: Stelle nel Regno dei Duellanti, Carte Locazione a Battle City, Carte del Millennio al Torneo Kaiba. Se ti serve una valuta precisa, sai quale torneo giocare.' },
             { icon: '👁️', titolo: 'Oggetti del Millennio', testo: `I soli premi che non sono una valuta, e ne esiste una copia sola ciascuno: ${Object.keys(MILLENNIUM_ITEMS).map((k) => `${MILLENNIUM_ITEMS[k].icon} ${MILLENNIUM_ITEMS[k].nome} da ${MILLENNIUM_ITEMS[k].nomeChi}`).join(' · ')}. ${Math.round(MILLENNIUM_ITEM_CHANCE * 100)}% ogni volta che batti chi lo porta, e solo dentro un torneo dove ha senso incontrarlo. Una volta vinto non esce più.` },
-            { icon: '✨', titolo: 'Prima vittoria di un torneo', testo: `Il premio di completamento vale ×${FIRST_COMPLETION_MULTIPLIER} la prima volta che vinci quel torneo. Le volte successive è pieno, ma non raddoppiato.` },
+            { icon: '✨', titolo: 'Prima vittoria di un torneo', testo: 'La prima vittoria assoluta aggiunge un bonus fisso: +500 crediti e +4 Stelle nel Regno, +1 Carta Locazione a Battle City oppure +1 Carta del Millennio al Torneo Kaiba. Non raddoppia il premio della difficolta\'.' },
             { icon: '🎯', titolo: 'Sfide completate', testo: 'Ogni Sfida paga UNA VOLTA sola, quando la completi: da 100 crediti per la prima vittoria fino a 1000 per le 50. Le più lunghe o simboliche danno anche valute rare — Slifer in campo vale una Carta del Millennio.' },
             { icon: '📈', titolo: 'I mazzi rincarano', testo: 'Ogni Starter o Structure Deck che compri fa salire il prezzo del successivo dello stesso tipo (contatori separati), e servono anche Carte Locazione o Carte del Millennio (dal secondo Starter, già dal primo Structure), in quantità che cresce ulteriormente con altri acquisti. Costano sempre Stelle e Crediti insieme — i numeri esatti sono nella pagina del Negozio.' }
         ];
@@ -534,10 +564,11 @@
         summaryHtml: summaryHtml,
         CURRENCY_META: CURRENCY_META,
         TOURNAMENT_COMPLETION: TOURNAMENT_COMPLETION,
+        FIRST_COMPLETION_BONUS: FIRST_COMPLETION_BONUS,
         TOURNAMENT_EXCLUDED: TOURNAMENT_EXCLUDED,
         MILLENNIUM_ITEMS: MILLENNIUM_ITEMS,
         MILLENNIUM_ITEM_CHANCE: MILLENNIUM_ITEM_CHANCE,
         millenniumItemInPalio: millenniumItemInPalio,
-        FIRST_COMPLETION_MULTIPLIER: FIRST_COMPLETION_MULTIPLIER
+        STAR_DROP_CHANCE: STAR_DROP_CHANCE
     };
 })();

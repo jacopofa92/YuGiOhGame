@@ -56,3 +56,22 @@ fortemente da sconfitte, rami e durata delle partite.
 - Il prossimo audit utile, dopo dati reali, è confrontare durata e tasso di
   vittoria a Difficile: la simulazione attuale assume che ogni tentativo sia
   una vittoria e quindi rappresenta il minimo effettivo.
+# Aggiornamento economia per difficolta' — 2026-10-10
+
+La curva di riferimento ora privilegia esplicitamente il Difficile senza
+rendere Facile e Normale equivalenti. Per una singola Stella casuale servono
+in media 50 vittorie a Facile, 20 a Normale e circa 11,1 a Difficile. Questa
+lotteria e' soltanto un'integrazione: la fonte deterministica resta il Regno
+dei Duellanti, che paga 14/19/24 Stelle per completamento.
+
+Per comprare il primo Starter da 18 Stelle partendo da zero servono quindi:
+
+- una prima vittoria del Regno a qualunque difficolta' (il bonus iniziale
+  porta Facile esattamente a 18);
+- dopo la prima volta, due tornei a Facile oppure uno a Normale/Difficile;
+- in alternativa un farming libero molto piu' lento e non garantito.
+
+Crediti per vittoria libera: 30/50/80; completamento torneo: 650/825/1000.
+Il bonus iniziale del torneo e' fisso (+500 crediti e la valuta tematica), non
+un moltiplicatore: in questo modo il primo completamento resta importante ma
+non trasforma il Difficile nella scorciatoia dominante che produrrebbe un x2.

@@ -2,6 +2,26 @@
 
 Ultimo aggiornamento verificato: 2026-10-07.
 
+## Economia graduata per difficolta' (2026-10-10)
+
+Il ritmo del farming non e' piu' quasi uniforme: una vittoria libera paga
+30/50/80 crediti e la Stella casuale ha probabilita' 2%/5%/9% rispettivamente
+a Facile/Normale/Difficile. Perdere paga 15 crediti, la prima vittoria del
+giorno 100; i rendimenti dimezzati dopo la quinta vittoria restano il freno
+alle maratone di crediti.
+
+Anche il completamento dei tornei usa tabelle esplicite per difficolta':
+650/825/1000 crediti; il Regno paga 14/19/24 Stelle, Battle City 1/2/3 Carte
+Locazione e il Torneo Kaiba 1/1/2 Carte del Millennio. La prima vittoria
+assoluta non raddoppia piu' il premio (che favoriva troppo il Difficile):
+aggiunge 500 crediti e 4 Stelle / 1 Locazione / 1 Millennio secondo il torneo.
+
+Nel Negozio lo Starter Yugi gratuito del profilo non conta piu' come acquisto:
+il primo Starter realmente scelto costa quindi le 18 Stelle dichiarate. Una
+carta Leggendaria in rotazione richiede 2 Carte del Millennio. La regressione
+e' in `tests/specs/economia-difficolta.spec.js`; ogni numero mostrato al
+giocatore continua a nascere dalle stesse tabelle applicate dalla logica.
+
 ## Audio web e APK
 
 `js/audio/audio-manager.js` espone sempre la stessa facciata `DuelMusic`, ma
