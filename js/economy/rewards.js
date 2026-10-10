@@ -555,6 +555,15 @@
     }
 
     window.Rewards = {
+        // Tabelle esposte in sola lettura di fatto (nessun chiamante le
+        // modifica): servono agli strumenti di audit per calcolare il
+        // farming leggendo gli stessi numeri del gioco, senza ricopiarli.
+        WIN_CREDITS: WIN_CREDITS,
+        LOSS_CREDITS: LOSS_CREDITS,
+        FIRST_WIN_OF_DAY_BONUS: FIRST_WIN_OF_DAY_BONUS,
+        DIMINISHING_AFTER_WINS: DIMINISHING_AFTER_WINS,
+        DIMINISHING_FACTOR: DIMINISHING_FACTOR,
+        TOURNAMENT_DUEL_CREDITS: TOURNAMENT_DUEL_CREDITS,
         forDuel: forDuel,
         forTournament: forTournament,
         forChallenge: forChallenge,

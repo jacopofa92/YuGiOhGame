@@ -75,3 +75,23 @@ Crediti per vittoria libera: 30/50/80; completamento torneo: 650/825/1000.
 Il bonus iniziale del torneo e' fisso (+500 crediti e la valuta tematica), non
 un moltiplicatore: in questo modo il primo completamento resta importante ma
 non trasforma il Difficile nella scorciatoia dominante che produrrebbe un x2.
+
+### Scenario settimanale intensivo
+
+`node tools/simula-economia.js` legge direttamente le tabelle usate dal gioco,
+quindi non conserva una seconda copia dei prezzi. Con lo scenario predefinito
+molto attivo — 10 vittorie libere al giorno per 7 giorni, un completamento di
+ciascuno dei tre tornei e 15 duelli di torneo vinti — la stima e':
+
+| Difficolta' | Crediti/settimana | Stelle/settimana | Locazioni | Millennio | Settimane per le Stelle di tutti i mazzi |
+|---|---:|---:|---:|---:|---:|
+| Facile | 6.025 | 15,40 | 3,06 | 1,53 | 106,7 |
+| Normale | 7.600 | 22,50 | 4,00 | 1,52 | 73,0 |
+| Difficile | 9.700 | 30,30 | 4,91 | 2,49 | 54,2 |
+
+Lo scaffale attuale contiene 7 Starter realmente acquistabili e 11 Structure,
+per 1.643 Stelle complessive. La colonna finale e' volutamente un limite
+teorico: non sottrae Stelle spese per carte/buste e non aggiunge Sfide o premi
+delle Storie. Mostra comunque il punto importante del bilanciamento: Facile e
+Normale richiedono sensibilmente piu' tempo, ma anche il Difficile non consente
+di esaurire rapidamente tutti i mazzi.

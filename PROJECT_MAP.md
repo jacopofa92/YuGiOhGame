@@ -2,6 +2,21 @@
 
 Ultimo aggiornamento verificato: 2026-10-07.
 
+## Apertura immediata del Duello Libero (2026-10-10)
+
+Nella vista SPA di `index.html` la topbar viene disegnata nello stesso turno
+del click, prima dei moduli lazy della configurazione del duello. Prima la
+vista appariva subito ma la barra aspettava tre file, creando un vuoto visibile
+al primo accesso soprattutto su mobile. CSS e JavaScript lazy ora partono in
+parallelo, l'initializer restituisce la propria Promise e un tocco anticipato
+su un Duellante aspetta quella stessa Promise invece di andare in errore.
+Non e' stato allungato il loader: il difetto era nell'ordine di inizializzazione.
+Guardrail: `duello-libero-topbar-immediata`.
+
+Lo strumento `tools/simula-economia.js` misura il farming leggendo direttamente
+le tabelle pubblicate da `Rewards` e `ShopCatalog`; lo scenario e i risultati
+di riferimento sono conservati in `FARMING_REPORT.md`.
+
 ## Economia graduata per difficolta' (2026-10-10)
 
 Il ritmo del farming non e' piu' quasi uniforme: una vittoria libera paga

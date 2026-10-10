@@ -2394,6 +2394,21 @@
     // js/duel-session.js) punta ancora alla pagina standalone vera,
     // MAI a questa vista fusa.
     registerView('duello-libero', function initDuelloLiberoView() {
+        // La topbar non dipende dai moduli lazy qui sotto: PageTopbar,
+        // DeckSwitcher e Icons sono gia' caricati dal menu. Prima veniva
+        // costruita soltanto al termine di tre richieste dinamiche e la
+        // vista appariva per un istante senza barra, soprattutto al primo
+        // accesso su mobile. Disegnarla subito elimina il vuoto reale,
+        // invece di nasconderlo allungando artificialmente il loader.
+        PageTopbar.render('#libero-topbarMount', {
+            icon: 'freeDuel',
+            title: 'Duello Libero',
+            subtitle: 'Scegli un duellante da sfidare',
+            onBack: showMenuFromView,
+            deck: true,
+            onProfile: () => showView('profilo')
+        });
+
         // Selettore di arena/musica della modale + ritratto e mazzo nella
         // barra: pesano poco, ma al menu non servono. Vedi la nota su
         // ensureViewScripts nel router: qui vanno SOLO i file che
@@ -2402,27 +2417,17 @@
         // ritratto compare in ogni topbar, index.html li carica già per
         // conto suo (vedi in cima al file) — rimetterli qui li scaricherebbe
         // una seconda volta senza motivo.
-        ensureViewStyles(['js/ui/duel-setup.css', 'js/ui/sfida-libera.css']);
-        ensureViewScripts([
-            'js/data/arena-options.js',
-            'js/ui/duel-setup.js',
-            'js/ui/sfida-libera.js'
-        ]).then(() => {
-            // La topbar si disegna solo ORA, a deck-switcher.js caricato:
-            // è PageTopbar a montarci dentro ritratto e mazzo, e se girasse
-            // prima li troverebbe assenti. Qui il Profilo è una VISTA di
-            // questa stessa pagina, non un file a sé, quindi si passa dal
-            // router invece di navigare.
-            PageTopbar.render('#libero-topbarMount', {
-                icon: 'freeDuel',
-                title: 'Duello Libero',
-                subtitle: 'Scegli un duellante da sfidare',
-                onBack: showMenuFromView,
-                deck: true,
-                onProfile: () => showView('profilo')
-            });
-            Icons.hydrate();
-        });
+        // CSS e JavaScript partono insieme. La Promise viene restituita al
+        // router (prima l'initializer tornava undefined), cosi' chiunque
+        // debba osservare la prontezza della vista ha un segnale vero.
+        const vistaPronta = Promise.all([
+            ensureViewStyles(['js/ui/duel-setup.css', 'js/ui/sfida-libera.css']),
+            ensureViewScripts([
+                'js/data/arena-options.js',
+                'js/ui/duel-setup.js',
+                'js/ui/sfida-libera.js'
+            ])
+        ]);
 
         let toastTimeout = null;
         function showToast(text) {
@@ -2532,7 +2537,11 @@
         // mentre la pagina standalone andava avanti: l'utente vedeva due
         // finestre diverse a seconda di come ci arrivava.
         function openDifficultyModal(character) {
-            SfidaLibera.apri(character, { toast: showToast });
+            // Un tocco molto rapido puo' arrivare mentre i tre piccoli
+            // moduli lazy stanno ancora finendo di caricarsi. Aspettare la
+            // stessa Promise evita sia un click perso sia un ReferenceError.
+            vistaPronta.then(() => SfidaLibera.apri(character, { toast: showToast }))
+                .catch(() => showToast('Impossibile preparare il duello. Riprova.'));
         }
 
         renderCubes();
@@ -2544,6 +2553,7 @@
         if (window.CloudSync && typeof CloudSync.waitForUser === 'function') {
             CloudSync.waitForUser().then(() => renderCubes()).catch(() => {});
         }
+        return vistaPronta;
     });
     </script>
     </div>
