@@ -1,7 +1,26 @@
-/* js/ui/duel-rps.css — morra cinese pre-duello (vedi js/ui/duel-rps.js).
-   z-index sopra la cinematica VS (100600 in duel-cinematics.css): questo
-   pannello si gioca MENTRE quella schermata è ancora a sipario
-   abbassato, quindi deve starle davanti. */
+/* =====================================================================
+   duel-rps.css — morra cinese pre-duello (vedi js/ui/duel-rps.js).
+   Rifatto da capo (richiesta dell'utente: "più moderna, figa e
+   responsive"): prima erano tre strati di regole sovrapposti, uno
+   sull'altro, che si annullavano a vicenda.
+
+   - Ai lati i due duellanti col ritratto scontornato e la mano in un
+     medaglione tinto del loro colore (blu tu, rosso l'avversario: gli
+     stessi delle plance in duello); al centro un medaglione VS dove scorre
+     il conto "Sasso… Carta… Forbice!".
+   - Le tre scelte sono schede con l'icona, il nome, cosa battono e (su
+     desktop) il tasto 1/2/3.
+   - Alla rivelazione le due mani si scontrano al centro, chi vince si
+     accende, chi perde si spegne.
+   - Le fasi (scelta / conto / esito) restano nella STESSA cella di una
+     griglia e cambiano solo in opacità: il pannello non cambia mai
+     altezza (vedi duel-rps.js).
+   Le classi .rps-panel/.rps-eyebrow/.rps-sub/.rps-actions/.rps-btn le
+   usa anche l'avviso "Mazzo non ammesso" di js/duel-session.js.
+
+   z-index sopra la cinematica VS (100600 in duel-cinematics.css): la
+   morra si gioca mentre quella schermata è ancora a sipario abbassato.
+   ===================================================================== */
 .rps-overlay {
     position: fixed;
     inset: 0;
@@ -9,13 +28,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 20px;
-    /* Velo leggero, non un fondo pieno: sotto c'è la schermata VS coi due
-       ritratti, e vederla in trasparenza lega la morra al duello che sta
-       per cominciare invece di farla sembrare una finestra a parte. La
-       leggibilità del testo è garantita dalla superficie del pannello
-       qui sotto, non dall'oscuramento di tutto lo schermo. */
-    background: radial-gradient(ellipse at 50% 40%, rgba(10, 8, 20, 0.62), rgba(4, 5, 8, 0.84));
+    padding: clamp(8px, 3vw, 24px);
+    /* Velo, non un fondo pieno: sotto c'è la schermata VS coi due
+       ritratti, e vederla in trasparenza lega la morra al duello. */
+    background: radial-gradient(ellipse at 50% 42%, rgba(18, 12, 28, 0.6), rgba(3, 4, 8, 0.88));
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
     opacity: 0;
     transition: opacity 0.3s ease;
 }
@@ -23,122 +41,187 @@
 .rps-overlay.is-out { opacity: 0; }
 
 .rps-panel {
-    width: min(94vw, 600px);
-    padding: clamp(16px, 3.4vw, 28px) clamp(14px, 3vw, 30px) clamp(18px, 3.4vw, 28px);
+    --rps-oro: #f7d774;
+    --rps-tu: #5aa8ff;
+    --rps-lui: #e46a5a;
+    position: relative;
+    width: min(96vw, 780px);
+    padding: clamp(18px, 3.2vw, 30px) clamp(14px, 3vw, 32px) clamp(18px, 3vw, 28px);
+    overflow: hidden;
     text-align: center;
-    color: #fff;
+    color: #fbf1d8;
     font-family: 'Arial', sans-serif;
-    /* Superficie propria: è questa a rendere leggibile il testo sopra i
-       ritratti della schermata VS, al posto di un oscuramento totale. */
-    background: linear-gradient(165deg, rgba(28, 22, 44, 0.93), rgba(10, 9, 16, 0.95));
-    border: 1px solid rgba(247, 215, 116, 0.28);
     border-radius: 22px;
-    box-shadow: 0 26px 70px rgba(0, 0, 0, 0.6), 0 0 60px rgba(247, 215, 116, 0.07);
-    transform: scale(0.94) translateY(10px);
+    background:
+        radial-gradient(ellipse at 50% 0%, rgba(247, 215, 116, 0.14), transparent 55%),
+        radial-gradient(circle at 0% 50%, rgba(90, 168, 255, 0.10), transparent 40%),
+        radial-gradient(circle at 100% 50%, rgba(228, 106, 90, 0.10), transparent 40%),
+        linear-gradient(170deg, rgba(24, 19, 34, 0.97), rgba(7, 8, 14, 0.98));
+    box-shadow: inset 0 0 0 1px rgba(247, 215, 116, 0.35), 0 30px 90px rgba(0, 0, 0, 0.72);
+    transform: translateY(14px) scale(0.95);
     opacity: 0;
-    transition: transform 0.42s cubic-bezier(0.18, 0.9, 0.3, 1.1), opacity 0.32s ease;
+    transition: transform 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.1), opacity 0.3s ease;
 }
 .rps-overlay.is-in .rps-panel { transform: none; opacity: 1; }
 
 .rps-eyebrow {
-    font-size: 0.72rem;
-    font-weight: 800;
-    letter-spacing: 0.24em;
-    text-transform: uppercase;
-    color: #f7d774;
-    margin-bottom: 14px;
-}
-
-/* ---- Le due mani, sempre presenti: non compaiono a metà partita, si
-   limitano a cambiare icona. È il motivo per cui il pannello non cambia
-   mai altezza. ---- */
-.rps-arena {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: clamp(10px, 4vw, 28px);
-    margin-bottom: 18px;
+    gap: 12px;
+    margin-bottom: clamp(12px, 2.4vw, 20px);
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: clamp(0.78rem, 1.6vw, 0.95rem);
+    font-weight: 700;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--rps-oro, #f7d774);
+}
+.rps-eyebrow::before,
+.rps-eyebrow::after {
+    content: '';
+    width: clamp(28px, 8vw, 90px);
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--rps-oro, #f7d774));
+}
+.rps-eyebrow::after { transform: scaleX(-1); }
+
+/* --- Arena: io | VS | lui ------------------------------------------ */
+.rps-arena {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: clamp(8px, 3vw, 28px);
+    margin-bottom: clamp(14px, 2.6vw, 22px);
 }
 .rps-hand {
-    flex: 0 1 160px;
-    padding: 14px 8px 10px;
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+    --lato: var(--rps-tu);
+    display: flex;
+    align-items: center;
+    gap: clamp(8px, 1.6vw, 14px);
+    min-width: 0;
+    transition: opacity 0.35s ease, filter 0.35s ease;
 }
-.rps-hand-icon {
-    font-size: clamp(2.2rem, 9vw, 3.2rem);
-    line-height: 1;
-    /* L'icona della mano del giocatore è specchiata: due mani che si
-       affrontano si guardano, non puntano nella stessa direzione. */
-    transition: transform 0.25s cubic-bezier(0.2, 1.6, 0.4, 1);
+.rps-hand--bot { --lato: var(--rps-lui); flex-direction: row-reverse; }
+.rps-chi {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    flex: 1 1 auto;
 }
-.rps-hand--player .rps-hand-icon { transform: scaleX(-1); }
+.rps-ritratto {
+    height: clamp(64px, 12vw, 104px);
+    max-width: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.6));
+}
+.rps-ritratto.is-ritratto {
+    width: clamp(56px, 10vw, 84px);
+    height: auto;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 12px;
+    -webkit-mask-image: radial-gradient(closest-side, #000 70%, transparent 100%);
+    mask-image: radial-gradient(closest-side, #000 70%, transparent 100%);
+}
 .rps-hand-name {
-    margin-top: 8px;
-    font-size: 0.68rem;
-    font-weight: 800;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: #9aa5bd;
-    overflow-wrap: anywhere;
+    max-width: 100%;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: clamp(0.72rem, 1.5vw, 0.92rem);
+    font-weight: 700;
+    color: #fbefd0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
+/* Il medaglione della mano, tinto del colore del lato. */
+.rps-hand-icon {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: clamp(72px, 13vw, 112px);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    font-size: clamp(2.2rem, 6vw, 3.6rem);
+    line-height: 1;
+    background:
+        radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--lato) 28%, transparent), transparent 70%),
+        rgba(8, 9, 16, 0.85);
+    box-shadow:
+        inset 0 0 0 2px color-mix(in srgb, var(--lato) 70%, transparent),
+        inset 0 0 22px color-mix(in srgb, var(--lato) 30%, transparent),
+        0 10px 24px rgba(0, 0, 0, 0.45);
+    transition: box-shadow 0.35s ease, transform 0.3s ease;
+}
+/* La mano del giocatore è specchiata: due mani che si affrontano si
+   guardano, non puntano nella stessa direzione. */
+.rps-hand--player .rps-hand-icon { transform: scaleX(-1); }
+
 .rps-chant {
-    flex: 0 0 auto;
-    min-width: 4.5em;
-    font-size: 0.95rem;
-    font-weight: 900;
-    letter-spacing: 0.06em;
-    color: #f7d774;
+    display: grid;
+    place-items: center;
+    width: clamp(62px, 11vw, 92px);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: clamp(0.8rem, 1.8vw, 1.1rem);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--rps-oro, #f7d774);
+    background: radial-gradient(circle at 50% 40%, rgba(247, 215, 116, 0.18), rgba(10, 10, 18, 0.95) 70%);
+    box-shadow: inset 0 0 0 1px rgba(247, 215, 116, 0.5), 0 0 26px rgba(247, 215, 116, 0.18);
 }
 
-/* Oscillazione delle mani mentre si scandisce "sasso, carta, forbice". */
-.rps-arena.is-shooting .rps-hand--player .rps-hand-icon {
-    animation: rpsShakeLeft 0.3s ease-in-out 3;
-}
-.rps-arena.is-shooting .rps-hand--bot .rps-hand-icon {
-    animation: rpsShakeRight 0.3s ease-in-out 3;
-}
-@keyframes rpsShakeLeft {
+/* Conto: le mani dondolano a tempo e il medaglione centrale pulsa. */
+.rps-arena.is-shooting .rps-hand--player .rps-hand-icon { animation: rpsDondolaTu 0.3s ease-in-out infinite; }
+.rps-arena.is-shooting .rps-hand--bot .rps-hand-icon { animation: rpsDondolaLui 0.3s ease-in-out infinite; }
+.rps-arena.is-shooting .rps-chant { animation: rpsBattito 0.3s ease-in-out infinite; }
+@keyframes rpsDondolaTu {
     0%, 100% { transform: scaleX(-1) translateY(0) rotate(0deg); }
-    50% { transform: scaleX(-1) translateY(-16%) rotate(-12deg); }
+    50% { transform: scaleX(-1) translateY(-14%) rotate(-12deg); }
 }
-@keyframes rpsShakeRight {
+@keyframes rpsDondolaLui {
     0%, 100% { transform: translateY(0) rotate(0deg); }
-    50% { transform: translateY(-16%) rotate(-12deg); }
+    50% { transform: translateY(-14%) rotate(-12deg); }
+}
+@keyframes rpsBattito {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
 }
 
-/* Rivelazione: le due icone "scattano" alla loro forma definitiva. */
-.rps-arena.is-revealed .rps-hand-icon { animation: rpsPop 0.34s cubic-bezier(0.2, 1.7, 0.4, 1); }
-.rps-arena.is-revealed .rps-hand--player .rps-hand-icon { animation-name: rpsPopMirrored; }
-@keyframes rpsPop {
-    0% { transform: scale(0.6); }
-    100% { transform: scale(1); }
+/* Rivelazione: le due mani scattano verso il centro e tornano. */
+.rps-arena.is-revealed .rps-hand--player .rps-hand-icon { animation: rpsScontroTu 0.45s cubic-bezier(0.3, 1.3, 0.5, 1); }
+.rps-arena.is-revealed .rps-hand--bot .rps-hand-icon { animation: rpsScontroLui 0.45s cubic-bezier(0.3, 1.3, 0.5, 1); }
+.rps-arena.is-revealed .rps-chant { animation: rpsLampo 0.45s ease-out; }
+@keyframes rpsScontroTu {
+    0% { transform: scaleX(-1) scale(0.7); }
+    45% { transform: scaleX(-1) translateX(-22%) scale(1.12); }
+    100% { transform: scaleX(-1); }
 }
-@keyframes rpsPopMirrored {
-    0% { transform: scaleX(-1) scale(0.6); }
-    100% { transform: scaleX(-1) scale(1); }
+@keyframes rpsScontroLui {
+    0% { transform: scale(0.7); }
+    45% { transform: translateX(-22%) scale(1.12); }
+    100% { transform: none; }
 }
-/* Chi ha vinto la mano si illumina, l'altro resta spento: l'esito si
-   capisce dal colpo d'occhio prima ancora di leggere il verdetto. */
-.rps-arena.is-win .rps-hand--player,
-.rps-arena.is-lose .rps-hand--bot {
-    border-color: rgba(111, 224, 138, 0.75);
-    box-shadow: 0 0 26px rgba(111, 224, 138, 0.28);
-    transform: translateY(-4px);
+@keyframes rpsLampo {
+    0% { box-shadow: inset 0 0 0 1px rgba(247, 215, 116, 0.5), 0 0 0 rgba(255, 236, 160, 0); }
+    35% { box-shadow: inset 0 0 0 1px rgba(255, 236, 160, 0.9), 0 0 50px rgba(255, 236, 160, 0.7); }
+    100% { box-shadow: inset 0 0 0 1px rgba(247, 215, 116, 0.5), 0 0 26px rgba(247, 215, 116, 0.18); }
+}
+/* Chi vince la mano si accende d'oro, chi perde si spegne. */
+.rps-arena.is-win .rps-hand--player .rps-hand-icon,
+.rps-arena.is-lose .rps-hand--bot .rps-hand-icon {
+    box-shadow:
+        inset 0 0 0 3px var(--rps-oro),
+        inset 0 0 26px rgba(247, 215, 116, 0.35),
+        0 0 34px rgba(247, 215, 116, 0.45);
 }
 .rps-arena.is-win .rps-hand--bot,
-.rps-arena.is-lose .rps-hand--player { opacity: 0.55; }
-.rps-arena.is-draw .rps-hand {
-    border-color: rgba(247, 215, 116, 0.6);
-    box-shadow: 0 0 22px rgba(247, 215, 116, 0.2);
-}
+.rps-arena.is-lose .rps-hand--player { opacity: 0.45; filter: saturate(0.4); }
 
-/* ---- Fasi sovrapposte nella STESSA cella di griglia: cambiano solo in
-   opacità, quindi il pannello non si ridimensiona mai e non c'è un
-   singolo riflusso di layout fra una fase e l'altra. L'altezza della
-   cella è quella della fase più alta, decisa una volta sola. ---- */
+/* --- Fasi nella stessa cella ---------------------------------------- */
 .rps-phases { display: grid; }
 .rps-phase {
     grid-area: 1 / 1;
@@ -147,86 +230,115 @@
     transform: translateY(8px);
     transition: opacity 0.26s ease, transform 0.26s ease, visibility 0.26s;
 }
-.rps-phase.is-on {
-    opacity: 1;
-    visibility: visible;
-    transform: none;
-}
+.rps-phase.is-on { opacity: 1; visibility: visible; transform: none; }
 
 .rps-sub {
-    font-size: 0.88rem;
-    color: #cdd6ea;
-    margin-bottom: 14px;
     min-height: 1.2em;
+    margin: 0 0 14px;
+    font-size: clamp(0.82rem, 1.5vw, 0.95rem);
+    color: #d6cdb6;
 }
 
-/* Tre bersagli grandi: stessa resa su desktop col mouse e su telefono
-   col dito, senza un layout separato per il tocco. */
+/* --- Scelte --------------------------------------------------------- */
 .rps-choices {
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(8px, 1.6vw, 14px);
 }
 .rps-choice {
-    flex: 1 1 130px;
-    max-width: 175px;
-    min-height: 120px;
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    padding: 14px 10px;
+    gap: 6px;
+    min-width: 0;
+    min-height: clamp(104px, 18vw, 150px);
+    padding: 14px 8px 12px;
+    border: none;
     border-radius: 16px;
-    border: 2px solid rgba(247, 215, 116, 0.32);
-    background: linear-gradient(160deg, rgba(40, 33, 58, 0.95), rgba(16, 14, 24, 0.95));
-    color: #fff;
+    color: #fbf1d8;
     font-family: inherit;
     cursor: pointer;
-    transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
-    /* Entrata scaglionata: i tre pulsanti arrivano uno dopo l'altro
-       invece che tutti insieme (--i è l'indice, scritto dal markup). */
-    animation: rpsChoiceIn 0.4s cubic-bezier(0.18, 0.9, 0.3, 1.15) backwards;
-    animation-delay: calc(0.16s + var(--i, 0) * 0.07s);
+    background:
+        radial-gradient(circle at 50% 30%, rgba(247, 215, 116, 0.14), transparent 55%),
+        linear-gradient(165deg, rgba(36, 29, 50, 0.98), rgba(10, 11, 19, 0.98));
+    box-shadow: inset 0 0 0 1px rgba(247, 215, 116, 0.28), 0 10px 24px rgba(0, 0, 0, 0.35);
+    transition: transform 0.18s ease, box-shadow 0.2s ease;
+    animation: rpsSceltaEntra 0.42s cubic-bezier(0.2, 0.9, 0.3, 1.15) backwards;
+    animation-delay: calc(0.15s + var(--i, 0) * 0.07s);
 }
-@keyframes rpsChoiceIn {
+@keyframes rpsSceltaEntra {
     from { opacity: 0; transform: translateY(16px) scale(0.94); }
     to { opacity: 1; transform: none; }
 }
 .rps-choice:hover {
     transform: translateY(-5px);
-    border-color: var(--gold, #f7d774);
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5), 0 0 20px rgba(247, 215, 116, 0.22);
+    box-shadow: inset 0 0 0 1px var(--rps-oro), 0 16px 32px rgba(0, 0, 0, 0.5), 0 0 24px rgba(247, 215, 116, 0.22);
 }
-.rps-choice:active { transform: translateY(-1px); }
+.rps-choice:active { transform: translateY(-1px) scale(0.98); }
+.rps-choice:focus-visible { outline: 2px solid var(--rps-oro); outline-offset: 3px; }
 .rps-choice.is-picked {
-    border-color: var(--gold, #f7d774);
-    box-shadow: 0 0 26px rgba(247, 215, 116, 0.4);
+    background:
+        radial-gradient(circle at 50% 30%, rgba(247, 215, 116, 0.3), transparent 60%),
+        linear-gradient(165deg, rgba(52, 40, 58, 0.98), rgba(14, 13, 21, 0.98));
+    box-shadow: inset 0 0 0 2px var(--rps-oro), 0 0 30px rgba(247, 215, 116, 0.4);
 }
-.rps-choice-icon { font-size: 2.4rem; line-height: 1; }
+.rps-choice-icon {
+    font-size: clamp(2rem, 5vw, 3rem);
+    line-height: 1;
+    filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.45));
+    transition: transform 0.2s ease;
+}
+.rps-choice:hover .rps-choice-icon { transform: scale(1.1) rotate(-6deg); }
 .rps-choice-label {
-    font-size: 0.8rem;
-    font-weight: 800;
-    letter-spacing: 0.06em;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: clamp(0.82rem, 1.6vw, 1rem);
+    font-weight: 700;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
 }
-
-.rps-verdict {
-    font-size: clamp(1.35rem, 5vw, 2rem);
-    font-weight: 900;
-    margin-bottom: 6px;
-    min-height: 1.1em;
-    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+.rps-choice-batte {
+    font-size: clamp(0.56rem, 1vw, 0.66rem);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(247, 215, 116, 0.6);
 }
-.rps-phase.is-on .rps-verdict { animation: rpsVerdictIn 0.42s cubic-bezier(0.2, 1.5, 0.35, 1); }
-@keyframes rpsVerdictIn {
-    from { opacity: 0; transform: scale(0.86); }
+.rps-choice-tasto {
+    position: absolute;
+    top: 8px;
+    left: 9px;
+    width: 20px;
+    height: 20px;
+    display: grid;
+    place-items: center;
+    border-radius: 6px;
+    font-size: 0.66rem;
+    font-weight: 800;
+    color: rgba(247, 215, 116, 0.75);
+    box-shadow: inset 0 0 0 1px rgba(247, 215, 116, 0.35);
+}
+/* Il tasto serve solo con una tastiera. */
+@media (hover: none), (max-width: 700px) { .rps-choice-tasto { display: none; } }
+
+/* --- Esito ---------------------------------------------------------- */
+.rps-verdict {
+    min-height: 1.1em;
+    margin-bottom: 6px;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: clamp(1.4rem, 4.6vw, 2.2rem);
+    font-weight: 700;
+    text-shadow: 0 2px 14px rgba(0, 0, 0, 0.7);
+}
+.rps-phase.is-on .rps-verdict { animation: rpsVerdetto 0.45s cubic-bezier(0.2, 1.4, 0.35, 1); }
+@keyframes rpsVerdetto {
+    from { opacity: 0; transform: scale(0.8); letter-spacing: 0.2em; }
     to { opacity: 1; transform: none; }
 }
-.rps-verdict--win { color: #6fe08a; }
-.rps-verdict--lose { color: #ff8a7a; }
-.rps-verdict--draw { color: #f7d774; }
+.rps-verdict--win { color: #8fe9a6; text-shadow: 0 0 22px rgba(111, 224, 138, 0.4), 0 2px 14px rgba(0, 0, 0, 0.7); }
+.rps-verdict--lose { color: #ff9b8c; }
+.rps-verdict--draw { color: var(--rps-oro, #f7d774); }
 
 .rps-actions {
     display: flex;
@@ -236,151 +348,72 @@
 }
 .rps-btn {
     min-height: 46px;
-    padding: 12px 22px;
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    background: rgba(255, 255, 255, 0.08);
-    color: #e8eefc;
+    padding: 0 24px;
+    border: none;
+    border-radius: 999px;
     font-family: inherit;
-    font-size: 0.88rem;
+    font-size: 0.9rem;
     font-weight: 800;
+    letter-spacing: 0.04em;
+    color: #efe6d2;
+    background: rgba(255, 255, 255, 0.07);
+    box-shadow: inset 0 0 0 1px rgba(247, 215, 116, 0.35);
     cursor: pointer;
-    transition: transform 0.15s ease, background 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.15s ease, background 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
 }
-.rps-btn:hover { transform: translateY(-2px); background: rgba(255, 255, 255, 0.15); }
-.rps-btn:active { transform: translateY(0); }
+.rps-btn:hover { transform: translateY(-2px); background: rgba(255, 255, 255, 0.13); }
+.rps-btn:active { transform: scale(0.97); }
+.rps-btn:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
 .rps-btn.primary {
-    background: linear-gradient(145deg, #f7d774, #f39c12);
-    border-color: rgba(0, 0, 0, 0.3);
-    color: #21160a;
+    color: #2a1600;
+    background: linear-gradient(180deg, #ffe48e 0%, #f2ad37 58%, #c97a14 100%);
+    box-shadow: 0 8px 22px rgba(240, 168, 48, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.65), inset 0 -2px 0 rgba(120, 60, 0, 0.35);
 }
-.rps-btn.primary:hover { box-shadow: 0 10px 24px rgba(243, 156, 18, 0.38); }
+.rps-btn.primary:hover { filter: brightness(1.07); }
 
-@media (max-width: 480px) {
-    .rps-arena { gap: 8px; }
-    .rps-hand { flex: 1 1 0; padding: 10px 4px 8px; }
-    .rps-chant { min-width: 3.4em; font-size: 0.8rem; }
-    .rps-choices { gap: 8px; }
-    .rps-choice { flex: 1 1 88px; min-height: 100px; padding: 10px 6px; }
-    .rps-choice-icon { font-size: 1.9rem; }
-    .rps-choice-label { font-size: 0.68rem; }
-    .rps-btn { width: 100%; }
+/* --- Telefono in verticale ------------------------------------------ */
+@media (max-width: 560px) and (orientation: portrait) {
+    .rps-panel { padding: 16px 12px 16px; border-radius: 18px; }
+    /* Ritratto sopra il medaglione, non di fianco: in larghezza non c'è
+       posto per entrambi. */
+    .rps-hand, .rps-hand--bot { flex-direction: column-reverse; gap: 6px; }
+    .rps-arena { gap: 6px; }
+    .rps-ritratto { height: 64px; }
+    .rps-hand-icon { width: 76px; font-size: 2.3rem; }
+    .rps-chant { width: 58px; font-size: 0.72rem; }
+    .rps-choice { min-height: 104px; padding: 10px 4px; border-radius: 13px; }
+    .rps-btn { flex: 1 1 100%; }
 }
 
-/* Telefono in orizzontale: poca altezza, il pannello deve restare
-   interamente visibile senza scorrere. */
-@media (max-height: 520px) and (orientation: landscape) {
-    .rps-eyebrow { margin-bottom: 6px; }
-    .rps-arena { margin-bottom: 8px; }
-    .rps-hand { padding: 6px 4px; }
-    .rps-hand-icon { font-size: 1.8rem; }
-    .rps-choice { min-height: 76px; }
-    .rps-choice-icon { font-size: 1.6rem; }
-    .rps-sub { margin-bottom: 8px; }
+/* --- Telefono in orizzontale: arena a sinistra, scelte a destra ------ */
+@media (max-height: 540px) and (orientation: landscape) {
+    .rps-overlay { padding: 6px; }
+    .rps-panel {
+        width: min(96vw, 860px);
+        padding: 10px 16px 12px;
+        display: grid;
+        grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+        grid-template-rows: auto 1fr;
+        column-gap: 18px;
+        align-items: center;
+    }
+    .rps-eyebrow { grid-column: 1 / -1; margin-bottom: 6px; font-size: 0.66rem; }
+    .rps-arena { grid-column: 1; grid-row: 2; margin: 0; gap: 6px; }
+    .rps-hand, .rps-hand--bot { flex-direction: column-reverse; gap: 4px; }
+    .rps-ritratto { height: 52px; }
+    .rps-hand-name { font-size: 0.66rem; }
+    .rps-hand-icon { width: 62px; font-size: 1.9rem; }
+    .rps-chant { width: 52px; font-size: 0.66rem; }
+    .rps-phases { grid-column: 2; grid-row: 2; }
+    .rps-sub { margin-bottom: 6px; font-size: 0.72rem; }
+    .rps-choice { min-height: 88px; padding: 8px 4px; }
+    .rps-choice-icon { font-size: 1.8rem; }
+    .rps-choice-label { font-size: 0.7rem; }
+    .rps-verdict { font-size: 1.2rem; }
+    .rps-btn { min-height: 38px; padding: 0 16px; font-size: 0.74rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .rps-overlay,
-    .rps-panel,
-    .rps-phase,
-    .rps-choice,
-    .rps-btn,
-    .rps-hand,
-    .rps-hand-icon { transition: none; animation: none; }
-}
-
-/* Revamp: arena rituale più leggibile, meno simile a una finestra di
-   sistema. Le scelte restano grandi e immediatamente confrontabili. */
-.rps-panel {
-    position: relative;
-    width: min(95vw, 760px);
-    overflow: hidden;
-    background:
-        radial-gradient(circle at 50% 35%, rgba(247,215,116,.13), transparent 36%),
-        linear-gradient(165deg, rgba(25,20,39,.97), rgba(6,8,15,.98));
-    border-color: rgba(247,215,116,.48);
-    box-shadow: 0 30px 90px rgba(0,0,0,.72), inset 0 1px rgba(255,255,255,.08);
-}
-.rps-panel::before {
-    content: '';
-    position: absolute;
-    inset: 9px;
-    border: 1px solid rgba(247,215,116,.1);
-    border-radius: 16px;
-    pointer-events: none;
-}
-.rps-eyebrow { position: relative; margin-bottom: 16px; font-family: Georgia,serif; font-size: .82rem; }
-.rps-eyebrow::after { content: ''; display: block; width: 120px; height: 1px; margin: 9px auto 0; background: linear-gradient(90deg,transparent,#f7d774,transparent); }
-.rps-arena { position: relative; gap: clamp(20px,6vw,58px); margin-bottom: 21px; }
-.rps-arena::before {
-    content: '';
-    position: absolute;
-    left: 50%; top: 50%;
-    width: clamp(70px,12vw,105px); aspect-ratio: 1;
-    border: 1px solid rgba(247,215,116,.25);
-    border-radius: 50%;
-    transform: translate(-50%,-50%);
-    box-shadow: inset 0 0 25px rgba(247,215,116,.08), 0 0 24px rgba(247,215,116,.07);
-}
-.rps-hand {
-    position: relative;
-    flex-basis: 190px;
-    padding: 18px 10px 13px;
-    background: linear-gradient(160deg, rgba(255,255,255,.075), rgba(255,255,255,.025));
-    border-color: rgba(247,215,116,.18);
-    box-shadow: inset 0 1px rgba(255,255,255,.05), 0 10px 25px rgba(0,0,0,.25);
-}
-.rps-hand-icon { font-size: clamp(3rem,7vw,4.6rem); filter: drop-shadow(0 7px 9px rgba(0,0,0,.48)); }
-.rps-chant { position: relative; z-index: 2; min-width: 5em; padding: 6px 5px; border-radius: 999px; background: #0b0b13; border: 1px solid rgba(247,215,116,.25); font-family: Georgia,serif; }
-.rps-sub { font-size: .94rem; }
-.rps-choices { gap: 14px; flex-wrap: nowrap; }
-.rps-choice {
-    position: relative;
-    max-width: none;
-    min-height: 132px;
-    overflow: hidden;
-    background: radial-gradient(circle at 50% 28%, rgba(247,215,116,.12), transparent 38%), linear-gradient(160deg, rgba(37,30,52,.98), rgba(11,12,20,.98));
-    border-width: 1px;
-    box-shadow: inset 0 1px rgba(255,255,255,.06), 0 10px 22px rgba(0,0,0,.28);
-}
-.rps-choice::after { content: ''; position: absolute; left: 18%; right: 18%; bottom: 0; height: 2px; background: linear-gradient(90deg,transparent,rgba(247,215,116,.65),transparent); opacity: .45; }
-.rps-choice-icon { font-size: 3rem; filter: drop-shadow(0 5px 7px rgba(0,0,0,.45)); }
-.rps-choice-label { font-family: Georgia,serif; font-size: .88rem; letter-spacing: .11em; }
-.rps-choice:hover, .rps-choice.is-picked { background: radial-gradient(circle at 50% 28%, rgba(247,215,116,.24), transparent 42%), linear-gradient(160deg, rgba(48,38,61,.98), rgba(14,14,22,.98)); }
-
-@media (max-width: 520px) and (orientation: portrait) {
-    .rps-overlay { padding: 8px; }
-    .rps-panel { width: 100%; padding: 17px 11px 15px; border-radius: 17px; }
-    .rps-eyebrow { margin-bottom: 10px; font-size: .68rem; }
-    .rps-arena { gap: 8px; margin-bottom: 12px; }
-    .rps-arena::before { width: 60px; }
-    .rps-hand { flex: 1 1 0; padding: 10px 4px 8px; }
-    .rps-hand-icon { font-size: 2.5rem; }
-    .rps-chant { min-width: 3.4em; padding-inline: 2px; font-size: .7rem; }
-    .rps-sub { margin-bottom: 9px; font-size: .78rem; }
-    .rps-choices { gap: 6px; }
-    .rps-choice { flex-basis: 0; min-width: 0; min-height: 92px; padding: 8px 3px; border-radius: 11px; }
-    .rps-choice-icon { font-size: 1.85rem; }
-    .rps-choice-label { font-size: .62rem; letter-spacing: .04em; }
-}
-
-@media (max-height: 540px) and (orientation: landscape) {
-    .rps-overlay { padding: 5px; }
-    .rps-panel { width: min(96vw,820px); padding: 9px 16px; display: grid; grid-template-columns: minmax(260px,.9fr) minmax(330px,1.1fr); grid-template-rows: auto 1fr; column-gap: 16px; align-items: center; }
-    .rps-eyebrow { grid-column: 1 / -1; margin-bottom: 3px; font-size: .58rem; }
-    .rps-eyebrow::after { margin-top: 3px; }
-    .rps-arena { grid-column: 1; grid-row: 2; margin: 0; gap: 7px; }
-    .rps-arena::before { width: 52px; }
-    .rps-hand { padding: 6px 3px 5px; }
-    .rps-hand-icon { font-size: 2rem; }
-    .rps-hand-name { margin-top: 3px; font-size: .5rem; }
-    .rps-chant { min-width: 3.5em; padding: 3px 1px; font-size: .6rem; }
-    .rps-phases { grid-column: 2; grid-row: 2; }
-    .rps-sub { margin-bottom: 5px; font-size: .68rem; }
-    .rps-choices { gap: 6px; }
-    .rps-choice { min-height: 86px; padding: 6px 4px; border-radius: 10px; }
-    .rps-choice-icon { font-size: 1.7rem; }
-    .rps-choice-label { font-size: .57rem; }
-    .rps-verdict { font-size: 1.15rem; }
-    .rps-btn { min-height: 38px; padding: 7px 13px; font-size: .7rem; }
+    .rps-overlay, .rps-panel, .rps-phase, .rps-choice, .rps-btn,
+    .rps-hand, .rps-hand-icon, .rps-chant, .rps-choice-icon { transition: none; animation: none !important; }
 }

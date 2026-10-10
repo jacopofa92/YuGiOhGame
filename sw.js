@@ -427,7 +427,8 @@
 // v194: plance dei duellanti a triangolo sfumato con la pedina scontornata, angolo di sistema (tempo/turno/livello/Abbandona) in un solo pannello.
 // v195: finestra "prepara la sfida" del Duello Libero condivisa (sfida-libera.js/.css), anteprime musicali che fermano davvero il sottofondo, dissolvenze della musica nel browser.
 // v196: fumetti delle battute rifatti e animati, ologrammi sotto la descrizione carta su telefono, Segnalini Magia visibili (Abile Mago Oscuro & co.).
-const CACHE_NAME = 'ygo-duel-arena-v196';
+// v197: morra cinese rifatta (ritratti, medaglioni, scontro delle mani, tasti 1/2/3).
+const CACHE_NAME = 'ygo-duel-arena-v197';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

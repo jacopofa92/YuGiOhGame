@@ -64,6 +64,18 @@
         return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
     }
 
+    // Ritratto scontornato delle pedine (images/characters/pedine/<file>.png,
+    // stesso nome del FILE del ritratto, vedi js/duel-session.js): se manca
+    // si ripiega sul ritratto normale, se manca anche quello resta vuoto.
+    function ritrattoMarkup(duellante) {
+        const img = duellante && duellante.image;
+        if (!img) return '';
+        const nome = String(img).split(/[\\/]/).pop().replace(/\.[a-z0-9]+(\?.*)?$/i, '');
+        const pedina = 'images/characters/pedine/' + nome + '.png';
+        return `<img class="rps-ritratto" alt="" src="${escapeText(pedina)}" `
+            + `onerror="if(this.dataset.r){this.remove();}else{this.dataset.r=1;this.classList.add('is-ritratto');this.src='${escapeText(img)}';}">`;
+    }
+
     /**
      * @param opponent  { name } — chi si ha di fronte
      * @param opts      solo per il MULTIPLAYER, dove l'avversario è una
@@ -87,23 +99,27 @@
             if (window.DUEL_RPS_SKIP) { resolve('player'); return; }
 
             const opponentName = (opponent && opponent.name) ? opponent.name : 'Avversario';
+            // Chi sei tu, se la sessione del duello lo sa (in Multiplayer e
+            // nella sandbox può non esserci: resta "Tu").
+            const io = (window.DuelSession && window.DuelSession.player) || null;
+            const playerName = (io && io.name) ? io.name : 'Tu';
             const overlay = document.createElement('div');
             overlay.id = 'duelRpsOverlay';
             overlay.className = 'rps-overlay';
             // Costruito UNA volta sola: da qui in poi si cambiano solo
             // classi e testi, mai la struttura.
             overlay.innerHTML = `
-                <div class="rps-panel">
+                <div class="rps-panel" role="dialog" aria-modal="true" aria-label="Morra cinese: chi comincia?">
                     <div class="rps-eyebrow">Chi comincia?</div>
                     <div class="rps-arena">
                         <div class="rps-hand rps-hand--player">
+                            <div class="rps-chi">${ritrattoMarkup(io)}<div class="rps-hand-name">${escapeText(playerName)}</div></div>
                             <div class="rps-hand-icon" data-role="playerIcon">✊</div>
-                            <div class="rps-hand-name">Tu</div>
                         </div>
                         <div class="rps-chant" data-role="chant">VS</div>
                         <div class="rps-hand rps-hand--bot">
+                            <div class="rps-chi">${ritrattoMarkup(opponent)}<div class="rps-hand-name">${escapeText(opponentName)}</div></div>
                             <div class="rps-hand-icon" data-role="botIcon">✊</div>
-                            <div class="rps-hand-name">${escapeText(opponentName)}</div>
                         </div>
                     </div>
                     <div class="rps-phases">
@@ -111,9 +127,11 @@
                             <p class="rps-sub">Scegli la tua mossa.</p>
                             <div class="rps-choices">
                                 ${CHOICES.map((c, i) => `
-                                    <button type="button" class="rps-choice" data-choice="${c.id}" style="--i:${i}">
+                                    <button type="button" class="rps-choice" data-choice="${c.id}" style="--i:${i}" aria-keyshortcuts="${i + 1}">
+                                        <span class="rps-choice-tasto" aria-hidden="true">${i + 1}</span>
                                         <span class="rps-choice-icon">${c.icon}</span>
                                         <span class="rps-choice-label">${c.label}</span>
+                                        <span class="rps-choice-batte">batte ${choiceById(c.beats).label}</span>
                                     </button>
                                 `).join('')}
                             </div>
@@ -172,6 +190,7 @@
 
             function resetForNewRound() {
                 arena.classList.remove('is-revealed', 'is-win', 'is-lose', 'is-draw');
+                overlay.querySelectorAll('.rps-choice').forEach((b) => b.classList.remove('is-picked'));
                 playerIcon.textContent = '✊';
                 botIcon.textContent = '✊';
                 chant.textContent = 'VS';
@@ -318,11 +337,25 @@
 
             overlay.querySelectorAll('.rps-choice').forEach((btn) => {
                 btn.onclick = () => {
+                    // Una sola mossa per mano: il pulsante resta cliccabile
+                    // durante la dissolvenza della fase, e un secondo tocco
+                    // lanciava una seconda mano sopra la prima.
+                    if (phase('pick').classList.contains('is-on') === false) return;
                     if (window.NativeHaptics) NativeHaptics.light();
-                    btn.classList.add('is-picked');
+                    overlay.querySelectorAll('.rps-choice').forEach((b) => b.classList.toggle('is-picked', b === btn));
                     shoot(btn.dataset.choice);
                 };
             });
+            // Tasti 1/2/3 sulla tastiera (desktop): stessi pulsanti, stesso
+            // percorso del click. Tolto il listener quando la morra finisce.
+            const tasti = (ev) => {
+                if (!document.body.contains(overlay)) { document.removeEventListener('keydown', tasti); return; }
+                const i = ['1', '2', '3'].indexOf(ev.key);
+                if (i === -1 || !phase('pick').classList.contains('is-on')) return;
+                const btn = overlay.querySelectorAll('.rps-choice')[i];
+                if (btn) btn.click();
+            };
+            document.addEventListener('keydown', tasti);
 
             // Un frame di ritardo perché la transizione d'entrata parta
             // davvero (un elemento appena inserito non anima).
