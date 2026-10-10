@@ -1676,6 +1676,13 @@
                 && window.FX && typeof FX.playCardFromGraveyard === 'function') {
                 FX.playCardFromGraveyard(card, owner, owner, slotIndex);
             }
+            // Un mostro arriva sul Terreno senza Segnalini: quelli di una
+            // vita precedente (es. Abile Mago Oscuro id 736 distrutto con 3
+            // Segnalini e poi rianimato) restavano attaccati all'oggetto
+            // carta nel Cimitero, e il mostro ripartiva già carico. Prima
+            // degli effetti "quando viene Evocato", che scattano dopo e
+            // possono quindi metterne di nuovi.
+            if (card.counters) card.counters = 0;
             field[slotIndex] = {
                 card: card,
                 position: position,
@@ -2239,6 +2246,9 @@
             // Prima finiva nella mano di chi l'aveva rubato.
             const proprietario = slot.originalOwner || owner;
             field[index] = null;
+            // Tornando in mano perde i Segnalini (vedi lo stesso azzeramento
+            // in specialSummon): Evocato di nuovo, deve ripartire da zero.
+            if (card.counters) card.counters = 0;
             // Cerchio degli Inferi (id 498): "bandiscilo quando lascia il
             // campo" vale per QUALUNQUE modo di lasciarlo, incluso il
             // ritorno in mano — questo percorso non passa mai dal

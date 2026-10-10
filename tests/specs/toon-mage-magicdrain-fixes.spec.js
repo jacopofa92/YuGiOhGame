@@ -51,7 +51,7 @@ module.exports = {
             gameState.playerMonsterField = [null, null, null, null, null];
             const ctx = DuelEngine.makeContext('player', { card: apprentice, slotIndex: -1 });
             DuelEngine.getDefinition(737).onSummon(ctx);
-            return gameState.botMonsterField[0].card.spellCounters;
+            return gameState.botMonsterField[0].card.counters;
         });
         t.assert(r2 === 1, `Abile Mago Oscuro deve ricevere il Segnalino Magia di Mago Apprendista (letto: ${r2})`);
 

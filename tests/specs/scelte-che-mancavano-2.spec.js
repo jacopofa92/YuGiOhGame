@@ -145,7 +145,7 @@ module.exports = {
         // --- 742: bersaglio scelto, Segnalini rimossi solo quanti servono ---
         await prepara();
         await t.evaluate(() => {
-            const mago = { ...cardDatabase.find((c) => c.id === 742), uid: 'mago', spellCounters: 4 };
+            const mago = { ...cardDatabase.find((c) => c.id === 742), uid: 'mago', counters: 4 };
             gameState.playerMonsterField = [{ card: mago, position: 'attack', isFaceDown: false }, __mostro('mio', 1000), null, null, null];
             gameState.botMonsterField = [__mostro('e2500', 2500), __mostro('e2000', 2000), __mostro('e1500', 1500), __mostro('e3000', 3000), null];
             DuelEngine.getDefinition(742).activate(DuelEngine.makeContext('player', { card: mago, zone: 'monster', index: 0 }));
@@ -156,7 +156,7 @@ module.exports = {
         await scegli(2, n742);
         const e742 = await t.evaluate(() => ({
             bot: gameState.botMonsterField.filter(Boolean).map((s) => s.card.uid),
-            segnalini: gameState.playerMonsterField[0].card.spellCounters,
+            segnalini: gameState.playerMonsterField[0].card.counters,
             mio: !!gameState.playerMonsterField[1]
         }));
         t.assert(e742.bot.join() === 'e2500,e2000,e3000' && e742.mio, `742: distrutto il mostro scelto (${JSON.stringify(e742)})`);

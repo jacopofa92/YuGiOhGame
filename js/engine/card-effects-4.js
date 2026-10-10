@@ -2719,7 +2719,7 @@
     // ================================================================
     // 615 — Biblioteca Magica Reale / Royal Magical Library
     // Ogni volta che una Magia viene attivata, guadagna 1 Segnalino
-    // Magia (max 3, su ctx.card.spellCounters). Rimuovendo 3 Segnalini:
+    // Magia (max 3, su ctx.card.counters). Rimuovendo 3 Segnalini:
     // pesca 1 carta. Usa onCardActivated/canActivateOnCardActivated —
     // stesso aggancio generico già usato da Signore del Rosso (id 354) —
     // per il conteggio, e canActivate/activate (Ignition, come Chiron il
@@ -2731,20 +2731,22 @@
     // che lo renda visibile).
     // ================================================================
     CardEffects.register(615, {
+        acceptsSpellCounters: 'counters',
+        maxSpellCounters: 3,
         canActivateOnCardActivated(ctx) {
             return ctx.activatedCard.type === 'spell';
         },
         onCardActivated(ctx) {
-            const current = ctx.card.spellCounters || 0;
+            const current = ctx.card.counters || 0;
             if (current >= 3) return;
-            ctx.card.spellCounters = current + 1;
-            ctx.log(`📚 Biblioteca Magica Reale guadagna un Segnalino Magia (${ctx.card.spellCounters}/3)!`);
+            ctx.card.counters = current + 1;
+            ctx.log(`📚 Biblioteca Magica Reale guadagna un Segnalino Magia (${ctx.card.counters}/3)!`);
         },
         canActivate(ctx) {
-            return (ctx.card.spellCounters || 0) >= 3;
+            return (ctx.card.counters || 0) >= 3;
         },
         activate(ctx) {
-            ctx.card.spellCounters -= 3;
+            ctx.card.counters -= 3;
             ctx.drawCards(ctx.owner, 1);
             ctx.log('📚 Biblioteca Magica Reale rimuove 3 Segnalini Magia e pesca 1 carta!');
         }

@@ -113,16 +113,20 @@
         // su 1 carta scoperta che può riceverne" — il valore è il nome del
         // campo su `card` dove va incrementato il contatore (diverso da
         // carta a carta per storia di sviluppo separata, vedi id 751).
-        acceptsSpellCounters: 'spellCounters',
+        // `counters` e non più `spellCounters`: il badge col numero sulla
+        // carta (renderFields in game-flow.js) legge SOLO `card.counters`,
+        // come da convenzione in cima a card-effects.js. Con un campo dal
+        // nome proprio i Segnalini c'erano ma non si vedevano.
+        acceptsSpellCounters: 'counters',
         canActivateOnCardActivated(ctx) {
             return ctx.activatedCard.type === 'spell';
         },
         onCardActivated(ctx) {
-            ctx.card.spellCounters = (ctx.card.spellCounters || 0) + 1;
-            ctx.log(`🐺 Bestia Mitica Cerbero guadagna un Segnalino Magia (${ctx.card.spellCounters})!`);
+            ctx.card.counters = (ctx.card.counters || 0) + 1;
+            ctx.log(`🐺 Bestia Mitica Cerbero guadagna un Segnalino Magia (${ctx.card.counters})!`);
         },
         static(ctx) {
-            const count = ctx.card.spellCounters || 0;
+            const count = ctx.card.counters || 0;
             if (count === 0) return;
             const e = gameState.atkDefBonus[ctx.card.uid] || { atk: 0, def: 0 };
             gameState.atkDefBonus[ctx.card.uid] = { atk: e.atk + count * 500, def: e.def };
@@ -130,8 +134,8 @@
         onBattlePhaseEnd(ctx) {
             if (!ctx.card.battledThisBattlePhase) return;
             ctx.card.battledThisBattlePhase = false;
-            if (!ctx.card.spellCounters) return;
-            ctx.card.spellCounters = 0;
+            if (!ctx.card.counters) return;
+            ctx.card.counters = 0;
             ctx.log('🐺 Bestia Mitica Cerbero ha combattuto: rimuove tutti i Segnalini Magia!');
         }
     });
@@ -141,54 +145,89 @@
     // Segnalino Magia ad ogni Magia attivata (max 3). Sacrificalo con 3
     // Segnalini per Special Summon 1 "Mago Nero" da mano/Deck/Cimitero.
     // ================================================================
+    // Dove si trova un "Mago Nero" (id 2) da Special Summonare con Abile
+    // Mago Oscuro: mano, Deck e Cimitero, ognuno solo se ne contiene uno.
+    // Il Cimitero sparisce dall'elenco se Necrovalley ne vieta gli
+    // spostamenti (vedi ctx.graveyardMoveNegated).
+    function fontiMagoNero(ctx) {
+        const fonti = [];
+        const hand = ctx.hand(ctx.owner);
+        if (hand.some((c) => c.id === 2)) fonti.push({ value: 'hand', label: 'Dalla mano', zona: hand });
+        const deck = gameState[Tavolo.chiave(ctx.owner, 'Deck')];
+        if (Array.isArray(deck) && deck.some((c) => c.id === 2)) fonti.push({ value: 'deck', label: 'Dal Deck', zona: deck });
+        const grave = ctx.graveyard(ctx.owner);
+        // Controllo SILENZIOSO (DuelEngine.isNecrovalleyProtectingGraveyard):
+        // questa funzione la chiama anche canActivate, molte volte al
+        // secondo, e ctx.graveyardMoveNegated scriverebbe ogni volta nel
+        // registro. Il controllo che scrive si fa al momento di spostare.
+        const necrovalley = DuelEngine.isNecrovalleyProtectingGraveyard && DuelEngine.isNecrovalleyProtectingGraveyard(ctx.owner);
+        if (grave.some((c) => c.id === 2) && !necrovalley) {
+            fonti.push({ value: 'graveyard', label: 'Dal Cimitero', zona: grave });
+        }
+        return fonti;
+    }
+
     CardEffects.register(736, {
-        acceptsSpellCounters: 'spellCounters',
+        // `counters` e non `spellCounters`: è il campo che il badge col
+        // numero sulla carta legge (vedi la convenzione in cima a
+        // card-effects.js). Prima i Segnalini si accumulavano ma restavano
+        // invisibili. maxSpellCounters lo rispetta anche chi ne aggiunge da
+        // fuori (Mago Apprendista, id 737).
+        acceptsSpellCounters: 'counters',
+        maxSpellCounters: 3,
         canActivateOnCardActivated(ctx) {
             return ctx.activatedCard.type === 'spell';
         },
         onCardActivated(ctx) {
-            const current = ctx.card.spellCounters || 0;
+            const current = ctx.card.counters || 0;
             if (current >= 3) return;
-            ctx.card.spellCounters = current + 1;
-            ctx.log(`🧙 Abile Mago Oscuro guadagna un Segnalino Magia (${ctx.card.spellCounters}/3)!`);
+            ctx.card.counters = current + 1;
+            ctx.log(`🧙 Abile Mago Oscuro guadagna un Segnalino Magia (${ctx.card.counters}/3)!`);
         },
+        // Attivabile solo se c'è davvero un Mago Nero da qualche parte:
+        // prima con 3 Segnalini risultava attivabile anche senza, e non
+        // faceva nulla.
         canActivate(ctx) {
-            return (ctx.card.spellCounters || 0) >= 3;
+            return (ctx.card.counters || 0) >= 3 && fontiMagoNero(ctx).length > 0;
         },
         activate(ctx) {
-            let source = null, from = null;
-            const hand = ctx.hand(ctx.owner);
-            const handIdx = hand.findIndex((c) => c.id === 2);
-            if (handIdx !== -1) { source = hand; from = handIdx; }
-            if (!source) {
-                const deckKey = Tavolo.chiave(ctx.owner, 'Deck');
-                const deck = gameState[deckKey];
-                if (Array.isArray(deck)) {
-                    const deckIdx = deck.findIndex((c) => c.id === 2);
-                    if (deckIdx !== -1) { source = deck; from = deckIdx; }
+            const fonti = fontiMagoNero(ctx);
+            if (fonti.length === 0) return;
+            // Da dove prenderlo lo decide il giocatore (i Maghi Neri sono
+            // identici, conta solo la zona: alleggerire il Deck, tenere
+            // quello in mano, recuperare quello nel Cimitero). Con una sola
+            // zona possibile non si chiede niente. Il bot preferisce il Deck,
+            // poi il Cimitero, e tiene per ultimo quello in mano.
+            const procedi = (zonaScelta) => {
+                const fonte = fonti.find((f) => f.value === zonaScelta);
+                if (!fonte) return;
+                if (fonte.value === 'graveyard' && ctx.graveyardMoveNegated(ctx.owner)) return;
+                const from = fonte.zona.findIndex((c) => c.id === 2);
+                if (from === -1) return;
+                const [darkMagician] = fonte.zona.splice(from, 1);
+                if (fonte.value === 'deck') gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = fonte.zona.length;
+                // Il costo: questa carta va nel Cimitero, senza i suoi
+                // Segnalini (non devono seguirla se un giorno torna in campo).
+                const field = ctx.field(ctx.owner);
+                const selfIndex = field.findIndex((s) => s && s.card.uid === ctx.card.uid);
+                if (selfIndex !== -1) {
+                    ctx.card.counters = 0;
+                    ctx.graveyard(ctx.owner).push(ctx.card);
+                    field[selfIndex] = null;
                 }
-            }
-            const grave = ctx.graveyard(ctx.owner);
-            if (!source) {
-                const graveIdx = grave.findIndex((c) => c.id === 2);
-                if (graveIdx !== -1) { source = grave; from = graveIdx; }
-            }
-            if (!source) return;
-            // Mano, Deck o Cimitero: qui la provenienza si sa solo ORA,
-            // ed e' quella del MAGO, non di questa carta (che finisce nel
-            // Cimitero poco piu' sotto come costo).
-            const zonaMago = source === hand ? 'hand' : (source === grave ? 'graveyard' : 'deck');
-            const [darkMagician] = source.splice(from, 1);
-            if (source === gameState.playerDeck || source === gameState.botDeck) {
-                gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = source.length;
-            }
-            const field = ctx.field(ctx.owner);
-            const selfIndex = field.findIndex((s) => s && s.card.uid === ctx.card.uid);
-            if (selfIndex !== -1) { ctx.graveyard(ctx.owner).push(ctx.card); field[selfIndex] = null; }
-            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-            if (slotIndex === -1) { ctx.graveyard(ctx.owner).push(darkMagician); return; }
-            ctx.specialSummon(ctx.owner, darkMagician, slotIndex, 'attack', zonaMago);
-            ctx.log('🧙 Abile Mago Oscuro si sacrifica e Special Summona Mago Nero!');
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (slotIndex === -1) { ctx.graveyard(ctx.owner).push(darkMagician); return; }
+                ctx.specialSummon(ctx.owner, darkMagician, slotIndex, 'attack', fonte.value);
+                ctx.log('🧙 Abile Mago Oscuro si sacrifica e Special Summona Mago Nero!');
+                if (typeof updateUI === 'function') updateUI();
+            };
+            if (fonti.length === 1) { procedi(fonti[0].value); return; }
+            chooseOption(ctx, {
+                title: '🧙 Abile Mago Oscuro',
+                text: 'Da dove vuoi Special Summonare "Mago Nero"?',
+                options: fonti.map((f) => ({ value: f.value, label: f.label })),
+                pickForBot: () => (fonti.find((f) => f.value === 'deck') || fonti.find((f) => f.value === 'graveyard') || fonti[0]).value
+            }, (scelta) => procedi(scelta || fonti[0].value));
         }
     });
 
@@ -216,7 +255,12 @@
                 ctx.field(o).forEach((slot) => {
                     if (!slot || slot.isFaceDown || slot.card.uid === ctx.card.uid) return;
                     const def = DuelEngine.getDefinition(slot.card.id);
-                    if (def && def.acceptsSpellCounters) candidates.push({ card: slot.card, field: def.acceptsSpellCounters });
+                    if (!def || !def.acceptsSpellCounters) return;
+                    // Una carta già al suo massimo (Abile Mago Oscuro: 3)
+                    // non può riceverne altri: prima ne prendeva un quarto.
+                    const giaPresenti = slot.card[def.acceptsSpellCounters] || 0;
+                    if (def.maxSpellCounters && giaPresenti >= def.maxSpellCounters) return;
+                    candidates.push({ card: slot.card, field: def.acceptsSpellCounters });
                 });
             });
             if (candidates.length === 0) return;
@@ -369,15 +413,19 @@
     // rimuovi N Segnalini; distruggi 1 mostro scoperto con ATK<=N*700.
     // ================================================================
     CardEffects.register(742, {
+        // Segnalini su `counters`, il campo che il badge sulla carta legge
+        // (prima `spellCounters`, invisibili). Può riceverne da Mago
+        // Apprendista (id 737), senza massimo.
+        acceptsSpellCounters: 'counters',
         canActivateOnCardActivated(ctx) {
             return ctx.activatedCard.type === 'spell';
         },
         onCardActivated(ctx) {
-            ctx.card.spellCounters = (ctx.card.spellCounters || 0) + 1;
-            ctx.log(`🎆 Mago dell'Esplosione guadagna un Segnalino Magia (${ctx.card.spellCounters})!`);
+            ctx.card.counters = (ctx.card.counters || 0) + 1;
+            ctx.log(`🎆 Mago dell'Esplosione guadagna un Segnalino Magia (${ctx.card.counters})!`);
         },
         canActivate(ctx) {
-            const count = ctx.card.spellCounters || 0;
+            const count = ctx.card.counters || 0;
             if (count === 0) return false;
             const maxAtk = count * 700;
             return Tavolo.ordine().some((owner) => ctx.field(owner).some((s) => s && !s.isFaceDown && DuelEngine.getEffectiveAtk(s.card) <= maxAtk));
@@ -389,7 +437,7 @@
         // solo il mostro con l'ATK più alto, anche uno PROPRIO, e azzerava
         // tutti i Segnalini. Il bot prende l'avversario più forte.
         activate(ctx) {
-            const count = ctx.card.spellCounters || 0;
+            const count = ctx.card.counters || 0;
             if (count === 0) return;
             const atk = (c) => DuelEngine.getEffectiveAtk(c.card);
             const allaPortata = (card) => DuelEngine.getEffectiveAtk(card) <= count * 700;
@@ -406,7 +454,7 @@
             }, (scelto) => {
                 try {
                     const servono = Math.max(1, Math.ceil(atk(scelto) / 700));
-                    ctx.card.spellCounters = Math.max(0, count - servono);
+                    ctx.card.counters = Math.max(0, count - servono);
                     const finalName = scelto.card.name;
                     ctx.destroyMonster(scelto.owner, scelto.index);
                     ctx.log(`🎆 Mago dell'Esplosione rimuove ${servono} Segnalini e distrugge ${finalName}!`);
