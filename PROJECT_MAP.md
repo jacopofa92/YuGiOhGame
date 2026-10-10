@@ -901,6 +901,23 @@ Terzo gruppo:
 - cache PWA `v200`; guardrail:
   `tests/specs/cinematiche-carte-iconiche-terzo-gruppo.spec.js`.
 
+Quarto gruppo:
+
+- Nega Attacco (`820`) assorbe la traiettoria offensiva in un varco e
+  chiude visivamente la Battle Phase; Capro Espiatorio (`434`) fa
+  materializzare uno spirito sopra ogni Token Pecora appena creato, prima
+  del normale riscontro di nascita condiviso da tutti i Token;
+- Scatola Mistica (`388`) conserva la fotografia del primo bersaglio
+  distrutto fino alla seconda scelta e mostra due cabine prospettiche prima
+  del normale passaggio di controllo;
+- Rimozione del Limitatore (`350`) applica contagiri e sovraccarico soltanto
+  agli indici dei mostri Macchina realmente potenziati;
+- Incantesimo Ombra (`439`) ha un impatto iniziale e catene persistenti
+  ricreate da `targetUid`: spariscono automaticamente quando mostro o
+  Trappola lasciano il Terreno;
+- cache PWA `v201`; guardrail:
+  `tests/specs/cinematiche-carte-iconiche-quarto-gruppo.spec.js`.
+
 ## Cinematica Evocazione Fusione
 
 - `DuelEngine.actions.fusionSummon()` fotografa i materiali realmente scelti

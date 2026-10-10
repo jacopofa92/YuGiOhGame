@@ -2747,6 +2747,9 @@
             // targeting.
             ctx.declareTargetWaiting(ctx.attackerOwner, ctx.attackerIndex, { totalTargetCount: 1 }, (decl) => {
                 if (!decl.allowed) return;
+                if (window.FX && typeof FX.playNegateAttack === 'function') {
+                    FX.playNegateAttack(ctx.attackerOwner, ctx.attackerIndex);
+                }
                 ctx.cancelAttack();
                 ctx.endBattlePhase();
                 ctx.log("🛡️ Nega Attacco annulla l'attacco e termina la Battle Phase!");

@@ -35,6 +35,11 @@
  *   FX.playSolemnJudgment(owner, cost)
  *   FX.playBookOfMoon(owner, index, card)
  *   FX.playCrushCardVirus(owner, targetIndices)
+ *   FX.playNegateAttack(attackerOwner, attackerIndex)
+ *   FX.playScapegoat(owner, tokenIndices)
+ *   FX.playMysticBox(destroyedTarget, offeredTarget)
+ *   FX.playLimiterRemoval(owner, machineIndices)
+ *   FX.playShadowSpell(owner, index)
  *   FX.playTributeSacrifice(cardElement)
  *   FX.spawnParticles(x, y, opts)
  */
@@ -1224,6 +1229,152 @@
         return 1800;
     }
 
+    /** Nega Attacco: un varco assorbe il colpo e chiude visivamente la Battle Phase. */
+    function playNegateAttack(attackerOwner, attackerIndex) {
+        const boardId = attackerOwner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+        const cardEl = document.querySelector(`#${boardId} .field-slot[data-owner="${attackerOwner}"][data-type="monster"][data-index="${attackerIndex}"] .card`);
+        if (!cardEl) return 0;
+        beginSummonCinematic();
+        const point = centerOf(cardEl);
+        const scene = document.createElement('div');
+        scene.className = 'fx-negate-attack';
+        scene.setAttribute('aria-hidden', 'true');
+        scene.innerHTML = '<div class="fx-negate-vignette"></div><div class="fx-negate-gate"><i></i><i></i><i></i><b></b></div><div class="fx-negate-beam"></div><strong>ATTACCO NEGATO</strong>';
+        const gate = scene.querySelector('.fx-negate-gate');
+        const gateX = window.innerWidth / 2;
+        const gateY = window.innerHeight / 2;
+        Object.assign(gate.style, { left: `${gateX}px`, top: `${gateY}px` });
+        const beam = scene.querySelector('.fx-negate-beam');
+        const dx = gateX - point.x;
+        const dy = gateY - point.y;
+        Object.assign(beam.style, {
+            left: `${point.x}px`, top: `${point.y}px`,
+            width: `${Math.hypot(dx, dy)}px`,
+            transform: `rotate(${Math.atan2(dy, dx) * 180 / Math.PI}deg)`
+        });
+        document.body.appendChild(scene);
+        if (window.SFX && typeof SFX.activateTrap === 'function') SFX.activateTrap();
+        setTimeout(() => { scene.remove(); endSummonCinematic(); }, 1550);
+        return 1550;
+    }
+
+    /** Capro Espiatorio: quattro spiriti percorrono gli slot appena creati. */
+    function playScapegoat(owner, tokenIndices) {
+        const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+        const targets = (tokenIndices || []).map((index) => {
+            const slot = document.querySelector(`#${boardId} .field-slot[data-owner="${owner}"][data-type="monster"][data-index="${index}"]`);
+            const rect = slot && slot.getBoundingClientRect();
+            return rect && rect.width ? { index, rect } : null;
+        }).filter(Boolean);
+        if (!targets.length) return 0;
+        beginSummonCinematic();
+        const scene = document.createElement('div');
+        scene.className = `fx-scapegoat fx-scapegoat--${owner}`;
+        scene.setAttribute('aria-hidden', 'true');
+        scene.innerHTML = '<div class="fx-scapegoat-mist"></div><strong>CAPRO ESPIATORIO</strong>';
+        targets.forEach(({ rect }, index) => {
+            const sheep = document.createElement('span');
+            sheep.className = 'fx-sheep-spirit';
+            Object.assign(sheep.style, {
+                left: `${rect.left + rect.width / 2}px`, top: `${rect.top + rect.height / 2}px`,
+                width: `${rect.width * 1.18}px`, height: `${rect.width * .9}px`,
+                '--sheep-delay': `${index * 105}ms`
+            });
+            sheep.innerHTML = '<i></i><b></b>';
+            scene.appendChild(sheep);
+        });
+        document.body.appendChild(scene);
+        if (window.SFX && typeof SFX.activateSpell === 'function') SFX.activateSpell();
+        setTimeout(() => { scene.remove(); endSummonCinematic(); }, 1650);
+        return 1650;
+    }
+
+    /** Scatola Mistica: due cabine in prospettiva, lama e passaggio di controllo. */
+    function playMysticBox(destroyedTarget, offeredTarget) {
+        if (!destroyedTarget || !offeredTarget) return 0;
+        const slotRect = (target) => {
+            const boardId = target.owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+            const slot = document.querySelector(`#${boardId} .field-slot[data-owner="${target.owner}"][data-type="monster"][data-index="${target.index}"]`);
+            return slot && slot.getBoundingClientRect();
+        };
+        const leftRect = slotRect(destroyedTarget);
+        const rightRect = slotRect(offeredTarget);
+        if (!leftRect || !rightRect || !leftRect.width || !rightRect.width) return 0;
+        beginSummonCinematic();
+        const scene = document.createElement('div');
+        scene.className = 'fx-mystic-box';
+        scene.setAttribute('aria-hidden', 'true');
+        scene.innerHTML = '<div class="fx-mystic-shade"></div><div class="fx-mystic-cabinet fx-mystic-cabinet--destroy"><i></i><b></b></div><div class="fx-mystic-cabinet fx-mystic-cabinet--offer"><i></i><b></b></div><div class="fx-mystic-arc"></div>';
+        const cabinets = scene.querySelectorAll('.fx-mystic-cabinet');
+        [[cabinets[0], leftRect], [cabinets[1], rightRect]].forEach(([el, rect]) => {
+            Object.assign(el.style, {
+                left: `${rect.left + rect.width / 2}px`, top: `${rect.top + rect.height / 2}px`,
+                width: `${rect.width * 1.45}px`, height: `${rect.height * 1.2}px`
+            });
+        });
+        if (destroyedTarget.card && typeof window.createCardElement === 'function') {
+            const ghost = createCardElement(destroyedTarget.card);
+            ghost.classList.add('fx-mystic-victim');
+            Object.assign(ghost.style, { left: `${leftRect.left}px`, top: `${leftRect.top}px`, width: `${leftRect.width}px`, height: `${leftRect.height}px` });
+            scene.appendChild(ghost);
+        }
+        document.body.appendChild(scene);
+        if (window.SFX && typeof SFX.activateSpell === 'function') SFX.activateSpell();
+        setTimeout(() => { scene.remove(); endSummonCinematic(); }, 1750);
+        return 1750;
+    }
+
+    /** Rimozione del Limitatore sovraccarica solo le Macchine coinvolte. */
+    function playLimiterRemoval(owner, machineIndices) {
+        const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+        const targets = (machineIndices || []).map((index) => {
+            const el = document.querySelector(`#${boardId} .field-slot[data-owner="${owner}"][data-type="monster"][data-index="${index}"] .card`);
+            return el ? centerOf(el) : null;
+        }).filter(Boolean);
+        if (!targets.length) return 0;
+        beginSummonCinematic();
+        const scene = document.createElement('div');
+        scene.className = 'fx-limiter-removal';
+        scene.setAttribute('aria-hidden', 'true');
+        scene.innerHTML = '<div class="fx-limiter-vignette"></div><div class="fx-limiter-gauge"><i></i><b></b></div><strong>LIMITATORE RIMOSSO</strong>';
+        targets.forEach((point, index) => {
+            const surge = document.createElement('span');
+            surge.className = 'fx-machine-surge';
+            Object.assign(surge.style, {
+                left: `${point.x}px`, top: `${point.y}px`,
+                width: `${point.rect.width * 1.5}px`, height: `${point.rect.height * 1.2}px`,
+                '--surge-delay': `${index * 80}ms`
+            });
+            surge.innerHTML = '<i></i><i></i><i></i><b></b>';
+            scene.appendChild(surge);
+        });
+        document.body.appendChild(scene);
+        if (window.SFX && typeof SFX.activateSpell === 'function') SFX.activateSpell();
+        setTimeout(() => { scene.remove(); endSummonCinematic(); }, 1600);
+        return 1600;
+    }
+
+    /** Impatto iniziale di Incantesimo Ombra; le catene permanenti le deriva il renderer. */
+    function playShadowSpell(owner, index) {
+        const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+        const cardEl = document.querySelector(`#${boardId} .field-slot[data-owner="${owner}"][data-type="monster"][data-index="${index}"] .card`);
+        if (!cardEl) return 0;
+        beginSummonCinematic();
+        const point = centerOf(cardEl);
+        const bind = document.createElement('div');
+        bind.className = 'fx-shadow-bind';
+        bind.setAttribute('aria-hidden', 'true');
+        Object.assign(bind.style, {
+            left: `${point.x}px`, top: `${point.y}px`,
+            width: `${point.rect.width * 1.75}px`, height: `${point.rect.height * 1.35}px`
+        });
+        bind.innerHTML = '<i></i><i></i><i></i><b></b><span></span>';
+        document.body.appendChild(bind);
+        if (window.SFX && typeof SFX.activateTrap === 'function') SFX.activateTrap();
+        setTimeout(() => { bind.remove(); endSummonCinematic(); }, 1400);
+        return 1400;
+    }
+
     /**
      * Cinematica che precede una vera Evocazione Fusione. Usa copie DOM
      * dei materiali già scelti dal motore: orbitano in prospettiva,
@@ -2230,6 +2381,11 @@
         playSolemnJudgment,
         playBookOfMoon,
         playCrushCardVirus,
+        playNegateAttack,
+        playScapegoat,
+        playMysticBox,
+        playLimiterRemoval,
+        playShadowSpell,
         playCoinFlip: viaBackend('playCoinFlip', playCoinFlip),
         playDiceRoll: viaBackend('playDiceRoll', playDiceRoll),
         // ATTENZIONE per chi scrivera' un backend per questa: i chiamanti

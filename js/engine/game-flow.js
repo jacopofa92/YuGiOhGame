@@ -1021,6 +1021,29 @@ function renderFields() {
                         chain.setAttribute('aria-hidden', 'true');
                         slotEl.appendChild(chain);
                     }
+                    // Incantesimo Ombra (id 439): le catene devono vivere
+                    // esattamente quanto il legame reale della Trappola.
+                    // La sorgente è normalmente sul lato opposto al mostro,
+                    // quindi cerchiamo entrambi i posti invece di assumere
+                    // che appartenga allo stesso proprietario del bersaglio.
+                    let shadowSource = null;
+                    Tavolo.ordine().some((sourceOwner) => {
+                        const sourceIndex = Tavolo.magieTrappole(sourceOwner).findIndex((stSlot) => stSlot
+                            && !stSlot.isFaceDown
+                            && stSlot.card.id === 439
+                            && stSlot.card.targetUid === slot.card.uid);
+                        if (sourceIndex === -1) return false;
+                        shadowSource = { owner: sourceOwner, index: sourceIndex };
+                        return true;
+                    });
+                    if (shadowSource) {
+                        const bind = document.createElement('div');
+                        bind.className = `shadow-spell-link shadow-spell-link--${owner}`;
+                        bind.style.setProperty('--shadow-link-angle', `${(shadowSource.index - index) * 6}deg`);
+                        bind.setAttribute('aria-hidden', 'true');
+                        bind.innerHTML = '<i></i><i></i><i></i><b></b>';
+                        slotEl.appendChild(bind);
+                    }
                 }
                 // ATK/DEF sotto la carta, stile Duel Masters: solo per i
                 // mostri SCOPERTI (un mostro coperto non rivela le sue

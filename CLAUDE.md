@@ -4248,3 +4248,11 @@ resta sincrona, requisito importante per attacchi, Trappole Contatore e
 risoluzione LIFO delle Chain. Il Virus riceve dal motore gli indici realmente
 colpiti, Giudizio il costo LP reale. Guardrail dedicato
 `cinematiche-carte-iconiche-terzo-gruppo`; cache `v200`.
+
+Quarto gruppo: Nega Attacco, Capro Espiatorio, Scatola Mistica, Rimozione
+del Limitatore e Incantesimo Ombra. Capro mantiene anche il feedback Token
+generico; Scatola conserva il primo bersaglio fra i due picker asincroni;
+Limitatore riceve gli indici delle sole Macchine potenziate. Come Richiamo
+degli Infestati, Incantesimo Ombra non usa una durata grafica arbitraria:
+`renderFields()` ricrea le catene dal `targetUid` reale e le rimuove insieme
+al legame. Guardrail `cinematiche-carte-iconiche-quarto-gruppo`, cache `v201`.

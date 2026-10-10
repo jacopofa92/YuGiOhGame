@@ -1412,12 +1412,17 @@
         canActivate(ctx) { return ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.race === 'Macchina'); },
         activate(ctx) {
             let count = 0;
-            ctx.field(ctx.owner).forEach((slot) => {
+            const machineIndices = [];
+            ctx.field(ctx.owner).forEach((slot, index) => {
                 if (!slot || slot.isFaceDown || slot.card.race !== 'Macchina') return;
+                machineIndices.push(index);
                 const currentAtk = DuelEngine.getEffectiveAtk(slot.card);
                 ctx.grantTemporaryAtkDefBonus(slot.card, currentAtk, 0, true);
                 count++;
             });
+            if (window.FX && typeof FX.playLimiterRemoval === 'function') {
+                FX.playLimiterRemoval(ctx.owner, machineIndices);
+            }
             ctx.log(`💥 Rimozione del Limitatore raddoppia l'ATK di ${count} most${count === 1 ? 'ro' : 'ri'} Macchina, distrutti in End Phase!`);
         }
     });
@@ -2304,7 +2309,7 @@
             ctx.field(ctx.opponent).forEach((slot, index) => {
                 if (slot) suoi.push({ owner: ctx.opponent, index, card: slot.card });
             });
-            const cediUnProprioMostro = () => {
+            const cediUnProprioMostro = (distrutto) => {
                 const miei = [];
                 ctx.field(ctx.owner).forEach((slot, index) => {
                     if (slot) miei.push({ owner: ctx.owner, index, card: slot.card });
@@ -2321,12 +2326,15 @@
                     const slot = ctx.field(ctx.owner)[mio.index];
                     if (!slot) return;
                     const name = slot.card.name;
+                    if (distrutto && window.FX && typeof FX.playMysticBox === 'function') {
+                        FX.playMysticBox(distrutto, { owner: mio.owner, index: mio.index, card: slot.card });
+                    }
                     if (ctx.takeControl(ctx.opponent, ctx.owner, mio.index)) {
                         ctx.log(`⚠️ ${name} passa sotto il controllo dell'avversario!`);
                     }
                 });
             };
-            if (suoi.length === 0) { cediUnProprioMostro(); return; }
+            if (suoi.length === 0) { cediUnProprioMostro(null); return; }
             chooseFieldMonsterTarget(ctx, suoi, {
                 title: '🎁 Scatola Mistica',
                 text: 'Scegli quale mostro avversario distruggere.'
@@ -2335,8 +2343,13 @@
                 // non scatenano le reazioni a un bersaglio singolo
                 // (Specchietto della Fata, Campo di Riryoku).
                 const decl = ctx.declareTarget(suo.owner, suo.index, { totalTargetCount: 2 });
-                if (decl.allowed) ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
-                cediUnProprioMostro();
+                let distrutto = null;
+                if (decl.allowed) {
+                    const slot = ctx.field(decl.targetOwner)[decl.targetIndex];
+                    if (slot) distrutto = { owner: decl.targetOwner, index: decl.targetIndex, card: slot.card };
+                    ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
+                }
+                cediUnProprioMostro(distrutto);
             });
         }
     });
@@ -2634,6 +2647,9 @@
                 ctx.card.targetOwner = scelta.owner;
                 ctx.card.targetIndex = scelta.index;
                 ctx.card.targetUid = targetSlot.card.uid;
+                if (window.FX && typeof FX.playShadowSpell === 'function') {
+                    FX.playShadowSpell(scelta.owner, scelta.index);
+                }
                 ctx.log(`👻 Incantesimo Ombra lega ${targetSlot.card.name}!`);
             });
         },
@@ -2855,6 +2871,7 @@
     // Si accende DOPO aver creato i Token, o bloccherebbe i Token stessi.
     CardEffects.register(434, {
         activate(ctx) {
+            const before = new Set(ctx.field(ctx.owner).filter(Boolean).map((slot) => slot.card.uid));
             // cannotBeTributed: il testo reale lo dice, ed e' la meta' del
             // senso della carta — quattro muri da 0 ATK che diventassero
             // carburante per un'Evocazione Tributo sarebbero un regalo
@@ -2862,6 +2879,13 @@
             const created = ctx.createTokens(ctx.owner, 4,
                 { name: 'Token Pecora', race: 'Bestia', attribute: 'TERRA', level: 1, attack: 0, defense: 0 },
                 { cannotBeTributed: true });
+            const tokenIndices = [];
+            ctx.field(ctx.owner).forEach((slot, index) => {
+                if (slot && slot.card.isToken && !before.has(slot.card.uid)) tokenIndices.push(index);
+            });
+            if (window.FX && typeof FX.playScapegoat === 'function') {
+                FX.playScapegoat(ctx.owner, tokenIndices);
+            }
             gameState.noSummonTurn = gameState.noSummonTurn || {};
             gameState.noSummonTurn[ctx.owner] = gameState.turn;
             ctx.log(`🐑 Capro Espiatorio evoca ${created} Token Pecora! Per questo turno puoi solo Settare altri mostri.`);
