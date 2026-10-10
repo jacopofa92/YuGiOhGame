@@ -1,0 +1,366 @@
+/* =====================================================================
+   sfida-libera.css — la finestra "prepara la sfida" del Duello Libero.
+   Gemello di js/ui/sfida-libera.js (vedi lì perché è un componente).
+   Vive nel <body> e non dentro una vista, quindi i selettori sono tutti
+   con prefisso .sl- e non dipendono dalla pagina che lo carica.
+
+   Disposizione:
+     - desktop: avversario a sinistra (alto quanto tutta la finestra),
+       a destra le scelte che scorrono e, sotto, il piede fisso col
+       pulsante "Duella";
+     - telefono in verticale: una colonna, avversario come intestazione
+       compatta, piede sempre visibile in fondo;
+     - telefono in orizzontale: due colonne strette, tutto più piccolo.
+   ===================================================================== */
+
+html.sl-aperta { overflow: hidden; }
+
+.sl-sfondo {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(8px, 3vw, 28px);
+    background: radial-gradient(ellipse at 50% 40%, rgba(24, 18, 10, 0.72), rgba(0, 0, 0, 0.88));
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+}
+.sl-sfondo.open { display: flex; animation: slSfuma 0.22s ease; }
+
+.sl-modale {
+    --sl-oro: #f7d774;
+    --sl-oro-tenue: rgba(247, 215, 116, 0.16);
+    --sl-testo: #efe6d2;
+    --sl-tenue: #a89d86;
+    position: relative;
+    width: min(1040px, 100%);
+    max-height: min(92vh, 780px);
+    display: grid;
+    grid-template-columns: minmax(220px, 290px) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas: "avv corpo" "avv piede";
+    overflow: hidden;
+    border-radius: 18px;
+    color: var(--sl-testo);
+    text-align: left;
+    background: linear-gradient(160deg, #1d1812 0%, #13131d 55%, #0d0f18 100%);
+    box-shadow: 0 0 0 1px rgba(247, 215, 116, 0.32), 0 30px 80px rgba(0, 0, 0, 0.7), inset 0 1px rgba(255, 255, 255, 0.05);
+    animation: slEntra 0.32s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+.sl-chiudi {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 3;
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    border: none;
+    border-radius: 50%;
+    color: var(--sl-tenue);
+    background: rgba(0, 0, 0, 0.35);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    transition: color 0.2s ease, background 0.2s ease;
+}
+.sl-chiudi svg { width: 16px; height: 16px; }
+.sl-chiudi:hover { color: #fff; background: rgba(0, 0, 0, 0.6); }
+.sl-chiudi:focus-visible { outline: 2px solid var(--sl-oro); outline-offset: 2px; }
+
+/* --- Avversario ------------------------------------------------------ */
+.sl-avversario {
+    grid-area: avv;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 28px 22px 26px;
+    text-align: center;
+    background:
+        radial-gradient(circle at 50% 40%, rgba(247, 205, 96, 0.22), transparent 58%),
+        linear-gradient(180deg, rgba(44, 30, 14, 0.55), rgba(10, 9, 14, 0.92));
+    box-shadow: inset -1px 0 0 rgba(247, 215, 116, 0.16);
+    overflow: hidden;
+}
+.sl-occhiello {
+    font-size: 0.62rem;
+    font-weight: 900;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--sl-oro);
+    opacity: 0.85;
+}
+.sl-ritratto {
+    position: relative;
+    width: 100%;
+    height: clamp(170px, 32vh, 280px);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+/* Basamento: un'ellisse di luce sotto ai piedi della pedina. */
+.sl-ritratto::after {
+    content: '';
+    position: absolute;
+    left: 18%;
+    right: 18%;
+    bottom: -6px;
+    height: 22px;
+    border-radius: 50%;
+    background: radial-gradient(ellipse at center, rgba(247, 205, 96, 0.45), rgba(247, 205, 96, 0) 70%);
+    z-index: 0;
+}
+.sl-ritratto img {
+    position: relative;
+    z-index: 1;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.7));
+    animation: slAppare 0.35s ease;
+}
+/* Ritratto normale (nessuna pedina): quadrato sfumato ai bordi invece di
+   un cerchio con l'anello. */
+.sl-ritratto.is-ritratto img {
+    width: min(200px, 80%);
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 14px;
+    -webkit-mask-image: radial-gradient(closest-side, #000 70%, transparent 100%);
+    mask-image: radial-gradient(closest-side, #000 70%, transparent 100%);
+}
+.sl-ritratto-ripiego { position: relative; z-index: 1; font-size: 3rem; opacity: 0.5; align-self: center; }
+.sl-identita { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
+.sl-nome {
+    margin: 6px 0 0;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: clamp(1.2rem, 2vw, 1.6rem);
+    font-weight: 700;
+    line-height: 1.1;
+    color: #fbefd0;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+    text-wrap: balance;
+}
+.sl-titolo { font-size: 0.78rem; line-height: 1.35; color: var(--sl-tenue); text-wrap: balance; }
+.sl-record { display: flex; gap: 10px; margin-top: 10px; }
+.sl-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 78px;
+    padding: 7px 10px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.32);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+.sl-stat b { font-family: Georgia, serif; font-size: 1.25rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.sl-stat span { margin-top: 3px; font-size: 0.56rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sl-tenue); }
+.sl-stat--v b { color: #8fe9a6; }
+.sl-stat--s b { color: #ff9b8c; }
+
+/* --- Scelte ---------------------------------------------------------- */
+.sl-corpo {
+    grid-area: corpo;
+    min-width: 0;
+    overflow-y: auto;
+    padding: 26px 28px 10px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(247, 215, 116, 0.35) transparent;
+}
+.sl-setup.ds-setup { --ds-surface: rgba(5, 8, 16, 0.5); }
+.sl-setup .ds-group-label,
+.sl-sezione {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.66rem;
+    font-weight: 900;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #f2d786;
+}
+.sl-setup .ds-group + .ds-group { margin-top: 16px; }
+.sl-setup .ds-field { width: 150px; height: 92px; }
+.sl-setup .ds-strip { scrollbar-width: thin; scrollbar-color: rgba(247, 215, 116, 0.35) transparent; }
+.sl-setup .ds-tracks { grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: 150px; }
+
+.sl-livello { margin-top: 18px; padding-top: 16px; box-shadow: inset 0 1px 0 rgba(247, 215, 116, 0.12); }
+.sl-livelli { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.sl-liv {
+    --liv-col: #f7c35a;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 64px;
+    padding: 10px 14px;
+    border: none;
+    border-radius: 12px;
+    font: inherit;
+    text-align: left;
+    color: var(--sl-testo);
+    background: rgba(10, 12, 22, 0.72);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+    cursor: pointer;
+    transition: transform 0.18s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+.sl-liv--easy { --liv-col: #6fe08a; }
+.sl-liv--medium { --liv-col: #f7c35a; }
+.sl-liv--hard { --liv-col: #ff7a6b; }
+.sl-liv:hover { transform: translateY(-2px); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--liv-col) 55%, transparent); }
+.sl-liv:focus-visible { outline: 2px solid var(--sl-oro); outline-offset: 2px; }
+.sl-liv.is-scelto {
+    background: linear-gradient(145deg, color-mix(in srgb, var(--liv-col) 22%, rgba(10, 12, 22, 0.9)), rgba(10, 12, 22, 0.9));
+    box-shadow: inset 0 0 0 2px var(--liv-col), 0 0 22px color-mix(in srgb, var(--liv-col) 30%, transparent);
+}
+.sl-liv-pallini { display: flex; gap: 4px; flex: none; }
+.sl-liv-pallini i {
+    width: 8px;
+    height: 8px;
+    transform: rotate(45deg);
+    background: var(--liv-col);
+    box-shadow: 0 0 6px color-mix(in srgb, var(--liv-col) 60%, transparent);
+    border-radius: 1px;
+}
+.sl-liv-testo { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.sl-liv-testo b { font-size: 0.95rem; }
+.sl-liv-testo small { font-size: 0.66rem; line-height: 1.25; color: rgba(255, 255, 255, 0.6); }
+
+/* --- Piede ----------------------------------------------------------- */
+.sl-piede {
+    grid-area: piede;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 28px 18px;
+    background: linear-gradient(0deg, rgba(5, 6, 11, 0.6), rgba(5, 6, 11, 0));
+    box-shadow: inset 0 1px 0 rgba(247, 215, 116, 0.12);
+}
+.sl-avviso { flex: 1; min-width: 0; font-size: 0.78rem; line-height: 1.35; color: #ff9b8c; }
+.sl-annulla {
+    border: none;
+    background: none;
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--sl-tenue);
+    cursor: pointer;
+    padding: 10px 6px;
+}
+.sl-annulla:hover { color: #fff; }
+.sl-duella {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    min-height: 48px;
+    padding: 0 30px;
+    border: none;
+    border-radius: 999px;
+    font: inherit;
+    font-size: 1rem;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #2a1600;
+    background: linear-gradient(180deg, #ffe48e 0%, #f2ad37 58%, #c97a14 100%);
+    box-shadow: 0 8px 24px rgba(240, 168, 48, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.65), inset 0 -2px 0 rgba(120, 60, 0, 0.35);
+    cursor: pointer;
+    transition: transform 0.15s ease, filter 0.2s ease, box-shadow 0.2s ease;
+}
+.sl-duella svg { width: 20px; height: 20px; }
+.sl-duella:hover { filter: brightness(1.07); box-shadow: 0 10px 30px rgba(240, 168, 48, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.65), inset 0 -2px 0 rgba(120, 60, 0, 0.35); }
+.sl-duella:active { transform: scale(0.97); }
+.sl-duella:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+.sl-duella:disabled { cursor: default; filter: saturate(0.6); opacity: 0.8; }
+
+/* --- Telefono in verticale ------------------------------------------- */
+@media (max-width: 620px) and (orientation: portrait) {
+    .sl-sfondo { padding: 8px; align-items: flex-end; }
+    .sl-modale {
+        width: 100%;
+        max-height: calc(100dvh - 16px);
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto minmax(0, 1fr) auto;
+        grid-template-areas: "avv" "corpo" "piede";
+        border-radius: 16px;
+    }
+    .sl-chiudi { top: 8px; right: 8px; width: 32px; height: 32px; }
+    .sl-avversario {
+        flex-direction: row;
+        justify-content: flex-start;
+        gap: 12px;
+        padding: 12px 48px 12px 14px;
+        text-align: left;
+        box-shadow: inset 0 -1px 0 rgba(247, 215, 116, 0.16);
+        background:
+            radial-gradient(circle at 12% 60%, rgba(247, 205, 96, 0.22), transparent 45%),
+            linear-gradient(180deg, rgba(44, 30, 14, 0.55), rgba(10, 9, 14, 0.92));
+    }
+    .sl-occhiello { display: none; }
+    .sl-ritratto { width: 76px; height: 82px; flex: none; }
+    .sl-ritratto::after { bottom: -4px; height: 12px; }
+    .sl-ritratto.is-ritratto img { width: 70px; }
+    .sl-identita { align-items: flex-start; }
+    .sl-nome { margin: 0; font-size: 1.12rem; }
+    .sl-titolo { font-size: 0.68rem; }
+    .sl-record { margin-top: 4px; gap: 6px; }
+    .sl-stat { flex-direction: row; gap: 5px; min-width: 0; padding: 3px 8px; align-items: baseline; }
+    .sl-stat b { font-size: 0.85rem; }
+    .sl-stat span { margin: 0; font-size: 0.5rem; }
+    .sl-corpo { padding: 12px 12px 6px; }
+    .sl-setup .ds-field { width: 128px; height: 78px; }
+    .sl-setup .ds-tracks { display: flex; overflow-x: auto; max-height: none; padding-bottom: 5px; }
+    .sl-setup .ds-track { flex: 0 0 185px; }
+    .sl-livello { margin-top: 12px; padding-top: 12px; }
+    .sl-livelli { gap: 6px; }
+    .sl-liv { flex-direction: column; align-items: flex-start; gap: 6px; min-height: 58px; padding: 9px 10px; }
+    .sl-liv-testo small { display: none; }
+    .sl-piede { padding: 10px 12px 12px; gap: 8px; flex-wrap: wrap; }
+    .sl-avviso:empty { display: none; }
+    .sl-avviso { flex-basis: 100%; }
+    .sl-duella { flex: 1; min-height: 46px; }
+}
+
+/* --- Telefono in orizzontale (poca altezza) -------------------------- */
+@media (max-height: 540px) and (orientation: landscape) {
+    .sl-sfondo { padding: 6px; }
+    .sl-modale { width: min(1000px, 100%); max-height: calc(100dvh - 12px); grid-template-columns: 170px minmax(0, 1fr); border-radius: 14px; }
+    .sl-chiudi { top: 6px; right: 6px; width: 30px; height: 30px; }
+    .sl-avversario { padding: 10px 10px 12px; gap: 3px; }
+    .sl-occhiello { font-size: 0.5rem; }
+    .sl-ritratto { height: 38vh; }
+    .sl-nome { font-size: 0.95rem; margin-top: 2px; }
+    .sl-titolo { font-size: 0.58rem; }
+    .sl-record { margin-top: 4px; gap: 5px; }
+    .sl-stat { min-width: 56px; padding: 4px 6px; }
+    .sl-stat b { font-size: 0.85rem; }
+    .sl-stat span { font-size: 0.46rem; }
+    .sl-corpo { padding: 10px 14px 4px; }
+    .sl-setup .ds-group + .ds-group { margin-top: 7px; }
+    .sl-setup .ds-group-label, .sl-sezione { margin-bottom: 4px; font-size: 0.55rem; }
+    .sl-setup .ds-field { width: 112px; height: 62px; }
+    .sl-setup .ds-strip { padding: 1px 1px 4px; gap: 6px; }
+    .sl-setup .ds-tracks { display: flex; overflow-x: auto; max-height: none; gap: 5px; }
+    .sl-setup .ds-track { flex: 0 0 170px; padding: 6px 8px; }
+    .sl-setup .ds-origins { flex-wrap: nowrap; overflow-x: auto; }
+    .sl-setup .ds-origin { flex: 0 0 auto; padding: 5px 9px; font-size: 0.6rem; }
+    .sl-livello { margin-top: 8px; padding-top: 8px; }
+    .sl-liv { min-height: 44px; padding: 6px 10px; gap: 8px; }
+    .sl-liv-testo b { font-size: 0.75rem; }
+    .sl-liv-testo small { font-size: 0.54rem; }
+    .sl-piede { padding: 7px 14px 8px; }
+    .sl-duella { min-height: 38px; padding: 0 22px; font-size: 0.85rem; }
+}
+
+@keyframes slSfuma { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slEntra { from { opacity: 0; transform: translateY(14px) scale(0.98); } to { opacity: 1; transform: none; } }
+@keyframes slAppare { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+    .sl-sfondo.open, .sl-modale, .sl-ritratto img { animation: none; }
+    .sl-liv, .sl-duella { transition: none; }
+}

@@ -33,6 +33,7 @@
      con la Sala d'Attesa del Multiplayer, più le scatole 3D dei mazzi. -->
 <link rel="stylesheet" href="js/ui/deck-box.css">
 <link rel="stylesheet" href="js/ui/duel-setup.css">
+<link rel="stylesheet" href="js/ui/sfida-libera.css">
 <link rel="stylesheet" href="js/ui/deck-switcher.css">
 <title>Yu-Gi-Oh! Duel Arena — Duello Libero</title>
 <style>
@@ -262,131 +263,6 @@
     }
 
     /* ============================================================
-       Modale selezione difficoltà
-       ============================================================ */
-    .diff-modal-backdrop {
-        position: fixed;
-        inset: 0;
-        background: rgba(0,0,0,0.78);
-        display: none;
-        align-items: center;
-        justify-content: center;
-        z-index: 200;
-        padding: 20px;
-    }
-    .diff-modal-backdrop.open { display: flex; }
-    .diff-modal {
-        /* Più larga di prima (420px) e con uno scorrimento proprio: da
-           quando la scelta di arena/musica mostra anteprime vere invece di
-           due menu a tendina, il contenuto può superare l'altezza dello
-           schermo anche su desktop — prima il limite esisteva solo nei
-           breakpoint mobile. */
-        width: min(94vw, 560px);
-        max-height: 92vh;
-        overflow-y: auto;
-        background: linear-gradient(145deg, #1f2a44, #2a2032);
-        border: 2px solid var(--gold-strong);
-        border-radius: 20px;
-        padding: 26px;
-        text-align: center;
-        box-shadow: 0 24px 60px rgba(0,0,0,0.5);
-    }
-    .diff-modal-portrait {
-        width: 96px;
-        height: 96px;
-        border-radius: 50%;
-        margin: 0 auto 14px;
-        overflow: hidden;
-        border: 2px solid rgba(247,215,116,0.5);
-        background: linear-gradient(150deg, #3a2f22, #1c1620);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 2.2rem;
-    }
-    .diff-modal-portrait img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-    .diff-modal-name {
-        font-size: 1.25rem;
-        font-weight: 900;
-        margin-bottom: 2px;
-    }
-    .diff-modal-title {
-        font-size: 0.8rem;
-        color: #9aa5bd;
-        margin-bottom: 8px;
-    }
-    .diff-modal-record {
-        font-size: 0.78rem;
-        font-weight: 700;
-        margin-bottom: 18px;
-    }
-    .diff-modal-record .wins { color: #6fe08a; }
-    .diff-modal-record .losses { color: #ff8a7a; }
-    .diff-modal-prompt {
-        color: #dbe6ff;
-        font-size: 0.9rem;
-        margin-bottom: 16px;
-    }
-    .diff-options {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-    .diff-btn {
-        border: none;
-        border-radius: 12px;
-        padding: 13px;
-        font-weight: 800;
-        font-size: 0.95rem;
-        cursor: pointer;
-        font-family: inherit;
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .diff-btn:hover { transform: translateY(-2px); }
-    /* Vetro scuro + bordo/bagliore luminoso (stessa lingua di .gate-btn in
-       index.html) invece del pieno piatto — l'emoji 🟢/🟠/🔴 nell'etichetta
-       porta già il codice colore "semaforo", il bordo lo rinforza senza
-       bisogno di un riempimento piatto. */
-    .diff-btn.easy {
-        background: linear-gradient(145deg, #123a1c, #05200f);
-        border: 1px solid rgba(111,224,138,0.6);
-        box-shadow: 0 0 12px rgba(111,224,138,0.28), inset 0 1px 0 rgba(255,255,255,0.08);
-    }
-    .diff-btn.easy:hover { box-shadow: 0 0 20px rgba(111,224,138,0.5), inset 0 1px 0 rgba(255,255,255,0.1); }
-    .diff-btn.medium {
-        background: linear-gradient(145deg, #3a2c10, #201705);
-        border: 1px solid rgba(243,156,18,0.6);
-        box-shadow: 0 0 12px rgba(243,156,18,0.28), inset 0 1px 0 rgba(255,255,255,0.08);
-    }
-    .diff-btn.medium:hover { box-shadow: 0 0 20px rgba(243,156,18,0.5), inset 0 1px 0 rgba(255,255,255,0.1); }
-    .diff-btn.hard {
-        background: linear-gradient(145deg, #3a1410, #1f0906);
-        border: 1px solid rgba(255,99,99,0.6);
-        box-shadow: 0 0 12px rgba(255,99,99,0.3), inset 0 1px 0 rgba(255,255,255,0.08);
-    }
-    .diff-btn.hard:hover { box-shadow: 0 0 20px rgba(255,99,99,0.5), inset 0 1px 0 rgba(255,255,255,0.1); }
-    .diff-cancel {
-        margin-top: 14px;
-        background: none;
-        border: none;
-        color: #9aa5bd;
-        font-size: 0.82rem;
-        cursor: pointer;
-        font-family: inherit;
-        text-decoration: underline;
-    }
-    .diff-cancel:hover { color: #fff; }
-
-    /* Toast "in arrivo" */
     .toast {
         position: fixed;
         left: 50%;
@@ -409,40 +285,10 @@
         text-overflow: ellipsis;
     }
     .toast.show { opacity: 1; transform: translate(-50%, 0); }
-    .custom-duel-options {
-        background: rgba(0, 0, 0, 0.3);
-        padding: 15px;
-        border-radius: 10px;
-        margin: 15px 0;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-    .opt-group {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    .opt-group label {
-        font-size: 0.8rem;
-        color: #f1c40f;
-        margin-bottom: 4px;
-        font-weight: bold;
-    }
-    .opt-group select {
-        width: 100%;
-        padding: 8px;
-        background: #1a253d;
-        border: 1px solid #f39c12;
-        color: white;
-        border-radius: 5px;
-        cursor: pointer;
-    }
-
     /* ============================================================
        Telefono — QUESTO blocco deve restare l'ULTIMA cosa nel foglio
        di stile: ogni regola qui sopra (.cube-grid, .cube-name,
-       .diff-modal, .opt-group...) è definita PRIMA, quindi a parità di
+       .cube-info...) è definita PRIMA, quindi a parità di
        specificità vince chi arriva DOPO nel sorgente. Un blocco mobile
        messo in cima al file (come accadeva qui prima) viene sovrascritto
        in silenzio dalle regole base sottostanti — bug reale trovato in
@@ -471,19 +317,6 @@
         .cube-title { font-size: 0.7rem; margin-bottom: 6px; }
         .cube-record { font-size: 0.72rem; gap: 6px; }
         .series-title { font-size: 0.82rem; margin-bottom: 10px; }
-        .diff-modal-backdrop { padding: 10px; }
-        .diff-modal { padding: 16px; max-height: 92vh; overflow-y: auto; }
-        .diff-modal-portrait { width: 56px; height: 56px; font-size: 1.4rem; margin-bottom: 8px; }
-        .diff-modal-name { font-size: 1.02rem; }
-        .diff-modal-title { font-size: 0.7rem; margin-bottom: 4px; }
-        .diff-modal-record { font-size: 0.68rem; margin-bottom: 10px; }
-        .custom-duel-options { padding: 10px; margin: 10px 0; gap: 8px; }
-        .opt-group label { font-size: 0.7rem; margin-bottom: 2px; }
-        .opt-group select { padding: 6px; font-size: 0.8rem; }
-        .diff-modal-prompt { font-size: 0.78rem; margin-bottom: 10px; }
-        .diff-options { gap: 7px; }
-        .diff-btn { padding: 10px; font-size: 0.82rem; }
-        .diff-cancel { margin-top: 10px; font-size: 0.74rem; }
     }
 
     /* Telefono ruotato in orizzontale (poca altezza, larghezza spesso
@@ -496,125 +329,8 @@
         :root { --cube-w: 118px; }
         .cube-grid { gap: 10px; }
         .series-title { font-size: 0.82rem; margin-bottom: 8px; }
-        .diff-modal-backdrop { padding: 6px; align-items: flex-start; }
-        .diff-modal { padding: 10px 14px; max-height: 96vh; overflow-y: auto; margin-top: 2vh; }
-        .diff-modal-portrait { width: 34px; height: 34px; font-size: 1rem; margin-bottom: 3px; }
-        .diff-modal-name { font-size: 0.85rem; }
-        .diff-modal-title { font-size: 0.62rem; margin-bottom: 2px; }
-        .diff-modal-record { font-size: 0.6rem; margin-bottom: 4px; }
-        .custom-duel-options { padding: 6px; margin: 6px 0; gap: 4px; }
-        .opt-group label { font-size: 0.66rem; margin-bottom: 1px; }
-        .opt-group select { padding: 4px; font-size: 0.72rem; }
-        .diff-modal-prompt { font-size: 0.68rem; margin-bottom: 4px; }
-        .diff-options { gap: 4px; }
-        .diff-btn { padding: 6px; font-size: 0.72rem; }
-        .diff-cancel { margin-top: 4px; font-size: 0.66rem; }
     }
 
-    /* Revamp configurazione: identità a sinistra, scelte a destra. La
-       modale resta una sola superficie, ma le decisioni hanno gerarchia. */
-    .diff-modal {
-        width: min(96vw, 980px);
-        display: grid;
-        grid-template-columns: minmax(190px, 230px) minmax(0, 1fr);
-        gap: 0;
-        padding: 0;
-        overflow: hidden;
-        text-align: left;
-        background: linear-gradient(145deg, rgba(25,31,51,.98), rgba(18,15,28,.99));
-        border: 1px solid rgba(247,215,116,.5);
-        box-shadow: 0 28px 80px rgba(0,0,0,.68), inset 0 1px rgba(255,255,255,.06);
-    }
-    .diff-duelist-summary {
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        min-height: 100%;
-        padding: 28px 22px;
-        text-align: center;
-        background: radial-gradient(circle at 50% 31%, rgba(247,215,116,.16), transparent 34%), linear-gradient(180deg, rgba(8,12,23,.35), rgba(5,7,14,.76));
-        border-right: 1px solid rgba(247,215,116,.18);
-        overflow: hidden;
-    }
-    .diff-duelist-summary::after {
-        content: '';
-        position: absolute;
-        left: 12%; right: 12%; bottom: 18px;
-        height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(247,215,116,.55), transparent);
-    }
-    .diff-modal-kicker { color: #f7d774; font-size: .58rem; font-weight: 900; letter-spacing: .22em; text-transform: uppercase; margin-bottom: 18px; }
-    .diff-modal-portrait { width: 116px; height: 116px; margin: 0 auto 15px; box-shadow: 0 0 0 5px rgba(247,215,116,.07), 0 14px 30px rgba(0,0,0,.5); }
-    .diff-modal-name { font-size: 1.32rem; line-height: 1.1; }
-    .diff-modal-title { margin: 5px 0 12px; line-height: 1.35; }
-    .diff-modal-record { margin: 0; padding: 6px 10px; border-radius: 999px; background: rgba(0,0,0,.3); }
-    .diff-versus-mark { margin-top: 18px; color: rgba(247,215,116,.4); font-family: Georgia,serif; font-size: 1.35rem; font-weight: 900; font-style: italic; }
-    .diff-config-body { min-width: 0; max-height: 92vh; overflow-y: auto; padding: 22px 24px 18px; }
-    .custom-duel-options { margin: 0; padding: 0; background: transparent; }
-    #liberoSetupMount.ds-setup { --ds-surface: rgba(5,8,16,.48); }
-    #liberoSetupMount .ds-group-label { color: #f2d786; font-weight: 900; }
-    #liberoSetupMount .ds-field { width: 154px; height: 94px; }
-    #liberoSetupMount .ds-strip { scrollbar-width: thin; scrollbar-color: rgba(247,215,116,.38) transparent; }
-    #liberoSetupMount .ds-tracks { grid-template-columns: repeat(2, minmax(0,1fr)); max-height: 132px; }
-    .diff-level-section { margin-top: 17px; padding-top: 14px; border-top: 1px solid rgba(247,215,116,.15); }
-    .diff-modal-prompt { margin: 0 0 10px; color: #f2d786; font-size: .7rem; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
-    .diff-options { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 9px; }
-    .diff-btn { min-height: 72px; padding: 10px 12px; justify-content: flex-start; text-align: left; border-radius: 11px; }
-    .diff-btn > span:last-child { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-    .diff-btn b { font-size: .9rem; }
-    .diff-btn small { color: rgba(255,255,255,.62); font-size: .62rem; font-weight: 600; line-height: 1.2; }
-    .diff-btn-icon { flex: none; font-size: .56rem; letter-spacing: -2px; }
-    .diff-btn.easy .diff-btn-icon { color: #6fe08a; }
-    .diff-btn.medium .diff-btn-icon { color: #f7d774; }
-    .diff-btn.hard .diff-btn-icon { color: #ff8074; }
-    .diff-cancel { display: block; margin: 13px auto 0; }
-
-    @media (max-width: 620px) and (orientation: portrait) {
-        .diff-modal-backdrop { padding: 8px; }
-        .diff-modal { width: 100%; max-height: 96vh; display: block; overflow-y: auto; }
-        .diff-duelist-summary { min-height: 0; padding: 12px 14px; display: grid; grid-template-columns: 62px minmax(0,1fr); grid-template-rows: auto auto auto; column-gap: 12px; text-align: left; border-right: 0; border-bottom: 1px solid rgba(247,215,116,.18); }
-        .diff-modal-kicker, .diff-versus-mark { display: none; }
-        .diff-modal-portrait { grid-row: 1 / 4; width: 60px; height: 60px; margin: 0; }
-        .diff-modal-name { font-size: 1rem; align-self: end; }
-        .diff-modal-title { margin: 1px 0; font-size: .66rem; }
-        .diff-modal-record { justify-self: start; padding: 2px 7px; font-size: .6rem; }
-        .diff-config-body { max-height: none; overflow: visible; padding: 13px 12px 11px; }
-        #liberoSetupMount .ds-field { width: 132px; height: 80px; }
-        #liberoSetupMount .ds-tracks { display: flex; overflow-x: auto; max-height: none; padding-bottom: 5px; }
-        #liberoSetupMount .ds-track { flex: 0 0 185px; }
-        .diff-options { grid-template-columns: 1fr; gap: 6px; }
-        .diff-btn { min-height: 50px; padding: 7px 10px; }
-        .diff-btn > span:last-child { flex-direction: row; align-items: baseline; justify-content: space-between; flex: 1; gap: 8px; }
-    }
-
-    @media (max-height: 540px) and (orientation: landscape) {
-        .diff-modal-backdrop { padding: 5px; align-items: center; }
-        .diff-modal { width: min(98vw, 1000px); max-height: 97vh; grid-template-columns: 150px minmax(0,1fr); margin: 0; }
-        .diff-duelist-summary { padding: 12px 10px; }
-        .diff-modal-kicker { margin-bottom: 7px; font-size: .48rem; }
-        .diff-modal-portrait { width: 66px; height: 66px; margin-bottom: 7px; }
-        .diff-modal-name { font-size: .9rem; }
-        .diff-modal-title { margin: 2px 0 5px; font-size: .58rem; }
-        .diff-modal-record { font-size: .55rem; padding: 3px 6px; }
-        .diff-versus-mark { margin-top: 7px; font-size: .85rem; }
-        .diff-config-body { max-height: 97vh; padding: 9px 12px 7px; }
-        #liberoSetupMount .ds-group + .ds-group { margin-top: 6px; }
-        #liberoSetupMount .ds-group-label { margin-bottom: 3px; font-size: .55rem; }
-        #liberoSetupMount .ds-field { width: 112px; height: 62px; }
-        #liberoSetupMount .ds-strip { padding: 1px 1px 4px; gap: 6px; }
-        #liberoSetupMount .ds-tracks { display: flex; overflow-x: auto; max-height: none; gap: 5px; }
-        #liberoSetupMount .ds-track { flex: 0 0 170px; padding: 6px 8px; }
-        #liberoSetupMount .ds-origins { flex-wrap: nowrap; overflow-x: auto; }
-        #liberoSetupMount .ds-origin { flex: 0 0 auto; padding: 5px 9px; font-size: .6rem; }
-        .diff-level-section { margin-top: 7px; padding-top: 6px; }
-        .diff-modal-prompt { margin-bottom: 4px; font-size: .55rem; }
-        .diff-btn { min-height: 42px; padding: 5px 8px; }
-        .diff-btn b { font-size: .72rem; }
-        .diff-btn small { font-size: .52rem; }
-        .diff-cancel { margin-top: 4px; font-size: .6rem; }
-    }
 </style>
 </head>
 <body>
@@ -625,37 +341,8 @@
         <div id="cubeGrid"></div>
     </main>
 
-    <div class="diff-modal-backdrop" id="diffModal">
-        <div class="diff-modal">
-            <section class="diff-duelist-summary">
-                <div class="diff-modal-kicker">Configurazione sfida</div>
-                <div class="diff-modal-portrait" id="diffPortrait">🂠</div>
-                <div class="diff-modal-name" id="diffName"></div>
-                <div class="diff-modal-title" id="diffTitle"></div>
-                <div class="diff-modal-record" id="diffRecord"></div>
-                <div class="diff-versus-mark" aria-hidden="true">VS</div>
-            </section>
-            <section class="diff-config-body">
-              <div class="custom-duel-options">
-                <!-- Mazzo, arena, musica e carte ammesse: stesso selettore
-                     visivo della Sala d'Attesa del Multiplayer
-                     (js/ui/duel-setup.js). Prima erano menu a tendina, che
-                     di un'arena non mostravano nulla e di una traccia non
-                     facevano sentire niente. -->
-                <div id="liberoSetupMount"></div>
-              </div>
-              <div class="diff-level-section">
-                <p class="diff-modal-prompt">Scegli il livello dell'avversario</p>
-                <div class="diff-options">
-                    <button type="button" class="diff-btn easy" data-difficulty="Facile"><span class="diff-btn-icon">◆</span><span><b>Facile</b><small>Mazzo più accessibile</small></span></button>
-                    <button type="button" class="diff-btn medium" data-difficulty="Medio"><span class="diff-btn-icon">◆◆</span><span><b>Normale</b><small>Sfida equilibrata</small></span></button>
-                    <button type="button" class="diff-btn hard" data-difficulty="Difficile"><span class="diff-btn-icon">◆◆◆</span><span><b>Difficile</b><small>Mazzo e IA al massimo</small></span></button>
-                </div>
-              </div>
-              <button type="button" class="diff-cancel" id="diffCancelBtn">Annulla</button>
-            </section>
-        </div>
-    </div>
+    <!-- La finestra "prepara la sfida" la costruisce js/ui/sfida-libera.js,
+         la stessa usata dalla vista Duello Libero dentro index.html. -->
 
     <div class="toast" id="toast"></div>
 
@@ -682,6 +369,7 @@
 <script src="js/ui/deck-box.js"></script>
 <script src="js/data/arena-options.js"></script>
 <script src="js/ui/duel-setup.js"></script>
+<script src="js/ui/sfida-libera.js"></script>
 <script src="js/ui/deck-switcher.js"></script>
 <script>
     // Nessun onBack: il genitore logico di questa pagina è sempre il menu
@@ -801,117 +489,14 @@
         });
     }
 
-    // Selettore di mazzo/arena/musica (js/ui/duel-setup.js), montato alla
-    // prima apertura della modale di difficoltà.
-    let liberoSetup = null;
-
+    // La finestra "prepara la sfida" (arena, musica, carte ammesse, livello
+    // e l'avvio del duello) è js/ui/sfida-libera.js, condivisa con la vista
+    // Duello Libero di index.html: due copie scritte a mano si erano già
+    // separate una volta.
     function openDifficultyModal(character) {
-        const modal = document.getElementById('diffModal');
-        const record = getCharacterRecord(character.id);
-
-        document.getElementById('diffName').textContent = character.name;
-        document.getElementById('diffTitle').textContent = character.title || '';
-        document.getElementById('diffRecord').innerHTML =
-            `<span class="wins">${record.wins} Vittorie</span> &nbsp;·&nbsp; <span class="losses">${record.losses} Sconfitte</span>`;
-
-        const portraitEl = document.getElementById('diffPortrait');
-        portraitEl.innerHTML = '🂠';
-        const img = document.createElement('img');
-        img.alt = character.name;
-        img.onerror = () => { portraitEl.innerHTML = '🂠'; };
-        img.onload = () => { portraitEl.innerHTML = ''; portraitEl.appendChild(img); };
-        img.src = character.image;
-
-        modal.dataset.characterId = character.id;
-        modal.dataset.characterName = character.name;
-        modal.classList.add('open');
-
-        // Il selettore si monta alla PRIMA apertura: i mazzi possono essere
-        // cambiati nel frattempo, e fino a qui era comunque tutto invisibile.
-        if (!liberoSetup && window.DuelSetup) {
-            // Niente `decks` qui: il mazzo si sceglie dalla barra in alto
-            // (js/ui/deck-switcher.js), dove resta visibile sempre.
-            liberoSetup = DuelSetup.mount(document.getElementById('liberoSetupMount'), { compact: true });
-        }
-        // A modale ormai aperta le scatole hanno una larghezza vera: solo
-        // adesso si può sapere quali nomi non ci stanno.
-        if (liberoSetup) liberoSetup.refresh();
+        SfidaLibera.apri(character, { toast: showToast });
     }
 
-    function closeDifficultyModal() {
-        document.getElementById('diffModal').classList.remove('open');
-        // Un assaggio musicale non deve sopravvivere alla chiusura.
-        if (liberoSetup) liberoSetup.stopPreview();
-    }
-
-    document.getElementById('diffCancelBtn').onclick = closeDifficultyModal;
-    document.getElementById('diffModal').addEventListener('click', (event) => {
-        if (event.target.id === 'diffModal') closeDifficultyModal();
-    });
-
-    // Il duello vero si combatte in duelMonstersCore.html, che è l'arena unica
-    // di tutte le modalità: le passiamo nell'URL chi è l'avversario e con
-    // quale difficoltà, e ci penserà js/duel-session.js a leggerli.
-    // A fine duello il pulsante "Continua" riporta proprio qui.
-    document.querySelectorAll('.diff-btn').forEach((btn) => {
-        btn.onclick = () => {
-            const modal = document.getElementById('diffModal');
-            const characterId = modal.dataset.characterId;
-            const name = modal.dataset.characterName;
-            const difficulty = btn.dataset.difficulty;
-            // Solo per il testo del toast qui sotto: "Medio" resta il
-            // valore INTERNO (data-difficulty, URL, DIFFICULTY_LABEL_TO_KEY
-            // in js/duel-session.js) — l'etichetta mostrata all'utente è
-            // "Normale" da questa sessione in poi (richiesta esplicita).
-            const difficultyLabel = difficulty === 'Medio' ? 'Normale' : difficulty;
-
-            // "Casuale" diventa un'arena e una traccia vere qui, non nel
-            // duello: il duello riceve sempre un nome di file preciso.
-            const scelta = liberoSetup ? liberoSetup.getSelection() : {};
-            const selectedField = ArenaOptions.risolviCampo(scelta.field);
-            const selectedMusic = ArenaOptions.risolviTraccia(scelta.music);
-            const provenienza = scelta.origin || 'yu-gi-oh';
-
-            // Mazzo contro "Carte ammesse", QUI: il motore lo ricontrolla
-            // comunque all'avvio del duello, ma a quel punto l'arena è già
-            // caricata e la musica partita — scoprirlo li' è tardi
-            // (richiesta esplicita dell'utente). Vedi js/data/deck-legality.js.
-            const fuori = window.DeckLegality ? DeckLegality.mazzoCorrenteNonAmmesso(provenienza) : [];
-            if (fuori.length > 0) {
-                const elenco = fuori.slice(0, 3).join(', ');
-                const altre = fuori.length - Math.min(3, fuori.length);
-                showToast(`🚫 Il tuo mazzo contiene ${fuori.length} cart${fuori.length === 1 ? 'a' : 'e'} non ammess${fuori.length === 1 ? 'a' : 'e'} (${elenco}${altre > 0 ? ` e altre ${altre}` : ''}). Cambia mazzo dalla barra in alto, o ammetti tutte le provenienze.`);
-                return;
-            }
-
-            closeDifficultyModal();
-            showToast(`⚔️ Duello contro ${name} (${difficultyLabel})...`);
-
-            // ADD parametri &field e &music all'URL
-            const url = 'duelMonstersCore.html?mode=free'
-                + '&character=' + encodeURIComponent(characterId)
-                + '&difficulty=' + encodeURIComponent(difficulty)
-                + '&field=' + encodeURIComponent(selectedField)   // <--- AGGIUNTO
-                + '&music=' + encodeURIComponent(selectedMusic)   // <--- AGGIUNTO
-                + '&origin=' + encodeURIComponent(provenienza);
-
-            setTimeout(() => { window.location.href = url; }, 450);
-        };
-    });
-
-    /**
-     * Provenienze selezionabili: "solo <X>" per ognuna di quelle note
-     * (CARD_ORIGIN_LABELS in js/data/cards-db.js, più quelle create
-     * dall'utente in crea-carta.html) più "tutte". Default Yu-Gi-Oh!,
-     * cioè il duello classico: chi ha infilato carte fanmade nel mazzo
-     * deve sceglierlo apposta. La verifica vera del mazzo avviene in
-     * js/duel-session.js (vedi findForbiddenCards lì): qui si sceglie
-     * soltanto la regola.
-     */
-    // L'elenco delle provenienze non si costruisce più qui: lo fa
-    // js/ui/duel-setup.js, che lo mostra come pastiglie insieme a mazzo,
-    // arena e musica (la stessa funzione esisteva, identica, anche nella
-    // vista dentro index.html).
     renderCubes();
     // Un amministratore vede tutti i Duellanti, ma `CloudSync.isAdmin()`
     // può ancora rispondere "no" al primo istante (il profilo arriva dal

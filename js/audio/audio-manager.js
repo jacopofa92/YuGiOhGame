@@ -299,13 +299,59 @@
          * discrete come click/tap/tasto/rotellina lo sono), quindi non
          * avrebbe comunque avuto l'effetto sperato.
          */
-        function tryPlay() {
-            const playPromise = audio.play();
-            if (!playPromise || typeof playPromise.catch !== 'function') return;
+        /*
+         * SFUMATURE (solo browser, richiesta dell'utente): la musica entra in
+         * dissolvenza invece di partire di colpo, ed esce in dissolvenza
+         * quando si cambia pagina o quando un'anteprima prende il suo posto.
+         * Riguardano soltanto l'elemento <audio> della pagina: nell'APK la
+         * musica è il MediaPlayer di NativeMusic, che continua da solo da una
+         * pagina all'altra senza alcun salto, e lì non si tocca niente
+         * (tryPlay e sfuma non vengono mai chiamate col backend nativo).
+         *
+         * NB: una sfumatura d'ingresso esisteva già una volta ed era stata
+         * tolta, insieme ad altre aggiunte, quando la musica aveva smesso di
+         * partire. Qui è volutamente separata dall'avvio: play() parte come
+         * sempre, e solo DOPO che è riuscito il volume sale. Se play() viene
+         * rifiutato, il volume viene comunque riportato al suo valore, così
+         * nessun percorso può lasciare la musica "muta a volume zero".
+         */
+        const SFUMA_ENTRATA_MS = 900;
+        const SFUMA_USCITA_MS = 320;
+        let timerSfumatura = null;
+        function fermaSfumatura() {
+            if (timerSfumatura) { clearInterval(timerSfumatura); timerSfumatura = null; }
+        }
+        function sfuma(verso, durataMs, allaFine) {
+            fermaSfumatura();
+            const da = audio.volume;
+            if (durataMs <= 0 || Math.abs(da - verso) < 0.01) {
+                audio.volume = verso;
+                if (allaFine) allaFine();
+                return;
+            }
+            const passi = Math.max(1, Math.round(durataMs / 30));
+            let passo = 0;
+            timerSfumatura = setInterval(() => {
+                passo++;
+                audio.volume = Math.min(1, Math.max(0, da + (verso - da) * (passo / passi)));
+                if (passo >= passi) {
+                    fermaSfumatura();
+                    if (allaFine) allaFine();
+                }
+            }, durataMs / passi);
+        }
 
-            playPromise.catch(() => {
+        function tryPlay() {
+            fermaSfumatura();
+            audio.volume = 0;
+            const playPromise = audio.play();
+            if (!playPromise || typeof playPromise.catch !== 'function') { audio.volume = volume; return; }
+
+            playPromise.then(() => sfuma(volume, SFUMA_ENTRATA_MS)).catch(() => {
+                audio.volume = volume;
                 const startOnInteraction = () => {
-                    audio.play().catch(() => {});
+                    audio.volume = 0;
+                    audio.play().then(() => sfuma(volume, SFUMA_ENTRATA_MS)).catch(() => { audio.volume = volume; });
                     document.removeEventListener('pointerdown', startOnInteraction, true);
                     document.removeEventListener('keydown', startOnInteraction, true);
                     document.removeEventListener('wheel', startOnInteraction, true);
@@ -334,8 +380,89 @@
         // preferenza da persistere.
         const trackPositions = {};
 
+        /*
+         * Uscita sfumata quando si lascia la pagina (solo browser). Un
+         * cambio di pagina non si può "ritardare" da beforeunload/pagehide:
+         * a quel punto è già deciso. Si usa allora la Navigation API
+         * (Chrome/Edge, gli stessi browser della transizione fra pagine): si
+         * ferma la navigazione, si abbassa il volume in ~0,3 s e la si rifà
+         * identica. Vale solo per i veri cambi di pagina avviati dal gioco
+         * (link, location.href): mai per un cambio di vista interno
+         * (history.pushState, sameDocument), mai per Indietro/ricarica (non
+         * annullabili), mai se la musica è ferma o muta. Una rete di
+         * sicurezza a tempo fa partire la navigazione anche se la sfumatura
+         * non arrivasse in fondo. Dove la Navigation API non c'è, la pagina
+         * cambia come sempre, senza sfumatura in uscita.
+         */
+        if (!nativeMusic && window.navigation && typeof window.navigation.addEventListener === 'function') {
+            let inUscita = false;
+            window.navigation.addEventListener('navigate', (ev) => {
+                if (inUscita) return;
+                if (!ev.cancelable || ev.hashChange || ev.downloadRequest || ev.formData) return;
+                if (ev.navigationType !== 'push' && ev.navigationType !== 'replace') return;
+                if (!ev.destination || ev.destination.sameDocument) return;
+                if (audio.paused || audio.muted || audio.volume < 0.02) return;
+                let destinazione;
+                try { destinazione = new URL(ev.destination.url); } catch (e) { return; }
+                if (destinazione.origin !== window.location.origin) return;
+
+                ev.preventDefault();
+                inUscita = true;
+                const sostituisci = ev.navigationType === 'replace';
+                let partita = false;
+                const vai = () => {
+                    if (partita) return;
+                    partita = true;
+                    persistState();
+                    if (sostituisci) window.location.replace(destinazione.href);
+                    else window.location.href = destinazione.href;
+                };
+                sfuma(0, SFUMA_USCITA_MS, vai);
+                setTimeout(vai, SFUMA_USCITA_MS + 250);
+            });
+        }
+
+        // Pausa TEMPORANEA della musica di sottofondo (sospendi/riprendi
+        // qui sotto), per chi deve far sentire altro per un momento — es.
+        // l'anteprima di una traccia nel selettore di js/ui/duel-setup.js.
+        let sospesa = false;
+        let eraInRiproduzione = false;
+
         window.DuelMusic = {
             audio: audio,
+            /**
+             * Mette in pausa la musica di sottofondo finché qualcuno non
+             * chiama riprendi(). Esiste perché nell'APK la musica NON è
+             * l'elemento <audio> della pagina ma il MediaPlayer di
+             * NativeMusic: mettere in pausa #bgMusicAudio lì non fermava
+             * nulla, e l'anteprima di una traccia suonava sopra il
+             * sottofondo (segnalato dall'utente). Qui si ferma il backend
+             * vero, qualunque sia. Chiamarla due volte di fila non fa danni.
+             */
+            sospendi: function () {
+                if (sospesa) return;
+                sospesa = true;
+                if (nativeMusic) {
+                    eraInRiproduzione = true;
+                    nativeMusic.pause().catch(() => {});
+                    return;
+                }
+                eraInRiproduzione = !audio.paused;
+                // Nel browser esce in dissolvenza (l'anteprima intanto entra).
+                if (eraInRiproduzione) sfuma(0, SFUMA_USCITA_MS, () => { audio.pause(); audio.volume = volume; });
+            },
+            /** Fa ripartire la musica fermata da sospendi(), se stava suonando (nel browser in dissolvenza). */
+            riprendi: function () {
+                if (!sospesa) return;
+                sospesa = false;
+                if (!eraInRiproduzione) return;
+                if (nativeMusic) { nativeMusic.resume().catch(() => {}); return; }
+                if (audio.muted) return;
+                // Se la sfumatura d'uscita non era ancora finita, si riparte
+                // da dove era arrivata invece di passare dalla pausa.
+                if (!audio.paused) { sfuma(volume, SFUMA_ENTRATA_MS); return; }
+                tryPlay();
+            },
             /**
              * Cambia la colonna sonora SENZA ricaricare la pagina. Nata con
              * le viste SPA di index.html: prima bastava passare `trackSrc`
@@ -396,6 +523,7 @@
             getVolume: function () { return audio.volume; },
             /** 0..1. Persiste in localStorage: resta la stessa in ogni pagina e sessione futura. */
             setVolume: function (value) {
+                fermaSfumatura(); // la scelta dell'utente vince su una sfumatura in corso
                 audio.volume = Math.min(1, Math.max(0, value));
                 volume = audio.volume;
                 if (nativeMusic) nativeMusic.setVolume({ volume: audio.volume }).catch(() => {});
@@ -416,7 +544,10 @@
             playOneShot: function (src, options) {
                 options = options || {};
                 const fadeMs = options.fadeMs !== undefined ? options.fadeMs : 500;
-                const baseVolume = audio.volume;
+                // Il volume SCELTO, non quello del momento: se una sfumatura
+                // d'ingresso è ancora a metà, audio.volume è più basso.
+                fermaSfumatura();
+                const baseVolume = volume;
 
                 if (options.pauseMusic !== false) {
                     if (nativeMusic) nativeMusic.pause().catch(() => {});

@@ -47,35 +47,94 @@
 
     function musicaDiPagina() { return document.getElementById('bgMusicAudio'); }
 
-    function fermaAnteprima() {
+    // La musica di sottofondo si ferma e riparte tramite DuelMusic, che
+    // conosce il backend vero: nell'APK è il MediaPlayer nativo, e mettere
+    // in pausa l'<audio> della pagina lì non fermava niente (l'anteprima
+    // suonava sopra il sottofondo). Il ripiego sull'elemento resta per le
+    // pagine che non hanno avviato l'audio manager.
+    let sottofondoFermatoDaNoi = false;
+    function fermaSottofondo() {
+        if (window.DuelMusic && typeof DuelMusic.sospendi === 'function') { DuelMusic.sospendi(); return; }
+        const bg = musicaDiPagina();
+        if (bg && !bg.paused) { bg.pause(); sottofondoFermatoDaNoi = true; }
+    }
+    function riprendiSottofondo() {
+        if (window.DuelMusic && typeof DuelMusic.riprendi === 'function') { DuelMusic.riprendi(); return; }
+        const bg = musicaDiPagina();
+        // Un play() rifiutato dal browser non è un errore da mostrare: la
+        // musica riprenderà al primo gesto vero.
+        if (bg && sottofondoFermatoDaNoi) bg.play().catch(() => {});
+        sottofondoFermatoDaNoi = false;
+    }
+
+    // Dissolvenze dell'anteprima: SOLO nel browser (richiesta dell'utente).
+    // Nell'APK il sottofondo è il player nativo e l'anteprima parte e si
+    // ferma secca, come prima. Il sottofondo, nel browser, sfuma da sé in
+    // DuelMusic.sospendi/riprendi: insieme fanno una dissolvenza incrociata.
+    const VOLUME_ANTEPRIMA = 0.6;
+    const SFUMA_ANTEPRIMA_MS = 450;
+    function sfumatureAttive() {
+        return !(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform());
+    }
+    function sfumaElemento(el, verso, durataMs, allaFine) {
+        if (el._timerSfumatura) clearInterval(el._timerSfumatura);
+        const da = el.volume;
+        const passi = Math.max(1, Math.round(durataMs / 30));
+        let passo = 0;
+        el._timerSfumatura = setInterval(() => {
+            passo++;
+            el.volume = Math.min(1, Math.max(0, da + (verso - da) * (passo / passi)));
+            if (passo >= passi) {
+                clearInterval(el._timerSfumatura);
+                el._timerSfumatura = null;
+                if (allaFine) allaFine();
+            }
+        }, durataMs / passi);
+    }
+
+    // Toglie l'anteprima in corso senza toccare il sottofondo: serve fra
+    // un'anteprima e la successiva, dove far ripartire la musica per un
+    // istante e rifermarla subito si sentirebbe come un singhiozzo. Nel
+    // browser la traccia uscente sfuma per conto suo, staccata dal resto.
+    function spegniAnteprima() {
         if (anteprimaStop) { clearTimeout(anteprimaStop); anteprimaStop = null; }
-        if (anteprima) { anteprima.pause(); anteprima = null; }
+        const cera = !!anteprima;
+        if (anteprima) {
+            const uscente = anteprima;
+            uscente.onended = null;
+            if (sfumatureAttive()) sfumaElemento(uscente, 0, SFUMA_ANTEPRIMA_MS * 0.7, () => uscente.pause());
+            else uscente.pause();
+            anteprima = null;
+        }
         if (anteprimaBtn) {
             anteprimaBtn.textContent = '▶';
             anteprimaBtn.classList.remove('suona');
             anteprimaBtn = null;
         }
-        const bg = musicaDiPagina();
-        // Se la musica della pagina era stata messa in pausa per
-        // l'assaggio, riprende. Un play() rifiutato dal browser non è un
-        // errore da mostrare: la musica riprenderà al primo gesto vero.
-        if (bg && bg.paused) bg.play().catch(() => {});
+        return cera;
+    }
+
+    /** Fine dell'anteprima (finita, fermata, o schermata chiusa): il sottofondo riparte. */
+    function fermaAnteprima() {
+        if (spegniAnteprima()) riprendiSottofondo();
     }
 
     function alternaAnteprima(file, btn, onBloccata) {
         const eraLoStesso = anteprimaBtn === btn;
-        fermaAnteprima();
-        if (eraLoStesso) return;
-
-        const bg = musicaDiPagina();
-        if (bg && !bg.paused) bg.pause();
+        if (eraLoStesso) { fermaAnteprima(); return; }
+        spegniAnteprima();
+        fermaSottofondo();
 
         anteprima = new Audio(window.ArenaOptions.audioFor(file));
-        anteprima.volume = 0.6;
+        const sfuma = sfumatureAttive();
+        anteprima.volume = sfuma ? 0 : VOLUME_ANTEPRIMA;
         anteprimaBtn = btn;
         btn.textContent = '⏸';
         btn.classList.add('suona');
-        anteprima.play().catch(() => {
+        const entrante = anteprima;
+        anteprima.play().then(() => {
+            if (sfuma && anteprima === entrante) sfumaElemento(entrante, VOLUME_ANTEPRIMA, SFUMA_ANTEPRIMA_MS);
+        }).catch(() => {
             if (onBloccata) onBloccata();
             fermaAnteprima();
         });
