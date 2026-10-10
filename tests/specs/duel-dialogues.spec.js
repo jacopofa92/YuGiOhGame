@@ -22,7 +22,10 @@ module.exports = {
                 malformedProfiles,
                 visible: bubble.classList.contains('is-visible'),
                 text: bubble.textContent,
-                nearAvatar: Math.abs(rect.right - box.right) < 8 && rect.top >= box.bottom,
+                // Il fumetto dell'avversario è agganciato al lato SINISTRO
+                // della sua plancia (il bordo dello schermo): agganciato a
+                // destra e più largo della plancia, usciva dallo schermo.
+                nearAvatar: Math.abs(rect.left - box.left) < 8 && rect.top >= box.bottom && rect.left >= 0,
                 iconic,
                 special: bubble.classList.contains('is-special'),
                 role: bubble.getAttribute('role')

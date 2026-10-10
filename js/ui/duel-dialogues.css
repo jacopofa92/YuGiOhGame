@@ -1,71 +1,173 @@
+/* =====================================================================
+   Fumetti delle battute dei duellanti (js/ui/duel-dialogues.js).
+   - In testa il NOME di chi parla, in oro: con due fumetti a schermo
+     insieme (inizio duello) si capisce subito chi dice cosa.
+   - Un filo di colore per lato, lo stesso delle plance: rosso per
+     l'avversario, blu per il giocatore.
+   - In fondo una barra sottile che si consuma per la durata del fumetto
+     (--durata, scritta da show()): dice quanto manca prima che sparisca.
+   - Le battute "speciali" (Evocazione della carta simbolo) sono dorate e
+     un riflesso le attraversa una volta.
+   ===================================================================== */
 .duel-speech {
+    --lato: #e46a5a;
+    --lato-tenue: rgba(228, 106, 90, .16);
     position: absolute;
     z-index: 4;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
     width: max-content;
-    max-width: min(290px, 38vw);
-    padding: 10px 14px;
-    border: 1px solid rgba(245, 211, 117, .72);
-    border-radius: 13px;
-    color: #fff8dc;
-    background: linear-gradient(145deg, rgba(25, 20, 42, .97), rgba(7, 9, 18, .96));
-    box-shadow: 0 9px 28px rgba(0, 0, 0, .48), inset 0 0 16px rgba(228, 188, 83, .08);
-    font-size: clamp(.75rem, 1.15vw, .94rem);
-    font-weight: 650;
-    line-height: 1.32;
+    max-width: min(300px, 38vw);
+    padding: 9px 15px 12px;
+    border-radius: 14px;
+    color: #fbf1d8;
+    background:
+        linear-gradient(135deg, var(--lato-tenue), transparent 55%),
+        linear-gradient(160deg, rgba(22, 18, 30, .97), rgba(7, 8, 15, .97));
+    box-shadow:
+        inset 0 0 0 1px rgba(247, 215, 116, .32),
+        inset 3px 0 0 var(--lato),
+        0 12px 30px rgba(0, 0, 0, .55);
     text-align: left;
     pointer-events: none;
+    overflow: visible;
     opacity: 0;
-    transform: translateY(7px) scale(.94);
-    transition: opacity .2s ease, transform .26s cubic-bezier(.2, .85, .3, 1);
+    transform: translateY(8px) scale(.94);
+    transform-origin: left top;
+    transition: opacity .2s ease, transform .3s cubic-bezier(.2, .85, .3, 1);
 }
+.duel-speech--player {
+    --lato: #5aa8ff;
+    --lato-tenue: rgba(90, 168, 255, .16);
+    transform-origin: right bottom;
+    transform: translateY(-8px) scale(.94);
+}
+.duel-speech__nome {
+    font-size: .58rem;
+    font-weight: 900;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: #f7d774;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.duel-speech__testo {
+    font-size: clamp(.78rem, 1.15vw, .95rem);
+    font-weight: 650;
+    line-height: 1.34;
+    text-wrap: pretty;
+}
+/* Barra del tempo: parte piena e si svuota da sinistra a destra. */
+.duel-speech__tempo {
+    position: absolute;
+    left: 15px;
+    right: 15px;
+    bottom: 5px;
+    height: 2px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--lato), rgba(247, 215, 116, .7));
+    opacity: .7;
+    transform-origin: left center;
+    transform: scaleX(0);
+}
+.duel-speech.is-visible .duel-speech__tempo {
+    animation: duelSpeechTempo var(--durata, 3000ms) linear forwards;
+}
+@keyframes duelSpeechTempo {
+    from { transform: scaleX(1); }
+    to { transform: scaleX(0); }
+}
+/* Codina verso la plancia: un quadratino ruotato con lo stesso fondo. */
 .duel-speech::after {
     content: '';
     position: absolute;
-    right: 18px;
     width: 12px;
     height: 12px;
-    border-right: 1px solid rgba(245, 211, 117, .72);
-    border-bottom: 1px solid rgba(245, 211, 117, .72);
-    background: #090b16;
-    transform: rotate(45deg);
+    background: #110f19;
+    box-shadow: inset 1px 1px 0 rgba(247, 215, 116, .32);
 }
 /* Ancorati al lato del pannello che sta sul BORDO dello schermo: il bot è
    in alto a sinistra, quindi il suo fumetto si apre verso destra a partire
-   dal bordo sinistro (prima era ancorato a destra e, più largo del
-   pannello, usciva dallo schermo); il giocatore è in basso a destra. */
+   dal bordo sinistro (agganciato a destra e più largo del pannello usciva
+   dallo schermo); il giocatore è in basso a destra. */
 .duel-speech--bot { top: calc(100% + 16px); left: 0; }
-.duel-speech--bot::after { top: -7px; left: 18px; right: auto; transform: rotate(225deg); }
+.duel-speech--bot::after { top: -6px; left: 22px; transform: rotate(45deg); }
 .duel-speech--player { bottom: calc(100% + 16px); right: 0; }
-.duel-speech--player::after { bottom: -7px; }
+.duel-speech--player::after { bottom: -6px; right: 22px; transform: rotate(225deg); }
+
 .duel-speech.is-visible { opacity: 1; transform: none; }
+
 .duel-speech.is-special {
-    border-color: #fff0a5;
-    color: #fff9d7;
-    box-shadow: 0 0 22px rgba(255, 211, 75, .28), 0 9px 28px rgba(0, 0, 0, .55);
+    --lato: #f7d774;
+    --lato-tenue: rgba(247, 215, 116, .22);
+    color: #fff8dc;
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 236, 160, .75),
+        inset 3px 0 0 var(--lato),
+        0 0 26px rgba(255, 211, 75, .32),
+        0 12px 30px rgba(0, 0, 0, .6);
+}
+.duel-speech.is-special .duel-speech__testo { font-family: Georgia, 'Times New Roman', serif; font-size: clamp(.85rem, 1.3vw, 1.05rem); }
+/* Riflesso che attraversa la battuta speciale una volta. */
+.duel-speech.is-special::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(105deg, transparent 35%, rgba(255, 240, 180, .28) 50%, transparent 65%);
+    background-size: 250% 100%;
+    background-position: 120% 0;
+    pointer-events: none;
+}
+.duel-speech.is-special.is-visible::before { animation: duelSpeechRiflesso 1.1s ease .15s 1 both; }
+@keyframes duelSpeechRiflesso {
+    from { background-position: 120% 0; }
+    to { background-position: -40% 0; }
 }
 
 @media (max-width: 600px) {
     .duel-speech {
-        max-width: min(220px, 58vw);
-        padding: 8px 11px;
-        border-radius: 10px;
-        font-size: .72rem;
+        max-width: min(230px, 58vw);
+        padding: 7px 12px 10px;
+        border-radius: 11px;
     }
+    .duel-speech__testo { font-size: .74rem; }
+    .duel-speech__nome { font-size: .52rem; }
 }
 
 /* Telefono in verticale: sopra la plancia del giocatore c'è la sua mano e
    sotto quella del bot la mano avversaria, quindi lì il fumetto coprirebbe
    le carte. Va invece DI LATO al pannello, nella stessa riga, dove lo
    spazio è vuoto (a sinistra della plancia del giocatore, a destra di
-   quella del bot). La freccia si sposta sul lato corrispondente. */
+   quella del bot). La codina si sposta sul lato corrispondente. */
 @media (orientation: portrait) and (max-width: 600px) {
     .duel-speech { max-width: calc(100vw - 210px); min-width: 120px; }
-    .duel-speech--player { bottom: 0; right: calc(100% + 16px); }
-    .duel-speech--player::after { bottom: 14px; right: -7px; transform: rotate(-45deg); }
-    .duel-speech--bot { top: 0; left: calc(100% + 16px); z-index: 16; }
-    .duel-speech--bot::after { top: 14px; left: -7px; transform: rotate(135deg); }
+    .duel-speech--player { bottom: 0; right: calc(100% + 16px); transform: translateX(-8px) scale(.94); }
+    .duel-speech--player::after { bottom: 14px; right: -6px; transform: rotate(135deg); }
+    .duel-speech--bot { top: 0; left: calc(100% + 16px); z-index: 16; transform: translateX(8px) scale(.94); }
+    .duel-speech--bot::after { top: 14px; left: -6px; transform: rotate(-45deg); }
+    .duel-speech.is-visible { transform: none; }
+    /* La riga dell'avatar è bassa (~60px): oltre, il fumetto del bot
+       scende sulla sua mano. Niente nome (la tinta del lato basta a dire chi
+       parla) e al massimo tre righe di testo. */
+    .duel-speech { padding: 6px 10px 9px; }
+    .duel-speech__nome { display: none; }
+    .duel-speech__testo,
+    .duel-speech.is-special .duel-speech__testo {
+        font-size: .7rem;
+        line-height: 1.25;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .duel-speech__tempo { left: 10px; right: 10px; bottom: 4px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .duel-speech { transition: opacity .12s linear; }
+    .duel-speech { transition: opacity .12s linear; transform: none; }
+    .duel-speech.is-visible .duel-speech__tempo,
+    .duel-speech.is-special.is-visible::before { animation: none; }
 }

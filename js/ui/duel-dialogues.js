@@ -180,6 +180,10 @@
         return lines[index];
     }
 
+    // Il fumetto ha tre parti: chi parla (nome in oro), la battuta e una
+    // barra sottile che si consuma mentre il fumetto resta a schermo — così
+    // si capisce quanto manca prima che sparisca. Costruito una volta per
+    // lato e riusato: testo e durata cambiano a ogni battuta.
     function bubble(owner) {
         const box = document.getElementById(owner === 'bot' ? 'botInfo' : 'playerInfo');
         if (!box) return null;
@@ -189,6 +193,9 @@
             el.className = 'duel-speech duel-speech--' + owner;
             el.setAttribute('role', 'status');
             el.setAttribute('aria-live', 'polite');
+            el.innerHTML = '<span class="duel-speech__nome"></span>'
+                + '<span class="duel-speech__testo"></span>'
+                + '<i class="duel-speech__tempo" aria-hidden="true"></i>';
             box.appendChild(el);
         }
         return el;
@@ -198,11 +205,22 @@
         const el = bubble(owner);
         if (!el || !text) return false;
         clearTimeout(timers[owner]);
-        el.textContent = text;
+        const durata = special ? 4100 : 3000;
+        const duellante = identity(owner) || {};
+        el.querySelector('.duel-speech__nome').textContent = duellante.name || (owner === 'bot' ? 'Avversario' : 'Tu');
+        el.querySelector('.duel-speech__testo').textContent = text;
+        el.style.setProperty('--durata', durata + 'ms');
         el.classList.toggle('is-special', !!special);
-        requestAnimationFrame(() => el.classList.add('is-visible'));
+        // Se il fumetto era già aperto (una battuta che ne sostituisce
+        // un'altra) resta aperto: riparte solo la barra del tempo, da piena.
+        // Chiudere e riaprire il fumetto lo farebbe sparire per un istante.
+        const tempo = el.querySelector('.duel-speech__tempo');
+        tempo.style.animation = 'none';
+        void tempo.offsetWidth;
+        tempo.style.animation = '';
+        if (!el.classList.contains('is-visible')) requestAnimationFrame(() => el.classList.add('is-visible'));
         lastShown[owner] = Date.now();
-        timers[owner] = setTimeout(() => el.classList.remove('is-visible'), special ? 4100 : 3000);
+        timers[owner] = setTimeout(() => el.classList.remove('is-visible'), durata);
         return true;
     }
 
