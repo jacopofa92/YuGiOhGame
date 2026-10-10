@@ -334,6 +334,107 @@
     .map-line.choice-line { stroke: rgba(247,215,116,0.6); }
 
     /* =====================================================================
+       Bivi "parlanti" e vicoli ciechi (richiesta dell'utente).
+       - Il sentiero percorso è un tratto dorato pieno, distinto dai bivi
+         ancora da scegliere (tratteggio) e dai vicoli ciechi (grigio).
+       - Un duello si riconosce prima di sceglierlo: ritratto dello
+         sfidante nel pallino, con un cartellino "Duello" e il nome.
+       - "Ignoto" è un sentiero misterioso: premio, insidia o vicolo cieco.
+       - Le etichette stanno su una pillola scura: sopra la foto del bosco
+         il testo grigio di prima si perdeva.
+       ===================================================================== */
+    .map-line.path-line { stroke: rgba(247,215,116,0.85); stroke-width: 5; stroke-dasharray: none; }
+    .map-line.dead-line { stroke: rgba(170,170,170,0.45); stroke-width: 3; stroke-dasharray: 4 7; }
+    .map-node-label {
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: rgba(8, 8, 14, 0.72);
+        color: #efe6cf;
+    }
+    .map-node-label:empty { display: none; }
+    .map-node-dot { position: relative; overflow: hidden; }
+    .map-node-dot img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center 20%;
+    }
+    .map-node-tag {
+        margin-top: -14px;
+        z-index: 1;
+        padding: 1px 7px;
+        border-radius: 4px;
+        font-size: 0.56rem;
+        font-weight: 900;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #2a1606;
+        background: linear-gradient(180deg, #ffe08a, #e0a630);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+    }
+    .map-node.choice.duel { width: 110px; }
+    .map-node.choice.duel .map-node-dot {
+        width: 68px;
+        height: 68px;
+        border: 3px solid #e8b84a;
+        background: radial-gradient(circle at 50% 35%, #3a2a14, #120d08);
+        box-shadow: 0 0 0 4px rgba(232,184,74,0.18), 0 0 18px rgba(232,184,74,0.35), 0 8px 20px rgba(0,0,0,0.6);
+    }
+    .map-node.choice.duel .map-node-label { color: #ffe9a8; }
+    .map-node.choice.mystery .map-node-dot {
+        border-color: rgba(150, 190, 255, 0.55);
+        background: radial-gradient(circle at 50% 40%, rgba(60, 70, 120, 0.9), rgba(14, 14, 28, 0.95));
+        color: #cfe0ff;
+        text-shadow: 0 0 10px rgba(150, 190, 255, 0.8);
+    }
+    .map-node.choice.closed { cursor: default; }
+    .map-node.choice.closed .map-node-dot,
+    .map-node.dead .map-node-dot {
+        animation: none;
+        border-style: solid;
+        border-color: rgba(170,170,170,0.45);
+        background: rgba(30, 30, 34, 0.9);
+        filter: grayscale(1);
+        opacity: 0.75;
+    }
+    .map-node.choice.closed .map-node-label,
+    .map-node.dead .map-node-label { color: #a9a9a9; }
+    .map-node.dead-step .map-node-dot { width: 20px; height: 20px; font-size: 0.6rem; border-width: 2px; }
+    .map-node.dead-step { width: 24px; }
+    .map-node.current.dead-here .map-node-dot {
+        animation: none;
+        border-color: #c9c9c9;
+        box-shadow: 0 0 0 7px rgba(200,200,200,0.15), 0 8px 24px rgba(0,0,0,0.6);
+    }
+    .map-node.choice:focus-visible .map-node-dot { outline: 3px solid #fff3c4; outline-offset: 3px; }
+    @media (prefers-reduced-motion: reduce) {
+        .map-node.choice .map-node-dot, .map-node.current .map-node-dot { animation: none; }
+    }
+    /* Legenda in basso: dice che cosa nasconde un sentiero "Ignoto". */
+    .map-legend {
+        position: fixed;
+        left: 50%;
+        bottom: max(12px, env(safe-area-inset-bottom));
+        transform: translateX(-50%);
+        z-index: 6;
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        justify-content: center;
+        max-width: calc(100vw - 24px);
+        padding: 6px 14px;
+        border-radius: 999px;
+        background: rgba(8, 8, 14, 0.78);
+        border: 1px solid rgba(247,215,116,0.25);
+        font-size: 0.7rem;
+        color: #e8dfc6;
+        pointer-events: none;
+    }
+    .map-legend b { color: #ffe08a; font-weight: 800; }
+
+    /* =====================================================================
        Animazioni: comparsa di nodi/linee NUOVI (un bivio appena generato,
        richiesta esplicita dell'utente: "un po' di animazione... quando ne
        compaiono di nuovi") e il "viaggio" verso il nodo scelto al click
@@ -693,8 +794,9 @@
     // ================================================================
     // Regno dei Duellanti — mappa a bivi generata "man mano" (non un
     // grafo intero precalcolato): ad ogni passo si offrono 2-3 percorsi
-    // (o un 4° "verso il Castello" oltre le 10 Stelle), il TIPO di ogni
-    // percorso resta nascosto finché non lo si sceglie. Stato persistito
+    // (o un 4° "verso il Castello" oltre le 10 Stelle). Un duello si vede
+    // prima di sceglierlo, con lo sfidante; premi, insidie e vicoli ciechi
+    // restano "ignoti" finché non li si raggiunge. Stato persistito
     // in SaveManager.getTournamentState('duelistKingdom') — sopravvive a
     // chiusura app/ricarica pagina, esattamente come deck/record.
     // ================================================================
@@ -923,6 +1025,7 @@
     // del tutto la varietà. Nessun Duellante ripetuto nello stesso set
     // di scelte (mero polish, non una regola del gioco reale).
     // ----------------------------------------------------------------
+    const DEAD_END_CHANCE = 0.35;
     function rollRouteKind() {
         const r = Math.random();
         if (r < 0.55) return 'opponent';
@@ -946,6 +1049,22 @@
             } else {
                 routes.push({ kind: 'malus', amount: 1 + Math.floor(Math.random() * 2) });
             }
+        }
+        // VICOLO CIECO (richiesta dell'utente): a volte uno dei sentieri
+        // ignoti non porta da nessuna parte, e dopo 1 o 2 nodi si torna al
+        // bivio. Per non incastrare mai il giocatore:
+        //  - al massimo UN vicolo cieco per bivio, e solo AGGIUNTO o al
+        //    posto di un'altra scelta quando ne restano almeno due vere —
+        //    quindi da ogni bivio c'è sempre almeno una strada che prosegue;
+        //  - chi lo scopre torna al bivio da solo e quel sentiero resta
+        //    chiuso (route.closed): non lo si può riprendere, niente giri a
+        //    vuoto (vedi enterCorridor/finalizeDeadEnd).
+        if (Math.random() < DEAD_END_CHANCE) {
+            const deadEnd = { kind: 'deadEnd', depth: Math.random() < 0.5 ? 1 : 2 };
+            if (routes.length >= 3) routes.splice(Math.floor(Math.random() * routes.length), 1);
+            // Posizione nel ventaglio a caso: sempre in coda sarebbe
+            // riconoscibile.
+            routes.splice(Math.floor(Math.random() * (routes.length + 1)), 0, deadEnd);
         }
         // Oltre la soglia, il percorso verso il Castello resta SEMPRE
         // disponibile in aggiunta alle scelte normali (non le sostituisce):
@@ -1272,14 +1391,20 @@
     }
 
     /** Aggiunge una tappa al sentiero (state.history) con una posizione CASUALE calcolata una sola volta qui — mai più ricalcolata nei render successivi. X avanza sempre verso destra (asse primario, vedi il commento sopra); Y vaga casualmente dentro la fascia fissa del mondo. Usare SEMPRE questa, mai un push diretto su state.history, per ogni nuova tappa risolta (premio/insidia/vittoria/sconfitta). */
-    function pushHistoryNode(state, kind, label) {
+    // `pos` (facoltativo) è il punto del bivio che il giocatore ha scelto:
+    // la tappa nasce LÌ, così il sentiero passa davvero dal nodo cliccato.
+    // Prima nasceva a caso accanto, e con i vicoli cieci (che restano
+    // disegnati sui punti delle scelte scartate) il cammino vero finiva
+    // sopra a quelli chiusi.
+    function pushHistoryNode(state, kind, label, pos) {
         const from = lastNodePosition(state);
+        const haPos = pos && typeof pos.x === 'number' && typeof pos.y === 'number';
         state.history.push({
             step: state.step,
             kind: kind,
             label: label,
-            x: from.x + MAP_NODE_SPACING_X + randomBetween(-MAP_NODE_SPACING_X_JITTER, MAP_NODE_SPACING_X_JITTER),
-            y: clampMapY(from.y + randomBetween(-MAP_NODE_Y_DRIFT, MAP_NODE_Y_DRIFT))
+            x: haPos ? pos.x : from.x + MAP_NODE_SPACING_X + randomBetween(-MAP_NODE_SPACING_X_JITTER, MAP_NODE_SPACING_X_JITTER),
+            y: haPos ? pos.y : clampMapY(from.y + randomBetween(-MAP_NODE_Y_DRIFT, MAP_NODE_Y_DRIFT))
         });
     }
 
@@ -1318,6 +1443,17 @@
             route.x = baseX + randomBetween(-25, 25);
             route.y = clampMapY(evenY + randomBetween(-20, 20));
         });
+        // I vicoli ciechi già scoperti restano disegnati dove stavano le
+        // scelte di un bivio precedente, quindi un bivio nuovo può nascere
+        // proprio sopra uno di loro (visto succedere). Il ventaglio intero
+        // scivola a destra finché nessuna scelta tocca più un vicolo: tutto
+        // insieme, così resta un ventaglio ordinato.
+        const ostacoli = [];
+        (state.closedBranches || []).forEach((b) => b.nodes.forEach((p) => ostacoli.push(p)));
+        const tocca = () => routes.some((r) => ostacoli.some((p) => Math.hypot(r.x - p.x, r.y - p.y) < 90));
+        for (let tentativi = 0; tentativi < 6 && tocca(); tentativi++) {
+            routes.forEach((r) => { r.x += 80; });
+        }
     }
 
     /**
@@ -1391,13 +1527,26 @@
         const history = castleOnly
             ? (state.castleHistory || [])
             : [Object.assign({ kind: 'start', label: "L'approdo sull'isola" }, MAP_START_POS)].concat(state.history);
-        const current = castleOnly ? MAP_START_POS : history[history.length - 1];
-        const choices = state.pendingRoutes || [];
+        // Dentro un vicolo cieco il "sei qui" è il nodo del vicolo, e
+        // l'unica scelta è il tratto successivo (se il vicolo è lungo 2);
+        // le altre strade del bivio aspettano, nascoste, il ritorno.
+        const corridor = (!castleOnly && state.corridor) ? state.corridor : null;
+        const junction = history[history.length - 1];
+        const current = castleOnly ? MAP_START_POS
+            : corridor ? corridor.nodes[corridor.at]
+            : junction;
+        const choices = corridor
+            ? ((!corridor.finito && corridor.at < corridor.nodes.length - 1)
+                ? [Object.assign({ kind: 'corridorStep' }, corridor.nodes[corridor.at + 1])]
+                : [])
+            : (state.pendingRoutes || []);
+        const closedBranches = castleOnly ? [] : (state.closedBranches || []);
         // Larghezza dinamica (cresce verso DESTRA man mano che si avanza,
         // come cresceva verso il basso nella versione a scorrimento
         // verticale) — l'altezza invece è SEMPRE MAP_WORLD_HEIGHT, una
         // fascia fissa entro cui il sentiero vaga in verticale.
-        const rightmostX = choices.reduce((max, c) => Math.max(max, c.x), current.x);
+        const rightmostX = closedBranches.reduce((max, b) => b.nodes.reduce((m, n) => Math.max(m, n.x), max),
+            choices.reduce((max, c) => Math.max(max, c.x), corridor ? Math.max(...corridor.nodes.map((n) => n.x)) : current.x));
         const contentWidth = rightmostX + MAP_CHOICE_SPACING_X;
         const contentHeight = MAP_WORLD_HEIGHT;
         // Il canvas deve riempire SEMPRE almeno l'intero .map-viewport
@@ -1424,6 +1573,7 @@
                     <svg class="map-lines" viewBox="0 0 ${canvasWidth} ${canvasHeight}" preserveAspectRatio="none"></svg>
                 </div>
             </div>
+            ${castleOnly ? '' : '<div class="map-legend"><span><b>⚔️ Duello</b> sfidante già noto</span><span><b>❔ Ignoto</b> premio, insidia o vicolo cieco</span></div>'}
         `;
         const canvas = document.getElementById('mapCanvas');
         const svg = canvas.querySelector('svg');
@@ -1449,6 +1599,24 @@
             el.style.left = pos.x + 'px';
             el.style.top = pos.y + 'px';
             el.innerHTML = `<span class="map-node-dot">${opts.icon || '?'}</span><span class="map-node-label">${opts.label || ''}</span>`;
+            // Ritratto dello sfidante dentro il pallino: l'icona resta
+            // sotto come ripiego finché l'immagine non è caricata (o se non
+            // esiste), così un file mancante non lascia un buco.
+            if (opts.image) {
+                const dot = el.querySelector('.map-node-dot');
+                const img = document.createElement('img');
+                img.alt = '';
+                img.onload = () => dot.classList.add('has-image');
+                img.onerror = () => img.remove();
+                img.src = opts.image;
+                dot.appendChild(img);
+            }
+            if (opts.tag) {
+                const tag = document.createElement('span');
+                tag.className = 'map-node-tag';
+                tag.textContent = opts.tag;
+                el.insertBefore(tag, el.querySelector('.map-node-label'));
+            }
             if (opts.onClick) el.onclick = opts.onClick;
             canvas.appendChild(el);
             return el;
@@ -1460,12 +1628,27 @@
         // (justGeneratedRoutes), mai ai render successivi in cui le stesse
         // scelte restano semplicemente in attesa (altrimenti "riapparirebbero"
         // ogni volta che si torna sulla mappa, es. da un duello concluso).
-        for (let i = 0; i < history.length - 1; i++) addLine(history[i], history[i + 1]);
-        if (!castleOnly) {
-            choices.forEach((route, index) => addLine(current, route, 'choice-line', { appear: justGeneratedRoutes, delay: index * 0.08, routeIndex: index }));
-        } else if (history.length > 0) {
-            choices.forEach((route, index) => addLine(current, route, 'choice-line', { appear: justGeneratedRoutes, delay: index * 0.08, routeIndex: index }));
+        // Vicoli ciechi già scoperti: grigi, sotto a tutto il resto.
+        closedBranches.forEach((b) => {
+            let prima = b.from;
+            b.nodes.forEach((n) => { addLine(prima, n, 'dead-line'); prima = n; });
+        });
+        for (let i = 0; i < history.length - 1; i++) addLine(history[i], history[i + 1], 'path-line');
+        // Il vicolo in cui si è entrati: dal bivio fino al nodo raggiunto.
+        if (corridor) {
+            let prima = junction;
+            corridor.nodes.slice(0, corridor.at + 1).forEach((n) => { addLine(prima, n, corridor.finito ? 'dead-line' : 'path-line'); prima = n; });
         }
+        if (!castleOnly || history.length > 0) {
+            choices.forEach((route, index) => addLine(current, route, 'choice-line' + (route.closed ? ' dead-line' : ''), { appear: justGeneratedRoutes, delay: index * 0.08, routeIndex: index }));
+        }
+
+        closedBranches.forEach((b) => {
+            b.nodes.forEach((n, i) => {
+                const fine = i === b.nodes.length - 1;
+                addNode(n, 'dead' + (fine ? '' : ' dead-step'), { icon: fine ? '🚧' : '•', label: fine ? 'Vicolo cieco' : '' });
+            });
+        });
 
         // Sentiero già fatto (start + tappe risolte) — una volta
         // disegnato, resta sempre visibile scorrendo la mappa: le
@@ -1474,30 +1657,59 @@
         // arrivati lì, ad ogni render reale di questa funzione — mai per un
         // semplice scroll/trascinamento, che non richiama mai renderMap).
         history.forEach((node, i) => {
-            const isCurrent = !castleOnly && i === history.length - 1;
+            const isCurrent = !castleOnly && !corridor && i === history.length - 1;
             addNode(node, isCurrent ? 'current' : node.kind, {
                 icon: ICON_FOR_KIND[node.kind] || '•',
-                label: castleOnly ? (node.label || '') : (isCurrent ? 'Sei qui' : ''),
+                label: castleOnly ? (node.label || '') : (isCurrent ? 'Sei qui' : (i === history.length - 1 ? 'Bivio' : '')),
                 appear: isCurrent
             });
         });
+        if (corridor) {
+            corridor.nodes.slice(0, corridor.at).forEach((n) => addNode(n, 'dead-step', { icon: '•' }));
+            addNode(corridor.nodes[corridor.at], 'current' + (corridor.finito ? ' dead-here' : ''), {
+                icon: corridor.finito ? '🚧' : '🌿',
+                label: corridor.finito ? 'Vicolo cieco' : 'Sei qui',
+                appear: true
+            });
+        }
 
         // Bivio: i percorsi ancora da scegliere, "a sorpresa" finché non
         // si sceglie (stesso spirito del vecchio Sentiero 1/2/3) — tranne
         // il Castello, sempre riconoscibile perché è una destinazione
         // precisa, non un incontro casuale.
+        // Cosa si vede PRIMA di scegliere (richiesta dell'utente): un duello
+        // si riconosce, con il ritratto e il nome dello sfidante; tutto il
+        // resto è "ignoto" e può essere un premio, un'insidia o un vicolo
+        // cieco — è lì che resta la sorpresa.
         choices.forEach((route, index) => {
             const isCastle = route.kind === 'castle';
             const isCastleChallenge = route.kind === 'castleChallenge';
-            // Il Castello, a differenza di un incontro casuale sull'isola,
-            // è a percorso unico: l'avversario è già noto in anticipo (lo
-            // era anche nella vecchia schermata-card renderCastleChallenge),
-            // quindi il nodo mostra subito nome e icona reali invece del
-            // mistero "❔ Sentiero N".
-            let label = `Sentiero ${index + 1}`;
+            let label = 'Ignoto';
             let icon = '❔';
-            let extraClass = '';
-            if (isCastle) {
+            let extraClass = 'mystery';
+            let image = null;
+            let tag = null;
+            let onClick = () => chooseRoute(state, index);
+            if (route.kind === 'corridorStep') {
+                label = 'Il sentiero prosegue';
+                onClick = () => advanceCorridor(state);
+            } else if (route.closed) {
+                // Senza etichetta: la scritta "Vicolo cieco" la porta il
+                // fondo del vicolo (closedBranches), che per un vicolo
+                // lungo 1 cade proprio qui sotto — due scritte uguali
+                // sarebbero solo rumore.
+                icon = '🚧';
+                label = '';
+                extraClass = 'closed';
+                onClick = null;
+            } else if (route.kind === 'opponent') {
+                const sfidante = getRosterCharacter(route.characterId);
+                icon = '⚔️';
+                label = sfidante ? sfidante.name : 'Duellante';
+                tag = 'Duello';
+                extraClass = 'duel';
+                image = sfidante ? getCharacterImageFor(sfidante.id, 'duelistKingdom') : null;
+            } else if (isCastle) {
                 icon = '🏰';
                 label = 'Castello di Pegasus';
                 extraClass = 'castle';
@@ -1506,13 +1718,17 @@
                 const opponent = getRosterCharacter(route.characterId);
                 icon = meta.icon;
                 label = opponent ? opponent.name : meta.title;
-                extraClass = 'castle';
+                tag = meta.title;
+                extraClass = 'castle duel';
+                image = opponent ? getCharacterImageFor(opponent.id, 'duelistKingdom') : null;
             }
             addNode(route, 'choice', {
                 extraClass,
                 icon,
                 label,
-                onClick: () => chooseRoute(state, index),
+                image,
+                tag,
+                onClick,
                 appear: justGeneratedRoutes,
                 delay: index * 0.08 + 0.1,
                 routeIndex: index
@@ -1533,7 +1749,12 @@
         // appena stato inserito nel DOM, il browser non ha ancora calcolato
         // scrollWidth/clientHeight per il nuovo contenuto.
         requestAnimationFrame(() => {
-            const focus = castleOnly && choices[0] ? choices[0] : current;
+            // Fuori dal Castello si centra a metà fra "sei qui" e il bivio:
+            // su un telefono, centrando solo "sei qui", gli sfidanti a
+            // destra finivano fuori schermo proprio quando vanno scelti.
+            const mediaScelte = choices.length ? choices.reduce((s, c) => s + c.x, 0) / choices.length : current.x;
+            const focus = castleOnly && choices[0] ? choices[0]
+                : { x: (current.x + mediaScelte) / 2, y: current.y };
             viewport.scrollLeft = Math.max(0, focus.x - viewport.clientWidth / 2);
             viewport.scrollTop = Math.max(0, focus.y - viewport.clientHeight / 2);
         });
@@ -1589,8 +1810,108 @@
 
     function chooseRoute(state, index) {
         const route = state.pendingRoutes[index];
+        if (!route || route.closed) return;
         if (window.NativeHaptics) NativeHaptics.light();
         animateTravelToRoute(index, () => resolveChosenRoute(state, route));
+    }
+
+    // ----------------------------------------------------------------
+    // VICOLI CIECHI.
+    // ----------------------------------------------------------------
+    // Un sentiero ignoto può non portare a nulla: si entra (1 nodo, o 2 se
+    // il sentiero "prosegue"), si scopre che finisce, e si torna al bivio
+    // da soli. Lo stato del cammino in corso vive in `state.corridor`
+    // { routeIndex, from, nodes, at, finito }, salvato a ogni passo: una
+    // pagina ricaricata riparte dallo stesso punto, e se il vicolo era già
+    // stato scoperto si torna subito al bivio (render → finalizeDeadEnd).
+    // Il bivio resta in `state.pendingRoutes` per tutto il tempo, e al
+    // ritorno quel sentiero è chiuso per sempre (route.closed): non ci si
+    // può rientrare, e le altre strade restano tutte lì.
+    // I vicoli già scoperti restano disegnati (state.closedBranches),
+    // grigi, come memoria di dove non andare.
+    const DEAD_END_SCENES = [
+        "Una frana ha sepolto il sentiero: da qui non si passa.",
+        "Il sentiero finisce sul ciglio di una scogliera a picco sul mare.",
+        "La boscaglia si chiude in un muro di rovi impenetrabile.",
+        "Il ponte di corda che attraversava la gola è crollato da tempo."
+    ];
+
+    function enterCorridor(state, index) {
+        const route = state.pendingRoutes[index];
+        const from = lastNodePosition(state);
+        const nodes = [{ x: route.x, y: route.y }];
+        if (route.depth === 2) {
+            // Il secondo tratto prosegue in avanti e si allontana dal
+            // centro del bivio: così non finisce dove nasceranno i bivi
+            // successivi del cammino vero.
+            const versoFuori = route.y >= from.y ? 1 : -1;
+            nodes.push({
+                x: route.x + 175 + randomBetween(-20, 20),
+                y: clampMapY(route.y + versoFuori * randomBetween(35, 75))
+            });
+        }
+        state.corridor = { routeIndex: index, from: { x: from.x, y: from.y }, nodes: nodes, at: 0, finito: false };
+        saveState(state);
+        if (nodes.length === 1) { reachDeadEnd(state); return; }
+        showToast('🌿 Il sentiero prosegue tra la vegetazione...');
+        render();
+    }
+
+    function advanceCorridor(state) {
+        if (window.NativeHaptics) NativeHaptics.light();
+        animateTravelToRoute(0, () => {
+            state.corridor.at++;
+            saveState(state);
+            reachDeadEnd(state);
+        });
+    }
+
+    let deadEndAnimating = false;
+    function reachDeadEnd(state) {
+        state.corridor.finito = true;
+        saveState(state);
+        deadEndAnimating = true;
+        render();
+        if (window.NativeHaptics) NativeHaptics.error();
+        showToast(`🚧 Vicolo cieco! ${pickRandom(DEAD_END_SCENES)} Torni al bivio.`);
+        // Il ritorno parte dopo un attimo, il tempo di leggere: si
+        // ripercorrono a ritroso i nodi del vicolo fino al bivio.
+        const tappe = state.corridor.nodes.slice(0, state.corridor.at).reverse().concat([state.corridor.from]);
+        setTimeout(() => animateWalkBack(tappe, () => finalizeDeadEnd(state)), 1400);
+    }
+
+    function finalizeDeadEnd(state) {
+        deadEndAnimating = false;
+        const c = state.corridor;
+        if (!c) return;
+        state.closedBranches = state.closedBranches || [];
+        state.closedBranches.push({ from: c.from, nodes: c.nodes });
+        if (state.pendingRoutes && state.pendingRoutes[c.routeIndex]) state.pendingRoutes[c.routeIndex].closed = true;
+        state.corridor = null;
+        saveState(state);
+        render();
+    }
+
+    /** Il viaggiatore luminoso ripercorre `tappe` una dopo l'altra, partendo dal nodo "sei qui". Solo grafica: alla fine chiama `onDone`, anche se la mappa non c'è più. */
+    function animateWalkBack(tappe, onDone) {
+        const canvas = document.getElementById('mapCanvas');
+        const currentEl = canvas && canvas.querySelector('.map-node.current');
+        if (!canvas || !currentEl || tappe.length === 0) { onDone(); return; }
+        const traveler = document.createElement('div');
+        traveler.className = 'map-traveler';
+        traveler.style.left = currentEl.style.left;
+        traveler.style.top = currentEl.style.top;
+        canvas.appendChild(traveler);
+        let i = 0;
+        const passo = () => {
+            if (i >= tappe.length) { onDone(); return; }
+            void traveler.offsetWidth;
+            traveler.style.left = tappe[i].x + 'px';
+            traveler.style.top = tappe[i].y + 'px';
+            i++;
+            setTimeout(passo, MAP_TRAVEL_MS);
+        };
+        passo();
     }
 
     function resolveChosenRoute(state, route) {
@@ -1608,18 +1929,22 @@
             // riconosce e riapre questo stesso modale invece di mostrare
             // un bivio fresco o (peggio) lanciare il duello senza puntata.
             state.pendingRoutes = null;
-            state.pendingEncounter = { characterId: route.characterId, wager: null, isKaibaGate: false };
+            state.pendingEncounter = { characterId: route.characterId, wager: null, isKaibaGate: false, x: route.x, y: route.y };
             saveState(state);
             promptOpponentWager(state);
             return;
         }
+        if (route.kind === 'deadEnd') {
+            enterCorridor(state, state.pendingRoutes.indexOf(route));
+            return;
+        }
         if (route.kind === 'prize') {
             addStars(route.amount, state);
-            pushHistoryNode(state, 'prize', `+${route.amount} Stelle`);
+            pushHistoryNode(state, 'prize', `+${route.amount} Stelle`, route);
             showToast(`🎁 ${pickRandom(PRIZE_SCENES)} (+${route.amount} Stelle)`);
         } else if (route.kind === 'malus') {
             addStars(-route.amount, state);
-            pushHistoryNode(state, 'malus', `-${route.amount} Stelle`);
+            pushHistoryNode(state, 'malus', `-${route.amount} Stelle`, route);
             showToast(`⚠️ ${pickRandom(MALUS_SCENES)} (-${route.amount} Stelle)`);
         } else if (route.kind === 'castle') {
             resolveCastlePath(state);
@@ -1995,7 +2320,7 @@
                 TournamentDialogues.mostraUnaVolta(TOURNAMENT_ID, 'castle', state, saveState);
                 showToast(`🏆 Hai sconfitto ${name}! Il Castello di Pegasus si apre davanti a te.`, reaction);
             } else {
-                pushHistoryNode(state, 'win', `Vittoria su ${name} (+${enc.wager})`);
+                pushHistoryNode(state, 'win', `Vittoria su ${name} (+${enc.wager})`, enc);
                 state.step++;
                 showToast(`⚔️ Hai sconfitto ${name}! +${enc.wager} Stelle.`, reaction);
             }
@@ -2005,7 +2330,7 @@
             if (enc.isKaibaGate) {
                 showToast(`💀 ${name} ti ha sconfitto: le tue Stelle sono andate perdute.`, reaction);
             } else {
-                pushHistoryNode(state, 'lose', `Sconfitta contro ${name} (-${enc.wager})`);
+                pushHistoryNode(state, 'lose', `Sconfitta contro ${name} (-${enc.wager})`, enc);
                 state.step++;
                 showToast(`💀 ${name} ti ha sconfitto. -${enc.wager} Stelle.`, reaction);
             }
@@ -2107,6 +2432,20 @@
         // schermata d'incontro drammatica finché il giocatore non preme
         // "Sfida!" (che trasforma questo in un vero pendingEncounter, sopra).
         if (state.atKaibaGate) { renderKaibaGateEncounter(state); return; }
+        // Vicolo già scoperto ma ritorno al bivio interrotto (pagina
+        // ricaricata durante l'animazione): si chiude adesso, senza
+        // animazione. Mentre l'animazione è in corso invece no.
+        if (state.corridor && state.corridor.finito && !deadEndAnimating) {
+            finalizeDeadEnd(state);
+            return;
+        }
+        // Rete di sicurezza contro il blocco: un bivio senza più strade
+        // aperte non dovrebbe esistere (generateRoutes ne lascia sempre
+        // almeno una vera), ma se capitasse se ne genera uno nuovo invece
+        // di lasciare il giocatore davanti a soli sentieri chiusi.
+        if (!state.corridor && state.pendingRoutes && state.pendingRoutes.every((r) => r.closed)) {
+            state.pendingRoutes = null;
+        }
         if (!state.pendingRoutes) generateRoutes(state);
         state = loadState();
         renderMap(state);

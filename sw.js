@@ -431,7 +431,8 @@
 // v206: fumetti delle battute a targa d'oro, senza barra del tempo.
 // v207: battute dei duellanti come sottotitoli.
 // v208: alone delle battute sfumato su tutti i lati.
-const CACHE_NAME = 'ygo-duel-arena-v208';
+// v209: Regno dei Duellanti con sfidanti visibili e vicoli ciechi.
+const CACHE_NAME = 'ygo-duel-arena-v209';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
