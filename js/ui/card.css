@@ -521,6 +521,11 @@
     box-shadow: none;
     overflow: visible;
     perspective: 900px;
+    /* Durante il giro il mouse non deve toccare la carta: l'effetto di
+       sollevamento al passaggio aggiunge un filtro, e un filtro appiattisce
+       il 3D del giro facendo sparire entrambe le facce. I click arrivano
+       comunque alla casella sotto. */
+    pointer-events: none;
 }
 /* Il contenitore del flip non ha un corpo suo: lo mostrano già le due
    facce dentro di lui, e un secondo corpo dietro si vedrebbe durante la

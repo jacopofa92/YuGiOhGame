@@ -432,7 +432,8 @@
 // v207: battute dei duellanti come sottotitoli.
 // v208: alone delle battute sfumato su tutti i lati.
 // v209: Regno dei Duellanti con sfidanti visibili e vicoli ciechi.
-const CACHE_NAME = 'ygo-duel-arena-v212';
+// v213: carta scoperta col Flip Summon che spariva al passaggio del mouse.
+const CACHE_NAME = 'ygo-duel-arena-v213';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

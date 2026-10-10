@@ -506,6 +506,19 @@
         outer.appendChild(inner);
 
         oldEl.replaceWith(outer);
+        // Finito il giro, la casella deve tornare una carta NORMALE. Il Flip
+        // Summon (changeMonsterPosition, evocazioni.js) chiama questa
+        // funzione DOPO l'ultimo ridisegno del Terreno, quindi nessuno
+        // sostituiva più la struttura del giro: restava lì fino al ridisegno
+        // successivo, e il passaggio del mouse (che solleva la carta con
+        // un'ombra-filtro, e un filtro appiattisce il 3D) faceva sparire
+        // entrambe le facce. Ridisegnando il Terreno la casella torna quella
+        // di sempre: riconciliaBoard (game-flow.js) vede che il suo HTML è
+        // cambiato e la sostituisce.
+        inner.addEventListener('animationend', () => {
+            if (!outer.isConnected) return;
+            if (typeof renderFields === 'function') renderFields();
+        }, { once: true });
         // L'ologramma del mostro (js/ui/monster-hologram.js) era già nato col
         // ridisegno appena prima del giro, sopra una carta ancora di dorso:
         // riallinearlo adesso gli fa vedere il giro in corso, lo toglie e lo
