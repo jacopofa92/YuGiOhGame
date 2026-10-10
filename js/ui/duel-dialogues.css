@@ -99,6 +99,64 @@
 
 .duel-speech.is-visible { opacity: 1; transform: none; }
 
+/* --- Animazioni (richiesta dell'utente: "animarlo di più") -----------
+   Entrata: il fumetto "esce" dalla plancia con un piccolo scatto elastico
+   (un velo di sovra-elongazione, poi fermo). È un fumetto 2D: niente a che
+   vedere con gli atterraggi 3D, dove il rimbalzo è escluso.
+   Poi resta sospeso con una fluttuazione leggerissima — su `translate`,
+   proprietà separata da `transform`, così non litiga con l'entrata.
+   Le parole compaiono una alla volta (--i, scritto da show()).
+   L'uscita resta la transizione di opacità/scala definita sopra. */
+.duel-speech.is-visible {
+    animation:
+        duelSpeechEntra .42s cubic-bezier(.3, 1.45, .55, 1) both,
+        duelSpeechFluttua 3.2s ease-in-out .5s infinite;
+}
+@keyframes duelSpeechEntra {
+    0% { opacity: 0; transform: translateY(10px) scale(.72); }
+    100% { opacity: 1; transform: none; }
+}
+.duel-speech--player.is-visible { animation-name: duelSpeechEntraSu, duelSpeechFluttua; }
+@keyframes duelSpeechEntraSu {
+    0% { opacity: 0; transform: translateY(-10px) scale(.72); }
+    100% { opacity: 1; transform: none; }
+}
+@keyframes duelSpeechFluttua {
+    0%, 100% { translate: 0 0; }
+    50% { translate: 0 -3px; }
+}
+.duel-speech__parola {
+    display: inline-block;
+    white-space: pre;
+    opacity: 0;
+}
+.duel-speech.is-visible .duel-speech__parola {
+    animation: duelSpeechParola .28s ease-out both;
+    animation-delay: calc(140ms + var(--i, 0) * 55ms);
+}
+@keyframes duelSpeechParola {
+    from { opacity: 0; transform: translateY(5px); filter: blur(2px); }
+    to { opacity: 1; transform: none; filter: none; }
+}
+/* Il nome scivola dentro un istante prima del testo. */
+.duel-speech.is-visible .duel-speech__nome { animation: duelSpeechNome .3s ease-out .06s both; }
+@keyframes duelSpeechNome {
+    from { opacity: 0; transform: translateX(-8px); letter-spacing: .3em; }
+    to { opacity: 1; transform: none; }
+}
+/* Battuta speciale: il bagliore dorato respira finché resta a schermo. */
+.duel-speech.is-special.is-visible {
+    animation:
+        duelSpeechEntra .5s cubic-bezier(.3, 1.45, .55, 1) both,
+        duelSpeechFluttua 3.2s ease-in-out .5s infinite,
+        duelSpeechBagliore 1.6s ease-in-out .5s infinite;
+}
+.duel-speech--player.is-special.is-visible { animation-name: duelSpeechEntraSu, duelSpeechFluttua, duelSpeechBagliore; }
+@keyframes duelSpeechBagliore {
+    0%, 100% { filter: drop-shadow(0 0 0 rgba(255, 211, 75, 0)); }
+    50% { filter: drop-shadow(0 0 10px rgba(255, 211, 75, .45)); }
+}
+
 .duel-speech.is-special {
     --lato: #f7d774;
     --lato-tenue: rgba(247, 215, 116, .22);
@@ -168,6 +226,10 @@
 
 @media (prefers-reduced-motion: reduce) {
     .duel-speech { transition: opacity .12s linear; transform: none; }
+    .duel-speech.is-visible,
+    .duel-speech.is-special.is-visible,
+    .duel-speech.is-visible .duel-speech__nome,
     .duel-speech.is-visible .duel-speech__tempo,
     .duel-speech.is-special.is-visible::before { animation: none; }
+    .duel-speech.is-visible .duel-speech__parola { animation: none; opacity: 1; }
 }

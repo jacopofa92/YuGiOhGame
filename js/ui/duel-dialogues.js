@@ -208,7 +208,21 @@
         const durata = special ? 4100 : 3000;
         const duellante = identity(owner) || {};
         el.querySelector('.duel-speech__nome').textContent = duellante.name || (owner === 'bot' ? 'Avversario' : 'Tu');
-        el.querySelector('.duel-speech__testo').textContent = text;
+        // Una parola per <span>, ciascuna col suo ritardo (--i): compaiono
+        // una dopo l'altra, come se il personaggio stesse parlando. Testo
+        // inserito con textContent parola per parola: niente HTML dalle
+        // battute, che possono contenere nomi di carte qualsiasi.
+        const testo = el.querySelector('.duel-speech__testo');
+        testo.textContent = '';
+        testo.setAttribute('aria-label', text);
+        String(text).split(/\s+/).filter(Boolean).forEach((parola, i, tutte) => {
+            const s = document.createElement('span');
+            s.className = 'duel-speech__parola';
+            s.style.setProperty('--i', i);
+            s.setAttribute('aria-hidden', 'true');
+            s.textContent = parola + (i < tutte.length - 1 ? ' ' : '');
+            testo.appendChild(s);
+        });
         el.style.setProperty('--durata', durata + 'ms');
         el.classList.toggle('is-special', !!special);
         // Se il fumetto era già aperto (una battuta che ne sostituisce
