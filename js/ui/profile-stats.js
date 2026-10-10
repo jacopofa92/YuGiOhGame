@@ -125,9 +125,11 @@
         return totale != null ? `${n}<small> / ${totale}</small>` : String(n);
     }
 
+    // `icona` è il nome di un'icona di js/ui/icon-library.js, non più
+    // un'emoji: le emoji di sistema stonavano accanto all'oro del resto.
     function voce(icona, valore, etichetta, extra) {
         return `<div class="pst-voce${extra && extra.classe ? ' ' + extra.classe : ''}">
-            <span class="pst-icona" aria-hidden="true">${icona}</span>
+            <span class="pst-icona" data-icon="${icona}" aria-hidden="true"></span>
             <span class="pst-valore">${valore}</span>
             <span class="pst-etichetta">${esc(etichetta)}</span>
             ${extra && extra.nota ? `<span class="pst-nota">${esc(extra.nota)}</span>` : ''}
@@ -147,49 +149,34 @@
         const s = calcola();
         el.classList.add('profile-stats');
 
-        // La percentuale disegnata come un anello: è il numero che dice
-        // di più, e un anello si legge prima di un numero.
-        const anello = s.percentuale == null ? ''
-            : `<div class="pst-anello" style="--pst-pct:${s.percentuale}">
-                   <span class="pst-anello-valore">${s.percentuale}%</span>
-                   <span class="pst-anello-etichetta">vittorie</span>
-               </div>`;
-
-        // Vinti e persi non si ripetono qui: li mostra già la fila di
-        // riquadri in cima al Profilo, subito sopra.
+        // Vittorie, sconfitte, duelli giocati e la percentuale li mostra la
+        // testata del Profilo (js/ui/profile-hero.js), subito sopra: qui
+        // non si ripetono.
         const duelli = [
-            voce('⚔️', String(s.giocati), 'Duelli giocati'),
-            voce('🎯', s.piuBattuto ? esc(nomeDuellante(s.piuBattuto.id)) : '—', 'Avversario più battuto',
-                { classe: 'pst-voce--nome', nota: s.piuBattuto ? `${s.piuBattuto.n} ${s.piuBattuto.n === 1 ? 'vittoria' : 'vittorie'}` : '' }),
-            voce('😈', s.bestiaNera ? esc(nomeDuellante(s.bestiaNera.id)) : '—', 'Bestia nera',
-                { classe: 'pst-voce--nome', nota: s.bestiaNera ? `${s.bestiaNera.n} ${s.bestiaNera.n === 1 ? 'sconfitta' : 'sconfitte'}` : '' })
+            voce('target', s.piuBattuto ? esc(nomeDuellante(s.piuBattuto.id)) : '—', 'Avversario più battuto',
+                { classe: 'pst-voce--nome', nota: s.piuBattuto ? `${s.piuBattuto.n} ${s.piuBattuto.n === 1 ? 'vittoria' : 'vittorie'}` : 'nessuno ancora' }),
+            voce('skull', s.bestiaNera ? esc(nomeDuellante(s.bestiaNera.id)) : '—', 'Bestia nera',
+                { classe: 'pst-voce--nome', nota: s.bestiaNera ? `${s.bestiaNera.n} ${s.bestiaNera.n === 1 ? 'sconfitta' : 'sconfitte'}` : 'nessuno ancora' })
         ];
         const collezione = [
-            voce('🃏', suQuanti(s.carteDiverse, s.carteTotali), 'Carte diverse'),
-            voce('📚', String(s.copie), 'Copie in collezione'),
-            voce('📦', String(s.mazziComprati), 'Mazzi acquistati')
+            voce('cards', suQuanti(s.carteDiverse, s.carteTotali), 'Carte diverse'),
+            voce('collection', String(s.copie), 'Copie in collezione'),
+            voce('shop', String(s.mazziComprati), 'Mazzi acquistati')
         ];
         const progressi = [
-            voce('📜', String(s.tappe), 'Tappe della Storia'),
-            voce('👑', String(s.storieFinite), 'Storie completate'),
-            voce('🏟️', String(s.torneiVinti), 'Tornei vinti', { nota: s.torneiTentati ? `su ${s.torneiTentati} ${s.torneiTentati === 1 ? 'tentativo' : 'tentativi'}` : '' }),
-            voce('🎖️', suQuanti(s.sfideFatte, s.sfideTotali), 'Sfide completate'),
-            voce('🧑‍🤝‍🧑', suQuanti(s.sbloccati, s.rosterTotale), 'Duellanti sbloccati'),
-            voce('👁️', suQuanti(s.oggetti, s.oggettiTotali), 'Oggetti del Millennio')
+            voce('story', String(s.tappe), 'Tappe della Storia'),
+            voce('crown', String(s.storieFinite), 'Storie completate'),
+            voce('tournament', String(s.torneiVinti), 'Tornei vinti', { nota: s.torneiTentati ? `su ${s.torneiTentati} ${s.torneiTentati === 1 ? 'tentativo' : 'tentativi'}` : '' }),
+            voce('medal', suQuanti(s.sfideFatte, s.sfideTotali), 'Sfide completate'),
+            voce('freeDuel', suQuanti(s.sbloccati, s.rosterTotale), 'Duellanti sbloccati'),
+            voce('eye', suQuanti(s.oggetti, s.oggettiTotali), 'Oggetti del Millennio')
         ];
 
         el.innerHTML = `
-            <div class="pst-testa">
-                ${anello}
-                <div class="pst-testa-testo">
-                    ${s.giocati
-                        ? `<strong>${s.giocati}</strong> ${s.giocati === 1 ? 'duello' : 'duelli'} in tutte le modalità`
-                        : 'Nessun duello ancora: le statistiche si riempiono giocando.'}
-                </div>
-            </div>
             ${gruppo('Duelli', duelli)}
             ${gruppo('Collezione', collezione)}
             ${gruppo('Progressi', progressi)}`;
+        if (window.Icons) Icons.hydrate(el);
     }
 
     window.ProfileStats = { render: render, calcola: calcola };

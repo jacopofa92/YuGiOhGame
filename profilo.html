@@ -35,6 +35,7 @@
 <link rel="preload" href="audio/soundtracks/56. Battle for the Millennium.mp3" as="audio">
 <link rel="stylesheet" href="js/ui/topbar.css">
 <link rel="stylesheet" href="js/ui/profile-stats.css">
+<link rel="stylesheet" href="js/ui/profile-hero.css">
 <!-- Ritratto del giocatore in fondo alla topbar: lo monta PageTopbar. -->
 <link rel="stylesheet" href="js/ui/deck-switcher.css">
 <!-- Le scatole 3D con cui sono mostrati i mazzi del giocatore, le stesse
@@ -214,6 +215,19 @@
     }
     .section-link:hover { text-decoration: underline; }
     section { margin-bottom: 30px; }
+    /* Titoli di sezione in serif, come la testata (js/ui/profile-hero.css). */
+    .section-title { font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif; font-weight: 700; font-size: 1.02rem; color: #f1c95a; }
+    .section-title [data-icon] { display: inline-flex; vertical-align: -0.12em; }
+    /* Account e backup in un riquadro solo, in fondo alla pagina. */
+    .account-zone {
+        padding: 18px 20px;
+        border-radius: 16px;
+        background: rgba(10, 9, 14, 0.62);
+        border: 1px solid rgba(241, 201, 90, 0.2);
+    }
+    .account-backup { margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+    .account-sottotitolo { font-weight: 800; font-size: 0.86rem; color: #e9e3d3; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+    .action-btn [data-icon] { display: inline-flex; vertical-align: -0.12em; }
 
     .deck-grid {
         display: grid;
@@ -472,67 +486,9 @@
     <div id="topbarMount"></div>
 
     <main class="main">
-        <div class="player-card">
-            <div class="player-avatar">
-                <span class="fallback-icon">👤</span>
-                <img src="images/characters/mirror.jpg" alt="Il tuo riflesso" onload="this.previousElementSibling.remove()" onerror="this.remove()">
-            </div>
-            <div class="player-card-body">
-                <div class="player-name-row">
-                    <input type="text" id="profileNameInput" class="menu-name-input" maxlength="24">
-                    <button type="button" class="profile-mini-btn" id="profileNameSaveBtn" title="Salva nome"><span data-icon="save"></span></button>
-                </div>
-                <div class="profile-meta" id="profileMeta"></div>
-            </div>
-        </div>
-
-        <div class="stat-row">
-            <div class="stat-tile">
-                <div class="stat-tile-value" id="statDeckCount">0</div>
-                <div class="stat-tile-label">Deck</div>
-            </div>
-            <div class="stat-tile">
-                <div class="stat-tile-value wins" id="statWins">0</div>
-                <div class="stat-tile-label">Vittorie</div>
-            </div>
-            <div class="stat-tile">
-                <div class="stat-tile-value losses" id="statLosses">0</div>
-                <div class="stat-tile-label">Sconfitte</div>
-            </div>
-        </div>
-
-        <section>
-            <div class="section-title">
-                <span><span data-icon="wallet"></span> Portafoglio</span>
-                <a href="negozio.html" class="section-link">Vai al Negozio ›</a>
-            </div>
-            <div class="stat-row">
-                <div class="stat-tile">
-                    <div class="stat-tile-value" id="statCredits">0</div>
-                    <div class="stat-tile-label">💰 Crediti</div>
-                </div>
-                <div class="stat-tile">
-                    <div class="stat-tile-value" id="statStarChips">0</div>
-                    <div class="stat-tile-label">⭐ Stelle</div>
-                </div>
-                <div class="stat-tile">
-                    <div class="stat-tile-value" id="statLocatorCards">0</div>
-                    <div class="stat-tile-label">🗺️ Carte Locazione</div>
-                </div>
-                <div class="stat-tile">
-                    <div class="stat-tile-value" id="statMillenniumCards">0</div>
-                    <div class="stat-tile-label">🔱 Carte del Millennio</div>
-                </div>
-            </div>
-        </section>
-
-        <section>
-            <div class="section-title">
-                <span><span data-icon="cards"></span> I tuoi Deck</span>
-                <a href="creazione-deck.html" class="section-link">Gestisci deck ›</a>
-            </div>
-            <div class="deck-grid" id="deckGrid"></div>
-        </section>
+        <!-- Testata, riepilogo, portafoglio e mazzi: componente condiviso
+             con la vista Profilo del menu (js/ui/profile-hero.js). -->
+        <div id="heroMount"></div>
 
         <!-- Statistiche, al posto del vecchio "Record Duello Libero":
              componente condiviso con la vista Profilo del menu. -->
@@ -543,9 +499,11 @@
             <div id="statsMount"></div>
         </section>
 
-        <section>
+        <!-- Account e backup in fondo, in un riquadro solo: si usano di
+             rado, e non devono stare fra i progressi. -->
+        <section class="account-zone">
             <div class="section-title">
-                <span><span data-icon="cloud"></span> Account Cloud</span>
+                <span><span data-icon="cloud"></span> Account e salvataggi</span>
                 <button type="button" class="section-link" id="changeAccountLink" style="display:none; background:none; border:none; cursor:pointer; font-family:inherit;"><span data-icon="switchAccount"></span> Cambia account</button>
             </div>
 
@@ -591,16 +549,16 @@
                     </div>
                 </details>
             </div>
-        </section>
 
-        <section>
-            <div class="section-title"><span><span data-icon="save"></span> Backup manuale su file</span></div>
-            <div class="profile-meta" style="margin-bottom: 10px;">Facoltativo: una copia extra del salvataggio in un file, indipendente dal cloud — utile prima di reinstallare l'app o come backup di sicurezza. Non necessario per il normale utilizzo.</div>
-            <div class="actions-row">
-                <button type="button" class="action-btn export" id="exportBtn">⬇️ Esporta salvataggio</button>
-                <button type="button" class="action-btn import" id="importBtn">⬆️ Importa salvataggio</button>
+            <div class="account-backup">
+                <div class="account-sottotitolo"><span data-icon="save"></span> Backup manuale su file</div>
+                <div class="profile-meta" style="margin-bottom: 10px;">Facoltativo: una copia extra del salvataggio in un file, indipendente dal cloud — utile prima di reinstallare l'app o come backup di sicurezza. Non necessario per il normale utilizzo.</div>
+                <div class="actions-row">
+                    <button type="button" class="action-btn export" id="exportBtn"><span data-icon="cloudDown"></span> Esporta salvataggio</button>
+                    <button type="button" class="action-btn import" id="importBtn"><span data-icon="cloudUp"></span> Importa salvataggio</button>
+                </div>
+                <input type="file" id="importInput" accept="application/json" style="display:none;">
             </div>
-            <input type="file" id="importInput" accept="application/json" style="display:none;">
         </section>
     </main>
 
@@ -678,6 +636,7 @@
 <script src="js/economy/rewards.js"></script>
 <script src="js/data/challenges-db.js"></script>
 <script src="js/ui/profile-stats.js"></script>
+<script src="js/ui/profile-hero.js"></script>
 <script>
     PageTopbar.render('#topbarMount', { icon: 'profile', title: 'Profilo Duellante' });
 
@@ -704,67 +663,13 @@
         // Nessun salvataggio (es. pagina raggiunta a mano senza essere mai
         // passati da "Nuova Partita"): ne creiamo uno al volo invece di
         // mostrare una pagina vuota o rompersi.
-        const save = SaveManager.load() || SaveManager.createNew('Giocatore');
-
-        document.getElementById('profileNameInput').value = save.player.name || 'Giocatore';
-        document.getElementById('profileMeta').textContent = `Ultimo salvataggio: ${formatSaveDate(save.player.lastSaved)}`;
-
-        const decks = save.decks || [];
-        document.getElementById('statDeckCount').textContent = decks.length;
-
-        const wallet = SaveManager.getCurrency();
-        document.getElementById('statCredits').textContent = wallet.credits;
-        document.getElementById('statStarChips').textContent = wallet.starChips;
-        document.getElementById('statLocatorCards').textContent = wallet.locatorCards;
-        document.getElementById('statMillenniumCards').textContent = wallet.millenniumCards || 0;
-        const deckGrid = document.getElementById('deckGrid');
-        deckGrid.innerHTML = '';
-        if (decks.length === 0) {
-            deckGrid.innerHTML = '<div class="empty-msg">Nessun deck ancora creato.</div>';
-        } else {
-            const attivo = SaveManager.getActiveDeckId ? SaveManager.getActiveDeckId() : null;
-            decks.forEach((deck) => {
-                const mainCount = (deck.main || []).reduce((sum, e) => sum + e.qty, 0);
-                const extraCount = (deck.extra || []).reduce((sum, e) => sum + e.qty, 0);
-                const inUso = deck.id === attivo;
-                const row = document.createElement('div');
-                row.className = 'deck-row' + (inUso ? ' is-attivo' : '');
-                row.innerHTML = (window.DeckBox ? DeckBox.markup({
-                    name: deck.name,
-                    color: deck.color || DeckBox.colorForId(deck.id)
-                }) : '')
-                    + '<div class="deck-row-name"></div>'
-                    + `<div class="deck-row-sub">${mainCount} Main · ${extraCount} Extra · Aggiornato ${new Date(deck.updatedAt || Date.now()).toLocaleDateString('it-IT')}</div>`
-                    + (inUso ? '<div class="deck-row-badge">In uso</div>' : '');
-                // Il nome del mazzo è testo scritto dall'utente: mai dentro
-                // innerHTML (prima ci finiva grezzo). DeckBox.markup se ne
-                // occupa da sé per la copia stampata sul coperchio.
-                row.querySelector('.deck-row-name').textContent = deck.name || '(senza nome)';
-                deckGrid.appendChild(row);
-            });
-        }
-
-        const roster = typeof characterDatabase !== 'undefined' ? characterDatabase : [];
-        const withResults = roster
-            .map((character) => ({ character, record: (save.records && save.records[character.id]) || { wins: 0, losses: 0 } }))
-            .filter((entry) => entry.record.wins > 0 || entry.record.losses > 0);
-
-        const totalWins = withResults.reduce((sum, e) => sum + e.record.wins, 0);
-        const totalLosses = withResults.reduce((sum, e) => sum + e.record.losses, 0);
-        document.getElementById('statWins').textContent = totalWins;
-        document.getElementById('statLosses').textContent = totalLosses;
-
-        // Al posto del vecchio "Record Duello Libero": il componente
-        // condiviso con la vista Profilo del menu (js/ui/profile-stats.js).
+        if (!SaveManager.load()) SaveManager.createNew('Giocatore');
+        // Testata, riepilogo, portafoglio e mazzi: componente condiviso con
+        // la vista Profilo del menu (js/ui/profile-hero.js), come le
+        // statistiche qui sotto (js/ui/profile-stats.js).
+        ProfileHero.render(document.getElementById('heroMount'), { toast: showToast });
         ProfileStats.render(document.getElementById('statsMount'));
     }
-
-    document.getElementById('profileNameSaveBtn').onclick = () => {
-        const name = SaveManager.setPlayerName(document.getElementById('profileNameInput').value);
-        document.getElementById('profileNameInput').value = name;
-        document.getElementById('profileMeta').textContent = `Ultimo salvataggio: ${formatSaveDate(SaveManager.load().player.lastSaved)}`;
-        showToast('💾 Nome aggiornato!');
-    };
 
     document.getElementById('exportBtn').onclick = () => {
         if (SaveManager.exportToFile()) showToast('⬇️ Salvataggio esportato come save_yugioh.json!');

@@ -66,9 +66,13 @@
     height: 1px;
     background: linear-gradient(90deg, rgba(247, 215, 116, 0.45), transparent);
 }
+/* auto-fit, non auto-fill: un gruppo con due sole voci le allarga a tutta
+   la riga invece di lasciare un buco vuoto a destra. */
 .profile-stats .pst-griglia {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    /* 250px: nella colonna del Profilo (900px) stanno tre voci per riga, e
+       i gruppi da 2, 3 e 6 voci escono sempre a righe piene. */
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 10px;
 }
 .profile-stats .pst-voce {
@@ -79,11 +83,11 @@
     align-items: center;
     padding: 10px 12px;
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.045);
-    border: 1px solid rgba(255, 255, 255, 0.09);
+    background: rgba(10, 9, 14, 0.62);
+    border: 1px solid rgba(247, 215, 116, 0.16);
     min-width: 0;
 }
-.profile-stats .pst-icona { grid-area: icona; font-size: 1.35rem; }
+.profile-stats .pst-icona { grid-area: icona; font-size: 1.35rem; color: var(--pst-oro); display: inline-flex; }
 .profile-stats .pst-valore {
     grid-area: valore;
     font-size: 1.3rem;
@@ -105,6 +109,9 @@
 
 @media (max-width: 480px) {
     .profile-stats .pst-griglia { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    /* Su due colonne l'ultima voce di un gruppo dispari resterebbe da sola
+       a metà riga: prende tutta la riga. */
+    .profile-stats .pst-voce:last-child:nth-child(odd) { grid-column: 1 / -1; }
     .profile-stats .pst-voce { padding: 8px 9px; column-gap: 7px; }
     .profile-stats .pst-icona { font-size: 1.1rem; }
     .profile-stats .pst-valore { font-size: 1.1rem; }

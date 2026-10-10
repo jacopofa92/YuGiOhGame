@@ -433,7 +433,8 @@
 // v208: alone delle battute sfumato su tutti i lati.
 // v209: Regno dei Duellanti con sfidanti visibili e vicoli ciechi.
 // v213: carta scoperta col Flip Summon che spariva al passaggio del mouse.
-const CACHE_NAME = 'ygo-duel-arena-v213';
+// v214: Profilo rifatto (testata, riepilogo, portafoglio, mazzi: js/ui/profile-hero.*).
+const CACHE_NAME = 'ygo-duel-arena-v214';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -559,7 +560,9 @@ const APP_SHELL = [
     'js/ui/game-logo.js',
     'js/ui/sfide-view.js',
     'js/ui/profile-stats.js',
+    'js/ui/profile-hero.js',
     'js/ui/profile-stats.css',
+    'js/ui/profile-hero.css',
     'js/ui/visual-effects-library.js',
     'js/multiplayer/mp-lobby.js',
     'js/multiplayer/mp-passo-comune.js',

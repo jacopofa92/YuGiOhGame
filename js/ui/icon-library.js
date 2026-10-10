@@ -239,6 +239,55 @@
         defensePos: `
             <path d="M12 2.2 L19.6 5.1 V11.6 C19.6 16.6 16.4 20.1 12 21.8 C7.6 20.1 4.4 16.6 4.4 11.6 V5.1 Z" fill="currentColor"/>
             <path d="M12 6.5 V17.5 M8.3 12 H15.7" stroke="#0b0d1c" stroke-width="1.2" opacity="0.55"/>
+        `,
+        // --- Icone del Profilo (portafoglio e statistiche): prima erano
+        // emoji di sistema, che stonavano accanto all'oro del resto. ---
+        // Crediti — moneta con l'Occhio inciso.
+        coin: `
+            <circle cx="12" cy="12" r="8.6" fill="currentColor"/>
+            <circle cx="12" cy="12" r="6.4" fill="none" stroke="#0b0d1c" stroke-width="0.9" opacity="0.5"/>
+            <ellipse cx="12" cy="12" rx="3" ry="1.7" fill="none" stroke="#0b0d1c" stroke-width="1.1"/>
+            <circle cx="12" cy="12" r="0.8" fill="#0b0d1c"/>
+        `,
+        // Stelle dell'Esagono — stella a cinque punte.
+        star: `
+            <path d="M12 2.6 L14.7 8.6 L21.2 9.2 L16.3 13.5 L17.8 19.9 L12 16.5 L6.2 19.9 L7.7 13.5 L2.8 9.2 L9.3 8.6 Z" fill="currentColor"/>
+        `,
+        // Carte Locazione — mappa ripiegata in tre.
+        map: `
+            <path d="M3 5.5 L8.5 3.5 L15.5 6 L21 4 V18.5 L15.5 20.5 L8.5 18 L3 20 Z" fill="currentColor"/>
+            <path d="M8.5 3.5 V18 M15.5 6 V20.5" stroke="#0b0d1c" stroke-width="1" opacity="0.5"/>
+        `,
+        // Oggetti / Carte del Millennio — l'Occhio di Wedjat.
+        eye: `
+            <path d="M2.5 11 C6 5.8 18 5.8 21.5 11 C18 16 6 16 2.5 11 Z" fill="currentColor"/>
+            <circle cx="12" cy="11" r="2.9" fill="#0b0d1c"/>
+            <circle cx="12" cy="11" r="1.1" fill="currentColor"/>
+            <path d="M10 14.8 L8.6 20 M13.5 15 L16.5 18.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        `,
+        // Sfide — medaglia col nastro.
+        medal: `
+            <path d="M8 2.5 L11 9 M16 2.5 L13 9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+            <circle cx="12" cy="14.6" r="6.2" fill="currentColor"/>
+            <path d="M12 11.2 L13.1 13.4 L15.5 13.7 L13.7 15.3 L14.2 17.7 L12 16.5 L9.8 17.7 L10.3 15.3 L8.5 13.7 L10.9 13.4 Z" fill="#0b0d1c" opacity="0.55"/>
+        `,
+        // Avversario più battuto — bersaglio.
+        target: `
+            <circle cx="12" cy="12" r="8.8" fill="none" stroke="currentColor" stroke-width="2"/>
+            <circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="2"/>
+            <circle cx="12" cy="12" r="1.8" fill="currentColor"/>
+        `,
+        // Bestia nera — teschio.
+        skull: `
+            <path d="M12 2.8 C7 2.8 4 6.3 4 10.4 C4 13 5.3 14.8 7 15.8 V19 C7 19.9 7.7 20.6 8.6 20.6 H15.4 C16.3 20.6 17 19.9 17 19 V15.8 C18.7 14.8 20 13 20 10.4 C20 6.3 17 2.8 12 2.8 Z" fill="currentColor"/>
+            <circle cx="9" cy="11" r="1.9" fill="#0b0d1c"/>
+            <circle cx="15" cy="11" r="1.9" fill="#0b0d1c"/>
+            <path d="M12 13.6 L10.9 15.6 H13.1 Z M10 18.4 V20.4 M12 18.4 V20.4 M14 18.4 V20.4" stroke="#0b0d1c" stroke-width="0.9" fill="#0b0d1c"/>
+        `,
+        // Modifica (il nome) — stilo di canna da scriba.
+        pencil: `
+            <path d="M15.6 3.6 L20.4 8.4 L9 19.8 L3.6 20.4 L4.2 15 Z" fill="currentColor"/>
+            <path d="M13.4 5.8 L18.2 10.6" stroke="#0b0d1c" stroke-width="1.1" opacity="0.55"/>
         `
     };
 

@@ -1277,18 +1277,37 @@
             :scope {
                 font-family: 'Arial', sans-serif;
                 color: #fff;
-                background-image: url('images/background/backgroundMenu.jpg');
                 --blue: #3498db;
                 --cube-w: 150px;
             }
+            /* Il fondale sta sullo strato FISSO, insieme alla sfumatura,
+               come in profilo.html: sul contenitore scorreva col contenuto e
+               si ripeteva a piastrelle, con una giunta visibile scorrendo. */
             :scope::before {
                 content: '';
                 position: fixed;
                 inset: 0;
                 z-index: 0;
-                background: linear-gradient(180deg, rgba(6,7,12,0.55) 0%, rgba(6,7,12,0.68) 60%, rgba(4,5,8,0.78) 100%);
+                background:
+                    linear-gradient(180deg, rgba(6,7,12,0.55) 0%, rgba(6,7,12,0.68) 60%, rgba(4,5,8,0.78) 100%),
+                    url('images/background/backgroundMenu.jpg') center/cover no-repeat;
                 pointer-events: none;
             }
+            /* Titoli di sezione in serif, come la testata (js/ui/profile-hero.css). */
+            /* `.main` davanti: la regola originale di .section-title sta più
+               in basso in questo stesso blocco e altrimenti vincerebbe. */
+            .main .section-title { font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif; font-weight: 700; font-size: 1.02rem; color: #f1c95a; }
+            .main .section-title [data-icon] { display: inline-flex; vertical-align: -0.12em; }
+            /* Account e backup in un riquadro solo, in fondo alla pagina. */
+            .account-zone {
+                padding: 18px 20px;
+                border-radius: 16px;
+                background: rgba(10, 9, 14, 0.62);
+                border: 1px solid rgba(241, 201, 90, 0.2);
+            }
+            .account-backup { margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+            .account-sottotitolo { font-weight: 800; font-size: 0.86rem; color: #e9e3d3; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+            .action-btn [data-icon] { display: inline-flex; vertical-align: -0.12em; }
             .main {
                 position: relative;
                 z-index: 1;
@@ -1649,68 +1668,9 @@
     <div id="profilo-topbarMount"></div>
 
     <main class="main">
-        <div class="player-card">
-            <div class="player-avatar">
-                <span class="fallback-icon">👤</span>
-                <img src="images/characters/mirror.jpg" alt="Il tuo riflesso" onload="this.previousElementSibling.remove()" onerror="this.remove()">
-            </div>
-            <div class="player-card-body">
-                <div class="player-name-row">
-                    <input type="text" id="profilo-profileNameInput" class="menu-name-input" maxlength="24">
-                    <button type="button" class="profile-mini-btn" id="profilo-profileNameSaveBtn" title="Salva nome"><span data-icon="save"></span></button>
-                </div>
-                <div class="profile-meta" id="profilo-profileMeta"></div>
-            </div>
-        </div>
-
-        <div class="stat-row">
-            <div class="stat-tile">
-                <div class="stat-tile-value" id="profilo-statDeckCount">0</div>
-                <div class="stat-tile-label">Deck</div>
-            </div>
-            <div class="stat-tile">
-                <div class="stat-tile-value wins" id="profilo-statWins">0</div>
-                <div class="stat-tile-label">Vittorie</div>
-            </div>
-            <div class="stat-tile">
-                <div class="stat-tile-value losses" id="profilo-statLosses">0</div>
-                <div class="stat-tile-label">Sconfitte</div>
-            </div>
-        </div>
-
-        <section>
-            <div class="section-title">
-                <span><span data-icon="wallet"></span> Portafoglio</span>
-                <a href="negozio.html" class="section-link">Vai al Negozio ›</a>
-            </div>
-            <div class="stat-row">
-                <div class="stat-tile">
-                    <div class="stat-tile-value" id="profilo-statCredits">0</div>
-                    <div class="stat-tile-label">💰 Crediti</div>
-                </div>
-                <div class="stat-tile">
-                    <div class="stat-tile-value" id="profilo-statStarChips">0</div>
-                    <div class="stat-tile-label">⭐ Stelle</div>
-                </div>
-                <div class="stat-tile">
-                    <div class="stat-tile-value" id="profilo-statLocatorCards">0</div>
-                    <div class="stat-tile-label">🗺️ Carte Locazione</div>
-                </div>
-                <!-- Mancava: è la quarta valuta, e i mazzi ora la chiedono. -->
-                <div class="stat-tile">
-                    <div class="stat-tile-value" id="profilo-statMillenniumCards">0</div>
-                    <div class="stat-tile-label">🔱 Carte del Millennio</div>
-                </div>
-            </div>
-        </section>
-
-        <section>
-            <div class="section-title">
-                <span><span data-icon="cards"></span> I tuoi Deck</span>
-                <a href="creazione-deck.html" class="section-link">Gestisci deck ›</a>
-            </div>
-            <div class="deck-grid" id="profilo-deckGrid"></div>
-        </section>
+        <!-- Testata, riepilogo, portafoglio e mazzi: componente condiviso
+             con profilo.html (js/ui/profile-hero.js). -->
+        <div id="profilo-heroMount"></div>
 
         <!-- Statistiche: al posto del vecchio "Record Duello Libero"
              (richiesta dell'utente). Il contenuto lo disegna il componente
@@ -1722,9 +1682,11 @@
             <div id="profilo-statsMount"></div>
         </section>
 
-        <section>
+        <!-- Account e backup in fondo, in un riquadro solo: si usano di
+             rado, e non devono stare fra i progressi. -->
+        <section class="account-zone">
             <div class="section-title">
-                <span><span data-icon="cloud"></span> Account Cloud</span>
+                <span><span data-icon="cloud"></span> Account e salvataggi</span>
                 <button type="button" class="section-link" id="profilo-changeAccountLink" style="display:none; background:none; border:none; cursor:pointer; font-family:inherit;"><span data-icon="switchAccount"></span> Cambia account</button>
             </div>
 
@@ -1770,16 +1732,16 @@
                     </div>
                 </details>
             </div>
-        </section>
 
-        <section>
-            <div class="section-title"><span><span data-icon="save"></span> Backup manuale su file</span></div>
-            <div class="profile-meta" style="margin-bottom: 10px;">Facoltativo: una copia extra del salvataggio in un file, indipendente dal cloud — utile prima di reinstallare l'app o come backup di sicurezza. Non necessario per il normale utilizzo.</div>
-            <div class="actions-row">
-                <button type="button" class="action-btn export" id="profilo-exportBtn">⬇️ Esporta salvataggio</button>
-                <button type="button" class="action-btn import" id="profilo-importBtn">⬆️ Importa salvataggio</button>
+            <div class="account-backup">
+                <div class="account-sottotitolo"><span data-icon="save"></span> Backup manuale su file</div>
+                <div class="profile-meta" style="margin-bottom: 10px;">Facoltativo: una copia extra del salvataggio in un file, indipendente dal cloud — utile prima di reinstallare l'app o come backup di sicurezza. Non necessario per il normale utilizzo.</div>
+                <div class="actions-row">
+                    <button type="button" class="action-btn export" id="profilo-exportBtn"><span data-icon="cloudDown"></span> Esporta salvataggio</button>
+                    <button type="button" class="action-btn import" id="profilo-importBtn"><span data-icon="cloudUp"></span> Importa salvataggio</button>
+                </div>
+                <input type="file" id="profilo-importInput" accept="application/json" style="display:none;">
             </div>
-            <input type="file" id="profilo-importInput" accept="application/json" style="display:none;">
         </section>
     </main>
 
@@ -1847,9 +1809,11 @@
         // ridisegna (renderProfile gira subito, prima che arrivino).
         // rewards.js serve solo a sapere QUANTI Oggetti del Millennio
         // esistono; senza, la voce mostra il numero senza il totale.
-        ensureViewStyles(['js/ui/profile-stats.css']);
-        ensureViewScripts(['js/economy/card-acquisition.js', 'js/economy/rewards.js', 'js/ui/profile-stats.js'])
-            .then(() => { if (window.ProfileStats) ProfileStats.render(document.getElementById('profilo-statsMount')); })
+        // Lo stesso per la testata (js/ui/profile-hero.js): finché non
+        // arriva la parte alta resta vuota, poi si disegna da sola.
+        ensureViewStyles(['js/ui/profile-stats.css', 'js/ui/profile-hero.css']);
+        ensureViewScripts(['js/economy/card-acquisition.js', 'js/economy/rewards.js', 'js/ui/profile-stats.js', 'js/ui/profile-hero.js'])
+            .then(() => renderProfile())
             .catch(() => { /* senza statistiche il resto del Profilo funziona uguale */ });
 
         let toastTimeout = null;
@@ -1872,67 +1836,14 @@
             // Nessun salvataggio (es. pagina raggiunta a mano senza essere mai
             // passati da "Nuova Partita"): ne creiamo uno al volo invece di
             // mostrare una pagina vuota o rompersi.
-            const save = SaveManager.load() || SaveManager.createNew('Giocatore');
-
-            document.getElementById('profilo-profileNameInput').value = save.player.name || 'Giocatore';
-            document.getElementById('profilo-profileMeta').textContent = `Ultimo salvataggio: ${formatSaveDate(save.player.lastSaved)}`;
-
-            const decks = save.decks || [];
-            document.getElementById('profilo-statDeckCount').textContent = decks.length;
-
-            const wallet = SaveManager.getCurrency();
-            document.getElementById('profilo-statCredits').textContent = wallet.credits;
-            document.getElementById('profilo-statStarChips').textContent = wallet.starChips;
-            document.getElementById('profilo-statLocatorCards').textContent = wallet.locatorCards;
-            document.getElementById('profilo-statMillenniumCards').textContent = wallet.millenniumCards || 0;
-            const deckGrid = document.getElementById('profilo-deckGrid');
-            deckGrid.innerHTML = '';
-            if (decks.length === 0) {
-                deckGrid.innerHTML = '<div class="empty-msg">Nessun deck ancora creato.</div>';
-            } else {
-                const attivo = SaveManager.getActiveDeckId ? SaveManager.getActiveDeckId() : null;
-                decks.forEach((deck) => {
-                    const mainCount = (deck.main || []).reduce((sum, e) => sum + e.qty, 0);
-                    const extraCount = (deck.extra || []).reduce((sum, e) => sum + e.qty, 0);
-                    const inUso = deck.id === attivo;
-                    const row = document.createElement('div');
-                    row.className = 'deck-row' + (inUso ? ' is-attivo' : '');
-                    row.innerHTML = (window.DeckBox ? DeckBox.markup({
-                        name: deck.name,
-                        color: deck.color || DeckBox.colorForId(deck.id)
-                    }) : '')
-                        + '<div class="deck-row-name"></div>'
-                        + `<div class="deck-row-sub">${mainCount} Main · ${extraCount} Extra · Aggiornato ${new Date(deck.updatedAt || Date.now()).toLocaleDateString('it-IT')}</div>`
-                        + (inUso ? '<div class="deck-row-badge">In uso</div>' : '');
-                    // Il nome del mazzo è testo scritto dall'utente: mai
-                    // dentro innerHTML (prima ci finiva grezzo).
-                    row.querySelector('.deck-row-name').textContent = deck.name || '(senza nome)';
-                    deckGrid.appendChild(row);
-                });
-            }
-
-            const roster = typeof characterDatabase !== 'undefined' ? characterDatabase : [];
-            const withResults = roster
-                .map((character) => ({ character, record: (save.records && save.records[character.id]) || { wins: 0, losses: 0 } }))
-                .filter((entry) => entry.record.wins > 0 || entry.record.losses > 0);
-
-            const totalWins = withResults.reduce((sum, e) => sum + e.record.wins, 0);
-            const totalLosses = withResults.reduce((sum, e) => sum + e.record.losses, 0);
-            document.getElementById('profilo-statWins').textContent = totalWins;
-            document.getElementById('profilo-statLosses').textContent = totalLosses;
-
-            // Le statistiche (al posto della griglia "Record Duello
-            // Libero"): se il componente non è ancora arrivato, ci pensa il
-            // .then() di ensureViewScripts più sopra appena si carica.
+            if (!SaveManager.load()) SaveManager.createNew('Giocatore');
+            // Testata, riepilogo, portafoglio e mazzi (js/ui/profile-hero.js)
+            // e statistiche (js/ui/profile-stats.js): componenti condivisi con
+            // profilo.html. Se non sono ancora arrivati, ci pensa il .then()
+            // di ensureViewScripts più sopra appena si caricano.
+            if (window.ProfileHero) ProfileHero.render(document.getElementById('profilo-heroMount'), { toast: showToast });
             if (window.ProfileStats) ProfileStats.render(document.getElementById('profilo-statsMount'));
         }
-
-        document.getElementById('profilo-profileNameSaveBtn').onclick = () => {
-            const name = SaveManager.setPlayerName(document.getElementById('profilo-profileNameInput').value);
-            document.getElementById('profilo-profileNameInput').value = name;
-            document.getElementById('profilo-profileMeta').textContent = `Ultimo salvataggio: ${formatSaveDate(SaveManager.load().player.lastSaved)}`;
-            showToast('💾 Nome aggiornato!');
-        };
 
         document.getElementById('profilo-exportBtn').onclick = () => {
             if (SaveManager.exportToFile()) showToast('⬇️ Salvataggio esportato come save_yugioh.json!');
