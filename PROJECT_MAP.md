@@ -739,6 +739,14 @@ Spec Multiplayer: richiedono un server HTTP e il relay veri
 protocollo attuale è `multiplayer-passo-comune` (turni veri con carte vere
 della mano: sostituirne una per comodità separerebbe davvero le due partite).
 
+La fase di risveglio del relay resta dentro `#mpStatus`, senza modali, ma la
+vecchia riga terminale è ora una console KaibaCorp semi-3D: emblema tecnico,
+stato uplink, circuiti, cronometro, cinque nodi di handshake e telemetria.
+I nodi avanzano con le frasi di attesa già prodotte dal client e non fingono
+eventi ricevuti dal server. Layout dedicato per telefono verticale e
+orizzontale, più variante `prefers-reduced-motion`. Cache PWA `v203`;
+guardrail `multiplayer-kaibacorp-connection-ui` e `multiplayer-end-to-end`.
+
 ## Rischi e debito tecnico noti
 
 1. `gameState` è un God Object globale, senza schema o validazione centrale

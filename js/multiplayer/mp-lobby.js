@@ -254,13 +254,24 @@
         el.classList.remove('mp-status-error');
         el.innerHTML = `
             <div class="mp-term" role="status" aria-live="polite">
-                <div class="mp-term-head">
-                    <span class="mp-term-title" data-glitch="KAIBACORP // NETWORK ACCESS">KAIBACORP // NETWORK ACCESS</span>
-                    <span class="mp-term-clock" id="mpTermClock">T+00:00</span>
+                <div class="mp-term-circuit mp-term-circuit-a"></div>
+                <div class="mp-term-circuit mp-term-circuit-b"></div>
+                <div class="mp-term-console">
+                    <div class="mp-term-emblem" aria-hidden="true"><i>KC</i><b></b></div>
+                    <div class="mp-term-main">
+                        <div class="mp-term-head">
+                            <span class="mp-term-title" data-glitch="KAIBACORP NETWORK">KAIBACORP NETWORK</span>
+                            <span class="mp-term-clock" id="mpTermClock">T+00:00</span>
+                        </div>
+                        <div class="mp-term-state"><i></i><span>UPLINK // HANDSHAKE REMOTO</span></div>
+                        <div class="mp-term-body" id="mpTermBody"></div>
+                    </div>
                 </div>
-                <div class="mp-term-body" id="mpTermBody"></div>
+                <div class="mp-term-stages" id="mpTermStages" aria-hidden="true">
+                    <i class="is-on"></i><span></span><i></i><span></span><i></i><span></span><i></i><span></span><i></i>
+                </div>
                 <div class="mp-term-bar"><span></span></div>
-                <div class="mp-term-foot" id="mpTermFoot"></div>
+                <div class="mp-term-meta"><span id="mpTermFoot"></span><b>KC-NET // TLS</b></div>
             </div>`;
         attesa.righe = 0;
     }
@@ -276,6 +287,9 @@
         $('mpTermClock').textContent = `T+${mm}:${ss}`;
         // Una riga nuova ogni 4 secondi, fino all'ultima, che resta.
         const attese = Math.min(FRASI_ATTESA.length, Math.floor(secondi / 4) + 1);
+        const avanzamento = Math.min(5, Math.max(1, Math.ceil(attese * 5 / FRASI_ATTESA.length)));
+        const stages = $('mpTermStages');
+        if (stages) stages.querySelectorAll('i').forEach((nodo, indice) => nodo.classList.toggle('is-on', indice < avanzamento));
         const corpo = $('mpTermBody');
         while (attesa.righe < attese) {
             const prec = corpo.lastElementChild;

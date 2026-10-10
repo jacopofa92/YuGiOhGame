@@ -1,0 +1,20 @@
+// L'attesa del relay deve restare in pagina e adattarsi ai telefoni, ma
+// avere una vera identità KaibaCorp invece di una riga di testo generica.
+const fs = require('fs');
+const path = require('path');
+
+module.exports = {
+    name: 'Multiplayer: console KaibaCorp responsive durante il risveglio del server',
+    async run(t) {
+        const root = path.join(__dirname, '..', '..');
+        const js = fs.readFileSync(path.join(root, 'js/multiplayer/mp-lobby.js'), 'utf8');
+        const css = fs.readFileSync(path.join(root, 'js/ui/mp-lobby.css'), 'utf8');
+        ['mp-term-emblem', 'mp-term-state', 'mp-term-stages', 'mp-term-meta', 'mp-term-circuit']
+            .forEach((marker) => t.assert(js.includes(marker), `${marker} deve essere montato dalla console`));
+        t.assert(js.includes("querySelectorAll('i')") && js.includes("classList.toggle('is-on'"),
+            'La sequenza di handshake deve avanzare insieme ai messaggi reali di attesa');
+        ['.mp-term-console', '.mp-term-emblem', '.mp-term-stages', '@media (max-width: 540px)', 'orientation: landscape', 'prefers-reduced-motion']
+            .forEach((marker) => t.assert(css.includes(marker), `${marker} deve essere coperto dallo stile`));
+        t.assert(!js.includes('class="modal') && !js.includes('showModal'), 'Il risveglio del server non deve tornare a essere un modale');
+    }
+};

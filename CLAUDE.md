@@ -4264,3 +4264,11 @@ creati; Controller riceve la modalità scelta. Buco Dimensionale sostituisce
 nel gruppo Muro di Luce Rivelatrice, risultato assente dal database: non si
 aggiunge una carta nuova di nascosto durante un lavoro grafico. Guardrail
 `cinematiche-carte-iconiche-quinto-gruppo`, cache `v202`.
+
+UI connessione Multiplayer: il terminale KaibaCorp dentro `#mpStatus` è
+diventato una console semi-3D con emblema KC, stato uplink, circuiti,
+cronometro, nodi di handshake e telemetria. Resta deliberatamente inline e
+mai modale; i nodi seguono il numero di frasi di attesa già emesse, non stati
+inventati del relay. Responsive verticale/orizzontale e movimento ridotto.
+Guardrail `multiplayer-kaibacorp-connection-ui` più end-to-end relay verde;
+cache `v203`.
