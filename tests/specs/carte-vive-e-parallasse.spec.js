@@ -63,11 +63,28 @@ module.exports = {
                 assert(JSON.stringify(r.livelli) === JSON.stringify(livelli),
                     `livelli di riflesso per ${rarita}: attesi ${livelli.join(',')}, trovati ${r.livelli.join(',')}`);
             }
+            await page.evaluate(() => CardDetail.close());
             const griglia = await page.evaluate(() => {
-                const tile = document.querySelector('.cards-grid .card, #cardGrid .card, .card.carta-viva:not(.cd-preview .card)');
-                return tile ? tile.dataset.viva : null;
+                const tile = document.querySelector('#cartotecaGrid .card');
+                const riflesso = tile && tile.querySelector('.cv-riflesso');
+                return tile ? {
+                    modo: tile.dataset.viva,
+                    riflessoARiposo: riflesso ? getComputedStyle(riflesso).display : null
+                } : null;
             });
-            assert(griglia === 'griglia', 'le carte della Cartoteca sono vive in modo "griglia": ' + griglia);
+            assert(griglia && griglia.modo === 'griglia', 'le carte della Cartoteca sono vive in modo "griglia": ' + JSON.stringify(griglia));
+            assert(griglia.riflessoARiposo === 'none', 'i livelli costosi della griglia riposano finché la carta non è osservata');
+
+            const tile = page.locator('#cartotecaGrid .card').first();
+            await tile.scrollIntoViewIfNeeded();
+            await tile.hover();
+            await page.waitForTimeout(50);
+            const riflessoHover = await tile.evaluate((el) => ({
+                display: getComputedStyle(el.querySelector('.cv-riflesso')).display,
+                hover: el.matches(':hover'),
+                classi: el.className
+            }));
+            assert(riflessoHover.display !== 'none', 'il riflesso della griglia si accende sotto il puntatore: ' + JSON.stringify(riflessoHover));
 
             // --- Mouse: la scheda si inclina e torna a ondeggiare --------
             await apriSchedaPerRarita(page, 'ultra');

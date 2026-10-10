@@ -763,11 +763,20 @@ body[data-card-badges] .card { overflow: visible; }
 
 /* A riposo la carta grande ondeggia piano da sola, così la luce passa
    anche su un telefono senza giroscopio o su un computer col mouse fermo. */
-.cv-inclina.cv-ozio { animation: cvOzio 7s ease-in-out infinite; }
-@keyframes cvOzio {
-    0%, 100% { --inc-x: 3deg;  --inc-y: -7deg; --luce-x: 22%; --luce-y: 30%; --forza: 0.45; }
-    50%      { --inc-x: -3deg; --inc-y: 7deg;  --luce-x: 78%; --luce-y: 62%; --forza: 0.45; }
+.cv-inclina.cv-ozio {
+    /* La luce resta elegante ma ferma: animare anche posizione dei
+       gradienti e intensità obbligava il browser a ridipingere laminatura
+       e glitter a ogni frame. Il solo transform viene composto dalla GPU. */
+    --luce-x: 38%;
+    --luce-y: 34%;
+    --forza: 0.42;
+    animation: cvOzio 7s ease-in-out infinite;
 }
+@keyframes cvOzio {
+    0%, 100% { transform: perspective(900px) var(--cv-base, translateZ(0)) rotateX(3deg) rotateY(-7deg); }
+    50%      { transform: perspective(900px) var(--cv-base, translateZ(0)) rotateX(-3deg) rotateY(7deg); }
+}
+.cv-inclina.cv-sospesa { animation-play-state: paused; will-change: auto; }
 /* Movimento ridotto: nessuna inclinazione, il lucido resta a metà forza. */
 .cv-inclina.cv-ferma { --forza: 0.35; }
 @media (prefers-reduced-motion: reduce) {
@@ -786,6 +795,24 @@ body[data-card-badges] .card { overflow: visible; }
     border-radius: var(--card-raggio);
     pointer-events: none;
     transition: opacity 0.4s ease;
+}
+
+/* Nelle griglie e nelle file possono esserci decine di carte. I livelli
+   con maschere e blend mode vengono dipinti soltanto sulla carta che si
+   sta davvero osservando; sul touch il dettaglio completo compare nella
+   scheda grande aperta dal tocco. Così lo scorrimento non trascina decine
+   di superfici laminate invisibili alla volta. */
+@media (hover: hover) and (pointer: fine) {
+    .cv-inclina[data-viva="griglia"]:not(:hover) :is(.cv-riflesso, .cv-bordo, .cv-olo, .cv-grana),
+    .cv-inclina[data-viva="fila"]:not(:hover) :is(.cv-riflesso, .cv-bordo, .cv-olo, .cv-grana) {
+        display: none;
+    }
+}
+@media (hover: none), (pointer: coarse) {
+    .cv-inclina[data-viva="griglia"] :is(.cv-riflesso, .cv-bordo, .cv-olo, .cv-grana),
+    .cv-inclina[data-viva="fila"] :is(.cv-riflesso, .cv-bordo, .cv-olo, .cv-grana) {
+        display: none;
+    }
 }
 
 /* La luce che passa: c'è su ogni carta, comuni comprese, ma solo quando

@@ -46,6 +46,15 @@ restare fluida anche nella WebView Android. Il riepilogo
 dello sbustamento in `pack-opening.js` è un carosello orizzontale: pan nativo
 su touch, trascinamento e rotellina su desktop; uno swipe non apre il dettaglio.
 
+Le carte vive (`card-renderer.js` + `card.css`) mantengono laminatura e
+glitter completi nella scheda grande, ma nelle griglie/file dipingono i layer
+con maschere e blend mode soltanto sulla carta sotto il mouse; su touch il
+dettaglio completo si vede aprendo la scheda. Gli aggiornamenti del puntatore
+sono limitati a uno per frame, l'ondeggiamento a riposo anima solo il transform
+composito e si sospende quando la carta grande non è visibile. Questa è una
+scelta di prestazioni deliberata: non riattivare gradienti animati su tutte le
+miniature contemporaneamente. Guardrail: `carte-vive-e-parallasse`.
+
 Questo file è la memoria breve e stabile del progetto. Va letto all'inizio di
 una nuova sessione prima di scandire di nuovo l'intero repository. Per la
 cronologia dettagliata delle decisioni e delle correzioni precedenti resta

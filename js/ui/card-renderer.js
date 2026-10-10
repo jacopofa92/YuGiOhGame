@@ -599,6 +599,8 @@
 
         const gradi = GRADI_MASSIMI[modo];
         const stile = bersaglio.style;
+        let fotogrammaPuntatore = null;
+        let ultimaInclinazione = null;
         function imposta(x, y) {
             stile.setProperty('--inc-x', (-y * gradi).toFixed(2) + 'deg');
             stile.setProperty('--inc-y', (x * gradi).toFixed(2) + 'deg');
@@ -630,23 +632,56 @@
             const y = ((e.clientY - riquadro.top) / (riquadro.height || 1)) * 2 - 1;
             bersaglio.classList.remove('cv-ozio');
             bersaglio.classList.add('cv-attiva');
-            imposta(Math.max(-1, Math.min(1, x)), Math.max(-1, Math.min(1, y)));
+            ultimaInclinazione = {
+                x: Math.max(-1, Math.min(1, x)),
+                y: Math.max(-1, Math.min(1, y))
+            };
+            // Alcuni mouse e touchpad inviano molti più eventi dei frame
+            // che lo schermo può mostrare. Scrivere cinque proprietà CSS a
+            // ogni evento costringeva glitter e laminatura a ridisegnarsi
+            // inutilmente più volte nello stesso frame.
+            if (fotogrammaPuntatore === null) {
+                fotogrammaPuntatore = requestAnimationFrame(() => {
+                    fotogrammaPuntatore = null;
+                    if (ultimaInclinazione && puntatoreDentro) {
+                        imposta(ultimaInclinazione.x, ultimaInclinazione.y);
+                    }
+                });
+            }
         });
         area.addEventListener('pointerleave', () => {
             riquadro = null;
             puntatoreDentro = false;
+            ultimaInclinazione = null;
             riposa();
         });
 
         if (modo === 'grande') {
             bersaglio.classList.add('cv-ozio');
+            let visibile = true;
+            let osservatore = null;
+            // La scheda carta resta nel DOM quando viene chiusa. Senza
+            // questo osservatore continuava ad animare gradienti dietro a
+            // `display:none`, consumando frame pur senza mostrare nulla.
+            if (typeof IntersectionObserver === 'function') {
+                osservatore = new IntersectionObserver((voci) => {
+                    if (!el.isConnected) { osservatore.disconnect(); return; }
+                    visibile = !!(voci[0] && voci[0].isIntersecting);
+                    bersaglio.classList.toggle('cv-sospesa', !visibile);
+                });
+                osservatore.observe(el);
+            }
             if (window.Inclinazione) {
                 // Si smette di ascoltare da soli quando la carta non è più
                 // nella pagina (scheda chiusa, premio passato): nessuno deve
                 // ricordarsi di farlo.
                 const smetti = Inclinazione.ascolta((l) => {
-                    if (!el.isConnected) { smetti(); return; }
-                    if (l.fonte !== 'sensore' || puntatoreDentro) return;
+                    if (!el.isConnected) {
+                        smetti();
+                        if (osservatore) osservatore.disconnect();
+                        return;
+                    }
+                    if (!visibile || l.fonte !== 'sensore' || puntatoreDentro) return;
                     bersaglio.classList.remove('cv-ozio');
                     bersaglio.classList.add('cv-attiva');
                     imposta(l.x, l.y);
