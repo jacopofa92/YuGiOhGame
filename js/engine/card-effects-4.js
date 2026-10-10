@@ -2905,6 +2905,7 @@
                 ctx.card.targetOwner = scelta.owner;
                 ctx.card.targetIndex = scelta.index;
                 ctx.card.targetUid = targetSlot.card.uid;
+                if (window.FX && typeof FX.playSpellbindingCircle === 'function') FX.playSpellbindingCircle(scelta.owner, scelta.index);
                 ctx.log(`⭕ Cerchio Ammaliante lega ${targetSlot.card.name}!`);
             });
         },

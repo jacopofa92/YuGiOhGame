@@ -4256,3 +4256,11 @@ Limitatore riceve gli indici delle sole Macchine potenziate. Come Richiamo
 degli Infestati, Incantesimo Ombra non usa una durata grafica arbitraria:
 `renderFields()` ricrea le catene dal `targetUid` reale e le rimuove insieme
 al legame. Guardrail `cinematiche-carte-iconiche-quarto-gruppo`, cache `v201`.
+
+Quinto gruppo: Cerchio Ammaliante, Cappelli Magici, Moltiplicazione,
+Controllore del Nemico e Buco Dimensionale. Il Cerchio persistente deriva
+dal `targetUid`; Cappelli e Moltiplicazione ricevono gli slot realmente
+creati; Controller riceve la modalità scelta. Buco Dimensionale sostituisce
+nel gruppo Muro di Luce Rivelatrice, risultato assente dal database: non si
+aggiunge una carta nuova di nascosto durante un lavoro grafico. Guardrail
+`cinematiche-carte-iconiche-quinto-gruppo`, cache `v202`.

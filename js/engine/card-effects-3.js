@@ -2065,6 +2065,7 @@
             field[monsterIndex].position = 'defense';
 
             const pendingDestroy = [];
+            const hatIndices = [monsterIndex];
             chosen.forEach((card) => {
                 const slotIndex = field.findIndex((s) => !s);
                 if (slotIndex === -1) {
@@ -2076,8 +2077,10 @@
                 card.attack = 0;
                 card.defense = 0;
                 field[slotIndex] = { card: card, position: 'defense', isFaceDown: true, hasAttacked: false, canChangePosition: false };
+                hatIndices.push(slotIndex);
                 pendingDestroy.push(card.uid);
             });
+            if (window.FX && typeof FX.playMagicalHats === 'function') FX.playMagicalHats(ctx.owner, hatIndices);
             gameState.pendingMagicalHatsDestroy = gameState.pendingMagicalHatsDestroy || {};
             gameState.pendingMagicalHatsDestroy[ctx.owner] = (gameState.pendingMagicalHatsDestroy[ctx.owner] || []).concat(pendingDestroy);
             ctx.log("🎩 Cappelli Magici mette coperti in Difesa 2 carte del Deck travestite da Mostri e il proprio mostro!");
@@ -2272,6 +2275,7 @@
                 : 'Scegli a quale mostro avversario cambiare la Posizione di Battaglia.',
             dichiara: true
         }, (scelto) => {
+            if (window.FX && typeof FX.playEnemyController === 'function') FX.playEnemyController(scelto.owner, scelto.index, ramo);
             if (ramo === 'controllo') {
                 const name = scelto.card.name;
                 if (ctx.takeControl(ctx.owner, scelto.owner, scelto.index)) {
@@ -2902,9 +2906,13 @@
         activate(ctx) {
             const index = ctx.field(ctx.owner).findIndex((s) => s && !s.isFaceDown && s.card.id === 22);
             if (index === -1) return;
+            const before = new Set(ctx.field(ctx.owner).filter(Boolean).map((s) => s.card.uid));
             ctx.destroyMonster(ctx.owner, index);
             const emptySlots = ctx.field(ctx.owner).filter((s) => s === null).length;
             const created = ctx.createTokens(ctx.owner, emptySlots, { name: 'Token Kuriboh', race: 'Demone', attribute: 'OSCURITÀ', level: 1, attack: 300, defense: 200 });
+            const tokenIndices = [];
+            ctx.field(ctx.owner).forEach((slot, i) => { if (slot && slot.card.isToken && !before.has(slot.card.uid)) tokenIndices.push(i); });
+            if (window.FX && typeof FX.playMultiply === 'function') FX.playMultiply(ctx.owner, index, tokenIndices);
             ctx.log(`👾 Moltiplicazione evoca ${created} Token Kuriboh!`);
         }
     });

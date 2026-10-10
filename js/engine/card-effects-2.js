@@ -596,6 +596,7 @@
                 const field = ctx.field(scelto.owner);
                 const banished = scelto.card;
                 if (blockBanishFromField(ctx, banished)) return;
+                if (window.FX && typeof FX.playDimensionHole === 'function') FX.playDimensionHole(scelto.owner, scelto.index, banished);
                 field[scelto.index] = null;
                 ctx.banishTemporarily(scelto.owner, banished, 'standby', scelto.index);
                 ctx.log(`🕳️ Buco Dimensionale bandisce ${banished.name} fino alla tua prossima Standby Phase! Quella Zona Mostro non può essere usata finché non torna.`);

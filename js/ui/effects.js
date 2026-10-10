@@ -1375,6 +1375,80 @@
         return 1400;
     }
 
+    /** Cerchio Ammaliante: sigillo iniziale; la versione persistente vive nel renderer. */
+    function playSpellbindingCircle(owner, index) {
+        return playTargetSigil(owner, index, 'fx-spellbinding-burst', 'trap');
+    }
+
+    /** Cappelli Magici: tre cappelli si materializzano sopra gli slot coperti. */
+    function playMagicalHats(owner, indices) {
+        const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+        const scene = document.createElement('div');
+        scene.className = 'fx-magical-hats'; scene.setAttribute('aria-hidden', 'true');
+        (indices || []).forEach((index, order) => {
+            const slot = document.querySelector(`#${boardId} .field-slot[data-owner="${owner}"][data-type="monster"][data-index="${index}"]`);
+            const rect = slot && slot.getBoundingClientRect(); if (!rect || !rect.width) return;
+            const hat = document.createElement('span'); hat.className = 'fx-magic-hat';
+            Object.assign(hat.style, { left:`${rect.left + rect.width/2}px`, top:`${rect.top + rect.height/2}px`, width:`${rect.width*1.35}px`, height:`${rect.height*1.12}px`, '--hat-delay':`${order*100}ms` });
+            hat.innerHTML = '<i></i><b></b>'; scene.appendChild(hat);
+        });
+        if (!scene.children.length) return 0;
+        beginSummonCinematic(); document.body.appendChild(scene);
+        if (window.SFX && typeof SFX.activateTrap === 'function') SFX.activateTrap();
+        setTimeout(() => { scene.remove(); endSummonCinematic(); }, 1650); return 1650;
+    }
+
+    /** Moltiplicazione: il Kuriboh centrale si divide verso i Token appena creati. */
+    function playMultiply(owner, sourceIndex, tokenIndices) {
+        const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+        const source = document.querySelector(`#${boardId} .field-slot[data-owner="${owner}"][data-type="monster"][data-index="${sourceIndex}"]`);
+        const sourceRect = source && source.getBoundingClientRect();
+        if (!sourceRect || !sourceRect.width) return 0;
+        beginSummonCinematic();
+        const scene = document.createElement('div'); scene.className = 'fx-multiply'; scene.setAttribute('aria-hidden', 'true');
+        const sx = sourceRect.left + sourceRect.width/2, sy = sourceRect.top + sourceRect.height/2;
+        (tokenIndices || []).forEach((index, order) => {
+            const slot = document.querySelector(`#${boardId} .field-slot[data-owner="${owner}"][data-type="monster"][data-index="${index}"]`);
+            const rect = slot && slot.getBoundingClientRect(); if (!rect || !rect.width) return;
+            const orb = document.createElement('span'); orb.className = 'fx-kuriboh-orb';
+            Object.assign(orb.style, { '--mul-x':`${sx}px`, '--mul-y':`${sy}px`, '--mul-end-x':`${rect.left+rect.width/2}px`, '--mul-end-y':`${rect.top+rect.height/2}px`, '--mul-delay':`${order*80}ms`, width:`${rect.width*.72}px`, height:`${rect.width*.72}px` });
+            orb.innerHTML = '<i></i><b></b>'; scene.appendChild(orb);
+        });
+        document.body.appendChild(scene); if (window.SFX && typeof SFX.activateSpell === 'function') SFX.activateSpell();
+        setTimeout(() => { scene.remove(); endSummonCinematic(); }, 1550); return 1550;
+    }
+
+    /** Controllore del Nemico: pannello Kaiba e comando scelto. */
+    function playEnemyController(owner, index, mode) {
+        const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+        const cardEl = document.querySelector(`#${boardId} .field-slot[data-owner="${owner}"][data-type="monster"][data-index="${index}"] .card`);
+        if (!cardEl) return 0;
+        beginSummonCinematic(); const p = centerOf(cardEl);
+        const panel = document.createElement('div'); panel.className = 'fx-enemy-controller'; panel.setAttribute('aria-hidden','true');
+        Object.assign(panel.style,{left:`${p.x}px`,top:`${p.y}px`,width:`${p.rect.width*2.15}px`,height:`${p.rect.height*1.35}px`});
+        panel.innerHTML = `<i></i><b></b><span>${mode === 'controllo' ? 'CONTROL' : 'POSITION'}</span><strong>↑ ↓ ← → A B</strong>`;
+        document.body.appendChild(panel); if (window.SFX && typeof SFX.activateSpell === 'function') SFX.activateSpell();
+        setTimeout(() => { panel.remove(); endSummonCinematic(); }, 1350); return 1350;
+    }
+
+    /** Buco Dimensionale: varco netto sul proprio slot prima del bando temporaneo. */
+    function playDimensionHole(owner, index, card) {
+        const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+        const slot = document.querySelector(`#${boardId} .field-slot[data-owner="${owner}"][data-type="monster"][data-index="${index}"]`);
+        const rect = slot && slot.getBoundingClientRect(); if (!rect || !rect.width) return 0;
+        beginSummonCinematic(); const hole = document.createElement('div'); hole.className = 'fx-dimension-hole';
+        Object.assign(hole.style,{left:`${rect.left+rect.width/2}px`,top:`${rect.top+rect.height/2}px`,width:`${rect.width*2}px`,height:`${rect.width*2}px`});
+        hole.innerHTML='<i></i><i></i><b></b>'; document.body.appendChild(hole);
+        if (card && typeof window.createCardElement === 'function') { const ghost=createCardElement(card); ghost.classList.add('fx-dimension-card'); Object.assign(ghost.style,{left:`${rect.left}px`,top:`${rect.top}px`,width:`${rect.width}px`,height:`${rect.height}px`}); document.body.appendChild(ghost); setTimeout(()=>ghost.remove(),1350); }
+        setTimeout(()=>{hole.remove();endSummonCinematic();},1450); return 1450;
+    }
+
+    function playTargetSigil(owner, index, className, soundKind) {
+        const boardId=owner==='player'?'playerFieldBoard':'botFieldBoard'; const el=document.querySelector(`#${boardId} .field-slot[data-owner="${owner}"][data-type="monster"][data-index="${index}"] .card`); if(!el)return 0;
+        beginSummonCinematic(); const p=centerOf(el); const sigil=document.createElement('div'); sigil.className=className; Object.assign(sigil.style,{left:`${p.x}px`,top:`${p.y}px`,width:`${p.rect.width*1.8}px`,height:`${p.rect.width*1.8}px`}); sigil.innerHTML='<i></i><i></i><i></i><b></b>'; document.body.appendChild(sigil);
+        if(window.SFX){const fn=soundKind==='trap'?SFX.activateTrap:SFX.activateSpell;if(typeof fn==='function')fn.call(SFX);} setTimeout(()=>{sigil.remove();endSummonCinematic();},1350); return 1350;
+    }
+
     /**
      * Cinematica che precede una vera Evocazione Fusione. Usa copie DOM
      * dei materiali già scelti dal motore: orbitano in prospettiva,
@@ -2386,6 +2460,11 @@
         playMysticBox,
         playLimiterRemoval,
         playShadowSpell,
+        playSpellbindingCircle,
+        playMagicalHats,
+        playMultiply,
+        playEnemyController,
+        playDimensionHole,
         playCoinFlip: viaBackend('playCoinFlip', playCoinFlip),
         playDiceRoll: viaBackend('playDiceRoll', playDiceRoll),
         // ATTENZIONE per chi scrivera' un backend per questa: i chiamanti

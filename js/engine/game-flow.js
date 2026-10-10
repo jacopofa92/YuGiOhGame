@@ -1044,6 +1044,15 @@ function renderFields() {
                         bind.innerHTML = '<i></i><i></i><i></i><b></b>';
                         slotEl.appendChild(bind);
                     }
+                    const spellbinding = Tavolo.ordine().some((sourceOwner) => Tavolo.magieTrappole(sourceOwner).some((stSlot) => stSlot
+                        && !stSlot.isFaceDown && stSlot.card.id === 620 && stSlot.card.targetUid === slot.card.uid));
+                    if (spellbinding) {
+                        const circle = document.createElement('div');
+                        circle.className = 'spellbinding-circle-link';
+                        circle.setAttribute('aria-hidden', 'true');
+                        circle.innerHTML = '<i></i><i></i><i></i><b></b>';
+                        slotEl.appendChild(circle);
+                    }
                 }
                 // ATK/DEF sotto la carta, stile Duel Masters: solo per i
                 // mostri SCOPERTI (un mostro coperto non rivela le sue

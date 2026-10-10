@@ -918,6 +918,21 @@ Quarto gruppo:
 - cache PWA `v201`; guardrail:
   `tests/specs/cinematiche-carte-iconiche-quarto-gruppo.spec.js`.
 
+Quinto gruppo:
+
+- Cerchio Ammaliante (`620`) apre un sigillo dorato e mantiene un cerchio
+  persistente derivato dal proprio `targetUid`;
+- Cappelli Magici (`363`) materializza un cappello sopra ciascuno dei tre
+  slot effettivamente nascosti; Moltiplicazione (`386`) divide Kuriboh verso
+  gli slot dei nuovi Token;
+- Controllore del Nemico (`226`, più la variante storica `845`) mostra un
+  pannello olografico col comando scelto; Buco Dimensionale (`201`) usa un
+  varco pulito e temporaneo, distinto dal portale distruttivo di Bottomless;
+- Muro di Luce Rivelatrice non è presente in `data/cards.json`: non è stato
+  aggiunto implicitamente durante un lavoro dedicato alle sole cinematiche;
+- cache PWA `v202`; guardrail:
+  `tests/specs/cinematiche-carte-iconiche-quinto-gruppo.spec.js`.
+
 ## Cinematica Evocazione Fusione
 
 - `DuelEngine.actions.fusionSummon()` fotografa i materiali realmente scelti

@@ -359,6 +359,7 @@
                 text: 'Scegli quale mostro avversario bersagliare.',
                 dichiara: true
             }, (scelto) => {
+                if (window.FX && typeof FX.playEnemyController === 'function') FX.playEnemyController(scelto.owner, scelto.index, 'controllo');
                 const ownField = ctx.field(ctx.owner);
                 const sacIndex = ownField.findIndex((s) => s);
                 if (sacIndex !== -1) {
