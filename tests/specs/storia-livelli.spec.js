@@ -12,6 +12,7 @@
 //
 // `standalone`: la Storia vive su una pagina sua.
 const path = require('path');
+const { liberaLaPagina } = require('../helpers/harness.js');
 
 module.exports = {
     standalone: true,
@@ -64,6 +65,11 @@ module.exports = {
             t.assert(!aperti.pulsanti[1].spento && !aperti.pulsanti[2].spento && /✓/.test(aperti.pulsanti[0].testo),
                 `Finita Facile, Normale e Difficile si aprono: ${JSON.stringify(aperti.pulsanti)}`);
 
+            // Finire la storia paga carte: al ricaricamento compare il
+            // riquadro "Carta ottenuta", e c'è ancora la schermata di
+            // caricamento. Entrambi stanno sopra la pagina e si prendono il
+            // click (vedi liberaLaPagina in tests/helpers/harness.js).
+            await liberaLaPagina(page);
             await page.locator('#livelliMount .livello', { hasText: 'Normale' }).click();
             await page.waitForTimeout(300);
             const normale = await page.evaluate(() => ({

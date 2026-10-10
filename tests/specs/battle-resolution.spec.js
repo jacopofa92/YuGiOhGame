@@ -30,9 +30,19 @@ module.exports = {
             //    carico può scattare proprio mentre i setTimeout
             //    annidati di resolveAttack stanno risolvendo la
             //    battaglia, e allora il turno cambia a metà.
+            //  - si svuotano Magie/Trappole e mano del bot. Vengono dalla
+            //    mano iniziale, estratta a caso: con una Nega Attacco
+            //    coperta o un Kuriboh in mano il bot ferma (giustamente)
+            //    l'attacco e il caso 6 "attacco diretto infligge danno"
+            //    falliva per sorte, una volta ogni tanto nella suite
+            //    completa e mai da solo. Qui si prova la risoluzione
+            //    base, senza risposte in mezzo.
             await t.evaluate(() => {
                 window.__battleDone = false;
                 if (typeof clearPhaseTransitionTimeout === 'function') clearPhaseTransitionTimeout();
+                gameState.botSTField = [null, null, null, null, null];
+                gameState.playerSTField = [null, null, null, null, null];
+                gameState.botHand = [];
                 gameState.phase = 'battle';
             });
             await t.evaluate(setupFn);

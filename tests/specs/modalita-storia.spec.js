@@ -11,6 +11,7 @@
 // provando a mano, perche' a mano non si ricarica la pagina apposta.
 const path = require('path');
 const fs = require('fs');
+const { liberaLaPagina } = require('../helpers/harness.js');
 
 module.exports = {
     standalone: true,
@@ -388,6 +389,13 @@ module.exports = {
             }));
             await page.reload();
             await page.waitForSelector('.nm-node', { timeout: 20000 });
+            // Prima di cliccare: la schermata di caricamento (resta almeno
+            // un secondo, vedi js/ui/page-loader.js) e il riquadro "Carta
+            // ottenuta" dei premi appena riscossi qui sopra (arriva da una
+            // coda salvata nella sessione, js/economy/card-drop-animation.js)
+            // stanno SOPRA la pagina e si prendono il click. Nel gioco vero
+            // li chiude il giocatore; qui li si aspetta e li si toglie.
+            await liberaLaPagina(page);
             await page.click('#btnRicomincia');
             await page.waitForTimeout(400);
             const conferma = await page.evaluate(() => ({
@@ -408,6 +416,7 @@ module.exports = {
             t.assert(dopoAnnulla.completate === 3,
                 `"Annulla" deve lasciare tutto com'era (rilevato ${dopoAnnulla.completate})`);
 
+            await liberaLaPagina(page);
             await page.click('#btnRicomincia');
             await page.waitForTimeout(400);
             await page.evaluate(() => [...document.querySelectorAll('#scenaMount .btn')]

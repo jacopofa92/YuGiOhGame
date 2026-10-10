@@ -216,4 +216,27 @@ function makeAssert() {
     };
 }
 
-module.exports = { openDuel, freezeNaturalGameLoop, waitForOpeningCascade, makeAssert, AssertionError, GAME_URL, PROJECT_ROOT };
+/**
+ * Toglie di mezzo ciò che sta SOPRA una pagina appena caricata e si
+ * prenderebbe un click: la schermata di caricamento condivisa (resta almeno
+ * un secondo, js/ui/page-loader.js) e i riquadri "Carta ottenuta" dei premi
+ * (js/economy/card-drop-animation.js, arrivano da una coda in sessionStorage
+ * e si mostrano al caricamento successivo). Nel gioco vero li chiude il
+ * giocatore; uno spec che clicca subito dopo un reload deve prima chiamare
+ * questa, o il click scade dopo 30 secondi con "intercepts pointer events".
+ */
+async function liberaLaPagina(page) {
+    await page.waitForFunction(() => {
+        const loader = document.getElementById('pageLoader');
+        return !loader || loader.classList.contains('page-loader-hidden');
+    }, null, { timeout: 15000 }).catch(() => {});
+    await page.evaluate(() => {
+        // Stessa chiave di STORAGE_KEY in card-drop-animation.js. Togliendo
+        // il riquadro a mano la sua coda resta "occupata" e non ne mostra
+        // altri: per uno spec è quello che serve.
+        try { sessionStorage.removeItem('duelArenaPendingCardDrops'); } catch (e) { /* noop */ }
+        document.querySelectorAll('.cdrop-overlay').forEach((o) => o.remove());
+    });
+}
+
+module.exports = { openDuel, freezeNaturalGameLoop, waitForOpeningCascade, liberaLaPagina, makeAssert, AssertionError, GAME_URL, PROJECT_ROOT };

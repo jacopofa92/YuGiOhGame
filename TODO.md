@@ -57,8 +57,9 @@ I test automatici coprono queste cose, ma alcune si giudicano solo dal vero.
 
 ## 5. Aperti, non urgenti
 
-- [ ] `modalita-storia` e `storia-livelli`: la carta in premio "Spirit Message"
-      copre il clic del test. Il gioco funziona; vanno chiusi i premi nel test.
+- [x] `modalita-storia` e `storia-livelli`: la carta in premio "Spirit Message"
+      e la schermata di caricamento coprivano il clic del test. Chiuso con
+      `liberaLaPagina` in `tests/helpers/harness.js` (10 ottobre).
 - [ ] Strumenti di simulazione della Storia (`tools/simula-storia-deck.js`,
       `tools/audit-fattoriale-storia.js`): non leggono i ritocchi dell'Editor
       Mappa. Se si cambia un avversario dall'editor, le simulazioni non lo sanno.
