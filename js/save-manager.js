@@ -246,8 +246,9 @@
     // tutto il resto diventerebbe superfluo:
     //   credits         — si guadagnano ovunque; comprano le carte del
     //                     giorno e le buste della settimana;
-    //   starChips       — quasi solo dai tornei (soprattutto il Regno dei
-    //                     Duellanti); comprano SOLO gli Starter/Structure
+    //   starChips       — dai tornei (soprattutto il Regno dei Duellanti),
+    //                     dai traguardi di vittorie e dalle missioni;
+    //                     comprano SOLO gli Starter/Structure
     //                     Deck, che non si possono avere coi crediti;
     //   locatorCards    — soprattutto da Battle City; comprano SOLO la
     //                     busta Leggendaria;
@@ -335,6 +336,15 @@
         // creato prima non le ha, e senza questa riga ogni lettura
         // troverebbe undefined.
         if (!save.missions) { save.missions = {}; dirty = true; }
+        // Traguardi ripetibili dell'economia, separati dai contatori
+        // giornalieri: devono sopravvivere al cambio di data. I tre
+        // livelli hanno progressi distinti, cosi' nove vittorie Facili
+        // seguite da una Difficile non possono incassare il premio Hard.
+        if (!save.economyProgress) { save.economyProgress = { freeWinsByDifficulty: {} }; dirty = true; }
+        if (!save.economyProgress.freeWinsByDifficulty) {
+            save.economyProgress.freeWinsByDifficulty = {};
+            dirty = true;
+        }
         // Duellanti sbloccati per il Duello Libero (vedi
         // js/data/character-unlocks.js). Contiene SOLO quelli guadagnati
         // vincendo: i due di partenza stanno nel codice, non qui, così un
@@ -426,6 +436,7 @@
             // giocatore le carte che ha già in mano (vedi ownsPack).
             ownedPacks: starterDeck.fromPackId ? [starterDeck.fromPackId] : [],
             challenges: {},
+            economyProgress: { freeWinsByDifficulty: {} },
             tournaments: {},
             tournamentStats: {},
         millenniumItems: {},
@@ -966,6 +977,32 @@
         return current;
     }
 
+    /**
+     * Registra una vittoria FUORI dai tornei per il premio ogni 10.
+     * Torna il progresso residuo e quante soglie sono state attraversate;
+     * usare il resto invece del totale evita crescita inutile del save e
+     * rende idempotente il pagamento: la stessa soglia non resta salvata
+     * come ancora da riscuotere al caricamento successivo.
+     */
+    function recordFreeWinMilestone(difficulty, every) {
+        const livello = difficulty === 'Facile' || difficulty === 'Difficile' ? difficulty : 'Medio';
+        const soglia = Math.max(1, Number(every) || 10);
+        const save = load() || createNew();
+        save.economyProgress = save.economyProgress || { freeWinsByDifficulty: {} };
+        const contatori = save.economyProgress.freeWinsByDifficulty || (save.economyProgress.freeWinsByDifficulty = {});
+        const totale = Math.max(0, Number(contatori[livello]) || 0) + 1;
+        const completati = Math.floor(totale / soglia);
+        contatori[livello] = totale % soglia;
+        touch(save);
+        return { difficulty: livello, progress: contatori[livello], completed: completati, every: soglia };
+    }
+
+    function getFreeWinMilestones() {
+        const save = load();
+        const valori = save && save.economyProgress && save.economyProgress.freeWinsByDifficulty;
+        return Object.assign({ Facile: 0, Medio: 0, Difficile: 0 }, valori || {});
+    }
+
     /** Vero se quella carta della rotazione giornaliera del Negozio è già stata comprata OGGI (`dayKey`). */
     function hasBoughtDailyShopCard(dayKey, cardId) {
         return (getDailyEconomy(dayKey).boughtShopCardIds || []).indexOf(cardId) !== -1;
@@ -1073,6 +1110,8 @@
         parsed.ownedPacks = parsed.ownedPacks || [];
         parsed.challenges = parsed.challenges || {};
         parsed.missions = parsed.missions || {};
+        parsed.economyProgress = parsed.economyProgress || { freeWinsByDifficulty: {} };
+        parsed.economyProgress.freeWinsByDifficulty = parsed.economyProgress.freeWinsByDifficulty || {};
         parsed.unlockedCharacters = Array.isArray(parsed.unlockedCharacters) ? parsed.unlockedCharacters : [];
         parsed.tournaments = parsed.tournaments || {};
         parsed.tournamentStats = parsed.tournamentStats || {};
@@ -1182,6 +1221,8 @@
         incrementTournamentStat: incrementTournamentStat,
         getDailyEconomy: getDailyEconomy,
         recordDailyWin: recordDailyWin,
+        recordFreeWinMilestone: recordFreeWinMilestone,
+        getFreeWinMilestones: getFreeWinMilestones,
         hasBoughtDailyShopCard: hasBoughtDailyShopCard,
         recordDailyShopCardPurchase: recordDailyShopCardPurchase,
         getOwnedPacks: getOwnedPacks,

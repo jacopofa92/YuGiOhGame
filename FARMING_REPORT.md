@@ -62,7 +62,10 @@ La curva di riferimento ora privilegia esplicitamente il Difficile senza
 rendere Facile e Normale equivalenti. Per una singola Stella casuale servono
 in media 50 vittorie a Facile, 20 a Normale e circa 11,1 a Difficile. Questa
 lotteria e' soltanto un'integrazione: la fonte deterministica resta il Regno
-dei Duellanti, che paga 14/19/24 Stelle per completamento.
+dei Duellanti, che paga 14/19/24 Stelle per completamento. In aggiunta, ogni
+10 vittorie libere allo stesso livello pagano 1/2/3 Stelle e Battle City/
+Torneo Kaiba ne pagano 3/5/8: il Regno resta il percorso piu' rapido, ma non
+e' piu' obbligatorio.
 
 Per comprare il primo Starter da 18 Stelle partendo da zero servono quindi:
 
@@ -85,13 +88,14 @@ ciascuno dei tre tornei e 15 duelli di torneo vinti — la stima e':
 
 | Difficolta' | Crediti/settimana | Stelle/settimana | Locazioni | Millennio | Settimane per le Stelle di tutti i mazzi |
 |---|---:|---:|---:|---:|---:|
-| Facile | 6.025 | 15,40 | 3,06 | 1,53 | 106,7 |
-| Normale | 7.600 | 22,50 | 4,00 | 1,52 | 73,0 |
-| Difficile | 9.700 | 30,30 | 4,91 | 2,49 | 54,2 |
+| Facile | 6.025 | 35,07 | 3,06 | 1,53 | 27,3 |
+| Normale | 7.600 | 53,17 | 4,00 | 1,52 | 18,0 |
+| Difficile | 9.700 | 73,97 | 4,91 | 2,49 | 12,9 |
 
 Lo scaffale attuale contiene 7 Starter realmente acquistabili e 11 Structure,
-per 1.643 Stelle complessive. La colonna finale e' volutamente un limite
-teorico: non sottrae Stelle spese per carte/buste e non aggiunge Sfide o premi
-delle Storie. Mostra comunque il punto importante del bilanciamento: Facile e
-Normale richiedono sensibilmente piu' tempo, ma anche il Difficile non consente
-di esaurire rapidamente tutti i mazzi.
+per 957 Stelle complessive: Starter 18→54 (+6), Structure 35→75 (+8, poi
+tetto). La simulazione include 6,67 Stelle settimanali attese completando le
+10 missioni estratte. La colonna finale resta un limite teorico: non sottrae
+Stelle spese per carte/buste e non aggiunge premi delle Storie. E' inoltre uno
+scenario intensivo (70 vittorie e tre tornei completi ogni settimana), quindi
+non rappresenta il calendario di un giocatore occasionale.

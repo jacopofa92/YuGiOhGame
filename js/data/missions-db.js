@@ -53,7 +53,7 @@ const missionsDatabase = [
         label: 'Senza un graffio', description: 'Vinci {n} Duelli senza perdere un solo Life Point',
         type: 'perfectWin', match: {},
         target: 1, targetWeekly: 4,
-        reward: { credits: 400 }, rewardWeekly: { credits: 1200, locatorCards: 1 }
+        reward: { credits: 400 }, rewardWeekly: { credits: 1200, starChips: 1, locatorCards: 1 }
     },
     {
         id: 'm-tournament', icon: '🏆', scope: 'weekly',
@@ -72,21 +72,21 @@ const missionsDatabase = [
         label: 'Il Drago Bianco', description: 'Evoca {n} volte il Drago Bianco Occhi Blu',
         type: 'summonMonster', match: { cardId: 1 },
         target: 1, targetWeekly: 4,
-        reward: { credits: 300 }, rewardWeekly: { credits: 1000 }
+        reward: { credits: 300 }, rewardWeekly: { credits: 1000, starChips: 1 }
     },
     {
         id: 'm-summon-dark-magician', icon: '🪄', scope: 'both',
         label: 'Il Mago Nero', description: 'Evoca {n} volte il Mago Nero',
         type: 'summonMonster', match: { cardId: 2 },
         target: 1, targetWeekly: 4,
-        reward: { credits: 300 }, rewardWeekly: { credits: 1000 }
+        reward: { credits: 300 }, rewardWeekly: { credits: 1000, starChips: 1 }
     },
     {
         id: 'm-summon-red-eyes', icon: '🔥', scope: 'both',
         label: 'Occhi Rossi', description: 'Evoca {n} volte il Drago Nero Occhi Rossi',
         type: 'summonMonster', match: { cardId: 3 },
         target: 1, targetWeekly: 4,
-        reward: { credits: 300 }, rewardWeekly: { credits: 1000 }
+        reward: { credits: 300 }, rewardWeekly: { credits: 1000, starChips: 1 }
     },
     {
         id: 'm-summon-kuriboh', icon: '🟤', scope: 'daily',
@@ -130,7 +130,7 @@ const missionsDatabase = [
         label: 'Il Padrone delle Ombre', description: 'Sconfiggi Marik Ishtar {n} volte',
         type: 'defeatCharacter', match: { characterId: 'marik' },
         target: 1, targetWeekly: 3,
-        reward: { credits: 400 }, rewardWeekly: { credits: 1300, locatorCards: 1 }
+        reward: { credits: 400 }, rewardWeekly: { credits: 1300, starChips: 1, locatorCards: 1 }
     },
 
     // --- Magie e Trappole -------------------------------------------

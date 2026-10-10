@@ -60,21 +60,22 @@
     //  - `starter.stelleBase` resta 18 perché è legato al premio del Regno
     //    dei Duellanti (TOURNAMENT_COMPLETION in js/economy/rewards.js): una
     //    vittoria deve bastare al PRIMO Starter. Rincara invece, e molto,
-    //    ogni Starter successivo (+12 invece di +7).
-    //  - gli Structure partono più in alto e rincarano più in fretta, e
+    //    ogni Starter successivo. La crescita ora ha un tetto: senza, il
+    //    totale dello scaffale superava 1.600 Stelle e richiedeva anni.
+    //  - gli Structure partono più in alto, e
     //    chiedono le carte speciali GIÀ DAL PRIMO (extraDalNumero 0): sono
     //    i mazzi più utili, devono richiedere i tornei impegnativi.
     //  - i Crediti non sono stati toccati: la richiesta riguardava le tre
     //    valute dei tornei, non quella che si guadagna a ogni duello.
     const PREZZI_MAZZI = {
         starter: {
-            stelleBase: 18, stellePerAcquisto: 12,
+            stelleBase: 18, stellePerAcquisto: 6, stelleMassime: 54,
             creditiBase: 1400, creditiPerAcquisto: 550,
             /** Dal N-esimo acquisto in poi serve anche una carta speciale (0 = il primo, 1 = dal secondo). */
             extraDalNumero: 1
         },
         structure: {
-            stelleBase: 40, stellePerAcquisto: 15,
+            stelleBase: 35, stellePerAcquisto: 8, stelleMassime: 75,
             creditiBase: 2200, creditiPerAcquisto: 800,
             extraDalNumero: 0
         }
@@ -222,7 +223,7 @@
         const t = PREZZI_MAZZI[kind === 'structure' ? 'structure' : 'starter'];
         const gia = possedutiDelTipo(kind === 'structure' ? 'structure' : 'starter');
         return {
-            starChips: t.stelleBase + t.stellePerAcquisto * gia,
+            starChips: Math.min(t.stelleMassime, t.stelleBase + t.stellePerAcquisto * gia),
             credits: t.creditiBase + t.creditiPerAcquisto * gia,
             /** Vero da quando il tipo chiede carte speciali (extraDalNumero). */
             richiedeExtra: gia >= t.extraDalNumero,

@@ -27,6 +27,7 @@ vm.runInNewContext(fs.readFileSync(path.join(RADICE, 'js/economy/rewards.js'), '
 vm.runInNewContext(fs.readFileSync(path.join(RADICE, 'js/economy/shop-catalog.js'), 'utf8'), ctx);
 vm.runInNewContext(fs.readFileSync(path.join(RADICE, 'js/data/starter-structure-decks.js'), 'utf8')
     + '\nglobalThis.__deckAudit = starterStructureDeckDatabase;', ctx);
+vm.runInNewContext(fs.readFileSync(path.join(RADICE, 'js/data/missions-db.js'), 'utf8'), ctx);
 
 const R = ctx.Rewards;
 const prezzi = ctx.ShopCatalog.PREZZI_MAZZI;
@@ -35,10 +36,17 @@ const quantiStarter = deck.filter((d) => d.kind === 'starter' && d.packId !== 's
 const quantiStructure = deck.filter((d) => d.kind === 'structure').length;
 const sommaStelle = (tipo, quanti) => {
     const p = prezzi[tipo];
-    return Array.from({ length: quanti }, (_, i) => p.stelleBase + p.stellePerAcquisto * i)
+    return Array.from({ length: quanti }, (_, i) => Math.min(p.stelleMassime, p.stelleBase + p.stellePerAcquisto * i))
         .reduce((a, b) => a + b, 0);
 };
 const stelleTuttiMazzi = sommaStelle('starter', quantiStarter) + sommaStelle('structure', quantiStructure);
+const poolSettimanale = ctx.missionsDatabase.filter((m) => m.scope === 'weekly' || m.scope === 'both');
+const stelleMissioniAttese = 10 * poolSettimanale.reduce((tot, m) => {
+    // ChallengeTracker usa rewardWeekly per QUALUNQUE missione estratta
+    // nel roster settimanale, anche se la missione ha scope='weekly'.
+    const premio = m.rewardWeekly || m.reward;
+    return tot + ((premio && premio.starChips) || 0);
+}, 0) / poolSettimanale.length;
 
 const livelli = ['Facile', 'Medio', 'Difficile'];
 const risultati = livelli.map((livello) => {
@@ -51,13 +59,17 @@ const risultati = livelli.map((livello) => {
     const vittorieLibere = vittorieGiorno * giorni;
     const pStella = R.STAR_DROP_CHANCE[livello];
     const stelleLibere = vittorieLibere * pStella;
+    const stelleGarantite = Math.floor(vittorieLibere / R.STAR_MILESTONE_EVERY)
+        * R.STAR_MILESTONE_REWARD[livello];
     const locazioniLibere = vittorieLibere * (1 - pStella) * 0.03;
     const millennioLibere = vittorieLibere * (1 - pStella) * 0.97 * 0.008;
     const valore = (torneo, valuta) => R.TOURNAMENT_COMPLETION[torneo][valuta][livello] * torneiSettimana;
     const creditiTornei = ['duelistKingdom', 'battleCity', 'kaibaTournament']
         .reduce((tot, id) => tot + valore(id, 'credits'), 0)
         + duelliTorneo * R.TOURNAMENT_DUEL_CREDITS;
-    const stelle = stelleLibere + valore('duelistKingdom', 'starChips');
+    const stelleTornei = ['duelistKingdom', 'battleCity', 'kaibaTournament']
+        .reduce((tot, id) => tot + valore(id, 'starChips'), 0);
+    const stelle = stelleLibere + stelleGarantite + stelleTornei + stelleMissioniAttese;
     return {
         livello,
         crediti: creditiLiberi + creditiTornei,
@@ -70,6 +82,7 @@ const risultati = livelli.map((livello) => {
 
 console.log(`Scenario: ${vittorieGiorno} vittorie libere/giorno x ${giorni} giorni, ${torneiSettimana} completamento/i per ciascun torneo, ${duelliTorneo} duelli di torneo vinti.`);
 console.log(`Scaffale: ${quantiStarter} Starter acquistabili + ${quantiStructure} Structure = ${stelleTuttiMazzi} Stelle complessive.`);
+console.log(`Missioni: ${stelleMissioniAttese.toFixed(2)} Stelle/settimana attese completando le 10 estratte.`);
 console.table(risultati.map((r) => ({
     Difficolta: r.livello,
     Crediti_settimana: Math.round(r.crediti),

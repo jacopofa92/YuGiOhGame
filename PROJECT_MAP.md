@@ -26,8 +26,9 @@ giorno 100; i rendimenti dimezzati dopo la quinta vittoria restano il freno
 alle maratone di crediti.
 
 Anche il completamento dei tornei usa tabelle esplicite per difficolta':
-650/825/1000 crediti; il Regno paga 14/19/24 Stelle, Battle City 1/2/3 Carte
-Locazione e il Torneo Kaiba 1/1/2 Carte del Millennio. La prima vittoria
+650/825/1000 crediti; il Regno paga 14/19/24 Stelle, mentre Battle City e
+Kaiba ne pagano 3/5/8 in aggiunta rispettivamente a 1/2/3 Carte Locazione e
+1/1/2 Carte del Millennio. La prima vittoria
 assoluta non raddoppia piu' il premio (che favoriva troppo il Difficile):
 aggiunge 500 crediti e 4 Stelle / 1 Locazione / 1 Millennio secondo il torneo.
 
@@ -36,6 +37,14 @@ il primo Starter realmente scelto costa quindi le 18 Stelle dichiarate. Una
 carta Leggendaria in rotazione richiede 2 Carte del Millennio. La regressione
 e' in `tests/specs/economia-difficolta.spec.js`; ogni numero mostrato al
 giocatore continua a nascere dalle stesse tabelle applicate dalla logica.
+
+Ogni 10 vittorie libere allo stesso livello si ricevono inoltre 1/2/3 Stelle;
+i tre contatori sono persistenti e separati per impedire di preparare nove
+vittorie Facili e riscuotere con una Difficile. Le missioni settimanali
+sorteggiate valgono in media 6,67 Stelle se completate tutte. La crescita dei
+mazzi ha ora un tetto: Starter 18→54 (+6) e Structure 35→75 (+8), per 957
+Stelle complessive invece di 1.643. Lo scenario intensivo aggiornato e' in
+`FARMING_REPORT.md` ed e' riproducibile con `node tools/simula-economia.js`.
 
 ## Audio web e APK
 
