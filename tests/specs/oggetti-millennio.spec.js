@@ -38,9 +38,9 @@ module.exports = {
 
         // --- Ogni torneo paga solo la propria valuta ------------------
         const attesi = {
-            duelistKingdom: 'starChips',
-            battleCity: 'locatorCards',
-            kaibaTournament: 'millenniumCards'
+            duelistKingdom: ['starChips'],
+            battleCity: ['starChips', 'locatorCards'],
+            kaibaTournament: ['starChips', 'millenniumCards']
         };
         for (const torneo of Object.keys(attesi)) {
             const esito = await t.evaluate((id) => {
@@ -55,10 +55,11 @@ module.exports = {
                     html: Rewards.summaryHtml(voci, 'x')
                 };
             }, torneo);
-            t.assert(esito.cambiate.length === 1 && esito.cambiate[0] === attesi[torneo],
-                `${torneo} deve accreditare solo ${attesi[torneo]} fra le valute rare (rilevate: ${JSON.stringify(esito.cambiate)})`);
-            t.assert(esito.note.length === 2,
-                `${torneo} deve SPIEGARE le due valute che non paga, non limitarsi a non pagarle (note rilevate: ${esito.note.length})`);
+            t.assert(esito.cambiate.join(',') === attesi[torneo].join(','),
+                `${torneo} deve accreditare ${attesi[torneo].join(' + ')} fra le valute rare (rilevate: ${JSON.stringify(esito.cambiate)})`);
+            const noteAttese = 3 - attesi[torneo].length;
+            t.assert(esito.note.length === noteAttese,
+                `${torneo} deve SPIEGARE le ${noteAttese} valute che non paga (note rilevate: ${esito.note.length})`);
             // Una nota non ha importo: se il riepilogo la disegnasse come
             // una voce vera uscirebbe "+undefined".
             t.assert(esito.html.indexOf('undefined') === -1,

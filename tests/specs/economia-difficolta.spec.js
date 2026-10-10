@@ -36,7 +36,19 @@ module.exports = {
                     return Rewards.forDuel({ won: true, difficulty: difficulty, inTournament: false })
                         .some((v) => v.currency === 'starChips');
                 }
+                Math.random = () => 0.99;
+                const primaTraguardo = valuta();
+                let vociTraguardo = [];
+                for (let i = 0; i < 10; i++) {
+                    vociTraguardo = Rewards.forDuel({ won: true, difficulty: 'Difficile', inTournament: false });
+                }
+                const dopoTraguardo = valuta();
                 const out = {
+                    traguardo: {
+                        stelle: delta(primaTraguardo, dopoTraguardo, 'starChips'),
+                        spiegato: vociTraguardo.some((v) => /10 vittorie/.test(v.rule || '')),
+                        progresso: SaveManager.getFreeWinMilestones().Difficile
+                    },
                     regno: {
                         facile: torneo('duelistKingdom', 'Facile', false),
                         medio: torneo('duelistKingdom', 'Medio', false),
@@ -47,6 +59,7 @@ module.exports = {
                     kaiba: ['Facile', 'Medio', 'Difficile'].map((d) => torneo('kaibaTournament', d, false)),
                     stelle: [stella('Facile', 0.03), stella('Medio', 0.03), stella('Medio', 0.07), stella('Difficile', 0.07)],
                     starter: ShopCatalog.costoMazzo('starter'),
+                    prezziMazzi: ShopCatalog.PREZZI_MAZZI,
                     leggendaria: ShopCatalog.carteDelGiorno().find((v) => v.rarity === 'legendary')
                 };
                 Math.random = originale;
@@ -63,12 +76,21 @@ module.exports = {
                 'Il riepilogo deve spiegare il bonus fisso');
             assert(esito.battleCity.map((x) => x.locatorCards).join(',') === '1,2,3',
                 `Carte Locazione non graduate: ${JSON.stringify(esito.battleCity)}`);
+            assert(esito.battleCity.map((x) => x.starChips).join(',') === '3,5,8',
+                `Stelle secondarie di Battle City non graduate: ${JSON.stringify(esito.battleCity)}`);
             assert(esito.kaiba.map((x) => x.millenniumCards).join(',') === '1,1,2',
                 `Carte del Millennio non graduate: ${JSON.stringify(esito.kaiba)}`);
+            assert(esito.kaiba.map((x) => x.starChips).join(',') === '3,5,8',
+                `Stelle secondarie del Torneo Kaiba non graduate: ${JSON.stringify(esito.kaiba)}`);
+            assert(esito.traguardo.stelle === 3 && esito.traguardo.spiegato && esito.traguardo.progresso === 0,
+                `Il traguardo Hard deve pagare 3 Stelle una volta ogni 10: ${JSON.stringify(esito.traguardo)}`);
             assert(esito.stelle.join(',') === 'false,true,false,true',
                 `Soglie Stella 2%/5%/9% non rispettate: ${JSON.stringify(esito.stelle)}`);
             assert(esito.starter.starChips === 18 && esito.starter.giaPosseduti === 0,
                 `Lo Starter gratuito non deve rincarare il primo acquisto: ${JSON.stringify(esito.starter)}`);
+            assert(esito.prezziMazzi.starter.stellePerAcquisto === 6 && esito.prezziMazzi.starter.stelleMassime === 54
+                && esito.prezziMazzi.structure.stellePerAcquisto === 8 && esito.prezziMazzi.structure.stelleMassime === 75,
+            `Curva/tetti dei mazzi inattesi: ${JSON.stringify(esito.prezziMazzi)}`);
             assert(esito.leggendaria && esito.leggendaria.costo.millenniumCards === 2,
                 `La Leggendaria deve costare 2 Carte del Millennio: ${JSON.stringify(esito.leggendaria)}`);
         } finally {

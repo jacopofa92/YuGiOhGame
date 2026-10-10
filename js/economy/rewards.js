@@ -61,6 +61,8 @@
      * rollDrop): due premi rari insieme sembrerebbero un errore.
      */
     const STAR_DROP_CHANCE = { Facile: 0.02, Medio: 0.05, Difficile: 0.09 };
+    const STAR_MILESTONE_EVERY = 10;
+    const STAR_MILESTONE_REWARD = { Facile: 1, Medio: 2, Difficile: 3 };
     const DROPS = [
         { currency: 'starChips', amount: 1, chanceByDifficulty: STAR_DROP_CHANCE, icon: '⭐', nome: 'Stella dell\'Esagono' },
         { currency: 'locatorCards', amount: 1, chance: 0.03, icon: '🃏', nome: 'Carta Locazione' },
@@ -91,10 +93,12 @@
         },
         battleCity: {
             credits: { Facile: 650, Medio: 825, Difficile: 1000 },
+            starChips: { Facile: 3, Medio: 5, Difficile: 8 },
             locatorCards: { Facile: 1, Medio: 2, Difficile: 3 }
         },
         kaibaTournament: {
             credits: { Facile: 650, Medio: 825, Difficile: 1000 },
+            starChips: { Facile: 3, Medio: 5, Difficile: 8 },
             millenniumCards: { Facile: 1, Medio: 1, Difficile: 2 }
         }
     };
@@ -114,8 +118,9 @@
 
     /**
      * Le valute che un torneo NON paga, e che quindi non si possono
-     * vincere giocandolo. Ogni torneo versa ormai solo la propria: se ti
-     * servono Stelle devi giocare il Regno, non il torneo che capita.
+     * vincere giocandolo. Battle City e Kaiba pagano anche poche Stelle:
+     * la loro identita' resta nella valuta primaria, ma non sono piu'
+     * percorsi morti per chi sta risparmiando per un mazzo.
      *
      * Vive in una tabella a parte invece che come uno zero dentro
      * TOURNAMENT_COMPLETION perche' "questo torneo non paga in Stelle" e'
@@ -131,8 +136,8 @@
      */
     const TOURNAMENT_EXCLUDED = {
         duelistKingdom: ['locatorCards', 'millenniumCards'],
-        battleCity: ['starChips', 'millenniumCards'],
-        kaibaTournament: ['starChips', 'locatorCards']
+        battleCity: ['millenniumCards'],
+        kaibaTournament: ['locatorCards']
     };
 
     /**
@@ -315,6 +320,17 @@
         // Drop raro: solo fuori dai tornei, che hanno già i propri premi
         // grossi garantiti e non devono anche vincere alla lotteria.
         if (!o.inTournament && o.difficulty) {
+            const traguardo = SaveManager.recordFreeWinMilestone
+                ? SaveManager.recordFreeWinMilestone(o.difficulty, STAR_MILESTONE_EVERY)
+                : null;
+            if (traguardo && traguardo.completed > 0) {
+                const stelle = (STAR_MILESTONE_REWARD[traguardo.difficulty] || 0) * traguardo.completed;
+                if (stelle > 0) {
+                    SaveManager.addCurrency('starChips', stelle);
+                    rewards.push(voce('starChips', stelle,
+                        `${STAR_MILESTONE_EVERY} vittorie fuori dai tornei a difficolta' ${traguardo.difficulty === 'Medio' ? 'Normale' : traguardo.difficulty}`));
+                }
+            }
             const drop = rollDrop(o.difficulty);
             if (drop) {
                 SaveManager.addCurrency(drop.currency, drop.amount);
@@ -509,9 +525,10 @@
             { icon: '🤝', titolo: 'Duello perso', testo: `+${LOSS_CREDITS} crediti lo stesso: un duello giocato non è mai tempo buttato.` },
             { icon: '🌅', titolo: 'Prima vittoria del giorno', testo: `+${FIRST_WIN_OF_DAY_BONUS} crediti una volta al giorno. Premia il tornare spesso, non il giocare venti duelli di fila.` },
             { icon: '📉', titolo: 'Rendimenti decrescenti', testo: `Dalla ${DIMINISHING_AFTER_WINS + 1}ª vittoria della giornata i crediti valgono la metà.` },
+            { icon: '🎯', titolo: 'Traguardo vittorie', testo: `Ogni ${STAR_MILESTONE_EVERY} vittorie fuori dai tornei: +${STAR_MILESTONE_REWARD.Facile}/+${STAR_MILESTONE_REWARD.Medio}/+${STAR_MILESTONE_REWARD.Difficile} Stelle a Facile/Normale/Difficile. Ogni livello conserva il proprio contatore.` },
             { icon: '🎲', titolo: 'Ritrovamenti fortunati', testo: `⭐ Stella: ${Math.round(STAR_DROP_CHANCE.Facile * 100)}% a Facile, ${Math.round(STAR_DROP_CHANCE.Medio * 100)}% a Normale, ${Math.round(STAR_DROP_CHANCE.Difficile * 100)}% a Difficile · 🃏 Carta Locazione 3% · 🔱 Carta del Millennio 0,8%. Solo fuori dai tornei e mai piu' di uno per duello.` },
             { icon: '🏟️', titolo: 'Duelli di torneo', testo: `+${TOURNAMENT_DUEL_CREDITS} crediti per ogni duello vinto dentro un torneo: lì si rischia l'eliminazione.` },
-            { icon: '🏆', titolo: 'Torneo completato', testo: 'Premio grosso e garantito, e ogni torneo paga SOLO la propria valuta: Stelle nel Regno dei Duellanti, Carte Locazione a Battle City, Carte del Millennio al Torneo Kaiba. Se ti serve una valuta precisa, sai quale torneo giocare.' },
+            { icon: '🏆', titolo: 'Torneo completato', testo: 'Ogni torneo paga soprattutto la propria valuta: molte Stelle nel Regno, Carte Locazione a Battle City e Carte del Millennio al Torneo Kaiba. Battle City e Kaiba danno anche 3/5/8 Stelle a Facile/Normale/Difficile.' },
             { icon: '👁️', titolo: 'Oggetti del Millennio', testo: `I soli premi che non sono una valuta, e ne esiste una copia sola ciascuno: ${Object.keys(MILLENNIUM_ITEMS).map((k) => `${MILLENNIUM_ITEMS[k].icon} ${MILLENNIUM_ITEMS[k].nome} da ${MILLENNIUM_ITEMS[k].nomeChi}`).join(' · ')}. ${Math.round(MILLENNIUM_ITEM_CHANCE * 100)}% ogni volta che batti chi lo porta, e solo dentro un torneo dove ha senso incontrarlo. Una volta vinto non esce più.` },
             { icon: '✨', titolo: 'Prima vittoria di un torneo', testo: 'La prima vittoria assoluta aggiunge un bonus fisso: +500 crediti e +4 Stelle nel Regno, +1 Carta Locazione a Battle City oppure +1 Carta del Millennio al Torneo Kaiba. Non raddoppia il premio della difficolta\'.' },
             { icon: '🎯', titolo: 'Sfide completate', testo: 'Ogni Sfida paga UNA VOLTA sola, quando la completi: da 100 crediti per la prima vittoria fino a 1000 per le 50. Le più lunghe o simboliche danno anche valute rare — Slifer in campo vale una Carta del Millennio.' },
@@ -578,6 +595,8 @@
         MILLENNIUM_ITEMS: MILLENNIUM_ITEMS,
         MILLENNIUM_ITEM_CHANCE: MILLENNIUM_ITEM_CHANCE,
         millenniumItemInPalio: millenniumItemInPalio,
-        STAR_DROP_CHANCE: STAR_DROP_CHANCE
+        STAR_DROP_CHANCE: STAR_DROP_CHANCE,
+        STAR_MILESTONE_EVERY: STAR_MILESTONE_EVERY,
+        STAR_MILESTONE_REWARD: STAR_MILESTONE_REWARD
     };
 })();
