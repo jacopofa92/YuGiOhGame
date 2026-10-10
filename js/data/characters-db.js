@@ -191,9 +191,16 @@ function getCharacterRecord(characterId) {
     return { wins: 0, losses: 0 };
 }
 
-function recordCharacterResult(characterId, won) {
+// `difficulty` (facoltativo): il livello del duello ('Facile'/'Medio'/
+// 'Difficile'). Per ogni vittoria si tiene il PIÙ ALTO battuto
+// (record.migliore), che il Duello Libero mostra come medaglia. Un record
+// vecchio non lo ha: semplicemente niente medaglia finché non si rivince.
+const LIVELLI_RECORD = ['Facile', 'Medio', 'Difficile'];
+function recordCharacterResult(characterId, won, difficulty) {
     const record = getCharacterRecord(characterId);
     if (won) record.wins += 1; else record.losses += 1;
+    const livello = LIVELLI_RECORD.indexOf(difficulty);
+    if (won && livello !== -1 && livello > LIVELLI_RECORD.indexOf(record.migliore)) record.migliore = difficulty;
     if (window.SaveManager) {
         SaveManager.setRecord(characterId, record);
     } else {

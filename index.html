@@ -2331,14 +2331,22 @@
         // CSS e JavaScript partono insieme. La Promise viene restituita al
         // router (prima l'initializer tornava undefined), cosi' chiunque
         // debba osservare la prontezza della vista ha un segnale vero.
+        // La griglia (js/ui/scelta-duellante.js) e il catalogo della Storia
+        // con i suoi ritocchi, che le serve per dire su ogni Duellante
+        // bloccato in quale campagna lo si incontra.
         const vistaPronta = Promise.all([
-            ensureViewStyles(['js/ui/duel-setup.css', 'js/ui/sfida-libera.css']),
+            ensureViewStyles(['js/ui/duel-setup.css', 'js/ui/sfida-libera.css', 'js/ui/scelta-duellante.css']),
             ensureViewScripts([
                 'js/data/arena-options.js',
                 'js/ui/duel-setup.js',
-                'js/ui/sfida-libera.js'
+                'js/ui/sfida-libera.js',
+                'js/data/story-campaigns.js',
+                'js/data/story-ritocchi.js',
+                'js/story/story-ritocchi.js',
+                'js/ui/scelta-duellante.js'
             ])
         ]);
+        vistaPronta.then(() => renderCubes()).catch(() => { /* la vista resta senza griglia, il resto funziona */ });
 
         let toastTimeout = null;
         function showToast(text) {
@@ -2349,95 +2357,17 @@
             toastTimeout = setTimeout(() => toast.classList.remove('show'), 2600);
         }
 
-        function createCube(character) {
-            const record = getCharacterRecord(character.id);
-            // Duellante ancora da guadagnare (js/data/character-unlocks.js):
-            // resta VISIBILE, in ombra e col lucchetto, invece di sparire
-            // dalla griglia. Un elenco che si allunga da solo non dice
-            // niente su cosa manchi; una fila di sagome bloccate sì.
-            const bloccato = !!(window.CharacterUnlocks && !CharacterUnlocks.sbloccato(character.id));
-            const cube = document.createElement('div');
-            cube.className = 'cube' + (bloccato ? ' cube--bloccato' : '');
-            cube.innerHTML = `
-                <div class="cube-portrait">
-                    <span class="cube-portrait-fallback">🧑‍🎤</span>
-                    <div class="cube-name">${character.name}</div>
-                </div>
-                <div class="cube-info">
-                    <div class="cube-title">${character.title || ''}</div>
-                    ${bloccato ? '<div class="cube-locked">Si sblocca in Torneo o nella Storia</div>' : `
-                    <div class="cube-record">
-                        <span class="wins">${record.wins}V</span>
-                        <span class="sep">•</span>
-                        <span class="losses">${record.losses}S</span>
-                    </div>`}
-                </div>
-            `;
-
-            const img = document.createElement('img');
-            img.alt = character.name;
-            img.loading = 'lazy';
-            img.onload = () => {
-                const fallback = cube.querySelector('.cube-portrait-fallback');
-                if (fallback) fallback.remove();
-            };
-            img.onerror = () => img.remove();
-            img.src = character.image;
-            cube.querySelector('.cube-portrait').insertBefore(img, cube.querySelector('.cube-name'));
-
-            cube.onclick = () => {
-                if (bloccato) { showToast('🔒 ' + CharacterUnlocks.comeSbloccare(character)); return; }
-                openDifficultyModal(character);
-            };
-            return cube;
-        }
-
-        // Ordine e nome leggibile di ogni "series" (vedi il campo series di
-        // ogni personaggio in js/characters-db.js). Un id non presente qui
-        // finirebbe comunque in fondo con il proprio nome grezzo come titolo,
-        // invece di sparire — così una futura series dimenticata qui resta
-        // visibile invece di scomparire silenziosamente dalla lista.
-        const SERIES_ORDER = ['main', 'forbiddenMemories', 'extra', 'special'];
-        const SERIES_LABELS = {
-            main: 'Serie Principale',
-            forbiddenMemories: 'Forbidden Memories',
-            extra: 'Extra',
-            special: 'Speciali'
-        };
-
+        // La griglia con barra di ricerca e filtri è il componente
+        // condiviso con duello-libero.html (js/ui/scelta-duellante.js),
+        // caricato con gli altri moduli lazy qui sopra: finché non arriva
+        // la griglia resta vuota, poi si disegna da sola.
+        let griglia = null;
         function renderCubes() {
-            const container = document.getElementById('libero-cubeGrid');
-            container.innerHTML = '';
-
-            const bySeries = new Map();
-            characterDatabase.forEach((character) => {
-                const key = character.series || 'main';
-                if (!bySeries.has(key)) bySeries.set(key, []);
-                bySeries.get(key).push(character);
-            });
-
-            // SERIES_ORDER prima, poi qualunque series imprevista rimasta
-            // (mai perdere silenziosamente un personaggio da un id dimenticato).
-            const orderedKeys = [...SERIES_ORDER, ...[...bySeries.keys()].filter(k => !SERIES_ORDER.includes(k))];
-
-            orderedKeys.forEach((key) => {
-                const characters = bySeries.get(key);
-                if (!characters || characters.length === 0) return;
-
-                const section = document.createElement('div');
-                section.className = 'series-section';
-
-                const title = document.createElement('div');
-                title.className = 'series-title';
-                title.innerHTML = `<span>${SERIES_LABELS[key] || key}</span><span class="series-count">${characters.length}</span>`;
-                section.appendChild(title);
-
-                const grid = document.createElement('div');
-                grid.className = 'cube-grid';
-                characters.forEach((character) => grid.appendChild(createCube(character)));
-                section.appendChild(grid);
-
-                container.appendChild(section);
+            if (!window.SceltaDuellante) return;
+            if (griglia) { griglia.refresh(); return; }
+            griglia = SceltaDuellante.mount(document.getElementById('libero-cubeGrid'), {
+                onScegli: (character) => openDifficultyModal(character),
+                toast: showToast
             });
         }
 

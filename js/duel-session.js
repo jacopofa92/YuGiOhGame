@@ -615,7 +615,9 @@
 
         let record = null;
         if (playerWon !== 'draw' && session.opponent.id && typeof recordCharacterResult === 'function') {
-            record = recordCharacterResult(session.opponent.id, playerWon);
+            // Il livello serve alla medaglia del Duello Libero ("battuto a
+            // Difficile"): vedi recordCharacterResult in characters-db.js.
+            record = recordCharacterResult(session.opponent.id, playerWon, session.difficulty);
         }
         // Sfide (js/data/challenges-db.js): 'defeatCharacter'/'winDuels'
         // contano solo vittorie VERE contro un avversario reale, mai il

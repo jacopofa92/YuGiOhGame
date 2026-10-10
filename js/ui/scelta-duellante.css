@@ -1,0 +1,131 @@
+/**
+ * scelta-duellante.css — La barra in cima alla griglia del Duello Libero
+ * (conteggio, filtri per serie, ricerca) e le parti nuove delle carte
+ * (record, medaglia, dove si sblocca). Vedi js/ui/scelta-duellante.js.
+ * Le carte stesse (.cube) restano disegnate dallo stile delle due pagine.
+ */
+.scelta-duellante {
+    --sd-oro: #f1c95a;
+    --sd-testo: #efe7d2;
+    --sd-tenue: #a49a82;
+}
+.scelta-duellante [hidden] { display: none !important; }
+
+/* Non sticky: la topbar è già fissa in alto, e una seconda barra fissa ci
+   finirebbe sotto (o richiederebbe di conoscerne l'altezza in pixel). */
+.scelta-duellante .sd-barra {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 22px;
+    padding: 12px 16px;
+    border-radius: 16px;
+    background: rgba(12, 10, 16, 0.86);
+    border: 1px solid rgba(241, 201, 90, 0.3);
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(6px);
+}
+.scelta-duellante .sd-conta {
+    display: grid;
+    grid-template-columns: auto auto;
+    align-items: baseline;
+    column-gap: 6px;
+    row-gap: 4px;
+    color: var(--sd-testo);
+    white-space: nowrap;
+}
+.scelta-duellante .sd-conta strong {
+    font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif;
+    font-size: 1.5rem;
+    color: var(--sd-oro);
+    line-height: 1;
+}
+.scelta-duellante .sd-conta > span:not(.sd-conta-barra) { font-size: 0.74rem; color: var(--sd-tenue); }
+.scelta-duellante .sd-conta-barra {
+    grid-column: 1 / -1;
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+}
+.scelta-duellante .sd-conta-barra span { display: block; height: 100%; background: linear-gradient(90deg, #b8862a, #ffe7a3); }
+.scelta-duellante .sd-filtri { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; min-width: 0; }
+.scelta-duellante .sd-filtri::-webkit-scrollbar { display: none; }
+.scelta-duellante .sd-chip {
+    flex: none;
+    padding: 7px 12px;
+    border-radius: 999px;
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--sd-testo);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    cursor: pointer;
+    white-space: nowrap;
+}
+.scelta-duellante .sd-chip span { color: var(--sd-tenue); font-weight: 600; margin-left: 2px; }
+.scelta-duellante .sd-chip.is-on { color: #2a1606; background: linear-gradient(180deg, #ffe08a, #e0a630); border-color: transparent; }
+.scelta-duellante .sd-chip.is-on span { color: rgba(42, 22, 6, 0.7); }
+.scelta-duellante .sd-cerca {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(241, 201, 90, 0.3);
+}
+.scelta-duellante .sd-cerca-ic { color: var(--sd-oro); font-size: 1.05rem; }
+.scelta-duellante .sd-cerca input {
+    width: 190px;
+    padding: 8px 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: #fff;
+    font: inherit;
+    font-size: 0.86rem;
+}
+.scelta-duellante .sd-cerca:focus-within { border-color: var(--sd-oro); box-shadow: 0 0 0 3px rgba(241, 201, 90, 0.18); }
+.scelta-duellante .sd-vuoto { text-align: center; color: var(--sd-tenue); padding: 40px 0; font-style: italic; }
+
+/* ---- Carte: record, medaglia, dove si sblocca ----------------------- */
+.scelta-duellante .sd-record { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.scelta-duellante .sd-v,
+.scelta-duellante .sd-s {
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+}
+.scelta-duellante .sd-v { color: #6fe08a; background: rgba(111, 224, 138, 0.12); }
+.scelta-duellante .sd-s { color: #ff8a7a; background: rgba(255, 138, 122, 0.12); }
+.scelta-duellante .sd-v small,
+.scelta-duellante .sd-s small { font-size: 0.76rem; margin-left: 2px; opacity: 0.85; text-transform: uppercase; }
+.scelta-duellante .sd-medaglia {
+    margin-left: auto;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 0.58rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #2a1606;
+}
+.scelta-duellante .sd-medaglia--bronzo { background: linear-gradient(180deg, #e6a874, #a8653a); }
+.scelta-duellante .sd-medaglia--argento { background: linear-gradient(180deg, #f1f1f1, #9aa3ad); }
+.scelta-duellante .sd-medaglia--oro { background: linear-gradient(180deg, #ffe08a, #d39a26); }
+.scelta-duellante .cube-locked { color: rgba(239, 231, 210, 0.8); font-size: 0.7rem; line-height: 1.3; }
+.scelta-duellante .sd-dove { display: block; font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--sd-tenue); }
+.scelta-duellante .sd-altri { color: var(--sd-oro); font-weight: 800; }
+.scelta-duellante .cube:focus-visible { outline: 3px solid #fff3c4; outline-offset: 3px; }
+
+/* ---- Telefono --------------------------------------------------------- */
+@media (max-width: 720px) {
+    .scelta-duellante .sd-barra { grid-template-columns: auto 1fr; gap: 10px; padding: 10px 12px; margin-bottom: 14px; }
+    .scelta-duellante .sd-filtri { grid-column: 1 / -1; grid-row: 2; }
+    .scelta-duellante .sd-cerca input { width: 100%; }
+}

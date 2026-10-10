@@ -34,6 +34,7 @@
 <link rel="stylesheet" href="js/ui/deck-box.css">
 <link rel="stylesheet" href="js/ui/duel-setup.css">
 <link rel="stylesheet" href="js/ui/sfida-libera.css">
+<link rel="stylesheet" href="js/ui/scelta-duellante.css">
 <link rel="stylesheet" href="js/ui/deck-switcher.css">
 <title>Yu-Gi-Oh! Duel Arena — Duello Libero</title>
 <style>
@@ -363,7 +364,14 @@
 <script src="js/data/card-origins.generated.js"></script>
 <script src="js/data/deck-legality.js"></script>
 <script src="js/data/characters-db.js"></script>
+<!-- Catalogo della Storia (con i ritocchi dell'Editor Mappa): serve solo a
+     dire su ogni Duellante bloccato in quale campagna lo si incontra,
+     vedi CharacterUnlocks.doveSiSblocca. -->
+<script src="js/data/story-campaigns.js"></script>
+<script src="js/data/story-ritocchi.js"></script>
+<script src="js/story/story-ritocchi.js"></script>
 <script src="js/data/character-unlocks.js"></script>
+<script src="js/ui/scelta-duellante.js"></script>
 <script src="js/ui/icon-library.js"></script>
 <script src="js/ui/topbar.js"></script>
 <script src="js/ui/deck-box.js"></script>
@@ -396,96 +404,16 @@
         toastTimeout = setTimeout(() => toast.classList.remove('show'), 2600);
     }
 
-    function createCube(character) {
-        const record = getCharacterRecord(character.id);
-        // Duellante ancora da guadagnare (js/data/character-unlocks.js):
-        // resta VISIBILE, in ombra e con il lucchetto, invece di sparire
-        // dalla griglia. Un elenco che si allunga da solo non dice niente
-        // su cosa manchi; una fila di sagome bloccate sì, ed è anche il
-        // motivo per cui vale la pena andare avanti nella Storia.
-        const bloccato = !!(window.CharacterUnlocks && !CharacterUnlocks.sbloccato(character.id));
-        const cube = document.createElement('div');
-        cube.className = 'cube' + (bloccato ? ' cube--bloccato' : '');
-        cube.innerHTML = `
-            <div class="cube-portrait">
-                <span class="cube-portrait-fallback">🧑‍🎤</span>
-                <div class="cube-name">${character.name}</div>
-            </div>
-            <div class="cube-info">
-                <div class="cube-title">${character.title || ''}</div>
-                ${bloccato ? '<div class="cube-locked">Si sblocca in Torneo o nella Storia</div>' : `
-                <div class="cube-record">
-                    <span class="wins">${record.wins}V</span>
-                    <span class="sep">•</span>
-                    <span class="losses">${record.losses}S</span>
-                </div>`}
-            </div>
-        `;
-
-        const img = document.createElement('img');
-        img.alt = character.name;
-        img.loading = 'lazy';
-        img.onload = () => {
-            const fallback = cube.querySelector('.cube-portrait-fallback');
-            if (fallback) fallback.remove();
-        };
-        img.onerror = () => img.remove();
-        img.src = character.image;
-        cube.querySelector('.cube-portrait').insertBefore(img, cube.querySelector('.cube-name'));
-
-        cube.onclick = () => {
-            if (bloccato) { showToast('🔒 ' + CharacterUnlocks.comeSbloccare(character)); return; }
-            openDifficultyModal(character);
-        };
-        return cube;
-    }
-
-    // Ordine e nome leggibile di ogni "series" (vedi il campo series di
-    // ogni personaggio in js/characters-db.js). Un id non presente qui
-    // finirebbe comunque in fondo con il proprio nome grezzo come titolo,
-    // invece di sparire — così una futura series dimenticata qui resta
-    // visibile invece di scomparire silenziosamente dalla lista.
-    const SERIES_ORDER = ['main', 'forbiddenMemories', 'extra', 'special'];
-    const SERIES_LABELS = {
-        main: 'Serie Principale',
-        forbiddenMemories: 'Forbidden Memories',
-        extra: 'Extra',
-        special: 'Speciali'
-    };
-
+    // La griglia dei Duellanti con la barra di ricerca e filtri è un
+    // componente condiviso con la vista Duello Libero del menu
+    // (js/ui/scelta-duellante.js): qui restano solo cosa succede alla
+    // scelta e i messaggi brevi.
+    let griglia = null;
     function renderCubes() {
-        const container = document.getElementById('cubeGrid');
-        container.innerHTML = '';
-
-        const bySeries = new Map();
-        characterDatabase.forEach((character) => {
-            const key = character.series || 'main';
-            if (!bySeries.has(key)) bySeries.set(key, []);
-            bySeries.get(key).push(character);
-        });
-
-        // SERIES_ORDER prima, poi qualunque series imprevista rimasta
-        // (mai perdere silenziosamente un personaggio da un id dimenticato).
-        const orderedKeys = [...SERIES_ORDER, ...[...bySeries.keys()].filter(k => !SERIES_ORDER.includes(k))];
-
-        orderedKeys.forEach((key) => {
-            const characters = bySeries.get(key);
-            if (!characters || characters.length === 0) return;
-
-            const section = document.createElement('div');
-            section.className = 'series-section';
-
-            const title = document.createElement('div');
-            title.className = 'series-title';
-            title.innerHTML = `<span>${SERIES_LABELS[key] || key}</span><span class="series-count">${characters.length}</span>`;
-            section.appendChild(title);
-
-            const grid = document.createElement('div');
-            grid.className = 'cube-grid';
-            characters.forEach((character) => grid.appendChild(createCube(character)));
-            section.appendChild(grid);
-
-            container.appendChild(section);
+        if (griglia) { griglia.refresh(); return; }
+        griglia = SceltaDuellante.mount(document.getElementById('cubeGrid'), {
+            onScegli: (character) => openDifficultyModal(character),
+            toast: showToast
         });
     }
 
