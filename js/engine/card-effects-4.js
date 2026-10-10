@@ -390,6 +390,9 @@
                 const target = ctx.field(decl.targetOwner)[decl.targetIndex];
                 const lpKey = Tavolo.chiave(ctx.owner, 'LP');
                 const cost = Math.ceil(ctx.gameState[lpKey] / 2);
+                if (window.FX && typeof FX.playSolemnJudgment === 'function') {
+                    FX.playSolemnJudgment(ctx.owner, cost);
+                }
                 ctx.dealDamage(ctx.owner, cost);
                 ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
                 ctx.log(`⚖️ Giudizio Solenne paga ${cost} Life Points per annullare e distruggere ${target ? target.card.name : ctx.summonedCard.name}, appena Evocato!`);
@@ -398,6 +401,9 @@
         activate(ctx) {
             const lpKey = Tavolo.chiave(ctx.owner, 'LP');
             const cost = Math.ceil(ctx.gameState[lpKey] / 2);
+            if (window.FX && typeof FX.playSolemnJudgment === 'function') {
+                FX.playSolemnJudgment(ctx.owner, cost);
+            }
             ctx.dealDamage(ctx.owner, cost);
             if (ctx.negateActivation()) {
                 ctx.log(`⚖️ Giudizio Solenne paga ${cost} Life Points e annulla l'attivazione!`);

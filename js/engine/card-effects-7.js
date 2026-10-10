@@ -2330,6 +2330,9 @@
                 const slot = ctx.field(scelto.owner)[scelto.index];
                 if (!slot) return;
                 const name = slot.card.name;
+                if (window.FX && typeof FX.playBookOfMoon === 'function') {
+                    FX.playBookOfMoon(scelto.owner, scelto.index, slot.card);
+                }
                 ctx.changePosition(scelto.owner, scelto.index, 'defense');
                 slot.isFaceDown = true;
                 ctx.log(`🌙 Libro della Luna gira ${name} in Difesa coperta!`);

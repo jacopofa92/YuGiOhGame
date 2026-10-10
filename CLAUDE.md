@@ -4239,3 +4239,12 @@ flussi devono proseguire sincronicamente. Richiamo conserva il mostro fuori
 dal campo durante l'emersione e `renderFields()` deriva la catena persistente
 dal `targetUid` reale della Trappola: nessun timer grafico può lasciarla
 appesa dopo la fine del legame.
+
+Terzo gruppo di cinematiche iconiche: Buco Trappola senza Fondo (portale
+dimensionale, non riuso del Buco Trappola), Armatura Sakuretsu, Giudizio
+Solenne, Libro della Luna e Virus Distruggi-Carte. Questi effetti sono
+deliberatamente solo visivi e lavorano su una fotografia del DOM: la regola
+resta sincrona, requisito importante per attacchi, Trappole Contatore e
+risoluzione LIFO delle Chain. Il Virus riceve dal motore gli indici realmente
+colpiti, Giudizio il costo LP reale. Guardrail dedicato
+`cinematiche-carte-iconiche-terzo-gruppo`; cache `v200`.

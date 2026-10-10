@@ -30,6 +30,11 @@
  *   FX.playMysticalSpaceTyphoon(owner, index, onImpact)
  *   FX.playMindControl(card, owner, index, mode)
  *   FX.playCallOfTheHaunted(owner, card, targetIndex, onImpact)
+ *   FX.playBottomlessTrapHole(owner, index, card)
+ *   FX.playSakuretsuArmor(owner, index)
+ *   FX.playSolemnJudgment(owner, cost)
+ *   FX.playBookOfMoon(owner, index, card)
+ *   FX.playCrushCardVirus(owner, targetIndices)
  *   FX.playTributeSacrifice(cardElement)
  *   FX.spawnParticles(x, y, opts)
  */
@@ -1072,6 +1077,154 @@
     }
 
     /**
+     * Buco Trappola senza Fondo non riusa la voragine marrone del normale
+     * Buco Trappola: il mostro viene fotografato e trascinato in un portale
+     * dimensionale viola, coerente con la successiva Zona Bandite.
+     */
+    function playBottomlessTrapHole(owner, index, card) {
+        const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+        const slot = document.querySelector(`#${boardId} .field-slot[data-owner="${owner}"][data-type="monster"][data-index="${index}"]`);
+        const rect = slot && slot.getBoundingClientRect();
+        if (!rect || !rect.width) return 0;
+        beginSummonCinematic();
+        const scene = document.createElement('div');
+        scene.className = 'fx-bottomless-hole';
+        scene.setAttribute('aria-hidden', 'true');
+        Object.assign(scene.style, {
+            left: `${rect.left + rect.width / 2}px`,
+            top: `${rect.top + rect.height * 0.72}px`,
+            width: `${rect.width * 2.15}px`,
+            height: `${rect.height * 0.82}px`
+        });
+        scene.innerHTML = '<i></i><i></i><i></i><b></b><span></span>';
+        document.body.appendChild(scene);
+        if (card && typeof window.createCardElement === 'function') {
+            const ghost = createCardElement(card);
+            ghost.classList.add('fx-bottomless-card');
+            Object.assign(ghost.style, {
+                left: `${rect.left}px`, top: `${rect.top}px`,
+                width: `${rect.width}px`, height: `${rect.height}px`
+            });
+            document.body.appendChild(ghost);
+            setTimeout(() => ghost.remove(), 1450);
+        }
+        if (window.SFX && typeof SFX.destroy === 'function') setTimeout(() => SFX.destroy(), 620);
+        setTimeout(() => {
+            scene.remove();
+            endSummonCinematic();
+        }, 1550);
+        return 1550;
+    }
+
+    /** Armatura Sakuretsu: piastre in prospettiva serrano l'attaccante e collassano. */
+    function playSakuretsuArmor(owner, index) {
+        const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+        const cardEl = document.querySelector(`#${boardId} .field-slot[data-owner="${owner}"][data-type="monster"][data-index="${index}"] .card`);
+        if (!cardEl) return 0;
+        beginSummonCinematic();
+        const point = centerOf(cardEl);
+        const armor = document.createElement('div');
+        armor.className = 'fx-sakuretsu-armor';
+        armor.setAttribute('aria-hidden', 'true');
+        Object.assign(armor.style, {
+            left: `${point.x}px`, top: `${point.y}px`,
+            width: `${point.rect.width * 2.05}px`, height: `${point.rect.height * 1.55}px`
+        });
+        armor.innerHTML = '<i></i><i></i><i></i><i></i><b></b><span></span>';
+        document.body.appendChild(armor);
+        if (window.SFX && typeof SFX.destroy === 'function') setTimeout(() => SFX.destroy(), 650);
+        setTimeout(() => {
+            armor.remove();
+            endSummonCinematic();
+        }, 1450);
+        return 1450;
+    }
+
+    /** Giudizio Solenne: tribunale celeste e sigillo che tronca l'azione negata. */
+    function playSolemnJudgment(owner, cost) {
+        beginSummonCinematic();
+        const scene = document.createElement('div');
+        scene.className = `fx-solemn-judgment fx-solemn-judgment--${owner}`;
+        scene.setAttribute('aria-hidden', 'true');
+        scene.innerHTML = '<div class="fx-solemn-sky"></div><div class="fx-solemn-judge"><i></i><b></b></div><div class="fx-solemn-seal"><i></i><i></i><i></i></div><strong>ANNULLATO</strong><small></small>';
+        scene.querySelector('small').textContent = cost ? `-${cost} LP` : '';
+        document.body.appendChild(scene);
+        if (window.SFX && typeof SFX.activateTrap === 'function') SFX.activateTrap();
+        setTimeout(() => {
+            scene.remove();
+            endSummonCinematic();
+        }, 1750);
+        return 1750;
+    }
+
+    /** Libro della Luna avvolge lo slot e ne accompagna il ribaltamento. */
+    function playBookOfMoon(owner, index, card) {
+        const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+        const cardEl = document.querySelector(`#${boardId} .field-slot[data-owner="${owner}"][data-type="monster"][data-index="${index}"] .card`);
+        if (!cardEl) return 0;
+        beginSummonCinematic();
+        const point = centerOf(cardEl);
+        const moon = document.createElement('div');
+        moon.className = 'fx-book-moon';
+        moon.setAttribute('aria-hidden', 'true');
+        Object.assign(moon.style, {
+            left: `${point.x}px`, top: `${point.y}px`,
+            width: `${point.rect.width * 2.2}px`, height: `${point.rect.width * 2.2}px`
+        });
+        moon.innerHTML = '<i class="fx-book-moon-disc"></i><i class="fx-book-moon-shadow"></i><b></b><span></span>';
+        document.body.appendChild(moon);
+        if (card && typeof window.createCardElement === 'function') {
+            const ghost = createCardElement(card);
+            ghost.classList.add('fx-book-moon-card');
+            Object.assign(ghost.style, {
+                left: `${point.rect.left}px`, top: `${point.rect.top}px`,
+                width: `${point.rect.width}px`, height: `${point.rect.height}px`
+            });
+            document.body.appendChild(ghost);
+            setTimeout(() => ghost.remove(), 1200);
+        }
+        if (window.SFX && typeof SFX.activateSpell === 'function') SFX.activateSpell();
+        setTimeout(() => {
+            moon.remove();
+            endSummonCinematic();
+        }, 1300);
+        return 1300;
+    }
+
+    /** Virus Distruggi-Carte propaga una scansione infetta sugli slot colpiti. */
+    function playCrushCardVirus(owner, targetIndices) {
+        const victim = owner === 'player' ? 'bot' : 'player';
+        const boardId = victim === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
+        const allowed = new Set((targetIndices || []).map(Number));
+        const targets = Array.from(document.querySelectorAll(`#${boardId} .field-slot[data-owner="${victim}"][data-type="monster"]`))
+            .filter((slot) => allowed.has(Number(slot.dataset.index)))
+            .map((slot) => slot.querySelector('.card')).filter(Boolean)
+            .map((el) => centerOf(el));
+        beginSummonCinematic();
+        const scene = document.createElement('div');
+        scene.className = 'fx-crush-virus';
+        scene.setAttribute('aria-hidden', 'true');
+        scene.innerHTML = '<div class="fx-virus-vignette"></div><div class="fx-virus-core"><i></i><i></i><i></i><b></b></div><strong>VIRUS DISTRUGGI-CARTE</strong>';
+        targets.forEach((point, index) => {
+            const mark = document.createElement('span');
+            mark.className = 'fx-virus-target';
+            Object.assign(mark.style, {
+                left: `${point.x}px`, top: `${point.y}px`,
+                width: `${point.rect.width * 1.45}px`, height: `${point.rect.height * 1.15}px`,
+                '--virus-delay': `${420 + index * 90}ms`
+            });
+            scene.appendChild(mark);
+        });
+        document.body.appendChild(scene);
+        if (window.SFX && typeof SFX.activateTrap === 'function') SFX.activateTrap();
+        setTimeout(() => {
+            scene.remove();
+            endSummonCinematic();
+        }, 1800);
+        return 1800;
+    }
+
+    /**
      * Cinematica che precede una vera Evocazione Fusione. Usa copie DOM
      * dei materiali già scelti dal motore: orbitano in prospettiva,
      * vengono risucchiati nel vortice e collassano nel nucleo centrale.
@@ -2072,6 +2225,11 @@
         playMysticalSpaceTyphoon,
         playMindControl,
         playCallOfTheHaunted,
+        playBottomlessTrapHole,
+        playSakuretsuArmor,
+        playSolemnJudgment,
+        playBookOfMoon,
+        playCrushCardVirus,
         playCoinFlip: viaBackend('playCoinFlip', playCoinFlip),
         playDiceRoll: viaBackend('playDiceRoll', playDiceRoll),
         // ATTENZIONE per chi scrivera' un backend per questa: i chiamanti

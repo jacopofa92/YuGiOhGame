@@ -884,6 +884,23 @@ Secondo gruppo:
 - cache PWA `v199`; guardrail:
   `tests/specs/cinematiche-carte-iconiche-secondo-gruppo.spec.js`.
 
+Terzo gruppo:
+
+- Buco Trappola senza Fondo (`128`) usa un portale viola dimensionale e
+  una copia grafica risucchiata, distinto dalla voragine fisica del normale
+  Buco Trappola; la regola continua a distruggere e poi bandire;
+- Armatura Sakuretsu (`793`) chiude quattro piastre prospettiche sul mostro
+  attaccante, mentre Giudizio Solenne (`448`) apre un tribunale celeste con
+  sigillo di annullamento e mostra il costo LP realmente pagato;
+- Libro della Luna (`875`) accompagna il ribaltamento con un'eclissi
+  localizzata; Virus Distruggi-Carte (`165`) marca soltanto gli slot che la
+  regola ha individuato con almeno 1500 ATK;
+- queste cinque scene fotografano il DOM prima della mutazione ma non
+  ritardano la regola: attacchi, annullamenti e Chain conservano così il
+  proprio ordine sincrono;
+- cache PWA `v200`; guardrail:
+  `tests/specs/cinematiche-carte-iconiche-terzo-gruppo.spec.js`.
+
 ## Cinematica Evocazione Fusione
 
 - `DuelEngine.actions.fusionSummon()` fotografa i materiali realmente scelti

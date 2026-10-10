@@ -1888,6 +1888,9 @@
                 const targetSlot = ctx.field(decl.targetOwner)[decl.targetIndex];
                 if (!targetSlot) return;
                 const name = targetSlot.card.name;
+                if (window.FX && typeof FX.playSakuretsuArmor === 'function') {
+                    FX.playSakuretsuArmor(decl.targetOwner, decl.targetIndex);
+                }
                 ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
                 ctx.cancelAttack();
                 ctx.log(`🛡️ Armatura Sakuretsu distrugge ${name}!`);

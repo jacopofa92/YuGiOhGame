@@ -131,12 +131,20 @@
             gameState.pendingNoDamageExpiry = gameState.pendingNoDamageExpiry || [];
             gameState.pendingNoDamageExpiry.push({ owner: ctx.opponent, endsRemaining: 2 });
 
-            let destroyed = 0;
+            const targetIndices = [];
             ctx.field(ctx.opponent).forEach((slot, index) => {
                 if (slot && !slot.isFaceDown && DuelEngine.getEffectiveAtk(slot.card) >= 1500) {
-                    ctx.destroyMonster(ctx.opponent, index);
-                    destroyed++;
+                    targetIndices.push(index);
                 }
+            });
+            if (window.FX && typeof FX.playCrushCardVirus === 'function') {
+                FX.playCrushCardVirus(ctx.owner, targetIndices);
+            }
+            let destroyed = 0;
+            targetIndices.forEach((index) => {
+                if (!ctx.field(ctx.opponent)[index]) return;
+                ctx.destroyMonster(ctx.opponent, index);
+                destroyed++;
             });
             ctx.log(`☠️ Virus Distruggi-Carte sacrifica ${tributeCard.name}: l'avversario non subisce danni fino alla fine del turno successivo, ${destroyed} mostr${destroyed === 1 ? 'o' : 'i'} con 1500+ ATK distrutt${destroyed === 1 ? 'o' : 'i'}!`);
             if (Decisioni.rispondeUnaPersona(ctx.owner)) {

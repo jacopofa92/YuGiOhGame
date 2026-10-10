@@ -2803,6 +2803,9 @@
                 if (!decl.allowed) return;
                 const target = ctx.field(decl.targetOwner)[decl.targetIndex];
                 if (!target) return;
+                if (window.FX && typeof FX.playBottomlessTrapHole === 'function') {
+                    FX.playBottomlessTrapHole(decl.targetOwner, decl.targetIndex, target.card);
+                }
                 target.card.mustBanishOnLeavingField = true;
                 ctx.destroyMonster(decl.targetOwner, decl.targetIndex);
                 ctx.log(`🕳️ Buco Trappola senza Fondo distrugge e bandisce ${target.card.name}!`);
