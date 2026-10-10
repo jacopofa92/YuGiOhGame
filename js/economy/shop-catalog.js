@@ -332,6 +332,24 @@
         return out;
     }
 
+    /**
+     * Un'unica porta d'ingresso per i pool ordinari delle buste.
+     *
+     * Non basta affidarsi a `idsByRarity`: quando una rarità non ha carte
+     * coerenti col tema, `apriBusta` ripiega intenzionalmente sull'intero
+     * tema. Quel percorso in passato saltava la classificazione e poteva
+     * quindi includere Testa Proibita nella busta degli Incantatori. Lo
+     * stesso rischio esisteva nella scelta delle creature base.
+     *
+     * Le eccezioni narrative (oggi soltanto Elefante Volante nelle Premium,
+     * dopo averne meritato la prima copia) restano esplicite più sotto: non
+     * devono mai entrare accidentalmente in un pool generico o tematico.
+     */
+    function acquistabileInBusta(cardId) {
+        return !!window.CardRarity && CardRarity.isPurchasable(cardId)
+            && (!window.CardAcquisition || CardAcquisition.isSignatureUnlocked(cardId));
+    }
+
     function dayKey() {
         return (window.ServerDate && ServerDate.dayKey()) || new Date().toISOString().slice(0, 10);
     }
@@ -417,7 +435,7 @@
         const estratte = [];
         Object.keys(busta.composizione || {}).forEach((rarity) => {
             let pool = CardRarity.idsByRarity(rarity)
-                .filter((id) => !window.CardAcquisition || CardAcquisition.isSignatureUnlocked(id));
+                .filter(acquistabileInBusta);
             if (tema) {
                 const themed = pool.filter((id) => { const c = db.find((x) => x.id === id); return c && tema.test(c); });
                 // Mai carte fuori tema. Se una fascia è troppo stretta si
@@ -425,7 +443,7 @@
                 // dagli altri slot e la bustina non tradisce il soggetto.
                 const tuttoIlTema = db.filter((c) => (c.origin || 'yu-gi-oh') === 'yu-gi-oh'
                     && tema.test(c)
-                    && (!window.CardAcquisition || CardAcquisition.isSignatureUnlocked(c.id)))
+                    && acquistabileInBusta(c.id))
                     .map((c) => c.id);
                 pool = themed.length ? themed : tuttoIlTema;
             }
@@ -434,7 +452,7 @@
         if (tema && busta.deboliGarantiti) {
             const mostriTema = db.filter((c) => c.type === 'monster'
                 && (c.origin || 'yu-gi-oh') === 'yu-gi-oh' && tema.test(c)
-                && (!window.CardAcquisition || CardAcquisition.isSignatureUnlocked(c.id)))
+                && acquistabileInBusta(c.id))
                 .sort((a, b) => ((a.attack || 0) + (a.defense || 0)) - ((b.attack || 0) + (b.defense || 0)));
             const davveroDeboli = mostriTema.filter((c) => (c.level || 0) <= 4
                 && (c.attack || 0) <= 1400 && (c.defense || 0) <= 1600);
@@ -447,7 +465,7 @@
         }
         if (busta.legendaryChance && Math.random() < busta.legendaryChance) {
             const leggendarie = CardRarity.idsByRarity('legendary')
-                .filter((id) => !window.CardAcquisition || CardAcquisition.isSignatureUnlocked(id));
+                .filter(acquistabileInBusta);
             if (leggendarie.length && estratte.length) estratte[estratte.length - 1] = pesca(leggendarie, 1, casuale)[0];
         }
         // L'Elefante Volante entra nelle sole buste Premium soltanto dopo
