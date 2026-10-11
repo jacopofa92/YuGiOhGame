@@ -112,6 +112,36 @@ module.exports = {
             await page.close();
         }
 
+        // Abbandono: conferma con la finestra del gioco, mai quella del browser.
+        {
+            const { page: p, errori: err } = await nuovaPagina(t);
+            const dialoghi = [];
+            p.removeAllListeners('dialog');
+            p.on('dialog', (d) => { dialoghi.push(d.message()); d.dismiss(); });
+            try {
+                await p.goto(PAGINA);
+                await p.evaluate(() => {
+                    if (!SaveManager.hasSave()) SaveManager.createNew('Scalatore');
+                    Torre.nuovaScalata();
+                });
+                await p.reload();
+                await p.click('#abbandonaScalata');
+                t.assert(await p.isVisible('#confermaAbbandono'), 'Abbandona apre la conferma del gioco');
+                await p.click('#abbandonoNo');
+                t.assert(!(await p.isVisible('#confermaAbbandono')) && await p.evaluate(() => !!Torre.stato().inCorso),
+                    '"Continua a salire" chiude la conferma e la scalata resta');
+                await p.click('#abbandonaScalata');
+                await p.click('#abbandonoSi');
+                const s = await p.evaluate(() => Torre.stato());
+                t.assert(!s.inCorso && s.ultimoEsito && s.ultimoEsito.piano === 1, `"Abbandona" chiude la scalata: ${JSON.stringify(s)}`);
+                t.assert(await p.isVisible('#iniziaScalata'), 'Dopo l\'abbandono si può ricominciare');
+                t.assert(dialoghi.length === 0, `Nessuna finestra di sistema del browser: ${JSON.stringify(dialoghi)}`);
+                t.assert(err.length === 0, `Nessun errore in pagina: ${JSON.stringify(err)}`);
+            } finally {
+                await p.close();
+            }
+        }
+
         // Ultimo piano vinto: Torre conquistata e Sfida completata.
         {
             const { page: p } = await nuovaPagina(t);

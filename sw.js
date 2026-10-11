@@ -445,7 +445,8 @@
 // v224: modalità Puzzle (puzzle.html, js/modes/), sezione Modalità nelle Sfide.
 // v225: modalità Rivincite (rivincite.html): duelli dell'anime col mazzo del personaggio.
 // v226: Torre dei Duellanti (torre.html): 20 piani, LP che si portano, Ristoro o oggetto.
-const CACHE_NAME = 'ygo-duel-arena-v226';
+// v227: Torre, conferma di abbandono con la finestra del gioco.
+const CACHE_NAME = 'ygo-duel-arena-v227';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

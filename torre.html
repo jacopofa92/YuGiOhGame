@@ -37,6 +37,19 @@
         <div id="contenuto"></div>
     </main>
 
+    <!-- Conferma prima di abbandonare la scalata, con la grafica del gioco
+         invece della finestra di sistema del browser. -->
+    <div class="mp-fondo" id="confermaAbbandono" hidden>
+        <div class="mp-finestra" role="alertdialog" aria-modal="true" aria-labelledby="abbandonoTitolo" aria-describedby="abbandonoTesto">
+            <h2 id="abbandonoTitolo">Abbandonare la scalata?</h2>
+            <p id="abbandonoTesto">Perdi i Life Point e gli oggetti raccolti, e la prossima scalata ripartirà dal piano 1.</p>
+            <div class="mp-riga">
+                <button type="button" class="mp-btn mp-btn--pericolo" id="abbandonoSi">Abbandona</button>
+                <button type="button" class="mp-btn mp-btn--secondario" id="abbandonoNo">Continua a salire</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Il premio dopo un piano vinto: due scelte, e per la Carta fidata la carta. -->
     <div class="mp-fondo" id="premio" hidden>
         <div class="mp-finestra" role="dialog" aria-modal="true" aria-labelledby="premioTitolo">
@@ -154,8 +167,11 @@
         lascia.type = 'button';
         lascia.className = 'mp-btn mp-btn--pericolo';
         lascia.textContent = 'Abbandona la scalata';
+        lascia.id = 'abbandonaScalata';
         lascia.onclick = () => {
-            if (confirm('Abbandonare la scalata? Ricomincerai dal piano 1.')) { Torre.abbandona(); disegna(); }
+            haptic();
+            document.getElementById('confermaAbbandono').hidden = false;
+            document.getElementById('abbandonoNo').focus();
         };
         azioni.append(sfida, lascia);
         p.appendChild(azioni);
@@ -271,6 +287,19 @@
             carte.appendChild(b);
         }
     }
+
+    // La conferma di abbandono: "Continua a salire", un tocco fuori o Esc la chiudono.
+    const conferma = document.getElementById('confermaAbbandono');
+    const chiudiConferma = () => { conferma.hidden = true; };
+    document.getElementById('abbandonoNo').onclick = chiudiConferma;
+    conferma.addEventListener('click', (e) => { if (e.target === conferma) chiudiConferma(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !conferma.hidden) chiudiConferma(); });
+    document.getElementById('abbandonoSi').onclick = () => {
+        haptic();
+        chiudiConferma();
+        Torre.abbandona();
+        disegna();
+    };
 
     disegna();
 </script>
