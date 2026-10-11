@@ -5040,6 +5040,11 @@
                     const targetOwner = slot.card.equippedToOwner;
                     const targetSlot = targetOwner != null ? fieldOf(targetOwner)[slot.card.equippedToIndex] : null;
                     const validTarget = targetSlot && !targetSlot.isFaceDown && targetSlot.card.uid === slot.card.equippedToUid;
+                    // Il giocatore sta ancora scegliendo a chi agganciarla
+                    // (equipToChosenTarget in card-effects.js): non è
+                    // orfana, non ha ancora un mostro. Niente pulizia e
+                    // niente static() finché la scelta non si chiude.
+                    if (!validTarget && slot.card.equipInScelta) return;
                     if (!validTarget) {
                         stFieldOf(owner)[index] = null;
                         // Mostro Union (def.isUnion, es. Testa di Drago Y

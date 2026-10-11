@@ -4340,3 +4340,16 @@ sfide.html) pagano solo crediti, i premi speciali arriveranno con carte nuove.
 Lo sorveglia `guardrail-modalita-fuori-dal-motore`; spec `modalita-puzzle`,
 `modalita-rivincite`, `modalita-torre`. Un puzzle nuovo va aggiunto anche allo
 spec dei puzzle, con la sua soluzione.
+
+Equip con scelta asincrona (2026-10-11, bug segnalato giocando): con due o più
+bersagli la lista si apre e la scelta è asincrona, ma la Carta Equipaggiamento
+è già nella sua casella senza aggancio, e la pulizia degli Equip orfani in
+`recomputeStaticEffects` (a ogni ridisegno) la mandava al Cimitero prima del
+tocco. Con un solo bersaglio la scelta è immediata e il guasto non si vedeva.
+Rimedio: la carta porta `equipInScelta` finché si sceglie (la pulizia la
+salta) e l'effetto chiede di essere aspettato (`attendiScelta`, nella parte
+SINCRONA di activate: dentro le callback `ctx.waitForChoice` non esiste più).
+Fatto in `equipToChosenTarget` (tutte le Equip comuni), Flamberge (727) e
+Sepoltura Prematura (633). Un Equip nuovo con una scelta propria deve fare lo
+stesso. Spec `equip-con-scelta-del-bersaglio`: ogni Equip con più bersagli,
+scegliendo l'ULTIMO della lista e toccandolo come un giocatore.

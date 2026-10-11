@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { otherHandCards, blockBanishFromField, findEquipTarget, equipToChosenTarget, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost } = window.CardEffectsShared;
+    const { attendiScelta, otherHandCards, blockBanishFromField, findEquipTarget, equipToChosenTarget, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost } = window.CardEffectsShared;
 
     // ================================================================
     // 631 — Megamorfosi / Megamorph (Equipaggiamento)
@@ -149,19 +149,34 @@
         },
         activate(ctx) {
             if (ctx.findEmptyMonsterSlot(ctx.owner) === -1) return;
-            searchGraveyardWithChoice(ctx, ctx.owner, (c) => c.type === 'monster', {
+            // Con due o più mostri nel Cimitero la scelta è asincrona e la
+            // carta aspetta nella sua casella senza aggancio: stesso bug
+            // corretto in equipToChosenTarget (card-effects.js), la pulizia
+            // degli Equip orfani la mandava al Cimitero prima del tocco.
+            // `equipInScelta` la protegge, l'attesa si chiede qui (parte
+            // sincrona) e si chiude a scelta fatta.
+            const equip = ctx.card;
+            const fine = attendiScelta(ctx);
+            equip.equipInScelta = true;
+            const sceltaChiusa = () => { delete equip.equipInScelta; fine(); };
+            const aperta = searchGraveyardWithChoice(ctx, ctx.owner, (c) => c.type === 'monster', {
                 title: '⚰️ Sepoltura Prematura',
                 text: 'Scegli quale mostro Special Summonare dal Cimitero.'
             }, (card) => {
-                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
-                if (slotIndex === -1) { ctx.graveyard(ctx.owner).push(card); return; }
-                ctx.dealDamage(ctx.owner, 800);
-                ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'graveyard');
-                ctx.card.equippedToOwner = ctx.owner;
-                ctx.card.equippedToIndex = slotIndex;
-                ctx.card.equippedToUid = card.uid;
-                ctx.log(`⚰️ Sepoltura Prematura paga 800 Life Points e Special Summona ${card.name} dal Cimitero!`);
+                try {
+                    const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                    if (slotIndex === -1) { ctx.graveyard(ctx.owner).push(card); return; }
+                    ctx.dealDamage(ctx.owner, 800);
+                    ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'graveyard');
+                    equip.equippedToOwner = ctx.owner;
+                    equip.equippedToIndex = slotIndex;
+                    equip.equippedToUid = card.uid;
+                    ctx.log(`⚰️ Sepoltura Prematura paga 800 Life Points e Special Summona ${card.name} dal Cimitero!`);
+                } finally {
+                    sceltaChiusa();
+                }
             });
+            if (aperta === false) sceltaChiusa();
         },
         isEquip: true,
         static(ctx) {
@@ -2919,7 +2934,18 @@
                 ctx.field(owner).forEach((slot, index) => { if (slot && !slot.isFaceDown) candidates.push({ owner, index, card: slot.card }); });
             });
             if (candidates.length === 0) return;
-            offerHandDiscardChoice(ctx, {
+            // Due scelte asincrone di fila (lo scarto, poi il bersaglio)
+            // mentre la carta è già nella sua casella senza aggancio: stesso
+            // bug corretto in equipToChosenTarget (card-effects.js) — la
+            // pulizia degli Equip orfani la mandava al Cimitero a metà
+            // scelta. `equipInScelta` la protegge finché si sceglie, e
+            // l'attesa va chiesta QUI, nella parte sincrona: dentro le
+            // callback ctx.waitForChoice non c'è più.
+            const card = ctx.card;
+            const fine = attendiScelta(ctx);
+            card.equipInScelta = true;
+            const sceltaChiusa = () => { delete card.equipInScelta; fine(); };
+            const avviata = offerHandDiscardChoice(ctx, {
                 title: '⚔️ Flamberge del Male Infranto',
                 text: 'Scegli quale carta scartare dalla mano.'
             }, (discarded) => {
@@ -2927,19 +2953,26 @@
                 // o dell'avversario), non più sempre il primo trovato —
                 // stesso schema già usato da Dispositivo di Evacuazione
                 // Forzata (id 671, chooseFieldMonsterTarget).
-                chooseFieldMonsterTarget(ctx, candidates, {
+                const aperta = chooseFieldMonsterTarget(ctx, candidates, {
                     title: '⚔️ Flamberge del Male Infranto',
                     text: 'Scegli a quale mostro equipaggiarti (tuo o dell\'avversario).',
                     // Checkpoint di targeting: come ogni Equip, vedi
                     // equipToChosenTarget in card-effects.js.
-                    dichiara: true
+                    dichiara: true,
+                    onNegato: sceltaChiusa
                 }, (choice) => {
-                    ctx.card.equippedToOwner = choice.owner;
-                    ctx.card.equippedToIndex = choice.index;
-                    ctx.card.equippedToUid = choice.card.uid;
-                    ctx.log(`⚔️ Flamberge del Male Infranto scarta ${discarded.name} e si equipaggia a ${choice.card.name}!`);
+                    try {
+                        card.equippedToOwner = choice.owner;
+                        card.equippedToIndex = choice.index;
+                        card.equippedToUid = choice.card.uid;
+                        ctx.log(`⚔️ Flamberge del Male Infranto scarta ${discarded.name} e si equipaggia a ${choice.card.name}!`);
+                    } finally {
+                        sceltaChiusa();
+                    }
                 });
+                if (aperta === false) sceltaChiusa();
             });
+            if (avviata === false) sceltaChiusa();
         },
         isEquip: true,
         static(ctx) {

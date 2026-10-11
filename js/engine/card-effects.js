@@ -554,7 +554,20 @@
     function equipToChosenTarget(ctx, filterFn, options) {
         const candidati = collectEquipTargets(ctx, filterFn);
         if (candidati.length === 0) return false;
-        return chooseFieldCardTarget(ctx, candidati, {
+        // BUG CORRETTO (segnalato giocando): con DUE o più mostri idonei la
+        // scelta apre la lista ed è asincrona, ma la Carta Equipaggiamento è
+        // già nella sua casella senza aggancio — e la pulizia degli Equip
+        // orfani in recomputeStaticEffects (duel-engine.js), che gira a
+        // ogni ridisegno, la mandava al Cimitero prima del tocco: il log
+        // diceva "equipaggiata" su una carta già nel Cimitero. Con un solo
+        // candidato la scelta è immediata, ed è per questo che sembrava
+        // funzionare. Due rimedi: la carta porta `equipInScelta` finché la
+        // lista è aperta (la pulizia la salta), e la risoluzione ASPETTA la
+        // scelta (chooseFieldCardTargetWaiting) invece di proseguire.
+        const card = ctx.card;
+        card.equipInScelta = true;
+        const sceltaChiusa = () => { delete card.equipInScelta; };
+        return chooseFieldCardTargetWaiting(ctx, candidati, {
             title: (options && options.title) || `⚔️ ${ctx.card.name}`,
             text: (options && options.text) || 'Scegli a quale tuo mostro equipaggiare questa carta.',
             // Equipaggiare è scegliere quel mostro come bersaglio (regola
@@ -565,8 +578,10 @@
             // sottrae, la carta resta senza aggancio e la pulizia di
             // recomputeStaticEffects la manda al Cimitero, come per un
             // Equip che perde il suo mostro.
-            dichiara: true
+            dichiara: true,
+            onNegato: sceltaChiusa
         }, (scelto) => {
+            sceltaChiusa();
             // Lo slot si ricontrolla ORA: fra l'apertura del picker e il
             // click il mostro scelto può essere sparito dal Terreno, e
             // attachEquip legge l'indice senza verificare nulla.
