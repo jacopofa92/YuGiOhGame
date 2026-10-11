@@ -464,7 +464,17 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
             // Una scelta fatta qui sopra non toglie mai l'attaccante dal
             // campo, ma resolveBattleDamage legge la sua carta senza
             // controlli: meglio uscire pulito che rompersi a metà.
-            if (attackerField[attackerIndex] !== attackerSlot) {
+            //
+            // Il campo si RILEGGE adesso, non si usa quello ricordato a
+            // inizio battaglia: se nel frattempo l'elenco delle caselle è
+            // stato sostituito da uno nuovo, il vecchio conteneva ancora lo
+            // slot e il controllo passava, mentre resolveBattleDamage (che
+            // rilegge il campo) trovava un vuoto — "Cannot read properties
+            // of null (reading 'card')". Visto sulla suite di GitHub nel
+            // test del bot (annotazione "Test instabile").
+            const campoAttaccanteOra = fieldOfOwner(attackerOwner);
+            const campoDifensoreOra = fieldOfOwner(effectiveDefenderOwner);
+            if (attackerField[attackerIndex] !== attackerSlot || campoAttaccanteOra[attackerIndex] !== attackerSlot) {
                 if (attackerOwner === 'player') clearSelection(); else updateUI();
                 done();
                 return;
@@ -479,7 +489,7 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
             // ha reso ripetibile. SEMPLIFICAZIONE: nel gioco vero scatta la
             // "ripetizione dell'attacco" (l'attaccante può sceglierne un
             // altro o rinunciare); qui l'attacco si ferma e conta come fatto.
-            if (effectiveTargetIndex !== -1 && !effectiveDefenderField[effectiveTargetIndex]) {
+            if (effectiveTargetIndex !== -1 && (!effectiveDefenderField[effectiveTargetIndex] || !campoDifensoreOra[effectiveTargetIndex])) {
                 addToLog('🌫️ Il bersaglio non è più sul Terreno: l\'attacco si ferma.');
                 attackerSlot.hasAttacked = true;
                 if (attackerOwner === 'player') clearSelection(); else updateUI();
