@@ -29,7 +29,7 @@ const torreDatabase = {
         { daPiano: 1, aPiano: 4, livello: 'Facile', campo: 'campoPrato.jpg',
             avversari: ['rex', 'weevil', 'mako', 'bonz', 'panik', 'tea', 'tristan'] },
         { daPiano: 6, aPiano: 9, livello: 'Medio', campo: 'arenaRegnoDeiDuellanti.jpg',
-            avversari: ['mai', 'joey', 'espaRoba', 'paradoxBrothers', 'duke', 'bandit_keith'] },
+            avversari: ['mai', 'joey', 'espaRoba', 'paradoxBrothers', 'duke'] },
         { daPiano: 11, aPiano: 14, livello: 'Medio', campo: 'citta.jpg',
             avversari: ['bakura', 'arkana', 'strings', 'odion', 'lumis', 'umbra'] },
         { daPiano: 16, aPiano: 19, livello: 'Difficile', campo: 'torreDeiDuelli.jpg',

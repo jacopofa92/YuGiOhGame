@@ -48,25 +48,28 @@ const Torre = (function () {
 
     /**
      * Gli avversari di tutti i piani, sorteggiati una volta all'inizio della
-     * scalata: così ricaricando la pagina non cambiano. Nessuno si ripete
-     * dentro la stessa fascia finché ce ne sono abbastanza.
+     * scalata: così ricaricando la pagina non cambiano. Nessuno si incontra
+     * due volte nella stessa scalata, nemmeno fra fasce diverse e nemmeno un
+     * boss (Bandit Keith al piano 5 e di nuovo al 7 era capitato davvero):
+     * si pesca prima fra chi non è ancora uscito, e solo se la fascia è
+     * esaurita si accetta un ritorno.
      * @returns {string[]}
      */
     function sorteggiaAvversari() {
         /** @type {string[]} */
         const out = [];
-        /** @type {Map<FasciaTorre, string[]>} */
-        const mazzi = new Map();
+        // I boss sono fissi: contano come già incontrati fin dall'inizio.
+        const usati = new Set(Object.values(db().boss).map((b) => b.avversario));
         for (let piano = 1; piano <= db().piani; piano++) {
             const boss = db().boss[piano];
             if (boss) { out.push(boss.avversario); continue; }
             const f = fasciaDi(piano);
             if (!f) { out.push('kaiba'); continue; }
-            let rimasti = mazzi.get(f);
-            if (!rimasti || rimasti.length === 0) rimasti = f.avversari.slice();
-            const i = Math.floor(Math.random() * rimasti.length);
-            out.push(rimasti.splice(i, 1)[0]);
-            mazzi.set(f, rimasti);
+            const nuovi = f.avversari.filter((a) => !usati.has(a));
+            const pool = nuovi.length ? nuovi : f.avversari;
+            const scelto = pool[Math.floor(Math.random() * pool.length)];
+            usati.add(scelto);
+            out.push(scelto);
         }
         return out;
     }

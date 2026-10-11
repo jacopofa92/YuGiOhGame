@@ -44,7 +44,28 @@ module.exports = {
             const sc = await page.evaluate(() => Torre.stato().inCorso);
             t.assert(sc && sc.piano === 1 && sc.lp === 8000 && sc.avversari.length === 20, `Scalata nuova al piano 1 con 8000 LP: ${JSON.stringify(sc)}`);
             t.assert(sc.avversari[4] === 'bandit_keith' && sc.avversari[19] === 'yamiYugi', 'I boss dei piani 5 e 20 sono quelli del catalogo');
-            t.assert(await page.$$eval('.mp-piano', (els) => els.length) === 20, 'La griglia mostra 20 piani');
+            t.assert(await page.$$eval('.mp-piano', (els) => els.length) === 20, 'La torre mostra 20 piani');
+            // Nessuno si incontra due volte nella stessa scalata (Bandit Keith,
+            // boss del 5, era ricomparso al 7). Si sorteggia più volte per
+            // non affidarsi al caso di un'unica estrazione.
+            const doppioni = await page.evaluate(() => {
+                const trovati = [];
+                for (let i = 0; i < 40; i++) {
+                    const a = Torre.nuovaScalata().inCorso.avversari;
+                    if (new Set(a).size !== a.length) trovati.push(a.join(','));
+                }
+                return trovati;
+            });
+            t.assert(doppioni.length === 0, `Scalate con un avversario ripetuto: ${doppioni.slice(0, 2).join(' | ')}`);
+            await page.reload();
+            // Sul piano attuale c'è il pulsante per sfidarlo, e porta allo stesso duello del pannello.
+            const sfide = await page.evaluate(() => [
+                (document.querySelector('.tw-piano.is-attuale #sfidaPianoTorre') || {}).getAttribute
+                    ? document.querySelector('.tw-piano.is-attuale #sfidaPianoTorre').getAttribute('href') : null,
+                document.getElementById('sfidaPiano').getAttribute('href'),
+                document.querySelector('.tw-piano.is-attuale') && document.querySelector('.tw-piano.is-attuale').dataset.piano
+            ]);
+            t.assert(sfide[0] && sfide[0] === sfide[1] && sfide[2] === '1', `"Sfida" sul piano attuale (1) porta al duello giusto: ${JSON.stringify(sfide)}`);
 
             // Piano 1: si gioca e si vince, finendo con 6500 LP.
             await Promise.all([page.waitForURL(/duelMonstersCore\.html\?mode=torre&piano=1/), page.click('#sfidaPiano')]);

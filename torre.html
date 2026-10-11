@@ -91,9 +91,10 @@
         disegnaEsito(s);
         const box = document.getElementById('contenuto');
         box.innerHTML = '';
-        if (!s.inCorso) { box.appendChild(introduzione()); return; }
+        if (!s.inCorso) { box.appendChild(introduzione()); box.appendChild(torreGrafica(null)); return; }
         box.appendChild(pannelloScalata(s.inCorso));
-        box.appendChild(griglia(s.inCorso));
+        box.appendChild(torreGrafica(s.inCorso));
+        inquadraPianoAttuale();
         if (s.inCorso.sceltaInSospeso) apriPremio(s.inCorso);
     }
 
@@ -178,47 +179,109 @@
         return p;
     }
 
-    /** I venti piani a riquadri, dal basso (1) verso l'alto (20). Gli avversari futuri restano un mistero, tranne i boss. */
-    function griglia(sc) {
-        const g = document.createElement('div');
-        g.className = 'mp-torre';
-        g.setAttribute('aria-label', 'I piani della Torre');
+    /**
+     * La torre vista di lato: il piano 20 in cima, l'1 in basso, la cima con
+     * la corona sopra e l'ingresso sotto. Si stringe salendo (un tratto ogni
+     * cinque piani), i boss sporgono come terrazze. Gli avversari dei piani
+     * ancora da raggiungere restano un mistero, tranne i boss. `sc` null =
+     * anteprima prima di cominciare (nessun piano raggiunto).
+     */
+    function torreGrafica(sc) {
         const n = Torre.piani();
-        for (let riga = Math.ceil(n / 5) - 1; riga >= 0; riga--) {
-            for (let col = 0; col < 5; col++) {
-                const piano = riga * 5 + col + 1;
-                if (piano > n) continue;
-                const fatto = piano < sc.piano;
-                const attuale = piano === sc.piano;
-                const boss = Torre.eBoss(piano);
-                const t = document.createElement('div');
-                t.className = 'mp-piano' + (fatto ? ' is-fatto' : '') + (attuale ? ' is-attuale' : '') + (boss ? ' is-boss' : '');
-                t.dataset.piano = String(piano);
-                const visibile = fatto || attuale || boss;
-                const p = visibile ? pers(Torre.pianoDi(sc, piano).avversario) : null;
-                if (p && p.image) {
-                    const img = document.createElement('img');
-                    img.alt = '';
-                    img.onerror = () => img.remove();
-                    img.src = p.image;
-                    t.appendChild(img);
-                } else if (!visibile) {
-                    const q = document.createElement('span');
-                    q.className = 'mp-piano-ignoto';
-                    q.textContent = '?';
-                    t.appendChild(q);
-                }
-                const num = document.createElement('span');
-                num.className = 'mp-piano-num';
-                num.textContent = String(piano);
-                t.appendChild(num);
-                t.title = visibile && p ? `Piano ${piano}: ${p.name}` : `Piano ${piano}`;
-                g.appendChild(t);
+        const attuale = sc ? sc.piano : 0;
+        const tw = document.createElement('div');
+        tw.className = 'tw';
+        tw.setAttribute('aria-label', 'I piani della Torre, dal basso verso l\'alto');
+        const cima = document.createElement('div');
+        cima.className = 'tw-cima';
+        cima.innerHTML = '<span class="tw-cima-corona" aria-hidden="true">👑</span>';
+        const scritta = document.createElement('div');
+        scritta.className = 'tw-cima-scritta';
+        scritta.textContent = 'Cima della Torre';
+        const piani = document.createElement('ol');
+        piani.className = 'tw-piani';
+        for (let piano = n; piano >= 1; piano--) {
+            const boss = Torre.eBoss(piano);
+            const fatto = piano < attuale;
+            const qui = piano === attuale;
+            const visibile = !!sc && (fatto || qui || boss);
+            const info = sc ? Torre.pianoDi(sc, piano) : (torreDatabase.boss[piano] || null);
+            const p = (visibile || (!sc && boss)) && info ? pers(info.avversario) : null;
+            const li = document.createElement('li');
+            li.className = 'mp-piano tw-piano' + (boss ? ' is-boss' : '') + (fatto ? ' is-fatto' : '') + (qui ? ' is-attuale' : '') + (!fatto && !qui ? ' is-futuro' : '');
+            li.dataset.piano = String(piano);
+            // Un tratto ogni cinque piani: dal 91% in basso al 70% in cima. Le
+            // terrazze dei boss aggiungono il 9%, quindi la più larga arriva
+            // esattamente al 100%: oltre, su un telefono la pagina scorrerebbe di lato.
+            li.style.setProperty('--largo', (91 - Math.floor((piano - 1) / 5) * 7) + '%');
+            const targa = document.createElement('span');
+            targa.className = 'tw-targa';
+            targa.textContent = String(piano);
+            const finestra = document.createElement('span');
+            finestra.className = 'tw-finestra';
+            if (p && p.image) {
+                const img = document.createElement('img');
+                img.alt = '';
+                img.onerror = () => { img.remove(); finestra.textContent = '?'; };
+                img.src = p.image;
+                finestra.appendChild(img);
+            } else {
+                const q = document.createElement('span');
+                q.className = 'tw-finestra-ignota';
+                q.textContent = '?';
+                finestra.appendChild(q);
             }
+            const testo = document.createElement('span');
+            testo.className = 'tw-testo';
+            const nome = document.createElement('span');
+            nome.className = 'tw-nome';
+            nome.textContent = p ? p.name : 'Avversario ignoto';
+            const det = document.createElement('span');
+            det.className = 'tw-dettaglio';
+            det.textContent = boss ? '👑 Boss' + (info ? ' · ' + (LIVELLI[info.livello] || info.livello) : '')
+                : (fatto ? 'Superato' : (qui ? 'Tocca a te' : (info && sc ? 'Livello ' + (LIVELLI[info.livello] || info.livello) : '')));
+            testo.append(nome, det);
+            // Sul piano dove sei, il duello si lancia da lì: la pagina si
+            // posiziona su questo piano e il pulsante del pannello resta in alto,
+            // fuori vista su un telefono.
+            if (qui && !sc.sceltaInSospeso) {
+                const sfida = document.createElement('a');
+                sfida.className = 'tw-sfida';
+                sfida.id = 'sfidaPianoTorre';
+                sfida.href = Torre.urlDuello(sc);
+                sfida.textContent = '⚔️ Sfida';
+                sfida.onclick = haptic;
+                det.replaceWith(sfida);
+            }
+            li.append(targa, finestra, testo);
+            if (qui) {
+                const pedina = document.createElement('span');
+                pedina.className = 'tw-pedina';
+                pedina.title = 'Sei qui';
+                const img = document.createElement('img');
+                img.alt = 'Sei qui';
+                img.onerror = () => { img.remove(); pedina.textContent = '🧍'; };
+                img.src = 'images/characters/mirror.jpg';
+                pedina.appendChild(img);
+                li.appendChild(pedina);
+            }
+            li.title = p ? `Piano ${piano}: ${p.name}` : `Piano ${piano}`;
+            piani.appendChild(li);
         }
-        return g;
+        const base = document.createElement('div');
+        base.className = 'tw-base';
+        base.innerHTML = '<span class="tw-base-scritta">Ingresso</span>';
+        tw.append(scritta, cima, piani, base);
+        return tw;
     }
 
+    /** Porta in vista il piano dove sei (la torre è alta: senza, si partirebbe dalla cima). */
+    function inquadraPianoAttuale() {
+        const qui = document.querySelector('.tw-piano.is-attuale');
+        if (!qui) return;
+        const dolce = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        requestAnimationFrame(() => qui.scrollIntoView({ block: 'center', behavior: dolce ? 'smooth' : 'auto' }));
+    }
     /** La scelta dopo un piano vinto: non si sale finché non si sceglie. */
     function apriPremio(sc) {
         const fondo = document.getElementById('premio');

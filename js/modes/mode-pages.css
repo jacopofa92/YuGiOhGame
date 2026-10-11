@@ -155,36 +155,231 @@ body::before {
 .mp-lp-riempi { height: 100%; background: linear-gradient(90deg, #c0392b, #f39c12 45%, #7fd18b); border-radius: inherit; }
 .mp-oggetti { display: flex; flex-wrap: wrap; gap: 6px; }
 .mp-oggetto { font-size: 0.78rem; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink); background: rgba(247, 215, 116, 0.06); }
-.mp-torre { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; width: min(100%, 520px); margin: 0 auto; }
-.mp-piano {
+/*
+ * LA TORRE, vista di lato: piani impilati dal basso (1) all'alto (20).
+ * Si stringe salendo (--largo per tratto, calcolato in torre.html), i boss
+ * sporgono come terrazze, ogni piano ha una finestra ad arco con il ritratto
+ * dell'avversario. I mattoni sono solo gradienti: nessuna immagine da
+ * caricare, quindi niente da aspettare né da dimenticare in pubblicazione.
+ * La classe .mp-piano resta su ogni piano: la usa lo spec della Torre.
+ */
+.tw {
+    --pietra: #4a3a24;
+    --pietra-scura: #2b2114;
+    --fuga: rgba(0, 0, 0, 0.38);
+    --luce: rgba(247, 215, 116, 0.85);
     position: relative;
-    aspect-ratio: 1;
-    border-radius: 10px;
-    border: 1px solid var(--line);
-    background: rgba(16, 13, 9, 0.7);
+    width: min(100%, 440px);
+    margin: 6px auto 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    filter: drop-shadow(0 18px 24px rgba(0, 0, 0, 0.55));
+}
+/* La cima: una piramide d'oro con la corona. */
+.tw-cima {
+    position: relative;
+    width: 74%;
+    height: 92px;
+    display: grid;
+    place-items: end center;
+    padding-bottom: 8px;
+    clip-path: polygon(50% 0, 100% 100%, 0 100%);
+    background:
+        linear-gradient(115deg, rgba(255, 244, 200, 0.55) 0 30%, transparent 60%),
+        linear-gradient(180deg, #f7d774, #b8862b 70%, #7a5418);
+}
+.tw-cima-corona { font-size: 1.6rem; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.5)); margin-bottom: 4px; }
+.tw-cima-scritta {
+    margin-top: 6px;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 0.78rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--gold);
+}
+.tw-piani { list-style: none; width: 100%; display: flex; flex-direction: column; align-items: center; }
+.tw-piano {
+    position: relative;
+    width: var(--largo, 100%);
+    height: 74px;
+    display: grid;
+    grid-template-columns: 44px 58px 1fr;
+    align-items: center;
+    gap: 10px;
+    padding: 0 12px;
+    color: var(--ink-dim);
+    border-left: 3px solid var(--pietra-scura);
+    border-right: 3px solid var(--pietra-scura);
+    background:
+        /* due file di mattoni sfalsati per piano */
+        repeating-linear-gradient(90deg, transparent 0 46px, var(--fuga) 46px 48px) 0 0 / 100% 37px no-repeat,
+        repeating-linear-gradient(90deg, transparent 0 22px, var(--fuga) 22px 24px, transparent 24px 46px) 0 37px / 100% 37px no-repeat,
+        linear-gradient(180deg, var(--fuga) 0 2px, transparent 2px 35px, var(--fuga) 35px 37px, transparent 37px),
+        linear-gradient(90deg, var(--pietra-scura), var(--pietra) 22%, #5b4a2e 50%, var(--pietra) 78%, var(--pietra-scura));
+    transition: filter 0.2s;
+}
+/* Il cornicione sotto ogni piano. */
+.tw-piano::after {
+    content: '';
+    position: absolute;
+    left: -8px;
+    right: -8px;
+    bottom: -3px;
+    height: 6px;
+    border-radius: 2px;
+    background: linear-gradient(180deg, #7a6440, #3a2c18);
+    z-index: 1;
+}
+.tw-piano.is-futuro { filter: brightness(0.62) saturate(0.7); }
+.tw-piano.is-fatto { filter: brightness(0.85); }
+.tw-piano.is-boss {
+    width: calc(var(--largo, 100%) + 9%);
+    height: 86px;
+    border-color: #8a6420;
+    background:
+        linear-gradient(180deg, rgba(243, 156, 18, 0.16), transparent 40%),
+        repeating-linear-gradient(90deg, transparent 0 46px, var(--fuga) 46px 48px) 0 0 / 100% 43px no-repeat,
+        repeating-linear-gradient(90deg, transparent 0 22px, var(--fuga) 22px 24px, transparent 24px 46px) 0 43px / 100% 43px no-repeat,
+        linear-gradient(90deg, #3a2a12, #6b5128 30%, #7d6131 50%, #6b5128 70%, #3a2a12);
+}
+.tw-targa {
+    width: 40px;
+    height: 30px;
     display: grid;
     place-items: center;
-    overflow: hidden;
-    color: var(--ink-dim);
-}
-.mp-piano img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 20%; opacity: 0.85; }
-.mp-piano-num {
-    position: absolute;
-    left: 5px;
-    bottom: 4px;
-    z-index: 1;
-    font-size: 0.72rem;
-    font-weight: bold;
-    color: var(--ink);
-    text-shadow: 0 1px 3px #000;
+    border-radius: 4px;
+    border: 1px solid rgba(247, 215, 116, 0.45);
+    background: linear-gradient(180deg, #2a1f10, #120d07);
+    color: var(--gold);
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 0.95rem;
     font-variant-numeric: tabular-nums;
+    position: relative;
+    z-index: 2;
 }
-.mp-piano-ignoto { font-size: 1.3rem; opacity: 0.5; }
-.mp-piano.is-boss { border-color: rgba(243, 156, 18, 0.7); }
-.mp-piano.is-boss::after { content: '👑'; position: absolute; top: 3px; right: 4px; font-size: 0.8rem; z-index: 1; }
-.mp-piano.is-fatto img { filter: grayscale(1) brightness(0.55); }
-.mp-piano.is-fatto::before { content: '✓'; position: absolute; inset: 0; display: grid; place-items: center; z-index: 1; color: var(--done); font-size: 1.6rem; text-shadow: 0 1px 4px #000; }
-.mp-piano.is-attuale { border: 2px solid var(--gold); box-shadow: 0 0 16px rgba(247, 215, 116, 0.45); }
+/* Finestra ad arco: il ritratto dell'avversario dietro i vetri. */
+.tw-finestra {
+    position: relative;
+    z-index: 2;
+    width: 54px;
+    height: 58px;
+    border-radius: 27px 27px 4px 4px;
+    border: 3px solid #7a6440;
+    background: radial-gradient(circle at 50% 35%, #1a1410, #050403);
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8);
+}
+.tw-finestra img { width: 100%; height: 100%; object-fit: cover; object-position: center 18%; }
+.tw-finestra-ignota { color: rgba(247, 215, 116, 0.35); font-family: Georgia, serif; font-size: 1.5rem; }
+.tw-piano.is-fatto .tw-finestra img { filter: grayscale(1) brightness(0.55); }
+.tw-piano.is-fatto .tw-finestra::after {
+    content: '✓';
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: var(--done);
+    font-size: 1.5rem;
+    text-shadow: 0 1px 4px #000;
+}
+.tw-piano.is-boss .tw-finestra { border-color: #c9962e; }
+.tw-testo { position: relative; z-index: 2; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.tw-nome {
+    font-family: Georgia, 'Times New Roman', serif;
+    color: var(--ink);
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: 0 1px 2px #000;
+}
+.tw-dettaglio { font-size: 0.72rem; color: var(--ink-dim); letter-spacing: 0.03em; text-shadow: 0 1px 2px #000; }
+.tw-piano.is-boss .tw-dettaglio { color: var(--gold); }
+/* Il piano dove sei: finestra accesa, contorno d'oro, la tua pedina. */
+.tw-piano.is-attuale {
+    filter: none;
+    z-index: 3;
+    box-shadow: 0 0 0 2px var(--gold), 0 0 26px rgba(247, 215, 116, 0.45);
+}
+.tw-piano.is-attuale .tw-finestra { border-color: var(--gold); box-shadow: 0 0 16px rgba(247, 215, 116, 0.6), inset 0 0 8px rgba(0,0,0,0.6); }
+.tw-pedina {
+    position: absolute;
+    right: -20px;
+    top: 50%;
+    z-index: 4;
+    width: 46px;
+    height: 46px;
+    margin-top: -23px;
+    border-radius: 50%;
+    border: 2px solid var(--gold);
+    background: #120d07;
+    overflow: hidden;
+    box-shadow: 0 0 14px rgba(247, 215, 116, 0.7);
+    animation: tw-pedina 1.8s ease-in-out infinite;
+}
+.tw-pedina img { width: 100%; height: 100%; object-fit: cover; }
+@keyframes tw-pedina { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+.tw-sfida {
+    align-self: flex-start;
+    margin-top: 3px;
+    padding: 3px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--gold);
+    background: linear-gradient(180deg, rgba(247,215,116,0.35), rgba(243,156,18,0.2));
+    color: #fff4d0;
+    font-size: 0.78rem;
+    font-weight: bold;
+    text-decoration: none;
+    text-shadow: 0 1px 2px #000;
+    box-shadow: 0 0 10px rgba(247, 215, 116, 0.35);
+}
+.tw-sfida:active { transform: scale(0.96); }
+.tw-sfida:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+/* La base: il portale d'ingresso. */
+.tw-base {
+    width: 94%;
+    height: 54px;
+    position: relative;
+    display: grid;
+    place-items: end center;
+    padding-bottom: 6px;
+    background: linear-gradient(180deg, #3a2c18, #1c150b);
+    border-top: 4px solid #7a6440;
+    border-radius: 0 0 6px 6px;
+}
+.tw-base::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 46px;
+    height: 40px;
+    margin-left: -23px;
+    border-radius: 23px 23px 0 0;
+    background: radial-gradient(circle at 50% 80%, rgba(247, 215, 116, 0.35), #050403 70%);
+    border: 2px solid #7a6440;
+    border-bottom: none;
+}
+.tw-base-scritta {
+    position: relative;
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    transform: translateY(-46px);
+}
+@media (max-width: 520px) {
+    .tw-piano { grid-template-columns: 38px 48px 1fr; gap: 8px; padding: 0 10px; height: 66px; }
+    .tw-piano.is-boss { height: 76px; }
+    .tw-finestra { width: 46px; height: 50px; border-radius: 23px 23px 4px 4px; }
+    .tw-targa { width: 34px; height: 26px; font-size: 0.85rem; }
+    .tw-nome { font-size: 0.85rem; }
+    .tw-pedina { right: -14px; width: 40px; height: 40px; margin-top: -20px; }
+}
+@media (prefers-reduced-motion: reduce) { .tw-pedina { animation: none; } }
 .mp-carte { display: flex; flex-direction: column; gap: 6px; max-height: 50vh; overflow-y: auto; }
 .mp-carta { padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); background: rgba(247,215,116,0.05); color: var(--ink); text-align: left; font: inherit; font-size: 0.88rem; cursor: pointer; }
 .mp-carta:hover, .mp-carta:focus-visible { border-color: var(--gold); outline: none; }
