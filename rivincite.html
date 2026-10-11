@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<!-- Opt-in STATICO alla View Transitions API — deve stare qui, non iniettato via JS in ritardo (vedi js/audio/audio-manager.js per la storia completa del bug che questo risolve). -->
+<style>@view-transition { navigation: auto; }</style>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="images/icons/icon-192.png">
+<link rel="apple-touch-icon" href="images/icons/icon-180.png">
+<meta name="theme-color" content="#0b0d14">
+<style>html, body { background: #0b0d14; }</style>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Millennium">
+<script src="js/ui/error-recovery.js"></script>
+<!-- Accesso obbligatorio (js/cloud/auth-gate.js). -->
+<script src="js/vendor/supabase.min.js"></script>
+<script src="js/cloud/supabase-config.js"></script>
+<script src="js/cloud/cloud-sync.js"></script>
+<script src="js/cloud/auto-sync.js"></script>
+<script src="js/cloud/auth-gate.js"></script>
+<script src="js/pwa-register.js"></script>
+<link rel="stylesheet" href="js/ui/page-loader.css">
+<link rel="stylesheet" href="js/ui/topbar.css">
+<link rel="stylesheet" href="js/ui/deck-switcher.css">
+<link rel="stylesheet" href="js/modes/mode-pages.css">
+<title>Yu-Gi-Oh! Millennium Duel Arena — Rivincite</title>
+</head>
+<body>
+    <script src="js/ui/page-loader.js"></script>
+    <div id="topbarMount"></div>
+
+    <main class="mp-main">
+        <p class="mp-intro">I duelli famosi dell'anime, giocati nei panni di uno dei due duellanti e con il suo mazzo. Il livello che scegli cambia solo l'avversario: tu hai sempre il mazzo completo del personaggio.</p>
+        <div class="mp-riepilogo" id="riepilogo"></div>
+        <div id="elenco"></div>
+    </main>
+
+    <div class="mp-fondo" id="sceltaLivello" hidden>
+        <div class="mp-finestra" role="dialog" aria-modal="true" aria-labelledby="sceltaTitolo">
+            <h2 id="sceltaTitolo"></h2>
+            <p id="sceltaDesc"></p>
+            <div class="mp-scelte">
+                <button type="button" class="mp-scelta" data-livello="Facile">
+                    <span class="mp-scelta-icona">🥉</span>
+                    <span><span class="mp-scelta-nome">Facile</span><span class="mp-scelta-desc">L'avversario usa il suo mazzo più leggero.</span></span>
+                </button>
+                <button type="button" class="mp-scelta" data-livello="Medio">
+                    <span class="mp-scelta-icona">🥈</span>
+                    <span><span class="mp-scelta-nome">Normale</span><span class="mp-scelta-desc">Un avversario all'altezza del duello originale.</span></span>
+                </button>
+                <button type="button" class="mp-scelta" data-livello="Difficile">
+                    <span class="mp-scelta-icona">🥇</span>
+                    <span><span class="mp-scelta-nome">Difficile</span><span class="mp-scelta-desc">Il mazzo completo dell'avversario e l'IA più attenta.</span></span>
+                </button>
+            </div>
+            <button type="button" class="mp-btn mp-btn--secondario" id="sceltaAnnulla">Annulla</button>
+        </div>
+    </div>
+
+<script src="js/data/characters-db.js"></script>
+<script src="js/data/rivincite-db.js"></script>
+<script src="js/save-manager.js"></script>
+<script src="js/audio/audio-manager.js"></script>
+<script src="js/native/app-back-button.js"></script>
+<script src="js/native/haptics.js"></script>
+<script src="js/native/native-save-backup.js"></script>
+<script src="js/ui/icon-library.js"></script>
+<script src="js/ui/deck-switcher.js"></script>
+<script src="js/ui/topbar.js"></script>
+<script>
+    PageTopbar.render('#topbarMount', { icon: 'rematch', title: 'Rivincite' });
+    initAudioManager();
+    Icons.hydrate();
+
+    const LIVELLI = ['Facile', 'Medio', 'Difficile'];
+    const MEDAGLIE = { Facile: '🥉', Medio: '🥈', Difficile: '🥇' };
+    const stato = SaveManager.getModeState('rivincite') || {};
+    const pers = (id) => characterDatabase.find((c) => c.id === id) || { name: id, image: null };
+
+    // Riepilogo: quante Rivincite vinte almeno una volta, e quante medaglie.
+    let vinte = 0;
+    let medaglie = 0;
+    rivinciteDatabase.forEach((r) => {
+        const v = (stato[r.id] || {}).vinte || {};
+        const n = LIVELLI.filter((l) => v[l]).length;
+        if (n > 0) vinte++;
+        medaglie += n;
+    });
+    document.getElementById('riepilogo').innerHTML =
+        `<span>⚔️ Vinte <strong>${vinte}/${rivinciteDatabase.length}</strong></span>` +
+        `<span>🏅 Medaglie <strong>${medaglie}/${rivinciteDatabase.length * 3}</strong></span>`;
+
+    /** Ritratto rotondo, con l'iniziale se l'immagine non c'è. */
+    function ritratto(p) {
+        const d = document.createElement('div');
+        d.className = 'mp-emblema';
+        d.textContent = (p.name || '?').charAt(0);
+        if (p.image) {
+            const img = document.createElement('img');
+            img.alt = '';
+            img.onload = () => { d.textContent = ''; d.appendChild(img); };
+            img.src = p.image;
+        }
+        return d;
+    }
+
+    // L'ordine del catalogo è quello della storia: un gruppo per epoca.
+    const elenco = document.getElementById('elenco');
+    let epocaCorrente = null;
+    let lista = null;
+    rivinciteDatabase.forEach((r) => {
+        if (r.epoca !== epocaCorrente) {
+            epocaCorrente = r.epoca;
+            const t = document.createElement('div');
+            t.className = 'mp-sezione';
+            t.textContent = r.epoca;
+            elenco.appendChild(t);
+            lista = document.createElement('div');
+            lista.className = 'mp-elenco';
+            elenco.appendChild(lista);
+        }
+        const g = pers(r.giocatore);
+        const a = pers(r.avversario);
+        const v = (stato[r.id] || {}).vinte || {};
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'mp-voce mp-voce--duo' + (LIVELLI.some((l) => v[l]) ? ' is-fatta' : '');
+        b.dataset.rivincita = r.id;
+        const duo = document.createElement('div');
+        duo.className = 'mp-duo';
+        duo.append(ritratto(g), ritratto(a));
+        const testo = document.createElement('div');
+        testo.innerHTML = '<div class="mp-titolo"></div><div class="mp-desc"></div><div class="mp-meta"></div>';
+        testo.querySelector('.mp-titolo').textContent = r.titolo;
+        testo.querySelector('.mp-desc').textContent = r.descrizione;
+        testo.querySelector('.mp-meta').textContent = `${g.name} contro ${a.name}`;
+        const med = document.createElement('div');
+        med.className = 'mp-medaglie';
+        med.setAttribute('aria-label', 'Medaglie: ' + (LIVELLI.filter((l) => v[l]).join(', ') || 'nessuna'));
+        LIVELLI.forEach((l) => {
+            const s = document.createElement('span');
+            s.className = 'mp-medaglia' + (v[l] ? ' is-vinta' : '');
+            s.textContent = MEDAGLIE[l];
+            med.appendChild(s);
+        });
+        b.append(duo, testo, med);
+        b.addEventListener('click', () => apriScelta(r));
+        lista.appendChild(b);
+    });
+
+    // Scelta del livello, poi il duello.
+    let scelta = null;
+    const fondo = document.getElementById('sceltaLivello');
+    function apriScelta(r) {
+        scelta = r;
+        if (window.NativeHaptics) NativeHaptics.light();
+        document.getElementById('sceltaTitolo').textContent = r.titolo;
+        document.getElementById('sceltaDesc').textContent = `Giochi come ${pers(r.giocatore).name}, con il suo mazzo, contro ${pers(r.avversario).name}.`;
+        fondo.hidden = false;
+    }
+    document.getElementById('sceltaAnnulla').onclick = () => { fondo.hidden = true; };
+    fondo.addEventListener('click', (e) => { if (e.target === fondo) fondo.hidden = true; });
+    fondo.querySelectorAll('.mp-scelta').forEach((bottone) => {
+        bottone.addEventListener('click', () => {
+            if (!scelta) return;
+            const url = 'duelMonstersCore.html?mode=rivincita'
+                + '&rivincita=' + encodeURIComponent(scelta.id)
+                + '&character=' + encodeURIComponent(scelta.avversario)
+                + '&difficulty=' + encodeURIComponent(bottone.dataset.livello)
+                + (scelta.campo ? '&field=' + encodeURIComponent(scelta.campo) : '');
+            window.location.href = url;
+        });
+    });
+</script>
+</body>
+</html>

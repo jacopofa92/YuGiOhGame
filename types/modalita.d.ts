@@ -87,6 +87,29 @@ interface StatoPuzzle {
     stelle: number;
 }
 
+/** Una Rivincita (js/data/rivincite-db.js): un duello dell'anime giocato col mazzo del personaggio. */
+interface RivincitaDef {
+    id: string;
+    titolo: string;
+    /** Dove si colloca nella storia (Regno dei Duellanti, Battle City...). */
+    epoca: string;
+    /** Id del personaggio di cui prendi il posto e il mazzo (characters-db.js). */
+    giocatore: string;
+    /** Id del personaggio avversario. */
+    avversario: string;
+    /** File di images/fields/ su cui si gioca. */
+    campo?: string;
+    descrizione: string;
+}
+
+/** Livelli dell'avversario, come nell'URL (?difficulty=). */
+type LivelloDuello = 'Facile' | 'Medio' | 'Difficile';
+
+/** Stato salvato delle Rivincite: per ogni id, i livelli vinti. */
+interface StatoRivincite {
+    [id: string]: { vinte: { [livello: string]: boolean } };
+}
+
 // Le funzioni della partita usate dalle modalità (initGame, endDuel,
 // preparaManiIniziali, getCharacterDeck, buildDeckFromSpec...) NON si
 // dichiarano qui: sono scritte in file js/ inclusi nel controllo, e una
@@ -100,6 +123,7 @@ declare var DuelCinematics: any;
 interface Window {
     ModalitaDuello?: { [mode: string]: ModalitaDuello };
     puzzlesDatabase: PuzzleDef[];
+    rivinciteDatabase: RivincitaDef[];
     SaveManager: any;
     ChallengeTracker: any;
     DuelSession: any;

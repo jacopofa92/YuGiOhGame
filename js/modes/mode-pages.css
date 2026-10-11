@@ -118,6 +118,22 @@ body::before {
 .mp-stato--stelle { color: var(--gold); border-color: rgba(247, 215, 116, 0.5); letter-spacing: 0.08em; }
 .mp-stato--fatta { color: var(--done); border-color: rgba(127, 209, 139, 0.5); }
 
+/* Rivincite: i due ritratti affiancati al posto dell'emblema. */
+.mp-voce.mp-voce--duo { grid-template-columns: 92px 1fr auto; }
+.mp-duo { position: relative; width: 92px; height: 54px; }
+.mp-duo .mp-emblema { position: absolute; top: 0; }
+.mp-duo .mp-emblema:first-child { left: 0; z-index: 1; border-color: rgba(247, 215, 116, 0.7); }
+.mp-duo .mp-emblema:last-child { right: 0; filter: saturate(0.85); }
+.mp-medaglie { display: flex; gap: 4px; font-size: 1.05rem; white-space: nowrap; }
+.mp-medaglia { opacity: 0.22; filter: grayscale(1); }
+.mp-medaglia.is-vinta { opacity: 1; filter: none; }
+@media (max-width: 520px) {
+    /* Più specifico della regola generica .mp-voce più in basso, che altrimenti vince. */
+    .mp-voce.mp-voce--duo { grid-template-columns: 76px 1fr; }
+    .mp-duo { width: 76px; height: 44px; }
+    .mp-medaglie { grid-column: 2; }
+}
+
 /* Pulsanti delle pagine (Torre, scelta livello delle Rivincite). */
 .mp-btn {
     display: inline-flex;

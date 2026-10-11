@@ -443,7 +443,8 @@
 // v222: Duello Sandbox visibile solo all'amministratore.
 // v223: nuovo nome, Yu-Gi-Oh! Millennium Duel Arena (logo, titoli, nome dell'app).
 // v224: modalità Puzzle (puzzle.html, js/modes/), sezione Modalità nelle Sfide.
-const CACHE_NAME = 'ygo-duel-arena-v224';
+// v225: modalità Rivincite (rivincite.html): duelli dell'anime col mazzo del personaggio.
+const CACHE_NAME = 'ygo-duel-arena-v225';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -466,6 +467,7 @@ const APP_SHELL = [
     'sfide.html',
     'tutorial.html',
     'puzzle.html',
+    'rivincite.html',
     'storia.html',
     'tornei.html',
     'torneo-regno-duellanti.html',
@@ -566,6 +568,8 @@ const APP_SHELL = [
     'js/tutorial/tutorial-duel.js',
     'js/data/puzzles-db.js',
     'js/modes/puzzle-mode.js',
+    'js/data/rivincite-db.js',
+    'js/modes/rivincita-mode.js',
     'js/ui/effects.js',
     'js/ui/error-recovery.js',
     'js/ui/icon-library.js',

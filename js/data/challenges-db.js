@@ -1073,6 +1073,50 @@ const challengesDatabase = [
         description: 'Porta tutti i puzzle a tre stelle',
         type: 'puzzleThreeStars', match: {}, target: 8,
         reward: { credits: 900 }
+    },
+
+    // Rivincite (js/modes/rivincita-mode.js):
+    //   'rivincitaWon'  una MEDAGLIA nuova, cioè una Rivincita vinta per la
+    //                   prima volta a un certo livello (match: { rivincitaId,
+    //                   difficulty }, o {} per "una qualsiasi"). Rivincere lo
+    //                   stesso duello allo stesso livello non conta di nuovo.
+    // Le medaglie in tutto sono 3 per ogni voce di js/data/rivincite-db.js
+    // (10 voci, quindi 30): aggiungendo Rivincite vanno alzati i traguardi
+    // "tutte", e lo spec modalita-rivincite lo controlla.
+    {
+        id: 'rivincita-prima', sezione: 'modalita', modalita: 'rivincite',
+        icon: '⚔️', label: 'Nei loro panni',
+        description: 'Vinci una Rivincita',
+        type: 'rivincitaWon', match: {}, target: 1,
+        reward: { credits: 150 }
+    },
+    {
+        id: 'rivincita-dieci-medaglie', sezione: 'modalita', modalita: 'rivincite',
+        icon: '🏅', label: 'Collezione di medaglie',
+        description: 'Ottieni 10 medaglie nelle Rivincite (una per Rivincita e livello)',
+        type: 'rivincitaWon', match: {}, target: 10,
+        reward: { credits: 450 }
+    },
+    {
+        id: 'rivincita-difficile', sezione: 'modalita', modalita: 'rivincite',
+        icon: '🥇', label: 'Come nell\'anime',
+        description: 'Vinci una Rivincita a livello Difficile',
+        type: 'rivincitaWon', match: { difficulty: 'Difficile' }, target: 1,
+        reward: { credits: 300 }
+    },
+    {
+        id: 'rivincita-tutte-difficile', sezione: 'modalita', modalita: 'rivincite',
+        icon: '👑', label: 'La storia riscritta',
+        description: 'Vinci tutte le Rivincite a livello Difficile',
+        type: 'rivincitaWon', match: { difficulty: 'Difficile' }, target: 10,
+        reward: { credits: 1000 }
+    },
+    {
+        id: 'rivincita-tutte-medaglie', sezione: 'modalita', modalita: 'rivincite',
+        icon: '🏆', label: 'Ogni duello, ogni livello',
+        description: 'Ottieni tutte le medaglie delle Rivincite',
+        type: 'rivincitaWon', match: {}, target: 30,
+        reward: { credits: 1400 }
     }
 ];
 
