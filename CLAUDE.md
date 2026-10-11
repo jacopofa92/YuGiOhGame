@@ -4282,3 +4282,13 @@ passo `fine` che segna `save.tutorial.lezioni[id]` e torna al menu. Nessun
 file di `js/engine/` le conosce (lo controlla lo spec della lezione col
 nonno): una lezione nuova si aggiunge solo lì e in `tutorial.html`. Spec
 `tutorial-lezioni-brevi`.
+
+Storia anime, regola di fedeltà (2026-10-11): un duello LATERALE che nel canone
+finisce con la sconfitta del personaggio noto si gioca dalla parte di chi ha
+vinto (Panik contro Mai, Marik contro Joey...); un duello della strada
+PRINCIPALE che Yugi perde nel canone si vince, e la scena dopo racconta la
+svolta vera (tempo scaduto col videonastro, attacco fermato sul parapetto). Lo
+sorveglia `storia-anime-coerenza-narrativa`. Per inserire tappe principali in
+un'area si usa una voce `separazioni` con `ids: [...]` (la posizione si ricava
+dalle tappe stesse, anche con più inserimenti nella stessa area): vedi
+`applicaSeparazioni` e lo spec `storia-anime-migrazione-fedelta`.

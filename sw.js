@@ -438,7 +438,8 @@
 // v216: unita la lezione guidata col nonno (js/tutorial/), sviluppata su un branch a parte.
 // v217: schermate di Vittoria/Sconfitta che tagliavano il titolo e i premi.
 // v218: menu Tutorial (tutorial.html) e lezioni brevi su Catena, Fusione e Flip.
-const CACHE_NAME = 'ygo-duel-arena-v218';
+// v219: Storia anime riallineata all'anime (duelli mancanti, laterali dalla parte di chi vince).
+const CACHE_NAME = 'ygo-duel-arena-v219';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

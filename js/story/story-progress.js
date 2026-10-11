@@ -408,18 +408,31 @@
             if (sep.dalla === 'principali-inserite' || sep.dalla === 'principali-fine') {
                 const area = forma.find((t) => t.id === sep.area);
                 if (!area) return;
-                const principali = (area.tappe || []).filter((t) => t.parallelo !== true);
+                // La forma dell'area SUBITO DOPO questa voce: senza le tappe
+                // inserite dalle voci successive che le elencano (`ids`).
+                // Senza questo filtro, una tappa inserita più tardi PRIMA di
+                // questo punto spostava di uno la posizione calcolata qui.
+                const insertePiuTardi = separazioni.slice(j + 1)
+                    .filter((s) => s.area === sep.area && Array.isArray(s.ids))
+                    .reduce((acc, s) => acc.concat(s.ids), []);
+                const principali = (area.tappe || [])
+                    .filter((t) => t.parallelo !== true && insertePiuTardi.indexOf(t.id) === -1);
                 const fatte = progress.sotto[sep.area] || 0;
-                const nuovaPosizione = sep.dalla === 'principali-fine'
-                    ? principali.length - sep.quante
-                    : principali.findIndex((t) => t.id === sep.prima) - sep.quante;
+                const quante = Array.isArray(sep.ids) ? sep.ids.length : sep.quante;
+                // Con `ids` la posizione è quella della prima tappa inserita,
+                // ovunque sia (anche in fondo); senza, la forma storica.
+                const nuovaPosizione = Array.isArray(sep.ids)
+                    ? principali.findIndex((t) => t.id === sep.ids[0])
+                    : (sep.dalla === 'principali-fine'
+                        ? principali.length - quante
+                        : principali.findIndex((t) => t.id === sep.prima) - quante);
                 if (nuovaPosizione >= 0 && fatte > nuovaPosizione) {
                     // Mai oltre il totale delle principali: chi aveva già
                     // finito l'area (contatore al massimo, vedi 'laterali'
                     // e 'inserite') non deve ritrovarsi con più prove fatte
                     // di quante l'area ne abbia — a ogni tappa inserita il
                     // numero cresceva di uno, fino a 19 su 17.
-                    progress.sotto[sep.area] = Math.min(fatte + sep.quante, principali.length);
+                    progress.sotto[sep.area] = Math.min(fatte + quante, principali.length);
                 }
                 return;
             }
