@@ -1,0 +1,59 @@
+name: Pubblica
+
+# Mette online su Cloudflare Pages la copia MINIFICATA del gioco
+# (scripts/pubblica.js). Il progetto su cui si lavora resta senza build:
+# la versione compressa nasce solo qui, a ogni pubblicazione.
+#
+# PARTE SOLO A MANO (Actions > Pubblica > Run workflow): il sito pubblicato
+# non deve cambiare a ogni push su main, dove ci sono anche lavori a metà.
+# Si pubblica quando si decide che la versione è pronta.
+#
+# Prima di mandare online qualunque cosa:
+#  1. crea la copia in dist/ (npm run pubblica);
+#  2. confronta ogni pagina della copia con l'originale
+#     (npm run verifica-pubblicazione);
+#  3. fa giocare sulla copia alcuni spec del motore (YGO_RADICE_GIOCO=dist):
+#     se la minificazione rompesse un duello, qui ci si ferma e il sito
+#     resta quello di prima.
+#
+# Servono due segreti del repository (Settings > Secrets and variables >
+# Actions): CLOUDFLARE_API_TOKEN (token con il solo permesso "Cloudflare
+# Pages: Edit") e CLOUDFLARE_ACCOUNT_ID. Il nome del progetto su Cloudflare
+# sta nella variabile CLOUDFLARE_PAGES_PROJECT, con "duel-arena" come
+# valore di ripiego.
+
+on:
+  workflow_dispatch: {}
+
+# Mai due pubblicazioni insieme: la seconda aspetta la prima.
+concurrency:
+  group: pubblica
+  cancel-in-progress: false
+
+jobs:
+  pubblica:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - name: Installa dipendenze (esbuild per la minificazione, Playwright per la verifica)
+        run: npm ci
+      - name: Installa Chromium per Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Controlla la sintassi
+        run: npm run check
+      - name: Prepara la copia minificata in dist/
+        run: npm run pubblica
+      - name: Confronta la copia con l'originale, pagina per pagina
+        run: npm run verifica-pubblicazione
+      - name: Gioca alcuni duelli sulla copia minificata
+        env:
+          YGO_RADICE_GIOCO: dist
+        run: node tests/run-all.js battle-resolution chain-resolution realistic-bot all-cards-hooks note-carte-chiuse scelte-utente
+      - name: Manda la copia su Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@4.20.0 pages deploy dist --project-name="${{ vars.CLOUDFLARE_PAGES_PROJECT || 'duel-arena' }}" --branch=main --commit-hash="${{ github.sha }}"
