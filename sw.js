@@ -436,7 +436,8 @@
 // v214: Profilo rifatto (testata, riepilogo, portafoglio, mazzi: js/ui/profile-hero.*).
 // v215: Duello Libero con barra di ricerca e filtri, sblocco preciso e medaglie (js/ui/scelta-duellante.*).
 // v216: unita la lezione guidata col nonno (js/tutorial/), sviluppata su un branch a parte.
-const CACHE_NAME = 'ygo-duel-arena-v216';
+// v217: schermate di Vittoria/Sconfitta che tagliavano il titolo e i premi.
+const CACHE_NAME = 'ygo-duel-arena-v217';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

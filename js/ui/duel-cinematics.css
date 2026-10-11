@@ -516,6 +516,10 @@
        `.do-content` non ha bisogno di un `max-height`: è un flex item
        dell'overlay e si restringe già da sé, verificato togliendolo. */
     overflow-y: auto;
+    /* Mai uno scorrimento di lato: su un telefono un riquadro che si sposta
+       anche in orizzontale sotto il dito sembra rotto. Le misure del titolo
+       e dei premi qui sotto sono fatte per starci; questo è solo l'argine. */
+    overflow-x: hidden;
     overscroll-behavior: contain;
 }
 /* NESSUNA BARRA DI SCORRIMENTO VISIBILE. Si può ancora scorrere — col
@@ -606,8 +610,17 @@
     to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
+/* Tetto a 4.6rem, non più 5.4: misurato, "SCONFITTA" a 5.4rem era larga
+   614px dentro un riquadro di 560 (.do-content, che scorre e quindi taglia
+   anche di lato), e su desktop le prime e le ultime lettere sparivano.
+   Il titolo è lungo circa 7 volte la sua altezza di carattere (9 lettere
+   spaziate e in corsivo): a 4.6rem fa ~520px, con margine per il
+   corsivo e il bagliore. Il padding orizzontale tiene dentro la coda
+   della lettera inclinata. */
 .do-title {
-    font-size: clamp(2.4rem, 9vw, 5.4rem);
+    font-size: clamp(2.2rem, 9vw, 4.6rem);
+    padding: 0 0.12em;
+    max-width: 100%;
     font-weight: 900;
     font-style: italic;
     letter-spacing: 0.08em;
@@ -685,7 +698,12 @@
    rubare la scena al numero. */
 .do-rewards {
     margin-top: 12px;
-    width: min(430px, 92vw);
+    /* 100% del riquadro, non 92vw: su un telefono in verticale il 92%
+       dello SCHERMO è più largo del riquadro in cui sta (lo schermo meno i
+       margini dell'overlay), e il riquadro dei premi sbordava di 8-10px di
+       lato, tagliato. */
+    width: min(430px, 100%);
+    box-sizing: border-box;
     padding: 12px 14px;
     border-radius: 14px;
     background: rgba(247, 215, 116, 0.07);
