@@ -33,7 +33,7 @@ async function main() {
     const partite = Math.max(1, Number(argomento('partite', '20')) || 20);
     const turni = Math.max(20, Number(argomento('turni', '80')) || 80);
     const semeBase = Number(argomento('seme', '94000')) || 94000;
-    const output = argomento('output', 'FORBIDDEN_MEMORIES_STRATEGY_AUDIT.json');
+    const output = argomento('output', 'reports/forbidden-memories/FORBIDDEN_MEMORIES_STRATEGY_AUDIT.json');
     const risultati = [];
 
     for (const [duellante, fusioni] of Object.entries(PIANI)) {
@@ -79,7 +79,9 @@ async function main() {
         }
     }
 
-    fs.writeFileSync(path.resolve(__dirname, '..', output), JSON.stringify({
+    const destinazione = path.resolve(__dirname, '..', output);
+    fs.mkdirSync(path.dirname(destinazione), { recursive: true });
+    fs.writeFileSync(destinazione, JSON.stringify({
         generatoIl: new Date().toISOString(),
         metodo: 'cinque deck campione Hard; conteggio delle Evocazioni Fusione del bot nel registro completo',
         opzioni: { partite, turni, seme: semeBase },

@@ -7,7 +7,7 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
 - [x] Rarità a sette fasce, rotazioni e buste tematiche.
 - [x] Deck non cumulativi, tetto a tre copie e sblocchi tramite Storia.
 - [x] Carte firma, Spirit Message, Carte Dio ed Exodia con pity.
-- [x] Simulare il farming necessario (`FARMING_REPORT.md`, 50.000 profili).
+- [x] Simulare il farming necessario (`docs/economy/FARMING_REPORT.md`, 50.000 profili).
 - [x] Animazione epica finto 3D per l'ottenimento di una carta speciale.
 
 ## Bilanciamento Storia per deck
@@ -20,15 +20,15 @@ sempre coerenti con il personaggio. Toon/Pegasus si affronta per ultimo.
       (`tools/simula-storia-deck.js`), con tentativi, turni e tempi.
 - [x] Eseguita la matrice isolata (16 deck × 3 difficoltà, IA giocatore
       sempre Difficile, massimo 50 tentativi per scontro): risultati grezzi
-      in `STORY_DECK_SIMULATION_REPORT.json`. Completati 46 percorsi su 48;
+      in `reports/story/STORY_DECK_SIMULATION_REPORT.json`. Completati 46 percorsi su 48;
       i soli due incompleti sono Pegasus Starter a Normale e Difficile.
-      `STORY_DIFFICULTY_AUDIT.md` evidenzia 9 incontri su 26 con progressione
+      `docs/audits/STORY_DIFFICULTY_AUDIT.md` evidenzia 9 incontri su 26 con progressione
       strettamente coerente. Il bilanciamento conseguente resta una decisione di game
       design, non una correzione automatica del simulatore.
 - [x] Audit fattoriale IA/deck sugli incontri anomali: `AI_HARD` è la causa
       dominante (migliore della Media solo in 2/16 casi); le liste Hard sono
       mediamente più forti delle Easy. Dati in
-      `STORY_DIFFICULTY_FACTORIAL_REPORT.json`.
+      `reports/story/STORY_DIFFICULTY_FACTORIAL_REPORT.json`.
 - [x] Corretta l'euristica `AI_HARD` mantenendo invariati tutti i deck e
       rieseguito l'audit a 50 tentativi. Prima Hard era peggiore della Media
       in 14/16 incontri (−2,48 tentativi medi); ora è pari o migliore in
@@ -80,7 +80,7 @@ sempre coerenti con il personaggio. Toon/Pegasus si affronta per ultimo.
       1.500 duelli danno una curva monotona 35,8% → 54,2% → 58,6%. La lista
       Difficile mantiene 40 carte ma prepara con più continuità Mille Occhi;
       il controllo del registro misura Mondo 74,5%, Abbandonato 18,5% e
-      Restrizione 4%. Dettagli in `PEGASUS_OPPONENT_AUDIT.md`.
+      Restrizione 4%. Dettagli in `docs/audits/PEGASUS_OPPONENT_AUDIT.md`.
 
 ## Audio multipagina
 
@@ -241,7 +241,7 @@ righe, actions.js 3.855, game-flow.js 3.797; 205 accessi al DOM e 85
 - [x] Tutorial: menu dedicato con lezione del nonno e lezioni brevi su
       Catena, Fusione e mostri Flip (`tutorial.html`).
 - [x] Bilanciamento delle difficoltà con simulazioni bot contro bot: matrice
-      completa post-intervento in `STORY_DECK_SIMULATION_REPORT_AFTER_BALANCE.json`.
+      completa post-intervento in `reports/story/STORY_DECK_SIMULATION_REPORT_AFTER_BALANCE.json`.
       La scala media è 1,64 / 3,45 / 4,12 tentativi per duello e 19 incontri
       su 26 sono monotoni. Restano Pegasus e, a Difficile, Invincible Fortress.
 
@@ -251,7 +251,7 @@ righe, actions.js 3.855, game-flow.js 3.797; 205 accessi al DOM e 85
       regole Duel Monsters: 15.750 duelli, 20 curve monotone su 21; Atenza
       resta quasi piatto per scelta tematica. Corretti Controllore Nemico,
       uso Hard degli effetti continui ripetibili e piano Wall Shadow;
-      dettagli in `FORBIDDEN_MEMORIES_AUDIT.md`. Questo non sostituisce il
+      dettagli in `docs/audits/FORBIDDEN_MEMORIES_AUDIT.md`. Questo non sostituisce il
       futuro set di regole specifico di Forbidden Memories.
 - [ ] Più avanti, se si vorrà: file `.ts` veri compilati in uno script
       classico (esbuild, formato IIFE: `file://` resta), un framework per

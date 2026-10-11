@@ -19,8 +19,8 @@ Lo Starter Pegasus non rientra in questo audit e non è stato modificato.
 - controllo identitario separato su quattro campioni non-Pegasus, così gli
   assorbimenti letti nel registro appartengono certamente all'avversario.
 
-I dati completi sono in `PEGASUS_OPPONENT_AUDIT.json` e
-`PEGASUS_OPPONENT_IDENTITY_AUDIT.json`.
+I dati completi sono in `reports/pegasus/PEGASUS_OPPONENT_AUDIT.json` e
+`reports/pegasus/PEGASUS_OPPONENT_IDENTITY_AUDIT.json`.
 
 ## Risultato
 

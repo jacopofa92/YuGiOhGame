@@ -1,5 +1,9 @@
 # Yu-Gi-Oh! Millennium Duel Arena — Multiplayer: guida rapida
 
+La documentazione tecnica è indicizzata in [`docs/README.md`](docs/README.md);
+i risultati grezzi di audit e simulazioni sono raccolti in
+[`reports/README.md`](reports/README.md).
+
 ## Perché serve un server?
 
 Il Duello Demo (contro il Bot) e la Cartoteca funzionano semplicemente aprendo

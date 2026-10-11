@@ -2223,7 +2223,7 @@
     });
 
     // ================================================================
-    // Backlog "carte prima serie TCG mancanti" — vedi AUDIT_CARTE_PRIMA_SERIE.md
+    // Backlog "carte prima serie TCG mancanti" — vedi docs/audits/AUDIT_CARTE_PRIMA_SERIE.md
     // per l'elenco completo e lo stato di avanzamento. Batch 1 (Livello 1,
     // le più facili).
     // ================================================================
@@ -2981,7 +2981,7 @@
     //    carta del dataset fa una cosa simile, quindi non c'è niente da negare.
     // Il bonus ai Guardiani della Tomba è PROPEDEUTICO
     // (l'archetipo non esiste ancora in questo dataset — vedi Livello 5
-    // in AUDIT_CARTE_PRIMA_SERIE.md): filtro per NOME (`includes('Guardiani
+    // in docs/audits/AUDIT_CARTE_PRIMA_SERIE.md): filtro per NOME (`includes('Guardiani
     // della Tomba')`, stesso stile già usato per "Occhi Rossi" in questo
     // file, dato che i Guardiani della Tomba reali non hanno una race
     // dedicata in questo motore), innocuo finché nessuna carta corrisponde.

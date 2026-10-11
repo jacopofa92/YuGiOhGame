@@ -47,7 +47,7 @@ Guardrail: `duello-libero-topbar-immediata`.
 
 Lo strumento `tools/simula-economia.js` misura il farming leggendo direttamente
 le tabelle pubblicate da `Rewards` e `ShopCatalog`; lo scenario e i risultati
-di riferimento sono conservati in `FARMING_REPORT.md`.
+di riferimento sono conservati in `docs/economy/FARMING_REPORT.md`.
 
 ## Economia graduata per difficolta' (2026-10-10)
 
@@ -76,7 +76,7 @@ vittorie Facili e riscuotere con una Difficile. Le missioni settimanali
 sorteggiate valgono in media 6,67 Stelle se completate tutte. La crescita dei
 mazzi ha ora un tetto: Starter 18→54 (+6) e Structure 35→75 (+8), per 957
 Stelle complessive invece di 1.643. Lo scenario intensivo aggiornato e' in
-`FARMING_REPORT.md` ed e' riproducibile con `node tools/simula-economia.js`.
+`docs/economy/FARMING_REPORT.md` ed e' riproducibile con `node tools/simula-economia.js`.
 
 ## Audio web e APK
 
@@ -109,14 +109,14 @@ rapido». Guardrail: `service-worker-cache` e `audio-nativo-persistente`.
 ## Rework acquisizione carte
 
 La fonte di verità di requisiti, probabilità e prezzi è
-`CARD_ACQUISITION.md`. La logica speciale è in
+`docs/economy/CARD_ACQUISITION.md`. La logica speciale è in
 `js/economy/card-acquisition.js`; rarità, commercio e accrediti restano
 separati rispettivamente in `card-rarity.js`, `shop-catalog.js` e
 `rewards.js`. Pity e traguardi sono persistiti nel campo `cardAcquisition`
 del salvataggio.
 Il costo in vittorie è misurato in modo riproducibile da
 `tools/simula-farming-carte.js`; risultati e giudizio sono in
-`FARMING_REPORT.md`.
+`docs/economy/FARMING_REPORT.md`.
 
 La cerimonia di una carta premio vive in `card-drop-animation.js`: la
 rivelazione dura circa 2,5 secondi e non può essere chiusa a metà. Usa uno
@@ -138,12 +138,12 @@ Questo file è la memoria breve e stabile del progetto. Va letto all'inizio di
 una nuova sessione prima di scandire di nuovo l'intero repository. Per la
 cronologia dettagliata delle decisioni e delle correzioni precedenti resta
 valido `CLAUDE.md`; per la separazione e il possibile riuso del motore vedere
-`GUIDA_RIUTILIZZO.md`. Le regole operative per un agente sono in `AGENTS.md`.
+`docs/architecture/GUIDA_RIUTILIZZO.md`. Le regole operative per un agente sono in `AGENTS.md`.
 
 ## Bilanciamento deck nella Storia
 
 L'audit esteso degli altri 31 duellanti anime è documentato in
-`MAIN_DUELISTS_AUDIT.md` e nei report `MAIN_DUELISTS_AUDIT_*.json`: cinque
+`docs/audits/MAIN_DUELISTS_AUDIT.md` e nei report `reports/main-duellists/MAIN_DUELISTS_AUDIT_*.json`: cinque
 deck campione, 50 semi e 250 duelli per livello, per un totale di 23.250
 duelli. Dopo le correzioni 30/31 curve sono monotone; Umbra ha soltanto uno
 scarto di −0,8 punti Facile→Medio, trattato come rumore e non come permesso
@@ -160,20 +160,20 @@ Yu-Gi-Oh e per Facile, Normale e Difficile. I rami paralleli non bloccano il
 percorso; i deck WW1 sono esclusi perché appartengono a un'origine non ammessa.
 Il report misura completamento, tentativi, turni, tempo virtuale e tempo reale,
 e conserva il dettaglio di ogni nodo non superato. La matrice completa
-si lancia con `node tools/simula-storia-deck.js --tentativi 50 --output report.json`;
+si lancia con `node tools/simula-storia-deck.js --tentativi 50 --output reports/story/report.json`;
 lo spec `simulazione-storia-deck` ne esegue soltanto uno smoke test ridotto.
 La matrice completa del 2026-10-07 è conservata in
-`STORY_DECK_SIMULATION_REPORT.json`: 16 deck, 3 difficoltà, 48 percorsi e 26
+`reports/story/STORY_DECK_SIMULATION_REPORT.json`: 16 deck, 3 difficoltà, 48 percorsi e 26
 duelli principali per percorso, con un tetto di 50 tentativi per scontro.
 L'IA del giocatore resta fissa a Difficile; 46 percorsi hanno concluso la
 storia. I soli due percorsi incompleti appartengono a Pegasus Starter
 (debolezza Toon già nota e rinviata), a Normale e Difficile.
 L'esecuzione successiva, a semi accoppiati e completa anche dopo un eventuale
-blocco, è interpretata in `STORY_DIFFICULTY_AUDIT.md`: soltanto 9 incontri su
+blocco, è interpretata in `docs/audits/STORY_DIFFICULTY_AUDIT.md`: soltanto 9 incontri su
 26 hanno una crescita strettamente coerente, con Medio spesso più duro di
 Difficile. Nessun deck o IA è stato modificato sulla sola base dell'audit.
-Il successivo audit fattoriale (`STORY_DIFFICULTY_FACTORIAL_REPORT.json`,
-interpretato in fondo a `STORY_DIFFICULTY_AUDIT.md`) ha separato IA e lista:
+Il successivo audit fattoriale (`reports/story/STORY_DIFFICULTY_FACTORIAL_REPORT.json`,
+interpretato in fondo a `docs/audits/STORY_DIFFICULTY_AUDIT.md`) ha separato IA e lista:
 con deck Hard fisso, `AI_HARD` è più efficace di `AI_MEDIUM` soltanto in 2
 incontri anomali su 16 e rende mediamente l'avversario più facile di 2,06
 tentativi; con IA Hard fissa, le liste Hard sono invece mediamente più forti
@@ -181,7 +181,7 @@ delle Easy di 2,27 tentativi. La priorità è quindi correggere l'IA Hard prima
 di ritoccare le liste dei personaggi.
 
 La correzione è misurata in
-`STORY_DIFFICULTY_FACTORIAL_REPORT_AFTER_AI_FIX_V2.json`: `AI_HARD` non usa
+`reports/story/STORY_DIFFICULTY_FACTORIAL_REPORT_AFTER_AI_FIX_V2.json`: `AI_HARD` non usa
 più una seconda strategia completa che rompeva le combo del deck, ma eredita
 la linea stabile della Media e aggiunge la lettura dei mostri coperti per
 evitare scontri certamente persi. A parità di deck Hard passa da 2/16 a
@@ -190,7 +190,7 @@ evitare scontri certamente persi. A parità di deck Hard passa da 2/16 a
 primi casi da studiare nelle liste avversarie; Pegasus/Toon resta rinviato.
 
 Sul branch `feature/ia-hard-tattica` il passo successivo è misurato in
-`STORY_DIFFICULTY_FACTORIAL_REPORT_HARD_TACTICS.json`. Hard usa le pescate e
+`reports/story/STORY_DIFFICULTY_FACTORIAL_REPORT_HARD_TACTICS.json`. Hard usa le pescate e
 ricerche pure prima dell'Evocazione Normale, ordina gli attaccanti conservando
 il più forte, riconosce le linee letali e soprattutto rimette legalmente in
 Attacco i mostri difensivi dei turni precedenti quando possono colpire. Con
@@ -203,7 +203,7 @@ Sul branch `feature/ia-posizioni-strategie` anche Media gestisce i cambi di
 Posizione in entrambi i versi: torna in Attacco con campo libero/bersaglio
 battibile e si ripara in Difesa sotto una minaccia superiore. Hard applica
 la stessa regola conoscendo anche le statistiche dei coperti. Il nuovo
-riferimento è `STORY_DIFFICULTY_FACTORIAL_REPORT_POSITIONS.json`: avendo
+riferimento è `reports/story/STORY_DIFFICULTY_FACTORIAL_REPORT_POSITIONS.json`: avendo
 potenziato anche Media, Hard resta mediamente più difficile di **+0,54
 tentativi**, ma è pari o superiore in 10/16 incontri. Questo comportamento
 di Media è un requisito esplicito e non va rimosso per gonfiare il divario;
@@ -214,7 +214,7 @@ inizializzata sia dal duello browser sia dal motore senza testa. Questo evita
 che in IA contro IA entrambi i lati ereditino la personalità dell'avversario
 della sessione. I profili restano opzionali: un personaggio WW1/custom senza
 voce usa la strategia neutra e non richiede metadati carta-per-carta. Il
-report `STORY_DIFFICULTY_FACTORIAL_REPORT_PLAYBOOKS.json`, 50 tentativi per
+report `reports/story/STORY_DIFFICULTY_FACTORIAL_REPORT_PLAYBOOKS.json`, 50 tentativi per
 scontro su 15 deck campione, porta Hard a **+0,57 tentativi medi** e a
 **11/16** incontri pari o superiori alla Media. Restano sotto Kaiba nel
 prologo, Joey al Castello, Seeker, Gansley e Noah. Un playbook che forzava i
@@ -222,7 +222,7 @@ personaggi aggressivi contro i coperti non modificava alcun risultato ed è
 stato scartato.
 
 Il passaggio successivo è conservato in
-`STORY_DIFFICULTY_FACTORIAL_REPORT_BALANCED.json`. Hard rimuove il freno extra
+`reports/story/STORY_DIFFICULTY_FACTORIAL_REPORT_BALANCED.json`. Hard rimuove il freno extra
 della Media nella scelta pesata di Magie/Trappole, prepara prima
 dell'Evocazione le Magie Terreno e quelle utilizzabili solo a inizio Main
 Phase, e dà a Seeker un playbook semantico per i mostri che cercano dal Deck.
@@ -243,7 +243,7 @@ Pegasus/Toon è escluso da questo ciclo per richiesta dell'utente.
 
 La verifica end-to-end successiva, ripetuta dopo l'audit mirato di Invincible
 Fortress, è in
-`STORY_DECK_SIMULATION_REPORT_AFTER_BALANCE.json`: 16 Starter/Structure × 3
+`reports/story/STORY_DECK_SIMULATION_REPORT_AFTER_BALANCE.json`: 16 Starter/Structure × 3
 difficoltà × 26 duelli, con tetto di 50 tentativi. La scala aggregata passa
 da **1,60** tentativi medi a Facile a **3,38** a Normale e **4,03** a
 Difficile; 20/26 incontri sono monotoni (erano 9/26). Completano 45 percorsi
@@ -298,7 +298,7 @@ correttamente il mostro assorbito anche su bando, Sacrificio e ritorno in
 mano, non soltanto su distruzione.
 
 La lista dello Starter non è stata toccata e ora completa 26/26 duelli a
-tutte le difficoltà nel report `STORY_PEGASUS_TOON_REWORK_REPORT.json`, con
+tutte le difficoltà nel report `reports/story/STORY_PEGASUS_TOON_REWORK_REPORT.json`, con
 medie corrette **2,62 / 6,23 / 8,12** tentativi. Il primo report era stato
 generato mentre a `Mondo dei Toon` mancava l'handler vuoto `activate()`: il
 motore lo lasciava quindi in mano e quei numeri sono stati sostituiti, non
@@ -307,7 +307,7 @@ cercava erroneamente Mondo nella zona Magia Terreno, e ha ristretto
 `Riavvolgimento Toon` ai veri Toon. Le liste avversarie Pegasus restano
 ripulite dalle mani troppo cariche di Toon alti mantenendo soltanto carte
 della sua lore. Il ricalcolo successivo al fix è ora in
-`PEGASUS_OPPONENT_AUDIT.md`: su 1.500 duelli la curva è **35,8% / 54,2% /
+`docs/audits/PEGASUS_OPPONENT_AUDIT.md`: su 1.500 duelli la curva è **35,8% / 54,2% /
 58,6%**. A Difficile il nucleo Fusione usa due copie di Fusione, Abbandonato
 e Idolo dai Mille Occhi: Restrizione compare nel 4% dei duelli misurati,
 abbastanza da essere un secondo piano riconoscibile ma non dominante sui
@@ -324,7 +324,7 @@ esplicitamente il doppio completamento di Obelisco.
 ## Passaggio di consegne (2026-10-06)
 
 Fra il 4 e il 6 ottobre il motore è stato rifatto in profondità seguendo il
-"piano di attacco" di `WORK_IN_PROGRESS.md` (Priorità 0-3). Tutto è in `main`;
+"piano di attacco" di `docs/planning/WORK_IN_PROGRESS.md` (Priorità 0-3). Tutto è in `main`;
 suite completa 204/204 prima dell'ultima unione (`0a21581`), poi due correzioni
 Multiplayer con spec mirati verdi (`d46d30a`). Il gioco offline si comporta
 come prima: lo prova `tools/impronta-partite.js` (60 partite IA contro IA a seme
@@ -411,7 +411,7 @@ impedisce il ritorno delle API eliminate. Compilata anche la shell Android di
 produzione beta.22 (`versionCode 22`) e ristretto il relay ai soli messaggi
 del protocollo corrente.
 
-**Cosa resta** (dettagli in `WORK_IN_PROGRESS.md`):
+**Cosa resta** (dettagli in `docs/planning/WORK_IN_PROGRESS.md`):
 
 1. Bilanciamento delle difficoltà con dati veri: ora si può, il duello senza
    testa gioca IA contro IA in ~0,1 s a partita (`--giocatore`,
@@ -422,7 +422,7 @@ del protocollo corrente.
    di `Tavolo`; rimangono solo quelli di testo/UI legati al punto di vista.
 4. Più grandi: tutorial; Forbidden Memories come secondo set di regole.
    I suoi 21 deck avversari nell'attuale Duel Monsters sono già stati
-   misurati e corretti: vedere `FORBIDDEN_MEMORIES_AUDIT.md`. L'audit dei
+   misurati e corretti: vedere `docs/audits/FORBIDDEN_MEMORIES_AUDIT.md`. L'audit dei
    deck non equivale all'implementazione delle regole PS1 dedicate.
 5. Decisioni aperte dell'utente: i 6 avatar PNG non usati; eliminare il branch
    `refactor/posti-al-tavolo` (già unito).
@@ -1229,7 +1229,7 @@ Quinto gruppo:
 - Eliminare dati carta duplicati/imprecisi invece di mascherarli.
 - Le immagini carta devono contenere la sola illustrazione nella cornice CSS.
 - Commentare soprattutto invarianti, motivazioni e bug non ovvi.
-- Prima di un refactor ampio leggere `GUIDA_RIUTILIZZO.md`.
+- Prima di un refactor ampio leggere `docs/architecture/GUIDA_RIUTILIZZO.md`.
 - Per modifiche al duello, oltre agli spec mirati, la pagina standard di prova
   manuale è `duelMonstersCore.html`.
 

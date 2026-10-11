@@ -169,6 +169,7 @@ async function main() {
     console.table(report.analisi);
     if (opzioni.output) {
         const destinazione = path.resolve(RADICE, opzioni.output);
+        fs.mkdirSync(path.dirname(destinazione), { recursive: true });
         fs.writeFileSync(destinazione, JSON.stringify(report, null, 2) + '\n', 'utf8');
         console.log(`Report scritto in ${destinazione}`);
     }

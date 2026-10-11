@@ -17,11 +17,11 @@ completo di cosa è cambiato il 2026-10-11.
 1. `PROJECT_MAP.md` — la mappa corrente. In cima c'è la sezione
    **«Passaggio di consegne (2026-10-06)»**: cosa è stato rifatto negli
    ultimi giorni, dove sta, cosa resta da fare.
-2. `WORK_IN_PROGRESS.md` — il piano di attacco con le voci aperte `[ ]`.
+2. `docs/planning/WORK_IN_PROGRESS.md` — il piano di attacco con le voci aperte `[ ]`.
 3. `CLAUDE.md` — la memoria lunga delle decisioni e dei bug passati. È un
    diario: cerca la parola chiave dell'area che tocchi invece di leggerlo
    tutto. Dove contraddice il codice, ha ragione il codice.
-4. `GUIDA_RIUTILIZZO.md` prima di un refactor ampio.
+4. `docs/architecture/GUIDA_RIUTILIZZO.md` prima di un refactor ampio.
 
 ## Regole dell'utente (non negoziabili)
 

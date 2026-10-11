@@ -17,7 +17,7 @@ Facile → Medio → Difficile, un piano giocabile e liste coerenti con la lore.
 Starter e Structure Deck del giocatore non sono stati modificati.
 
 Lo strumento riproducibile è `tools/audit-duellanti-main.js`; i dati grezzi
-sono nei file `MAIN_DUELISTS_AUDIT_*.json`.
+sono nei file `reports/main-duellists/MAIN_DUELISTS_AUDIT_*.json`.
 
 ## Regno dei Duellanti e protagonisti
 

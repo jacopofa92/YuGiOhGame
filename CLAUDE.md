@@ -62,7 +62,7 @@ esplicita dell'utente, vale per ogni sessione).
 
 ## Struttura del codice
 
-Mappa completa e ragionata in **`GUIDA_RIUTILIZZO.md`** (leggerla prima di
+Mappa completa e ragionata in **`docs/architecture/GUIDA_RIUTILIZZO.md`** (leggerla prima di
 un refactor ampio) — riassunto:
 
 ```
@@ -1253,7 +1253,7 @@ priorità o richiedono un refactor ampio):
     creare l'utente dalla dashboard Supabase invece di insistere con
     `signUp`, se il dominio dell'email non ha ancora DNS/MX validi.
   - **Ancora non fatto, noto e accettato dopo il merge in `main`**:
-    `GUIDA_RIUTILIZZO.md` non aggiornata con `js/cloud/auth-gate.js`/
+    `docs/architecture/GUIDA_RIUTILIZZO.md` non aggiornata con `js/cloud/auth-gate.js`/
     `admin.html`; nessun test Playwright dedicato per il flusso di
     approvazione (impossibile scriverne uno vero senza un progetto
     Supabase di test separato — la suite esistente bypassa il gate
@@ -1460,7 +1460,7 @@ priorità o richiedono un refactor ampio):
   al primo tentativo, per un singolo `{id,qty}` contato male). Rimosso
   "Duel Master K" (nessun altro riferimento nel codice a parte
   characters-db.js/character-decks.js, rimozione pulita).
-- ✅ **10 bug da `TODOLIST_BUGS` (file di lavoro dell'utente, ogni punto
+- ✅ **10 bug da `docs/planning/TODOLIST_BUGS.md` (file di lavoro dell'utente, ogni punto
   ora smarcato `[x]`), tutti risolti nella stessa sessione**:
   1) **Magie Veloci (subtype `quick-play`) attivabili SOLO in Main Phase,
      mai in Battle Phase**: `actions.js#handleCardClickInner` gate va va
@@ -1965,7 +1965,7 @@ priorità o richiedono un refactor ampio):
     code degli Structure Deck) prima di cambiare type/subtype/effetto.
   Suite motore 60/60 verde (59 esistenti + il nuovo test di stress
   permanente).
-- ✅ **3 dei 4 punti IA di `TODOLIST_BUGS` chiusi** (richiesta esplicita
+- ✅ **3 dei 4 punti IA di `docs/planning/TODOLIST_BUGS.md` chiusi** (richiesta esplicita
   dell'utente: "concentrati sui punti legati all'ia" — il 4° punto,
   "2 mazzi per difficoltà per personaggio", è di CONTENUTO dati
   [js/data/character-decks.js], non di logica IA, lasciato apposta fuori
@@ -2074,7 +2074,7 @@ priorità o richiedono un refactor ampio):
   cambia correttamente con turno e personaggio. Suite motore 60/60
   verde (incluso "Il bot gioca 3 turni realistici senza errori", che
   esercita dal vivo esattamente i percorsi di codice toccati qui).
-- ✅ **4° punto di `TODOLIST_BUGS` chiuso (mazzi a due velocità per
+- ✅ **4° punto di `docs/planning/TODOLIST_BUGS.md` chiuso (mazzi a due velocità per
   difficoltà) + 4 delle idee IA proposte a fine sessione precedente,
   tutte richieste esplicitamente dall'utente**: "fai il 4° punto, e
   delle tue proposte fai il punto 1,2,3,5" (l'idea 4, un livello
@@ -4184,7 +4184,7 @@ esplicita diversa dell'utente.
 
 ### Audit degli altri duellanti anime (2026-10-09)
 
-Il riferimento completo è `MAIN_DUELISTS_AUDIT.md`: 31 personaggi, cinque
+Il riferimento completo è `docs/audits/MAIN_DUELISTS_AUDIT.md`: 31 personaggi, cinque
 deck campione, 50 semi, 23.250 duelli. Non usare una singola coppia come
 misura di bilanciamento. Dopo gli interventi, 30 curve su 31 sono monotone;
 Umbra ha soltanto −0,8 punti Facile→Medio ed è stato lasciato invariato.
@@ -4201,7 +4201,7 @@ prima della risoluzione).
 
 Non riusare le vecchie statistiche di Pegasus avversario: erano state
 misurate quando Mondo dei Toon non poteva ancora essere attivato. Il nuovo
-riferimento è `PEGASUS_OPPONENT_AUDIT.md` (dati grezzi nei due JSON): 1.500
+riferimento è `docs/audits/PEGASUS_OPPONENT_AUDIT.md` (dati grezzi nei due JSON): 1.500
 duelli, curva 35,8% / 54,2% / 58,6%. Lo Starter Pegasus resta invariato.
 
 La prima lista Hard post-fix aveva rimosso tutti i Conigli Oscuri e scendeva
@@ -4215,7 +4215,7 @@ duello una volta per ogni segnale.
 
 ### Audit deck avversari Forbidden Memories (2026-10-10)
 
-Il riferimento è `FORBIDDEN_MEMORIES_AUDIT.md`: 21 personaggi, cinque deck
+Il riferimento è `docs/audits/FORBIDDEN_MEMORIES_AUDIT.md`: 21 personaggi, cinque deck
 campione, 50 semi, 15.750 duelli nella matrice principale. Starter e
 Structure non sono stati toccati. Venti curve su ventuno sono monotone;
 High Mage Atenza ha Hard 1,6 punti sotto Medio, ma realizza più spesso Drago

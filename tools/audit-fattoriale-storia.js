@@ -46,7 +46,10 @@ async function eseguiAudit(opts) {
         .filter((d) => !String(d.packId).includes('ww1') && d.packId !== 'starter_sdp_pegasus');
     const campagne = caricaGlobale('js/data/story-campaigns.js', 'window.storyCampaignsDatabase');
     const tutti = duelliPrincipali(campagne.find((c) => c.id === 'anime'));
-    const precedente = JSON.parse(fs.readFileSync(path.join(RADICE, 'STORY_DECK_SIMULATION_REPORT.json'), 'utf8'));
+    const precedente = JSON.parse(fs.readFileSync(
+        path.join(RADICE, 'reports', 'story', 'STORY_DECK_SIMULATION_REPORT.json'),
+        'utf8'
+    ));
     const anomalie = new Set(precedente.analisiIncontri
         .filter((x) => !x.progressioneCoerente && x.avversario !== 'pegasus')
         .map((x) => x.id));
@@ -98,11 +101,13 @@ async function main() {
         turni: Number(valore('turni', '80')) || 80,
         seme: Number(valore('seme', '7000')) || 7000
     };
-    const output = valore('output', 'STORY_DIFFICULTY_FACTORIAL_REPORT.json');
+    const output = valore('output', 'reports/story/STORY_DIFFICULTY_FACTORIAL_REPORT.json');
     const report = await eseguiAudit(opts);
-    fs.writeFileSync(path.resolve(output), JSON.stringify(report, null, 2) + '\n', 'utf8');
+    const destinazione = path.resolve(RADICE, output);
+    fs.mkdirSync(path.dirname(destinazione), { recursive: true });
+    fs.writeFileSync(destinazione, JSON.stringify(report, null, 2) + '\n', 'utf8');
     console.table(report.risultati);
-    console.log(`Report scritto in ${path.resolve(output)}`);
+    console.log(`Report scritto in ${destinazione}`);
 }
 
 if (require.main === module) main().catch((e) => { console.error(e.stack || e); process.exit(1); });

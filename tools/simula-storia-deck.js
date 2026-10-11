@@ -200,6 +200,7 @@ async function main() {
     console.table(report.risultati);
     if (opzioni.output) {
         const destinazione = path.resolve(opzioni.output);
+        fs.mkdirSync(path.dirname(destinazione), { recursive: true });
         fs.writeFileSync(destinazione, JSON.stringify(report, null, 2) + '\n', 'utf8');
         console.log(`Report scritto in ${destinazione}`);
     }

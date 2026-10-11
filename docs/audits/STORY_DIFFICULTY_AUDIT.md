@@ -1,6 +1,6 @@
 # Audit difficoltà della Storia anime
 
-Data: 2026-10-07. Dati grezzi: `STORY_DECK_SIMULATION_REPORT.json`.
+Data: 2026-10-07. Dati grezzi: `reports/story/STORY_DECK_SIMULATION_REPORT.json`.
 
 ## Obiettivo e metodo
 
@@ -83,7 +83,7 @@ dell'IA o la consistenza di uno specifico deck, preservandone sempre il tema.
 ## Audit fattoriale: risultato
 
 Il controllo è stato eseguito e i dati grezzi sono in
-`STORY_DIFFICULTY_FACTORIAL_REPORT.json`. Ha isolato i 16 incontri anomali
+`reports/story/STORY_DIFFICULTY_FACTORIAL_REPORT.json`. Ha isolato i 16 incontri anomali
 non-Toon lungo due assi, sempre sugli stessi 15 deck campione e con gli stessi
 semi.
 
@@ -138,7 +138,7 @@ Nessun deck e nessuna euristica sono stati modificati durante questi audit.
 ## Verifica dopo la correzione di IA Hard
 
 Il secondo report completo è
-`STORY_DIFFICULTY_FACTORIAL_REPORT_AFTER_AI_FIX_V2.json` (stessi semi, 15
+`reports/story/STORY_DIFFICULTY_FACTORIAL_REPORT_AFTER_AI_FIX_V2.json` (stessi semi, 15
 deck campione, massimo 50 tentativi). Nessuno Starter, Structure o deck
 avversario è stato modificato.
 
@@ -162,7 +162,7 @@ Il miglioramento è netto ma non viene presentato come perfetto:
 
 ## Affinamento tattico successivo
 
-Il report `STORY_DIFFICULTY_FACTORIAL_REPORT_HARD_TACTICS.json` misura un
+Il report `reports/story/STORY_DIFFICULTY_FACTORIAL_REPORT_HARD_TACTICS.json` misura un
 secondo intervento sempre a deck invariati. Hard ora:
 
 - attiva una pescata/ricerca pura prima dell'Evocazione Normale, così può
@@ -185,7 +185,7 @@ testo e il report peggiorava.
 
 Come richiesto dall'utente, anche IA Media gestisce ora Attacco↔Difesa: usa
 solo informazioni visibili, mentre Hard può valutare anche i mostri coperti.
-Il report `STORY_DIFFICULTY_FACTORIAL_REPORT_POSITIONS.json` non va letto come
+Il report `reports/story/STORY_DIFFICULTY_FACTORIAL_REPORT_POSITIONS.json` non va letto come
 una regressione da correggere indebolendo Media: entrambi i livelli sono più
 competenti.
 
@@ -203,7 +203,7 @@ legge più l'avversario globale della pagina: in un duello IA contro IA ogni
 lato mantiene la propria personalità. Se l'identità è assente o non ha un
 profilo (WW1, sandbox e contenuti custom), viene usato il valore neutro.
 
-Il report `STORY_DIFFICULTY_FACTORIAL_REPORT_PLAYBOOKS.json` usa 50 tentativi
+Il report `reports/story/STORY_DIFFICULTY_FACTORIAL_REPORT_PLAYBOOKS.json` usa 50 tentativi
 per scontro e 15 deck campione. Hard sale da +0,54 a **+0,57 tentativi medi**
 rispetto a Media e da 10/16 a **11/16** incontri pari o superiori. Restano
 sotto Kaiba nel prologo, Joey al Castello, Seeker, Gansley e Noah. È stata
@@ -213,7 +213,7 @@ perché renderebbero WW1 e carte custom dipendenti da lavoro manuale.
 
 ## Playbook Hard e primo bilanciamento lore-safe
 
-Il report conclusivo è `STORY_DIFFICULTY_FACTORIAL_REPORT_BALANCED.json`
+Il report conclusivo è `reports/story/STORY_DIFFICULTY_FACTORIAL_REPORT_BALANCED.json`
 (50 tentativi per incontro, 15 deck campione, Pegasus escluso). Le strategie
 tenute dopo le prove sono: scelta Magie/Trappole più incisiva di Media;
 Terreni e finestre di inizio Main Phase prima dell'Evocazione; Seeker dà
@@ -235,7 +235,7 @@ o superiori. Nessuno Starter/Structure è stato modificato.
 
 ## Matrice completa dopo il bilanciamento
 
-`STORY_DECK_SIMULATION_REPORT_AFTER_BALANCE.json` ripete l'intera campagna
+`reports/story/STORY_DECK_SIMULATION_REPORT_AFTER_BALANCE.json` ripete l'intera campagna
 principale con 16 Starter/Structure, tre difficoltà e fino a 50 tentativi per
 ciascuno dei 26 duelli. La progressione aggregata è ora chiaramente monotona:
 **1,64** tentativi medi per duello a Facile, **3,45** a Normale e **4,12** a

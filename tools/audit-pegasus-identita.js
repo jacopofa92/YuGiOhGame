@@ -35,7 +35,7 @@ async function main() {
     const partite = Math.max(1, Number(argomento('partite', '50')) || 50);
     const turni = Math.max(20, Number(argomento('turni', '80')) || 80);
     const semeBase = Number(argomento('seme', '91000')) || 91000;
-    const output = argomento('output', 'PEGASUS_OPPONENT_IDENTITY_AUDIT.json');
+    const output = argomento('output', 'reports/pegasus/PEGASUS_OPPONENT_IDENTITY_AUDIT.json');
     const risultati = [];
 
     for (const livello of LIVELLI) {
@@ -86,7 +86,9 @@ async function main() {
         segnali: SEGNALI,
         risultati
     };
-    fs.writeFileSync(path.resolve(__dirname, '..', output), JSON.stringify(report, null, 2) + '\n', 'utf8');
+    const destinazione = path.resolve(__dirname, '..', output);
+    fs.mkdirSync(path.dirname(destinazione), { recursive: true });
+    fs.writeFileSync(destinazione, JSON.stringify(report, null, 2) + '\n', 'utf8');
     console.log(`Report scritto in ${output}`);
 }
 

@@ -17,9 +17,9 @@ da Simon Muran a DarkNite. Starter e Structure non sono stati modificati.
 - controllo separato delle Fusioni realmente eseguite, non soltanto delle
   carte dichiarate nelle liste.
 
-I dati grezzi sono in `FORBIDDEN_MEMORIES_AUDIT.json`,
-`FORBIDDEN_MEMORIES_REPEATABLE_IMPACT.json` e
-`FORBIDDEN_MEMORIES_STRATEGY_AUDIT.json`.
+I dati grezzi sono in `reports/forbidden-memories/FORBIDDEN_MEMORIES_AUDIT.json`,
+`reports/forbidden-memories/FORBIDDEN_MEMORIES_REPEATABLE_IMPACT.json` e
+`reports/forbidden-memories/FORBIDDEN_MEMORIES_STRATEGY_AUDIT.json`.
 
 ## Risultati
 
