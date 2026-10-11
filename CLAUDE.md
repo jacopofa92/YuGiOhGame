@@ -1,9 +1,20 @@
-# YuGiOhGame — contesto per Claude
+# Yu-Gi-Oh! Millennium Duel Arena — contesto per Claude
 
 Duello Yu-Gi-Oh completo in HTML/JS puro, **nessun build, nessun bundler,
 nessun framework**: ogni pagina è un file `.html` apribile anche solo con
 doppio click (`file://`), con `<script src="...">` in sequenza fissa.
-Autore unico (Jacopo/jacopofa92), repo Git a un solo branch attivo (`main`).
+Autore unico (Jacopo/jacopofa92), repo Git **privato**
+`jacopofa92/millennium-duel-arena` (prima `YuGiOhGame`) a un solo branch
+attivo (`main`).
+
+**Dove gira (dal 2026-10-11)**: sito su Cloudflare Workers
+(`https://millennium-duel-arena.workspace-j10-jacopo.workers.dev`), ricostruito
+da solo a ogni push su main con `npm run pubblica` (copia minificata in
+`dist/`). GitHub Pages non si usa più (il repository è privato). Server
+Multiplayer su Render: `millennium-duel-arena-relay`. APK di produzione in
+`C:\AndroidDev\YuGiOhGameAndroidProd`, puntata al sito Cloudflare. La suite
+su GitHub parte solo a mano o su pull request (2.000 minuti al mese del piano
+Free per i repository privati); a ogni push gira solo il controllo sintassi.
 
 **Mappa corrente breve**: leggere prima `PROJECT_MAP.md`. Contiene
 architettura, fonti di verità, comandi, rischi e stato dei lavori attivi senza

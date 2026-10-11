@@ -37,6 +37,13 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    # La suite completa (circa 30 minuti, di più con le ripetizioni dei
+    # test instabili) NON parte a ogni push: da quando il repository è
+    # privato, GitHub Free dà 2.000 minuti al mese, che con un push sì e uno
+    # no finirebbero in pochi giorni. Parte su una pull request verso main e
+    # a mano (Actions > Test suite > Run workflow). Il controllo di sintassi
+    # qui sopra, che dura secondi, resta a ogni push.
+    if: github.event_name != 'push'
     # Se la sintassi è rotta la suite non può che fallire: inutile
     # accendere un browser e aspettare otto minuti per scoprirlo.
     needs: sintassi
