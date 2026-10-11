@@ -440,7 +440,8 @@
 // v218: menu Tutorial (tutorial.html) e lezioni brevi su Catena, Fusione e Flip.
 // v219: Storia anime riallineata all'anime (duelli mancanti, laterali dalla parte di chi vince).
 // v221: avatar definitivi e sinergie IA/deck di Mage Soldier.
-const CACHE_NAME = 'ygo-duel-arena-v221';
+// v222: Duello Sandbox visibile solo all'amministratore.
+const CACHE_NAME = 'ygo-duel-arena-v222';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
