@@ -163,7 +163,24 @@ module.exports = {
             gameState.botMonsterField = [{ card: { ...base, attack: 100, defense: 100, uid: 'v1' }, position: 'attack', isFaceDown: false }, { card: { ...base, attack: 100, defense: 100, uid: 'v2' }, position: 'attack', isFaceDown: false }, null, null, null];
             resolveAttack('player', 0, 0, () => { window.__battleDone = true; });
         });
-        const asura1 = await t.evaluate(() => ({ puoAncora: !gameState.playerMonsterField[0].hasAttacked }));
+        // Sulla suite di GitHub (Linux, più lenta) qui il Sacerdote non era più
+        // nella sua casella, e il test si fermava su un "null" senza dire
+        // altro. Ora, se manca, l'errore racconta dove è finito e cosa dice il
+        // registro del duello: è da lì che si capirà la causa vera.
+        const asura1 = await t.evaluate(() => {
+            const slot = gameState.playerMonsterField[0];
+            if (slot && slot.card && slot.card.uid === 'asura') return { presente: true, puoAncora: !slot.hasAttacked };
+            const dove = (z) => (gameState[z] || []).some((c) => c && (c.uid === 'asura' || (c.card && c.card.uid === 'asura')));
+            const log = Array.from(document.querySelectorAll('#gameLog .log-entry, #gameLog p, #gameLog div')).slice(-8).map((e) => e.textContent.trim()).filter(Boolean);
+            return {
+                presente: false,
+                casella0: slot ? (slot.card && slot.card.uid) : null,
+                campo: gameState.playerMonsterField.map((s) => s && s.card && s.card.uid),
+                cimitero: dove('playerGraveyard'), banditi: dove('playerBanished'),
+                fase: gameState.phase, turno: gameState.turn, diChi: gameState.currentPlayer, log
+            };
+        });
+        t.assert(asura1.presente, `Il Sacerdote di Asura deve essere ancora in campo dopo il primo attacco: ${JSON.stringify(asura1)}`);
         t.assert(asura1.puoAncora, 'Dopo aver attaccato un mostro, il Sacerdote di Asura può attaccare ancora (resta un altro mostro)');
         await t.evaluate(() => { window.__battleDone = false; resolveAttack('player', 0, 1, () => { window.__battleDone = true; }); });
         await t.page.waitForFunction(() => window.__battleDone === true, null, { timeout: 8000 });

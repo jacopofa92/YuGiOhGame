@@ -322,6 +322,16 @@
             mostriGiocatore: [mostro(ID.drago), mostro(ID.celtico)],
             mtGiocatore: [copertaPronta(ID.giudizio)]
         });
+        // Il nonno pesca a inizio turno. Se pescasse un mostro evocabile e
+        // lo evocasse PRIMA di Raigeki, il gioco chiederebbe di rispondere
+        // all'Evocazione e Giudizio Solenne si consumerebbe lì: Raigeki
+        // passerebbe e la lezione insegnerebbe il contrario. È successo
+        // davvero sulla suite di GitHub, dove l'IA ha tempi diversi. Nel suo
+        // mazzo restano solo Draghi Bianchi (Livello 8): senza Tributi non
+        // si evocano, quindi l'unica mossa possibile è Raigeki.
+        const draghi = carte([ID.drago, ID.drago, ID.drago, ID.drago, ID.drago, ID.drago]);
+        gameState[Tavolo.chiave('bot', 'Deck')] = draghi;
+        gameState[Tavolo.chiave('bot', 'DeckCount')] = draghi.length;
     }
     const PASSI_CATENA = [
         {
