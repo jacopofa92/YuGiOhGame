@@ -277,6 +277,25 @@
                 return { zone: 'monster', index, card: slot.card };
             }
         }
+        // Mage Soldier deve saper convertire i Segnalini Magia in vero
+        // controllo del campo. Non attiviamo genericamente ogni Ignition:
+        // Distruttore ha gia' canActivate vincolato a un retrocampo nemico,
+        // mentre per Mago dell'Esplosione imponiamo qui un bersaglio NEMICO
+        // alla portata, evitando che la scelta di ripiego distrugga un
+        // proprio mostro quando sul lato avversario non c'e' nulla.
+        for (let index = 0; index < campo.length; index++) {
+            const slot = campo[index];
+            if (!slot || slot.isFaceDown || (slot.card.id !== 131 && slot.card.id !== 742)) continue;
+            if (slot.card.id === 742) {
+                const portata = (slot.card.counters || 0) * 700;
+                const bersaglioNemico = Tavolo.mostri(Tavolo.avversario(io), gameState).some((nemico) => nemico
+                    && !nemico.isFaceDown && DuelEngine.getEffectiveAtk(nemico.card) <= portata);
+                if (!bersaglioNemico) continue;
+            }
+            if (window.DuelEngine && DuelEngine.canActivate(io, 'monster', index)) {
+                return { zone: 'monster', index, card: slot.card };
+            }
+        }
         // I Cannoni Drago di Kaiba e future carte equivalenti convertono
         // uno scarto in una rimozione. Lasciarli scoperti senza usare
         // l'Ignition renderebbe inutile la combinazione appena compiuta.

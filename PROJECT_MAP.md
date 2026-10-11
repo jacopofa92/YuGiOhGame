@@ -1,6 +1,27 @@
 # YuGiOhGame — mappa tecnica persistente
 
-Ultimo aggiornamento verificato: 2026-10-07.
+Ultimo aggiornamento verificato: 2026-10-11.
+
+## Mage Soldier: identita' visiva e deck (2026-10-11)
+
+Il placeholder di Mage Soldier e' stato sostituito da un ritratto definitivo
+coerente con il personaggio di Forbidden Memories. Le tre risorse condividono
+la stessa figura: `images/characters/mageSoldier.jpg` per le schede del Duello
+Libero, l'originale scontornato in `avatarTrasparenza/mageSoldier.png` e la
+pedina ottimizzata 320x320 in `pedine/mageSoldier.png`.
+
+L'audit del deck ha chiuso tre linee che esistevano soltanto sulla carta:
+Evocatore di Illusioni ora trova Re dei Musicisti nell'Extra Deck Facile e
+Medio; Distruttore accetta i Segnalini Magia esterni; IA Media (e quindi anche
+Hard) usa le rimozioni di Distruttore e Mago dell'Esplosione solo quando hanno
+un bersaglio nemico utile. Nel Difficile, i due Abili Maghi Oscuri privi di
+Mago Nero sono stati sostituiti da Bestia Mitica Cerbero, coerente col piano a
+Segnalini e Magie. Guardrail: `mage-soldier-deck-ai`.
+
+Misura riproducibile, 50 duelli per livello contro Yugi Muto Medio, stessi
+semi: Mage Soldier vince 11/50 Facile, 32/50 Medio e 41/50 Difficile; nessun
+errore, invariante o duello al limite. La curva e' quindi netta senza cambiare
+Starter o Structure Deck.
 
 ## Apertura immediata del Duello Libero (2026-10-10)
 

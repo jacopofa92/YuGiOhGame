@@ -3069,7 +3069,11 @@ const characterDeckDatabase = {
                 { id: 600, qty: 1 }, // Trappola Fasulla
                 { id: 875, qty: 1 } // Libro della Luna
             ],
-            extra: []
+            extra: [
+                // Evocatore di Illusioni ha finalmente un bersaglio reale;
+                // i materiali sono gia' entrambi nel Main Deck.
+                { id: 387, qty: 1 } // Re dei Musicisti
+            ]
         },
         medium: {
             main: [
@@ -3105,7 +3109,9 @@ const characterDeckDatabase = {
                 { id: 646, qty: 1 }, // Tempesta Pesante
                 { id: 546, qty: 1 } // Dian Keto la Maestra delle Cure
             ],
-            extra: []
+            extra: [
+                { id: 387, qty: 1 } // Re dei Musicisti
+            ]
         },
         hard: {
             main: [
@@ -3114,7 +3120,10 @@ const characterDeckDatabase = {
                 { id: 744, qty: 2 }, // Mago a Fuoco Rapido
                 { id: 742, qty: 2 }, // Mago dell'Esplosione
                 { id: 1066, qty: 1 }, // Elfa Oscura
-                { id: 736, qty: 2 }, // Abile Mago Oscuro
+                // Abile Mago Oscuro senza Mago Nero era una linea morta.
+                // Cerbero conserva i Segnalini Magia e premia davvero le
+                // numerose Magie del livello Difficile.
+                { id: 734, qty: 2 }, // Bestia Mitica Cerbero
                 { id: 554, qty: 2 }, // Stregone dei Dannati
                 { id: 550, qty: 1 }, // Il Mistico Severo
                 { id: 591, qty: 2 }, // Cappello Magico Bianco

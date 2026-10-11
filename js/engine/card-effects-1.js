@@ -2901,6 +2901,11 @@
     // primo trovato) invece di un'interfaccia di selezione dedicata.
     // ================================================================
     CardEffects.register(131, {
+        // Anche i Segnalini aggiunti da altre carte (per esempio Mago
+        // Apprendista) devono essere accettati: senza questo contratto il
+        // Distruttore del mazzo Mage Soldier poteva ricevere soltanto il
+        // proprio Segnalino dell'Evocazione Normale.
+        acceptsSpellCounters: 'counters',
         onSummon(ctx) {
             ctx.summonedCard.counters = (ctx.summonedCard.counters || 0) + 1;
             ctx.log('🔮 Distruttore, il Guerriero Magico riceve un Segnalino Magia!');
