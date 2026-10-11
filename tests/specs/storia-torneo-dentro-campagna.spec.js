@@ -94,7 +94,9 @@ module.exports = {
                 const t = StoryProgress.getTorneo(d.c, d.t);
                 return (t.tappe || []).map((p) => p.characterId || ('scena:' + p.kind));
             }, { c: CAMPAGNA, t: TORNEO });
-            const ATTESO = ['rex', 'weevil', 'mai', 'bandit_keith',
+            // Dopo i preliminari, come nel gioco, Shadi porta Yugi dentro il
+            // Puzzle (una scena) prima delle finali.
+            const ATTESO = ['rex', 'weevil', 'mai', 'bandit_keith', 'scena:scene',
                 'shadi', 'bakura', 'pegasus', 'ishizu', 'kaiba', 'scena:scene'];
             assert(tabellone.join(',') === ATTESO.join(','),
                 `Il tabellone deve seguire il gioco originale.\n  atteso: ${ATTESO.join(', ')}\n  trovato: ${tabellone.join(', ')}`);

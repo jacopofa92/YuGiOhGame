@@ -166,6 +166,9 @@ module.exports = {
             const perCapitolo = await page.evaluate(() => {
                 const out = {};
                 StoryProgress.getTappe('forbiddenMemories').forEach((t) => {
+                    // L'ultima tappa del presente è il ritorno in Egitto: lì
+                    // parla di nuovo il principe (protagonista della tappa).
+                    if (t.id === 'fm-3-ritorno') { out.ritorno = new Set([(t.protagonista || {}).name]); return; }
                     out[t.capitoloId] = out[t.capitoloId] || new Set();
                     out[t.capitoloId].add((t.protagonista || {}).name || '(nessuno)');
                 });
@@ -181,6 +184,8 @@ module.exports = {
                 `Nel capitolo del presente si deve essere Yugi Muto: ${JSON.stringify(perCapitolo.capitoli['fm-presente'])}`);
             assert(String(perCapitolo.capitoli['fm-principe']) === 'Atem',
                 `Nel passato si deve restare Atem: ${JSON.stringify(perCapitolo.capitoli['fm-principe'])}`);
+            assert(String(perCapitolo.capitoli.ritorno) === 'Atem',
+                `Nella scena del ritorno in Egitto si torna il principe: ${JSON.stringify(perCapitolo.capitoli.ritorno)}`);
             assert(String(perCapitolo.torneo) === 'Yugi Muto',
                 `Dentro il torneo si è la stessa persona della tappa che lo contiene: ${JSON.stringify(perCapitolo.torneo)}`);
 
@@ -188,9 +193,10 @@ module.exports = {
             // l'URL porta la tappa (?tappa=), e il duello ne ricava il
             // capitolo. Senza quel parametro si tornerebbe al protagonista
             // della campagna senza che nulla lo segnali.
-            for (const [tappa, atteso] of [['fm-3-shadi', 'Yugi Muto'],
+            for (const [tappa, atteso] of [['fm-3t-rex', 'Yugi Muto'],
                 ['fm-3t-kaiba', 'Yugi Muto'],
-                ['fm-1-jono', 'Atem']]) {
+                ['fm-1-jono', 'Atem'],
+                ['fm-4-mage-soldier', 'Atem']]) {
                 await page.goto(base + 'duelMonstersCore.html?mode=story&campaign=forbiddenMemories'
                     + '&character=kaiba&difficulty=Medio&tappa=' + tappa);
                 await page.waitForFunction(() => !!(window.DuelSession && DuelSession.player), null, { timeout: 25000 });

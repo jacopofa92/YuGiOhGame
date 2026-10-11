@@ -1769,23 +1769,25 @@ const storyCampaignsDatabase = [
             {
                 id: 'fm-principe',
                 nome: 'Il Regno del Principe',
-                testo: 'Tremila anni prima di tutto: un regno in pace, un maestro, e tre amici con cui esercitarsi.',
+                // Cinquemila anni, come nel gioco e come nel resto di questa
+                // campagna (qui c'era scritto "tremila").
+                testo: 'Cinquemila anni prima di tutto: un regno in pace, un maestro severo, e un principe che scappa dal palazzo per duellare in paese.',
                 tappe: [
                     {
                         id: 'fm-1-scena', kind: 'scene', icona: '🏛️',
                         label: 'La lezione', x: 1640, y: 350,
                         chi: 'Simon Muran', chiId: 'simonMuran',
                         testo: [
-                            'Mio principe, il regno è in pace e tu sei annoiato. È esattamente quando un sovrano è più in pericolo.',
+                            'Mio principe, le guardie ti hanno visto scavalcare di nuovo il muro del giardino. A duellare in paese, con la gente del mercato.',
                             'Tuo padre mi ha affidato due cose: te e i Sette Oggetti del Millennio. Della seconda si occupano i sacerdoti; della prima, purtroppo, io.',
-                            'Prendi le carte. Questo gioco è vecchio quanto il regno, e non è un passatempo: si impara a leggere l\'avversario prima che muova.',
-                            'Finché mi batti a questo gioco, so che sei ancora sveglio.',
+                            'Non ti proibirò di giocare: questo gioco è vecchio quanto il regno, e insegna a leggere l\'avversario prima che muova.',
+                            'Ti chiedo solo di battere prima me. Finché mi batti, so che fuori da queste mura sai cavartela.',
                             'E un giorno ti servirà saperlo fare contro qualcuno che non ti vuole bene.'
                         ]
                     },
                     {
                         id: 'fm-1-simon', kind: 'duel', icona: '📜',
-                        label: 'Simon Muran', x: 1430, y: 480,
+                        label: 'Simon Muran', x: 1470, y: 520,
                         characterId: 'simonMuran', difficulty: 'Medio',
                         field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg'
 ,
@@ -1795,40 +1797,49 @@ const storyCampaignsDatabase = [
                             { io: true, testo: 'Allora facciamo in modo che la seconda non mi serva mai.' }
                         ]
                     },
-                    {
-                        id: 'fm-1-jono', kind: 'duel', icona: '🗡️',
-                        label: 'Jono', x: 1230, y: 620,
-                        characterId: 'jono', difficulty: 'Medio',
-                        field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg'
-,
-                        dialogo: [
-                            { chi: 'jono', testo: 'Principe. Mi hanno fatto lavare tre volte prima di lasciarmi entrare qui dentro.' },
-                            { chi: 'jono', testo: 'Io non ho un tutore che mi insegna le regole. Ho imparato al mercato, dove chi perde paga davvero.' },
-                            { io: true, testo: 'Allora insegnami qualcosa anche tu.' }
-                        ]
-                    },
+                    // Nel gioco il principe incontra Teana e Jono all'arena del
+                    // paese, non a palazzo: è lì che scappa a duellare. Teana
+                    // viene prima di Jono, come nell'ordine originale.
                     {
                         id: 'fm-1-teana', kind: 'duel', icona: '🌾',
-                        label: 'Teana', x: 1460, y: 730,
+                        label: 'Teana', x: 1450, y: 900,
                         characterId: 'teana', difficulty: 'Medio',
                         field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg'
 ,
                         dialogo: [
-                            { chi: 'teana', testo: 'Jono ti ha detto che ha imparato al mercato? Ha imparato da me, al mercato.' },
-                            { chi: 'teana', testo: 'E non fare quella faccia da principe che lascia vincere. Lo vedo, sai, quando lo fai.' },
-                            { io: true, testo: 'Non ho intenzione di farlo.' }
+                            { chi: 'teana', testo: 'Un ragazzo col mantello troppo bello per il mercato… e scommetto che fuggi da qualche maestro.' },
+                            { chi: 'teana', testo: 'Qui all\'arena nessuno ti fa vincere perché sei di buona famiglia. E non fare quella faccia: lo vedo, quando qualcuno si trattiene.' },
+                            { io: true, testo: 'Non ho intenzione di trattenermi.' }
                         ]
                     },
                     {
-                        id: 'fm-1-isis', kind: 'duel', icona: '🔮',
-                        label: 'Sacerdotessa Isis', x: 1720, y: 660,
-                        characterId: 'priestessIsis', difficulty: 'Medio',
-                        field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg'
+                        id: 'fm-1-jono', kind: 'duel', icona: '🗡️',
+                        label: 'Jono', x: 1640, y: 960,
+                        characterId: 'jono', difficulty: 'Medio',
+                        field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg'
 ,
                         dialogo: [
-                            { chi: 'priestessIsis', testo: 'La Collana mi mostra sempre lo stesso frammento, mio principe, e non mi piace: una notte, il tempio aperto, e sette luci che se ne vanno.' },
-                            { chi: 'priestessIsis', testo: 'Non so quando. So che duellerai piu\' di quanto un sovrano dovrebbe.' },
-                            { io: true, testo: 'Allora comincio adesso.' }
+                            { chi: 'jono', testo: 'Hai battuto Teana? Allora tocca a me. Io non ho un tutore che mi insegna le regole: ho imparato qui, dove chi perde paga davvero.' },
+                            { chi: 'jono', testo: 'E stasera c\'è la festa: se vinco, mi offri da bere. Se vinci tu, ti porto a vedere i duelli dei sacerdoti.' },
+                            { io: true, testo: 'Allora preparati a portarmi alla festa.' }
+                        ]
+                    },
+                    // Alla festa del paese il sacerdote Seto umilia Jono, e il
+                    // principe lo sfida. Nel gioco è qui che Seto compare, ed
+                    // è qui che promette di rivedere il principe. Prendeva il
+                    // posto di un duello con la Sacerdotessa Isis, che nel
+                    // passato non c'è: la si incontra solo nel torneo di Kaiba.
+                    {
+                        id: 'fm-1-seto-festa', kind: 'duel', icona: '🔺',
+                        label: 'Seto alla festa', x: 1850, y: 880,
+                        characterId: 'priestSeto', difficulty: 'Medio',
+                        field: 'images/fields/mobile/anticoEgittoNotte_1.jpg'
+,
+                        dialogo: [
+                            { chi: 'jono', testo: 'Ahi… quel sacerdote mi ha spazzato via in tre turni. E ride pure.' },
+                            { chi: 'priestSeto', testo: 'Un mendicante che gioca con le carte dei re. E tu chi saresti, ragazzino, per difenderlo?' },
+                            { io: true, testo: 'Uno che non ride di chi ha appena battuto. Sfido te, sacerdote.' },
+                            { chi: 'priestSeto', testo: 'Come vuoi. Ma ricordati la mia faccia: chi mi batte, prima o poi, mi rivede.' }
                         ]
                     }
                 ]
@@ -1840,7 +1851,7 @@ const storyCampaignsDatabase = [
                 tappe: [
                     {
                         id: 'fm-2-presagio', kind: 'scene', icona: '🌘',
-                        label: 'Il potere oscuro', x: 1830, y: 650,
+                        label: 'Il potere oscuro', x: 1880, y: 440,
                         chi: 'Simon Muran', chiId: 'simonMuran',
                         testo: [
                             'Ho trovato Heishin nelle rovine proibite. Dice di aver scoperto un Potere Oscuro e brandisce la Barra del Millennio come se gli appartenesse.',
@@ -1851,50 +1862,60 @@ const storyCampaignsDatabase = [
                     },
                     {
                         id: 'fm-2-scena', kind: 'scene', icona: '⚔️',
-                        label: 'Il colpo di stato', x: 1990, y: 780,
+                        label: 'Il colpo di stato', x: 2000, y: 580,
                         chi: 'Heishin', chiId: 'heishin',
                         testo: [
-                            'Sette Oggetti del Millennio. Sette. E voi ne tenevate uno ciascuno, come fossero gioielli.',
-                            'Un sacerdote per Oggetto, e nessuno che si chiedesse mai cosa succederebbe se fossero tutti nelle stesse mani.',
-                            'Io li ho presi tutti. Il trono viene dopo: è la parte facile.',
-                            'Le guardie del palazzo si sono arrese prima dell\'alba. Non per paura di me — per paura di quello che avevo in mano.',
-                            'Cercate pure il principe. Io cerco altro, e ho già cominciato a scavare.'
+                            'Il Faraone e la Regina sono nelle mie mani. Le guardie si sono arrese prima dell\'alba: non per paura di me, per paura di quello che ho trovato nelle Rovine Proibite.',
+                            'Il tesoro degli antichi stregoni. Un potere che i vostri sacerdoti hanno sepolto perché non sapevano usarlo.',
+                            'Sette Oggetti del Millennio, uno per sacerdote, e nessuno che si chiedesse mai cosa succederebbe se fossero tutti nelle stesse mani.',
+                            'Ne mancano ancora. Il più prezioso lo porta il principe al collo, o lo nasconde il suo vecchio maestro.',
+                            'Trovateli. Il trono viene dopo: è la parte facile.'
                         ]
                     },
+                    // Nel gioco Seto è fra gli invasori, ma non duella: pretende
+                    // il Puzzle in cambio di una via di fuga. Il principe
+                    // rifiuta, e alle sue spalle arriva Simon, ferito, col
+                    // Puzzle in mano. Il tradimento vero di Seto arriva solo
+                    // alla fine della storia.
                     {
-                        id: 'fm-2-seto', kind: 'duel', icona: '🔺',
-                        label: 'Sacerdote Seto', x: 2160, y: 920,
-                        characterId: 'priestSeto', difficulty: 'Difficile',
-                        field: 'images/fields/mobile/anticoEgittoNotte_1.jpg'
-,
-                        dialogo: [
-                            { chi: 'priestSeto', testo: 'Il tempio e\' aperto, le guardie sono a terra e io sono qui davanti a te. Immagino tu abbia gia\' capito da che parte sto.' },
-                            { chi: 'priestSeto', testo: 'Heishin mi ha promesso il trono. Non e\' per il trono: e\' che a te il trono e\' stato dato, e a me no.' },
-                            { io: true, testo: 'Ti e\' stato dato un tempio da custodire. Guarda com\'e\' ridotto.' }
+                        id: 'fm-2-seto', kind: 'scene', icona: '🔺',
+                        label: 'L\'offerta di Seto', x: 1850, y: 660,
+                        chi: 'Sacerdote Seto', chiId: 'priestSeto',
+                        testo: [
+                            { chi: 'priestSeto', testo: 'Ci rivediamo, principe. Te l\'avevo detto, alla festa.' },
+                            { chi: 'priestSeto', testo: 'Dammi il Puzzle del Millennio e ti faccio uscire dal palazzo vivo. Nessuno saprà che sono stato io ad aprirti la porta.' },
+                            { io: true, testo: 'Sei venuto insieme agli uomini che hanno incatenato mio padre. Il Puzzle non lo avrai, Seto.' },
+                            { chi: 'priestSeto', testo: 'Come vuoi. Heishin non sarà gentile quanto me.' },
+                            { chi: 'simonMuran', testo: 'Principe… di qua, presto! Il Puzzle ce l\'ho io. Heishin mi è alle calcagna.' }
                         ]
                     },
                     {
                         id: 'fm-2-heishin', kind: 'duel', icona: '🏛️',
-                        label: 'Heishin', x: 1940, y: 1020,
+                        label: 'Heishin', x: 1665, y: 700,
                         characterId: 'heishin', difficulty: 'Difficile',
                         field: 'images/fields/mobile/anticoEgittoNotte_1.jpg'
 ,
                         dialogo: [
-                            { chi: 'heishin', testo: 'Sette su sette, e il tuo sacerdote me li ha portati senza che dovessi chiedere due volte.' },
-                            { chi: 'heishin', testo: 'Resti solo tu fra me e la corona, principe. E tu sei un ragazzo con un mazzo di carte.' },
-                            { io: true, testo: 'Un ragazzo con un mazzo di carte ti ha appena raggiunto qui dentro.' }
+                            { chi: 'heishin', testo: 'Il vecchio maestro col Puzzle in mano, e il principe che lo protegge. Che quadretto commovente.' },
+                            { chi: 'heishin', testo: 'Facciamo così, principe: un duello. Vinci, e forse ti lascio andare. Perdi, e il Puzzle è mio.' },
+                            { io: true, testo: 'Accetto. Ma non per il Puzzle: per mio padre.' }
                         ]
                     },
+                    // Nel gioco questo duello si perde per forza, ed è da lì che
+                    // il principe spezza il Puzzle. Qui si vince, e la scena
+                    // racconta quello che succede comunque: Heishin non ha mai
+                    // voluto rispettare il patto.
                     {
                         id: 'fm-2-sigillo', kind: 'scene', icona: '🧩',
-                        label: 'Il sigillo', x: 1680, y: 1080,
+                        label: 'Il sigillo', x: 1480, y: 640,
                         chi: 'Simon Muran', chiId: 'simonMuran',
                         testo: [
-                            'Non posso salvare il regno. Posso salvare te, e solo in un modo.',
-                            'Il Puzzle è l\'unico degli Oggetti che Heishin non ha ancora. Lo smonto io stesso, adesso, e con te dentro.',
-                            'Dormirai finché qualcuno non avrà la pazienza di rimetterlo insieme. Non la forza: la pazienza. È per questo che nessuno ci riuscirà presto.',
-                            'Potrebbero volerci molti anni. Non ho un numero da darti.',
-                            'Quando ti sveglierai, il mio nome non se lo ricorderà nessuno. Fa niente: ricordati il tuo.'
+                            { chi: 'heishin', testo: 'Hai vinto la partita, principe. Peccato che io non abbia mai giocato per rispettarla. Guardie: prendete il Puzzle.' },
+                            { chi: 'simonMuran', testo: 'Non posso salvare il regno, principe. Posso salvare te, e solo in un modo: spezza il Puzzle. Adesso, mentre li trattengo io.' },
+                            { io: true, testo: 'Simon, se lo spezzo…' },
+                            { chi: 'simonMuran', testo: 'Le nostre anime resteranno sigillate dentro, la tua e la mia. Dormirai finché qualcuno non avrà la pazienza di rimetterlo insieme. Non la forza: la pazienza.' },
+                            { chi: 'simonMuran', testo: 'Potrebbero volerci molti anni. Non ho un numero da darti.' },
+                            { testo: 'Il principe alza il Puzzle sopra la testa e lo lascia cadere. Mille pezzi d\'oro si spargono sul pavimento, e il palazzo sparisce nel buio.' }
                         ]
                     }
                 ]
@@ -1911,27 +1932,32 @@ const storyCampaignsDatabase = [
                 // della campagna per tutte le sue tappe, torneo compreso.
                 protagonista: { name: 'Yugi Muto', title: 'Il ragazzo del Puzzle', image: 'images/characters/yugiMuto.jpg', icon: '🧩' },
                 tappe: [
+                    // Nel gioco il presente si apre con Yugi che si sveglia da un
+                    // sogno: un principe, un palazzo in fiamme, un Puzzle che si
+                    // spezza. Shadi arriva solo più tardi, a torneo iniziato.
                     {
                         id: 'fm-3-scena', kind: 'scene', icona: '💡',
-                        label: 'L\'ultimo pezzo', x: 2270, y: 1270,
-                        chi: 'Shadi', chiId: 'shadi',
+                        label: 'Il sogno', x: 1560, y: 1600,
+                        chi: 'Yugi Muto', chiId: 'yugiMuto',
                         testo: [
-                            'Il Puzzle è stato completato. Dopo cinquemila anni, un ragazzo ci è riuscito — e quel ragazzo somiglia al Principe più di quanto sappia.',
-                            'Gli Oggetti sono tornati a muoversi. Sei di loro dormono ancora sotto la sabbia; il settimo lo porta al collo chi ha appena finito di montarlo.',
-                            'Ma prima di guardare indietro devi guardarti intorno. C\'è un ragazzo, in questa città, che tiene fra le mani una carta che apparteneva a un sacerdote.',
-                            'Non lo sa, naturalmente. Nessuno di loro sa niente: giocano con la vostra storia stampata su cartoncino e la chiamano un passatempo.',
-                            'Va\' a riprendertela. E non farlo da principe: falla come la fanno loro, iscrivendoti al loro torneo.'
+                            { testo: 'Domino City, cinquemila anni dopo. Un ragazzo si sveglia di soprassalto, con il Puzzle del Millennio stretto fra le mani.' },
+                            { io: true, testo: 'Ancora quel sogno… un principe, un palazzo in fiamme, un vecchio che gli dice di spezzare il Puzzle.' },
+                            { io: true, testo: 'L\'ho rimesso insieme pezzo per pezzo, per anni. È come se qualcuno, là dentro, stesse aspettando proprio me.' },
+                            { chi: 'solomonMuto', testo: 'Yugi, sei sveglio? Il torneo mondiale della Kaiba Corporation comincia oggi. Non vorrai arrivare tardi!' }
                         ]
                     },
+                    // L'iscrizione al torneo. Era un duello con Shadi prima del
+                    // torneo, che nel gioco non c'è: Shadi Yugi lo incontra dopo
+                    // i preliminari, e lo affronta nelle finali.
                     {
-                        id: 'fm-3-shadi', kind: 'duel', icona: '🗝️',
-                        label: 'Shadi', x: 2520, y: 1370,
-                        characterId: 'shadi', difficulty: 'Difficile',
-                        field: 'images/fields/mobile/rovine_1.jpg',
-                        dialogo: [
-                            { chi: 'shadi', testo: 'Non sono un avversario, ragazzo. Sono una prova.' },
-                            { chi: 'shadi', testo: 'La Bilancia pesa ciò che uno è, non ciò che dice di essere. Se il tuo cuore non regge il peso del Puzzle, è meglio scoprirlo qui che laggiù.' },
-                            { io: true, testo: 'Allora pesalo.' }
+                        id: 'fm-3-shadi', kind: 'scene', icona: '🎟️',
+                        label: 'L\'iscrizione', x: 1760, y: 1690,
+                        chi: 'Joey Wheeler', chiId: 'joey',
+                        testo: [
+                            { chi: 'joey', testo: 'Yugi! Di qua! Lo stadio di Kaiba è pieno di gente: ci sono duellanti da tutto il mondo.' },
+                            { chi: 'tea', testo: 'Rex Raptor, Weevil, Mai Valentine… perfino Bandit Keith. Sei sicuro di volerti iscrivere?' },
+                            { io: true, testo: 'Sicuro. Non so spiegarlo, ma sento che qui dentro troverò la risposta a quel sogno.' },
+                            { chi: 'joey', testo: 'Allora vai e falli neri. Noi tifiamo dagli spalti!' }
                         ]
                     },
                     // IL TORNEO DELLA KAIBA CORPORATION.
@@ -1943,7 +1969,7 @@ const storyCampaignsDatabase = [
                     // nell'intestazione di questo file).
                     {
                         id: 'fm-3-torneo', kind: 'torneo', icona: '🏟️',
-                        label: 'Il torneo di Kaiba', x: 2760, y: 1450,
+                        label: 'Il torneo di Kaiba', x: 1960, y: 1620,
                         nome: 'Torneo della Kaiba Corporation',
                         testo: 'Quattro preliminari e cinque finali fino al presidente. Chi perde esce dal tabellone e ricomincia dal primo.',
                         mappa: {
@@ -1954,11 +1980,10 @@ const storyCampaignsDatabase = [
                         // L'ORDINE È QUELLO DEL GIOCO PS1, non una scelta:
                         // quattro preliminari (Rex, Weevil, Mai, Bandit
                         // Keith) e poi le finali (Shadi, Yami Bakura,
-                        // Pegasus, Isis, Seto Kaiba). Ognuno dei cinque
-                        // finalisti custodisce un Oggetto del Millennio, ed
-                        // è il motivo per cui il torneo esiste: non si
-                        // gioca per la coppa, si gioca per quello che hanno
-                        // addosso.
+                        // Pegasus, Isis, Seto Kaiba). I cinque finalisti
+                        // portano SEI Oggetti del Millennio (Shadi ne ha
+                        // due, la Chiave e la Bilancia): con il Puzzle fanno
+                        // sette, ed è il motivo per cui il torneo esiste.
                         // MARIK NON C'È, e non è una dimenticanza: in
                         // Forbidden Memories non compare affatto — il
                         // duellante oscuro di questo tabellone è Yami
@@ -2011,6 +2036,24 @@ const storyCampaignsDatabase = [
                                     { io: true, testo: 'Lo chiedo io.' }
                                 ]
                             },
+                            // Finiti i preliminari, nel gioco compare Shadi: con
+                            // la Chiave del Millennio porta Yugi dentro la sua
+                            // mente, dove incontra il principe, che gli dà sei
+                            // carte bianche. Senza questa scena le finali "per
+                            // gli Oggetti" arrivavano senza spiegazione.
+                            {
+                                id: 'fm-3t-dentro-il-puzzle', kind: 'scene', icona: '🗝️',
+                                label: 'Dentro il Puzzle', x: 2450, y: 900,
+                                chi: 'Shadi', chiId: 'shadi',
+                                testo: [
+                                    { chi: 'shadi', testo: 'Ti ho seguito fin qui, ragazzo. Gli Oggetti del Millennio si sono risvegliati tutti insieme, nello stesso stadio, e non è un caso.' },
+                                    { chi: 'shadi', testo: 'Il principe del tuo sogno è reale: è lo spirito che dorme nel tuo Puzzle. Con la Chiave del Millennio posso aprirti la porta della tua mente. Entra.' },
+                                    { testo: 'Un corridoio di pietra, mille porte, e in fondo un ragazzo che ha il volto di Yugi, ma uno sguardo più antico.' },
+                                    { nome: 'Il principe', icona: '👑', testo: 'Sei tu ad avermi svegliato. Ti chiedo un ultimo favore: nelle finali ci sono sei Oggetti del Millennio. Vinci, e queste sei carte bianche li custodiranno.' },
+                                    { nome: 'Il principe', icona: '👑', testo: 'Con il tuo Puzzle saranno sette. E sette Oggetti possono riportarmi a casa, dove il mio regno aspetta ancora di essere liberato.' },
+                                    { io: true, testo: 'Allora vincerò per te. Lasciami solo un po\' di coraggio.' }
+                                ]
+                            },
                             {
                                 id: 'fm-3t-shadi', kind: 'duel', icona: '🗝️',
                                 label: 'Finali · la Chiave', x: 2740, y: 560,
@@ -2019,8 +2062,8 @@ const storyCampaignsDatabase = [
                                 dialogo: [
                                     { chi: 'shadi', testo: 'Sei arrivato alle finali. Ora la parte che conta: nessuno dei quattro che ti restano davanti è qui per il torneo.' },
                                     { io: true, testo: 'E tu perché ci sei?' },
-                                    { chi: 'shadi', testo: 'Per vedere se meriti quello che stai per riprenderti. Porto la Chiave del Millennio, e la Chiave apre solo a chi ha già dentro qualcosa da aprire.' },
-                                    { chi: 'shadi', testo: 'Battimi, e sarà tua. Perdi, e resterai un ragazzo con un bel ciondolo.' }
+                                    { chi: 'shadi', testo: 'Per vedere se meriti quello che stai per riprenderti. Porto due Oggetti, la Chiave e la Bilancia: la Bilancia pesa il cuore, e la Chiave apre solo a chi ha già dentro qualcosa da aprire.' },
+                                    { chi: 'shadi', testo: 'Battimi, e saranno tuoi tutti e due. Perdi, e resterai un ragazzo con un bel ciondolo.' }
                                 ]
                             },
                             {
@@ -2055,7 +2098,7 @@ const storyCampaignsDatabase = [
                                 dialogo: [
                                     { chi: 'ishizu', testo: 'La Collana del Millennio mostra quello che deve accadere. Ho visto questo duello molto prima di sederti davanti.' },
                                     { io: true, testo: 'E come finisce?' },
-                                    { chi: 'ishizu', testo: 'Con te che vinci. Ma vedere la fine non è viverla: la mia famiglia custodisce da tremila anni il nome che tu hai dimenticato, e te lo restituisco solo se arrivi in fondo da solo.' },
+                                    { chi: 'ishizu', testo: 'Con te che vinci. Ma vedere la fine non è viverla: la mia famiglia custodisce da cinquemila anni il nome che tu hai dimenticato, e te lo restituisco solo se arrivi in fondo da solo.' },
                                     { chi: 'ishizu', testo: 'Quindi giocherò per vincere. Sarebbe un insulto fare altrimenti.' }
                                 ]
                             },
@@ -2082,24 +2125,31 @@ const storyCampaignsDatabase = [
                                 io: true,
                                 testo: [
                                     'Il presidente della Kaiba Corporation è a terra in mezzo al suo stadio, e non ha capito niente di quello che è appena successo.',
-                                    'Non è per la coppa che sono salito su questo ring. Erano cinque, uno per finalista: la Chiave, l\'Anello, l\'Occhio, la Collana, lo Scettro.',
-                                    'Cinque Oggetti del Millennio in una notte sola, più il Puzzle che il ragazzo porta al collo da quando aveva otto anni. Sei.',
-                                    'Il settimo non è in questo secolo. È dove l\'ho lasciato cinquemila anni fa, insieme a tutto il resto.',
+                                    'Non è per la coppa che sono salito su questo ring. La Chiave e la Bilancia di Shadi, l\'Anello di Bakura, l\'Occhio di Pegasus, la Collana di Isis, lo Scettro di Kaiba: sei Oggetti, e sei carte bianche che adesso non sono più bianche.',
+                                    'Con il Puzzle che porto al collo fanno sette. Sette, come quelli che Heishin mi ha strappato.',
+                                    'Le carte si illuminano tutte insieme. Il principe sta tornando a casa, e mi porta con sé fino alla soglia.',
                                     'Shadi aveva ragione: nessuno di loro era qui per il torneo. Nemmeno io.'
                                 ]
                             }
                         ]
                     },
                     {
+                        // Il ritorno nel passato: le sei carte del presente hanno
+                        // riportato il principe in Egitto, ma lì gli Oggetti veri
+                        // sono ancora nelle mani di Heishin, nei santuari. Simon,
+                        // che sta svanendo, gli dice cosa fare (come nel gioco).
                         id: 'fm-3-ritorno', kind: 'scene', icona: '⏳',
-                        label: 'Indietro', x: 2960, y: 1600,
-                        io: true,
+                        label: 'Indietro', x: 2120, y: 1730,
+                        chi: 'Simon Muran', chiId: 'simonMuran',
+                        // Qui si torna il principe: il protagonista della tappa
+                        // vince su quello del capitolo (Yugi Muto).
+                        protagonista: { name: 'Atem', title: 'Il Faraone senza memoria', image: 'images/characters/atem.jpg', icon: '👑' },
                         testo: [
-                            'Gli Oggetti sono sette. Uno è al collo del ragazzo, uno l\'ha appena lasciato Kaiba senza capire cosa stesse lasciando.',
-                            'Gli altri cinque sono dove li ha messi Heishin: cinquemila anni fa, uno per ciascuno dei suoi maghi.',
-                            'Se li voglio indietro devo andarli a prendere. Non c\'è una strada più corta.',
-                            'Cinque terre, cinque Alti Maghi, e davanti a ciascuno una guardia che non mi lascerà passare per cortesia.',
-                            'Shadi dice che il Puzzle può riportarmi là. Non dice se può riportarmi anche indietro.'
+                            { testo: 'Sabbia, sole, e il profilo del palazzo all\'orizzonte. Il principe è tornato a casa, con il proprio corpo e il proprio volto.' },
+                            { chi: 'simonMuran', testo: 'Principe… ce l\'hai fatta. Il ragazzo del futuro ti ha riportato qui. Io, purtroppo, non posso restare: il sigillo mi ha consumato.' },
+                            { chi: 'simonMuran', testo: 'Heishin regna sull\'Egitto, e i suoi Sommi Maghi hanno nascosto gli Oggetti del Millennio nei santuari delle terre conquistate.' },
+                            { chi: 'simonMuran', testo: 'Riprendili, uno per uno, e sigillali per sempre. Nessuno deve più poterli riunire per il male.' },
+                            { io: true, testo: 'Lo farò, Simon. Te lo prometto.' }
                         ]
                     }
                 ]
@@ -2115,9 +2165,72 @@ const storyCampaignsDatabase = [
                 // si capiva più per cosa si stesse duellando, che è
                 // esattamente ciò che questo file dice di non fare.
                 tappe: [
+                    // --- Il ritorno, come nel gioco ---
+                    // Prima dei santuari il principe ritrova Sadin nella Valle
+                    // dei Re, si scontra con la ronda di Heishin, ritrova Jono e
+                    // Teana in una nuova arena, e fra le rovine del palazzo Seto
+                    // gli indica la strada. Queste cinque tappe sono nate dopo:
+                    // vedi 'fm-ritorno-in-egitto' in `separazioni`.
+                    {
+                        id: 'fm-4-valle', kind: 'scene', icona: '🏺',
+                        label: 'La Valle dei Re', x: 2240, y: 640,
+                        chi: 'Sadin', chiId: 'shadi',
+                        testo: [
+                            { nome: 'Sadin', icona: '🗝️', testo: 'Principe. Ti ho riconosciuto dal passo, prima ancora che dal volto. Custodisco queste tombe da quando sei sparito.' },
+                            { io: true, testo: 'Sadin… quanto tempo è passato?' },
+                            { nome: 'Sadin', icona: '🗝️', testo: 'Abbastanza perché Heishin si sia preso tutto l\'Egitto. Le sue ronde battono ogni strada, e cercano chiunque somigli a te.' },
+                            { nome: 'Sadin', icona: '🗝️', testo: 'Va\' in città, ma tieni gli occhi aperti. E se ti chiedono chi sei, non dire il tuo nome.' }
+                        ]
+                    },
+                    {
+                        id: 'fm-4-mage-soldier', kind: 'duel', icona: '🪖',
+                        label: 'Mage Soldier', x: 2050, y: 800,
+                        characterId: 'mageSoldier', difficulty: 'Medio',
+                        field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg',
+                        dialogo: [
+                            { chi: 'mageSoldier', testo: 'Fermo lì, straniero. Per ordine del Sommo Heishin nessuno entra in città senza dire il proprio nome.' },
+                            { chi: 'mageSoldier', testo: 'E quel volto… somigli al principe scomparso. Se sei lui, Heishin mi coprirà d\'oro.' },
+                            { io: true, testo: 'Allora dovrai battermi per scoprirlo.' }
+                        ]
+                    },
+                    {
+                        id: 'fm-4-jono2', kind: 'duel', icona: '🗡️',
+                        label: 'Jono, di nuovo', x: 2080, y: 960,
+                        characterId: 'jono', difficulty: 'Medio',
+                        field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg',
+                        dialogo: [
+                            { chi: 'jono', testo: 'No… non può essere. Sei tu! Ti credevamo morto da anni! La vecchia arena l\'hanno chiusa i soldati: ci siamo spostati qui.' },
+                            { chi: 'jono', testo: 'Vediamo se sei davvero tu: un duello, come ai vecchi tempi. Se giochi come allora, ti credo.' },
+                            { io: true, testo: 'Come ai vecchi tempi, Jono.' }
+                        ]
+                    },
+                    {
+                        id: 'fm-4-teana2', kind: 'duel', icona: '🌾',
+                        label: 'Teana, di nuovo', x: 1930, y: 1060,
+                        characterId: 'teana', difficulty: 'Medio',
+                        field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg',
+                        dialogo: [
+                            { chi: 'teana', testo: 'Jono dice che sei tornato. Io non ci credo finché non lo vedo con i miei occhi… e con le mie carte.' },
+                            { chi: 'teana', testo: 'Sono passati anni, e Heishin ci ha tolto tutto. Se vuoi sfidarlo, prima devi battere me.' },
+                            { io: true, testo: 'Allora gioca sul serio, Teana. Come sempre.' }
+                        ]
+                    },
+                    {
+                        id: 'fm-4-seto-consiglio', kind: 'scene', icona: '🔺',
+                        label: 'Le rovine del palazzo', x: 1965, y: 300,
+                        chi: 'Sacerdote Seto', chiId: 'priestSeto',
+                        testo: [
+                            { testo: 'Il palazzo è una rovina. Fra i rotoli bruciati del tempio, una mappa: la strada per le Rovine Proibite, e sulle pareti disegnati i santuari dove sono custoditi gli Oggetti.' },
+                            { chi: 'priestSeto', testo: 'Sei sopravvissuto, principe. Non avrei scommesso una moneta.' },
+                            { io: true, testo: 'Seto. Eri con Heishin, quella notte.' },
+                            { chi: 'priestSeto', testo: 'Ero con chi vinceva. Adesso Heishin si fida solo dei suoi Sommi Maghi, e io sono fuori dai suoi favori. Abbiamo lo stesso nemico.' },
+                            { chi: 'priestSeto', testo: 'I cinque Sommi Maghi custodiscono gli Oggetti, uno per santuario. Battili, riprenditi gli Oggetti, e Heishin si indebolirà a ogni sconfitta.' },
+                            { io: true, testo: 'Non mi fido di te. Ma i santuari li visiterò comunque.' }
+                        ]
+                    },
                     {
                         id: 'fm-4-scena-ocean', kind: 'scene', icona: '🌊',
-                        label: 'Le secche', x: 2520, y: 1660,
+                        label: 'Le secche', x: 2150, y: 1430,
                         chi: 'High Mage Secmeton', chiId: 'highMageSecmeton',
                         testo: [
                             'Heishin ha diviso i Sette Oggetti fra noi cinque. A me è toccato il mare, e con il mare non si discute.',
@@ -2129,7 +2242,9 @@ const storyCampaignsDatabase = [
                     },
                     {
                         id: 'fm-4-ocean', kind: 'duel', icona: '🐚',
-                        label: 'Ocean Mage', x: 2250, y: 1690,
+                        // Le rovine sulla costa; il Sommo Mago aspetta nel
+                        // tempio sommerso, più al largo.
+                        label: 'Ocean Mage', x: 2230, y: 1285,
                         characterId: 'oceanMage', difficulty: 'Medio',
                         field: 'images/fields/mobile/anticoEgittoGiorno_2.jpg'
 ,
@@ -2140,7 +2255,7 @@ const storyCampaignsDatabase = [
                     },
                     {
                         id: 'fm-4-secmeton', kind: 'duel', icona: '🔱',
-                        label: 'High Mage Secmeton', x: 1980, y: 1640,
+                        label: 'High Mage Secmeton', x: 2780, y: 1520,
                         characterId: 'highMageSecmeton', difficulty: 'Difficile',
                         field: 'images/fields/mobile/anticoEgittoNotte_2.jpg'
 ,
@@ -2302,11 +2417,17 @@ const storyCampaignsDatabase = [
                         id: 'fm-5-settimo-oggetto', kind: 'scene', icona: '🔱',
                         label: 'La via per Heishin', x: 1610, y: 1060,
                         chi: 'Sacerdote Seto', chiId: 'priestSeto',
+                        // Nel gioco, a questo punto, gli uomini di Seto rapiscono
+                        // Teana per attirare il principe: lui e Jono la liberano
+                        // al santuario di Heishin, e Seto la rilascia prima di
+                        // portarlo da Heishin.
                         testo: [
-                            'Hai sconfitto i cinque Sommi Maghi e recuperato sei Oggetti. Il settimo è la Barra che Heishin porta con sé.',
-                            'Ora che i santuari sono senza guardiani posso mostrarti un ingresso nascosto sotto il palazzo. Conduce direttamente al Santuario Oscuro.',
-                            "Sebek e Neku sorvegliano l'ultimo corridoio. Dopo di loro troverai Heishin e potrai riprenderti la Barra.",
-                            'Non fermarti a chiederti perché ti sto aiutando. Liberare il regno e riunire gli Oggetti, per il momento, sono la stessa strada.'
+                            { chi: 'jono', testo: 'Principe! Hanno preso Teana! Uomini con le vesti dei sacerdoti, l\'hanno portata verso il santuario di Heishin.' },
+                            { testo: 'Il principe e Jono corrono fino al santuario. Teana è lì, legata a una colonna, e davanti a lei aspetta Seto.' },
+                            { chi: 'priestSeto', testo: 'Calmatevi. Non volevo farle del male: volevo solo essere sicuro che saresti venuto, principe. Lasciatela andare.' },
+                            { chi: 'teana', testo: 'Stai bene? Io sì… ma non fidarti di lui. Nemmeno per un momento.' },
+                            { chi: 'priestSeto', testo: 'Hai battuto i cinque Sommi Maghi e ripreso i loro Oggetti. Il settimo, la Barra, Heishin lo tiene con sé. Sotto il palazzo c\'è un ingresso nascosto che porta da lui.' },
+                            { chi: 'priestSeto', testo: 'Sebek e Neku sorvegliano l\'ultimo corridoio. Non chiederti perché ti aiuto: per il momento, liberare il regno e riunire gli Oggetti sono la stessa strada.' }
                         ]
                     },
                     {
@@ -2331,6 +2452,21 @@ const storyCampaignsDatabase = [
                             { chi: 'labyrinthMage', testo: 'Sotto il palazzo non ci sono corridoi: ci sono scelte. Heishin ne ha fatte scavare a centinaia.' },
                             { chi: 'labyrinthMage', testo: 'Tu ne hai appena fatta una sbagliata.' },
                             { io: true, testo: 'Le ho contate tutte. Questa la volevo.' }
+                        ]
+                    },
+                    // Seto nel labirinto (nel gioco viene subito dopo
+                    // Labyrinth Mage): vuole vedere con i suoi occhi se il
+                    // principe è abbastanza forte da arrivare fino a Heishin.
+                    // Nato dopo: vedi 'fm-seto-labirinto' in `separazioni`.
+                    {
+                        id: 'fm-5-seto2', kind: 'duel', icona: '🔺',
+                        label: 'Seto nel labirinto', x: 1770, y: 1240,
+                        characterId: 'priestSeto', difficulty: 'Difficile',
+                        field: 'images/fields/mobile/anticoEgittoNotte_2.jpg',
+                        dialogo: [
+                            { chi: 'priestSeto', testo: 'Il labirinto è finito, principe. Prima di portarti da Heishin voglio vedere con i miei occhi quanto vali.' },
+                            { chi: 'priestSeto', testo: 'Alla festa ti ho lasciato vincere. Oggi no.' },
+                            { io: true, testo: 'Alla festa non mi hai lasciato vincere, Seto. E oggi lo vedrai.' }
                         ]
                     },
                     {
@@ -2368,12 +2504,16 @@ const storyCampaignsDatabase = [
                         id: 'fm-6-scena', kind: 'scene', icona: '👁️',
                         label: 'Sette su sette', x: 2380, y: 900,
                         chi: 'Heishin', chiId: 'heishin',
+                        // Nel gioco Heishin vuole gli Oggetti PER SÉ: con tutti e
+                        // sette può evocare il dio oscuro degli antichi stregoni e
+                        // comandarlo. (Qui diceva di raccoglierli "per qualcun
+                        // altro", che è l'opposto.)
                         testo: [
                             'Hai ripreso i miei Oggetti uno a uno. Ammirevole. Davvero.',
-                            'Cinque Alti Maghi, cinque terre, e tu che arrivi fin qui con tutti e sette addosso. Nemmeno io ci sarei riuscito.',
-                            'Ma io non li ho mai voluti per me. Che me ne faccio di un trono? Ne avevo già uno a portata di mano e l\'ho lasciato vuoto.',
-                            'Li ho raccolti per QUALCUN ALTRO. E adesso che sono di nuovo tutti insieme, nello stesso posto, lui può finalmente passare.',
-                            'Grazie di averli portati fin qui, Principe. Hai fatto l\'ultimo pezzo di lavoro al posto mio.'
+                            'Cinque Sommi Maghi, cinque terre, e tu che arrivi fin qui con sei Oggetti addosso. L\'ultimo, la Barra, è in mano mia.',
+                            'Sai perché li volevo tutti? Il trono è niente. Nelle Rovine Proibite c\'è scritto come evocare il dio oscuro degli antichi stregoni: chi lo chiama con i sette Oggetti, lo comanda.',
+                            'E adesso me li hai portati tu, fin dentro casa mia.',
+                            'Grazie, Principe. Hai fatto l\'ultimo pezzo di lavoro al posto mio.'
                         ]
                     },
                     {
@@ -2394,22 +2534,28 @@ const storyCampaignsDatabase = [
                         characterId: 'priestSeto', difficulty: 'Difficile',
                         field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg'
 ,
+                        // Il tradimento vero di Seto, come nel gioco: discende dagli
+                        // antichi stregoni oscuri e ha usato il principe per
+                        // riunire gli Oggetti ed evocare DarkNite.
                         dialogo: [
-                            { chi: 'priestSeto', testo: 'Cinquemila anni fa ti ho aperto il tempio. Oggi sono qui a sbarrarti una porta, e non e\' piu\' la mia.' },
-                            { chi: 'priestSeto', testo: 'Heishin non comanda piu\' nulla, principe. Comanda quello che ha chiamato.' },
-                            { io: true, testo: 'Allora togliti di mezzo e lasciamelo vedere.' }
+                            { chi: 'priestSeto', testo: 'Heishin è a terra, e i sette Oggetti sono tutti in questa stanza. Esattamente dove volevo che fossero.' },
+                            { chi: 'priestSeto', testo: 'Ti ho usato, principe. I santuari, il labirinto, Teana: ogni passo ti ha portato a raccoglierli per me. Il mio sangue è quello degli antichi stregoni: sono io quello che deve chiamare DarkNite.' },
+                            { io: true, testo: 'Me l\'aveva detto Teana di non fidarmi di te. Gli Oggetti non li avrai, Seto.' }
                         ]
                     },
                     {
+                        // Battuto Seto, Heishin ricompare: la sua sconfitta era
+                        // recitata, per vedere chi avrebbe allungato la mano sugli
+                        // Oggetti. Li afferra ed evoca DarkNite (come nel gioco).
                         id: 'fm-6-tradimento', kind: 'scene', icona: '😈',
-                        label: 'Il tradimento', x: 3010, y: 410,
-                        chi: 'DarkNite', chiId: 'darkNite',
+                        label: 'L\'inganno di Heishin', x: 3010, y: 410,
+                        chi: 'Heishin', chiId: 'heishin',
                         testo: [
-                            'Heishin mi ha chiamato. Heishin mi ha aperto la porta. Heishin non mi serve più.',
-                            'Credeva di comandarmi. Tutti quelli che mi chiamano lo credono: è la prima cosa che smettono di credere.',
-                            'Il suo regno, il suo colpo di stato, i suoi cinque maghi in cinque terre — piccolezze. Serviva solo che i Sette tornassero insieme, e lui ci ha messo una vita.',
-                            'Tu invece sì: sei l\'unico in cinquemila anni che valga la pena di battere.',
-                            'Hai attraversato due epoche per arrivare qui. Sarebbe scortese non giocare sul serio.'
+                            { chi: 'heishin', testo: 'Bravi, bravi tutti e due. Credevate davvero che mi fossi arreso? Ho perso apposta, per vedere chi dei due avrebbe allungato le mani sugli Oggetti.' },
+                            { chi: 'priestSeto', testo: 'Heishin… fermo!' },
+                            { chi: 'heishin', testo: 'Troppo tardi, sacerdote. Gli Oggetti sono miei, e la statua è pronta.' },
+                            { testo: 'Heishin depone i sette Oggetti del Millennio sulla statua del dio oscuro. La sala si riempie di un vento nero, e qualcosa apre gli occhi.' },
+                            { chi: 'heishin', testo: 'Sorgi, DarkNite! Per l\'antico patto degli stregoni, io ti comando!' }
                         ]
                     }
                 ]
@@ -2462,19 +2608,25 @@ const storyCampaignsDatabase = [
                         dialogo: [
                             { chi: 'darkNite', nome: 'Nitemare', testo: 'Nessuno mi aveva mai costretto a mostrare questa forma. Nessuno.' },
                             { chi: 'darkNite', nome: 'Nitemare', testo: 'Quando avro\' finito con te non resterai nemmeno nei racconti, principe. Sara\' come se il tuo nome non fosse mai esistito.' },
-                            { io: true, testo: 'Il mio nome lo perdero\' comunque. Il regno no.' }
+                            { io: true, testo: 'Il mio regno ha aspettato cinquemila anni che tornassi. Non lo lascerò a te.' }
                         ]
                     },
                     {
+                        // Il finale del gioco: Nitemare torna da dove è venuto,
+                        // Seto sparisce per sempre, e il principe sale al trono,
+                        // seppellisce le Rovine Proibite e riunisce l'Egitto. Il
+                        // nodo sta nel palazzo, dove la storia era cominciata.
                         id: 'fm-7-finale', kind: 'scene', icona: '🌅',
-                        label: 'Le memorie', x: 2300, y: 330,
+                        label: 'Il nuovo Faraone', x: 1760, y: 250,
                         io: true,
                         testo: [
-                            'Gli Oggetti sono di nuovo sette, e di nuovo divisi. Il regno resterà in piedi.',
-                            'Di me, invece, non resterà quasi niente: nemmeno il nome. Chi rimetterà insieme il Puzzle fra cinquemila anni troverà un Faraone senza memoria.',
-                            'Sarà compito suo ritrovarla.',
-                            'Simon mi disse che non aveva un numero da darmi. Adesso so che erano cinquemila anni, e che li ho fatti due volte: una dormendo, una camminando all\'indietro.',
-                            'Al ragazzo che ha finito il Puzzle non dirò niente. Imparerà giocando, come ho imparato io.'
+                            { testo: 'Nitemare si dissolve, ricacciato da dove era venuto. Quando la polvere si posa, di Seto non c\'è più traccia: nessuno lo rivedrà mai più.' },
+                            { io: true, testo: 'Gli Oggetti del Millennio sono sette, e sono di nuovo miei. Li sigillerò dove nessuno potrà più riunirli per il male, come mi ha chiesto Simon.' },
+                            { io: true, testo: 'Le Rovine Proibite le faremo seppellire sotto la sabbia, con tutto quello che c\'è scritto dentro.' },
+                            { chi: 'jono', testo: 'E adesso? Torni a scavalcare il muro del giardino per duellare con noi?' },
+                            { chi: 'teana', testo: 'Adesso è il Faraone, Jono. Dovrai chiamarlo così.' },
+                            { io: true, testo: 'Fuori dal palazzo, chiamatemi come allora. Al ragazzo del futuro che mi ha riportato qui devo un regno: farò in modo che ne valga la pena.' },
+                            { testo: 'L\'Egitto torna unito sotto il nuovo Faraone, e per lunghi anni conosce la pace.' }
                         ]
                     }
                 ]
@@ -2483,7 +2635,14 @@ const storyCampaignsDatabase = [
         separazioni: [
             { id: 'fm-presagio-caduta', dalla: 'tappe', nuove: ['fm-2-presagio'], prima: 'fm-2-scena' },
             { id: 'fm-peso-settimo', dalla: 'tappe', nuove: ['fm-5-settimo-oggetto'], prima: 'fm-5-scena' },
-            { id: 'fm-porta-darknite', dalla: 'tappe', nuove: ['fm-7-porta'], prima: 'fm-7-darknite' }
+            { id: 'fm-porta-darknite', dalla: 'tappe', nuove: ['fm-7-porta'], prima: 'fm-7-darknite' },
+            // Revisione di fedeltà al gioco PS1 (2026-10-11): il ritorno in
+            // Egitto (Sadin, Mage Soldier, le rivincite di Jono e Teana, Seto
+            // fra le rovine), Seto nel labirinto, e Shadi che porta Yugi
+            // dentro il Puzzle a metà torneo.
+            { id: 'fm-ritorno-in-egitto', dalla: 'tappe', nuove: ['fm-4-valle', 'fm-4-mage-soldier', 'fm-4-jono2', 'fm-4-teana2', 'fm-4-seto-consiglio'], prima: 'fm-4-scena-ocean' },
+            { id: 'fm-seto-labirinto', dalla: 'tappe', nuove: ['fm-5-seto2'], prima: 'fm-5-sebek' },
+            { id: 'fm-dentro-il-puzzle', dalla: 'principali-inserite', area: 'fm-3-torneo', ids: ['fm-3t-dentro-il-puzzle'] }
         ],
         premioFinale: { credits: 3000, starChips: 5, locatorCards: 5, millenniumCards: 4 }
     },

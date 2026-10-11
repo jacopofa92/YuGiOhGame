@@ -72,7 +72,12 @@ module.exports = {
 
             const migration = await page.evaluate((newIds) => {
                 const current = StoryProgress.getTappe('forbiddenMemories');
-                const historic = current.filter((step) => !newIds.includes(step.id));
+                // La forma storica è quella senza NESSUNA delle tappe nate
+                // dopo: anche quelle della revisione di fedeltà al gioco, che
+                // un salvataggio senza timbri riceve tutte insieme.
+                const nate = storyCampaignsDatabase.find((c) => c.id === 'forbiddenMemories').separazioni
+                    .reduce((acc, s) => acc.concat(s.nuove || []), newIds);
+                const historic = current.filter((step) => !nate.includes(step.id));
                 const oldDarkniteIndex = historic.findIndex((step) => step.id === 'fm-7-darknite');
                 SaveManager.setStoryState('forbiddenMemories', {
                     completate: oldDarkniteIndex,

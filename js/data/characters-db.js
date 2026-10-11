@@ -108,6 +108,10 @@ const characterDatabase = [
     { id: 'priestSeto', name: 'Sacerdote Seto', title: 'Il Sommo Sacerdote', image: 'images/characters/priestSeto.jpg', series: 'forbiddenMemories' },
     { id: 'shadi', name: 'Shadi', title: 'Il Guardiano dell\'Equilibrio', image: 'images/characters/shadi.jpg', series: 'forbiddenMemories' },
     { id: 'priestessIsis', name: 'Sacerdotessa Isis', title: 'La Veggente della collana del millennio', image: 'images/characters/priestessIsis.jpg', series: 'forbiddenMemories' },
+    // Mage Soldier: il soldato-mago di Heishin che il principe affronta per
+    // primo al ritorno in Egitto. Il ritratto è un segnaposto a tema, allo
+    // stesso nome di file che userà quello vero.
+    { id: 'mageSoldier', name: 'Mage Soldier', title: 'Il Soldato-Mago di Heishin', image: 'images/characters/mageSoldier.jpg', series: 'forbiddenMemories' },
     // I 7 Maghi elementali del Labirinto (+ Sebek e Neku): i guardiani del
     // dungeon di Forbidden Memories tra il Cancello e i veri boss finali
     // qui sotto — richiesti esplicitamente dall'utente, posizionati subito
