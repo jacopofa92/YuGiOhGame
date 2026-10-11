@@ -41,9 +41,11 @@ module.exports = {
             });
 
             const battle = areas.find((area) => area.id === 'anime-area-battlecity1').tappe.map((node) => node.id);
-            const expectedBattle = ['anime-3-seeker', 'anime-3-espa', 'anime-3-strings', 'anime-3-arkana',
-                'anime-3-lumis', 'anime-3-umbra', 'anime-3-bakura', 'anime-3-ishizu', 'anime-3-odion',
-                'anime-3-sei-carte', 'anime-4-scena'];
+            // Arkana prima di Strings, come nell'anime (episodi 11-13 e 16-18);
+            // le finali cominciano dallo stadio con gli otto finalisti.
+            const expectedBattle = ['anime-3-seeker', 'anime-3-espa', 'anime-3-arkana', 'anime-3-strings',
+                'anime-3-lumis', 'anime-3-umbra', 'anime-3-marik-molo', 'anime-3-finali', 'anime-3-bakura',
+                'anime-3-ishizu', 'anime-3-odion', 'anime-3-sei-carte', 'anime-4-scena'];
             let cursor = -1;
             expectedBattle.forEach((id) => {
                 const index = battle.indexOf(id);
@@ -84,6 +86,8 @@ module.exports = {
                 if (index <= finaleCursor) problems.push(`Finali del Regno fuori ordine: ${id}`);
                 finaleCursor = index;
             });
+            // 'anime-6-gozaburo' è la scena della scelta di Noah: il duello
+            // con Gozaburo, che nell'anime c'è, ha un id suo.
             ['anime-1-nonno', 'anime-1-joey', 'anime-1-tristan', 'anime-1-tea', 'anime-6-gozaburo'].forEach((id) => {
                 const node = areas.flatMap((area) => area.tappe).find((entry) => entry.id === id);
                 if (!node || node.kind !== 'scene') problems.push(`${id}: uno scontro non avvenuto nella serie non deve essere un duello`);
@@ -98,6 +102,47 @@ module.exports = {
             ['anime-1-amichevole-joey', 'anime-1-amichevole-tristan', 'anime-1-amichevole-tea'].forEach((id) => {
                 if (!fra(id, 'anime-1-joey', 'anime-1-tristan')) problems.push(`${id}: amichevole fuori dal ramo richiesto`);
             });
+
+            // --- Revisione di fedeltà all'anime -------------------------
+            const tutte = areas.flatMap((area) => area.tappe);
+            const nodo = (id) => tutte.find((entry) => entry.id === id);
+            // I momenti che mancavano: duelli e scene della strada principale.
+            ['anime-1-tempo-scaduto', 'anime-2-kaiba-torre', 'anime-3-finali', 'anime-6-cinque-uniti',
+                'anime-6-kaiba-gozaburo', 'anime-4b-battaglia-reale', 'anime-4b-epilogo', 'anime-9-kisara', 'anime-5-addio']
+                .forEach((id) => {
+                    const n = nodo(id);
+                    if (!n) problems.push(`${id}: momento dell'anime mancante`);
+                    else if (n.parallelo === true) problems.push(`${id}: deve stare sulla strada principale`);
+                });
+            // I laterali nuovi: rami morti, non portano avanti la storia.
+            ['anime-3-joey-weevil', 'anime-4b-terzo-posto', 'anime-9-seto-bakura'].forEach((id) => {
+                const n = nodo(id);
+                if (!n || n.parallelo !== true) problems.push(`${id}: deve esistere come duello laterale`);
+            });
+            // Un laterale si gioca dalla parte di chi nel canone VINCE: il
+            // personaggio sconfitto nell'anime è l'avversario, mai il protagonista.
+            const vincitori = {
+                'anime-2-mai-panik': ['mai', 'Panik'],
+                'anime-2-kaiba-pegasus': ['kaiba', 'Maximillion Pegasus'],
+                'anime-3-joey-seeker': ['joey', 'Seeker'],
+                'anime-3-bakura-marik': ['bakura', 'Yami Marik'],
+                'anime-3-mai-marik': ['mai', 'Yami Marik'],
+                'anime-6-kaiba-noah': ['kaiba', 'Noah Kaiba'],
+                'anime-6-nesbitt': ['nesbitt', 'Serenity Wheeler'],
+                'anime-4-joey': ['joey', 'Yami Marik'],
+                'anime-4b-terzo-posto': ['joey', 'Seto Kaiba']
+            };
+            Object.keys(vincitori).forEach((id) => {
+                const n = nodo(id);
+                const [avversario, protagonista] = vincitori[id];
+                if (!n || n.characterId !== avversario || !n.protagonista || n.protagonista.name !== protagonista) {
+                    problems.push(`${id}: va giocato da ${protagonista} contro ${avversario}`);
+                }
+            });
+            // Il duello contro Pegasus nel videonastro si gioca a casa, nel
+            // negozio del nonno, non sull'isola della KaibaCorp.
+            const video = nodo('anime-1-pegasus-video');
+            if (!video || video.x > 400) problems.push('anime-1-pegasus-video: deve stare a casa di Yugi');
 
             return { problems, scenes, base: anime.azzeraSeSenzaTimbro, migrations: anime.separazioni.map((entry) => entry.id) };
         });

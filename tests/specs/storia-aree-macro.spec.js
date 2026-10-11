@@ -218,8 +218,10 @@ module.exports = {
             });
             t.assert(mappe.quante === 2 && mappe.corrente === 1,
                 `Il Regno deve avere due mappe, e davanti a Pegasus la corrente è la seconda: ${JSON.stringify(mappe)}`);
-            t.assert(mappe.ultimaDellIsola === 'anime-2-kaiba' && mappe.primaDelCastello === 'anime-2c-scena',
-                `L'isola finisce con Kaiba e il castello comincia dall'ingresso: ${JSON.stringify(mappe)}`);
+            // L'isola finisce con la scena del parapetto, subito dopo il duello
+            // con Kaiba (Yugi ferma l'ultimo attacco, come nell'anime).
+            t.assert(mappe.ultimaDellIsola === 'anime-2-kaiba-torre' && mappe.primaDelCastello === 'anime-2c-scena',
+                `L'isola finisce col duello di Kaiba sul parapetto e il castello comincia dall'ingresso: ${JSON.stringify(mappe)}`);
 
             await page.goto(url('?campaign=anime&torneo=' + AREA));
             await page.waitForSelector('.nm-node', { timeout: 20000 });

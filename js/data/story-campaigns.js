@@ -435,8 +435,11 @@ const storyCampaignsDatabase = [
                             },
                             {
                                 id: 'anime-1-regionale-rex', kind: 'duel', icona: '🏆',
+                                // Nell'anime la finale regionale arriva DOPO il
+                                // duello di Yugi con Kaiba (episodio 2): si apre
+                                // da lì, non prima.
                                 label: 'Finale regionale: Weevil contro Rex', x: 735, y: 275,
-                                parallelo: true, sbloccaDopo: 'anime-1-tea',
+                                parallelo: true, sbloccaDopo: 'anime-1-kaiba',
                                 characterId: 'rex', difficulty: 'Medio',
                                 protagonista: { name: 'Weevil Underwood', title: 'Campione regionale', image: 'images/characters/weevilUnderwood.jpg', icon: '🐛' },
                                 dialogo: [
@@ -489,16 +492,41 @@ const storyCampaignsDatabase = [
                                 music: '32. Seto Kaiba (Tournament Final) HD.mp3',
                                 dialogo: [
                                     { chi: 'kaiba', testo: 'Ho sconfitto tuo nonno e strappato il suo Drago Bianco. Ora i tre esemplari rimasti risponderanno soltanto a me.' },
-                                    { io: true, testo: 'Le carte di mio nonno custodiscono il cuore di chi gliele ha affidate. Te lo dimostrerò in questo duello.' }
+                                    { io: true, testo: 'Le carte di mio nonno custodiscono il cuore di chi gliele ha affidate. Te lo dimostrerò in questo duello.' },
+                                    // Exodia va nominata qui: è la carta con cui
+                                    // Yugi vince questo duello, e Weevil la cita
+                                    // sulla nave come cosa nota a tutti.
+                                    { chi: 'kaiba', testo: 'Il mazzo del vecchio? Non c’è niente là dentro che possa fermare tre Draghi Bianchi.' },
+                                    { io: true, testo: 'C’è una carta che nessuno è mai riuscito a evocare, Kaiba: Exodia il Proibito. Mio nonno me ne ha dato tutti e cinque i pezzi.' }
                                 ]
                             },
+                            // Il videonastro arriva a casa, nel negozio del
+                            // nonno: il nodo sta lì, non sulla torre di Kaiba.
                             {
                                 id: 'anime-1-pegasus-video', kind: 'duel', icona: '📼',
-                                label: 'Il duello nel videonastro', x: 1540, y: 610,
+                                label: 'Il duello nel videonastro', x: 92, y: 690,
                                 characterId: 'pegasus', difficulty: 'Medio',
                                 dialogo: [
                                     { chi: 'pegasus', testo: 'Ti concedo quindici minuti, Yugi-boy. Il mio Occhio vede la tua mente e, allo scadere, reclamerò una ricompensa.' },
                                     { io: true, testo: 'Non so come tu abbia dato vita alle carte attraverso un videonastro, ma vincerò e scoprirò che cosa vuoi da me.' }
+                                ]
+                            },
+                            // Nell'anime questo duello Yugi lo perde allo
+                            // scadere del tempo, e il nonno ci rimette l'anima.
+                            // Qui il duello si vince: la scena racconta la
+                            // svolta, che è quella vera — il tempo era già
+                            // finito, e Pegasus aveva più Life Point.
+                            {
+                                id: 'anime-1-tempo-scaduto', kind: 'scene', icona: '⏳',
+                                label: 'Tempo scaduto', x: 205, y: 712,
+                                chi: 'Maximillion Pegasus', chiId: 'pegasus',
+                                testo: [
+                                    { chi: 'pegasus', testo: 'Bravo, Yugi-boy, che attacco! Peccato che sia arrivato a tempo scaduto. Allo scoccare dei quindici minuti avevo io più Life Point, e le regole sono regole.' },
+                                    { io: true, testo: 'Cosa vuol dire? Il duello l’ho vinto io!' },
+                                    { chi: 'pegasus', testo: 'Il duello sì. La sfida a tempo, no. E chi perde paga: guarda alle tue spalle.' },
+                                    { testo: 'Dallo schermo esce una luce. Il nonno si irrigidisce sulla sedia, e la sua anima si stacca dal corpo per finire dentro il televisore.' },
+                                    { chi: 'yugiMuto', testo: 'Nonno! NONNO! Rispondimi!' },
+                                    { chi: 'pegasus', testo: 'Se lo rivuoi, vieni a prenderlo. Ti aspetto nel Regno dei Duellanti.' }
                                 ]
                             }
                         ]
@@ -596,8 +624,11 @@ const storyCampaignsDatabase = [
                                 characterId: 'rex', difficulty: 'Medio',
                                 protagonista: { name: 'Joey Wheeler', title: 'Il duellante dal cuore indomabile', image: 'images/characters/joeyWheeler.jpg', icon: '🎲' },
                                 dialogo: [
-                                    { chi: 'rex', testo: 'Se vinco, Mai viene a cena con me. Se perdi, mi lasci il tuo Mago del Tempo.' },
-                                    { io: true, testo: 'Non duello per una scommessa su Mai. Duello perché devo arrivare da Serenity con il premio.' }
+                                    // È il duello in cui Joey vince il suo Drago
+                                    // Nero Occhi Rossi: da qui in poi è la carta
+                                    // di Joey, e la storia la nomina come tale.
+                                    { chi: 'rex', testo: 'Metto in palio il mio Drago Nero Occhi Rossi, la carta più rara della mia collezione. Tanto non lo vedrai mai dalla tua parte del campo.' },
+                                    { io: true, testo: 'Allora tienilo stretto, Rex. Duello per arrivare da Serenity con il premio, e quel drago mi servirà per arrivarci.' }
                                 ]
                             },
                             {
@@ -644,13 +675,18 @@ const storyCampaignsDatabase = [
                             },
                             {
                                 id: 'anime-2-mai-panik', kind: 'duel', icona: '🕯️',
-                                label: 'Mai contro Panik', x: 235, y: 570,
+                                // Nell'anime è Panik a vincere (Mai perde tutte le
+                                // Stelle, ed è da lì che parte "Le Stelle di
+                                // Mai"): si gioca dalla sua parte, come ogni
+                                // laterale in cui il canone dà la vittoria
+                                // all'avversario del personaggio più noto.
+                                label: 'Panik contro Mai', x: 235, y: 570,
                                 parallelo: true, sbloccaDopo: 'anime-2-mako',
-                                characterId: 'panik', difficulty: 'Difficile',
-                                protagonista: { name: 'Mai Valentine', title: 'La duellante delle Arpie', image: 'images/characters/maiValentine.jpg', icon: '🦋' },
+                                characterId: 'mai', difficulty: 'Difficile',
+                                protagonista: { name: 'Panik', title: 'Eliminatore di Pegasus', image: 'images/characters/panik.jpg', icon: '🕯️' },
                                 dialogo: [
-                                    { chi: 'panik', testo: 'Nel buio non vedrai i miei mostri crescere. Quando la paura avrà vinto, prenderò tutte le tue Stelle.' },
-                                    { io: true, testo: 'Non ho bisogno di vedere il tuo volto per capire che vivi d’intimidazione. Le mie Arpie non si piegheranno.' }
+                                    { chi: 'mai', testo: 'Non ho bisogno di vedere il tuo volto per capire che vivi d’intimidazione. Le mie Arpie non si piegheranno.' },
+                                    { io: true, testo: 'Nel buio non vedrai i miei mostri crescere. Quando la paura avrà vinto, prenderò tutte le tue Stelle.' }
                                 ]
                             },
                             {
@@ -679,19 +715,11 @@ const storyCampaignsDatabase = [
                                 label: 'Il fantasma di Kaiba', x: 610, y: 390,
                                 characterId: 'kaiba', difficulty: 'Difficile',
                                 dialogo: [
+                                    // Mokuba era con Yugi quella notte: è da lì
+                                    // che si allea con lui (episodi 8-10).
+                                    { chi: 'mokuba', testo: 'Quello non è mio fratello, Yugi! Seto non si comporterebbe mai così. Ti prego, battilo!' },
                                     { nome: 'Imitatore di Kaiba', icona: '👻', testo: 'Pegasus mi ha dato il mazzo di Kaiba e una parte della sua mente. Affronterai di nuovo i suoi tre Draghi Bianchi.' },
                                     { io: true, testo: 'Non sei Kaiba: imiti le sue carte senza comprenderne l’orgoglio. Libererò ciò che resta della sua anima da questo duello.' }
-                                ]
-                            },
-                            {
-                                id: 'anime-2-kaiba-pegasus', kind: 'duel', icona: '👁️',
-                                label: 'Kaiba contro Pegasus', x: 520, y: 325,
-                                parallelo: true, sbloccaDopo: 'anime-2-kaiba',
-                                characterId: 'pegasus', difficulty: 'Difficile',
-                                protagonista: { name: 'Seto Kaiba', title: 'In cerca di Mokuba', image: 'images/characters/setoKaiba_duelist_Kingdom.png', icon: '🐉' },
-                                dialogo: [
-                                    { chi: 'pegasus', testo: 'Mokuba e la KaibaCorp saranno miei, Kaiba-boy. Con l’Occhio del Millennio conosco già ogni carta che giocherai.' },
-                                    { io: true, testo: 'Non mi interessa come leggi la mente. Libererai Mokuba quando i miei Draghi Bianchi avranno distrutto i tuoi Toon.' }
                                 ]
                             },
                             {
@@ -754,10 +782,30 @@ const storyCampaignsDatabase = [
                                     { io: true, testo: 'Anch’io devo entrare per salvare mio nonno, Kaiba. Nessuno dei due può rinunciare a questo duello.' }
                                 ]
                             },
+                            // Nell'anime questo duello Yugi lo PERDE: stava per
+                            // vincere, ma Kaiba sale sul parapetto e Yugi ferma
+                            // l'ultimo attacco per non farlo cadere. Il duello
+                            // qui si vince, e la scena racconta quella scelta.
+                            {
+                                id: 'anime-2-kaiba-torre', kind: 'scene', icona: '🏰',
+                                avatar: { kaiba: 'images/characters/setoKaiba_duelist_Kingdom.png' },
+                                // Sulla torre destra del castello, dove si
+                                // gioca il duello nell'anime.
+                                label: 'Sul parapetto', x: 1055, y: 200,
+                                chi: 'Seto Kaiba', chiId: 'kaiba',
+                                testo: [
+                                    { chi: 'kaiba', testo: 'Avanti, attacca. Ma sappi che se il mio ologramma viene distrutto, cado anch’io: sono sul bordo del parapetto, e non mi sposterò.' },
+                                    { io: true, testo: 'Sei impazzito? Scendi da lì, Kaiba!' },
+                                    { chi: 'yugiMuto', testo: 'Fermati! Se attacchi, Kaiba precipita! Non è questo il modo di vincere!' },
+                                    { testo: 'Il colpo finale non parte. Yugi riprende il controllo del Puzzle e abbassa la mano: il duello finisce lì, e la vittoria va a Kaiba.' },
+                                    { chi: 'kaiba', testo: 'Metà delle tue Stelle sono mie. Pegasus mi aspetta.' },
+                                    { chi: 'tea', testo: 'Yugi… hai fatto la cosa giusta. Le Stelle che ti mancano le recupero io.' }
+                                ]
+                            },
                             {
                                 id: 'anime-2-tea-mai', kind: 'duel', icona: '💫',
                                 label: 'Téa contro Mai', x: 1110, y: 285,
-                                parallelo: true, sbloccaDopo: 'anime-2-kaiba',
+                                parallelo: true, sbloccaDopo: 'anime-2-kaiba-torre',
                                 characterId: 'mai', difficulty: 'Medio',
                                 protagonista: { name: 'Téa Gardner', title: 'Amica di Yugi', image: 'images/characters/teaGardner.jpg', icon: '💫' },
                                 dialogo: [
@@ -781,14 +829,32 @@ const storyCampaignsDatabase = [
                                     { chi: 'mai', testo: 'Quattro finalisti: Yugi, Joey, Keith e io. Mi sembra una compagnia interessante.' },
                                     { nome: 'Croquet', testo: 'Il signor Pegasus vi aspetta per le finali. Stanotte dormirete nel castello, e domani si duella nell’arena al piano di sotto.' },
                                     { chi: 'joey', testo: 'E gli abbinamenti li decidete voi?' },
-                                    { nome: 'Croquet', testo: 'Li decide il caso, come ogni cosa sotto questo tetto. O quasi. Una cortesia: non girate per i corridoi di notte.' }
+                                    { nome: 'Croquet', testo: 'Li decide il caso, come ogni cosa sotto questo tetto. O quasi. Una cortesia: non girate per i corridoi di notte.' },
+                                    { io: true, testo: 'E Kaiba? È entrato prima di noi.' },
+                                    { nome: 'Croquet', testo: 'Il signor Kaiba ha sfidato il padrone di casa questo pomeriggio. Ha perso, e la sua anima è rimasta in una carta. Non lo vedrete a cena.' }
+                                ]
+                            },
+                            // Kaiba contro Pegasus si gioca DENTRO il castello,
+                            // in una delle sale (episodi 26-27). Nell'anime vince
+                            // Pegasus, e Kaiba ci perde l'anima: si gioca dalla
+                            // parte di chi ha vinto.
+                            {
+                                id: 'anime-2-kaiba-pegasus', kind: 'duel', icona: '👁️',
+                                avatar: { kaiba: 'images/characters/setoKaiba_duelist_Kingdom.png' },
+                                label: 'Pegasus contro Kaiba', x: 1190, y: 175,
+                                parallelo: true, sbloccaDopo: 'anime-2c-scena',
+                                characterId: 'kaiba', difficulty: 'Difficile',
+                                protagonista: { name: 'Maximillion Pegasus', title: 'Il padrone del castello', image: 'images/characters/maximillionPegasus.jpg', icon: '👁️' },
+                                dialogo: [
+                                    { chi: 'kaiba', testo: 'Non mi interessa come leggi la mente, Pegasus. Libererai Mokuba quando i miei Draghi Bianchi avranno distrutto i tuoi Toon.' },
+                                    { io: true, testo: 'Mokuba e la KaibaCorp saranno miei, Kaiba-boy. Con l’Occhio del Millennio conosco già ogni carta che giocherai.' }
                                 ]
                             },
                             // Nell'anime la semifinale di Yugi è contro Mai,
                             // una seconda volta dopo il duello sull'isola.
                             {
                                 id: 'anime-2c-mai', kind: 'duel', icona: '🦋',
-                                label: 'Semifinale: Mai', x: 880, y: 445,
+                                label: 'Semifinale: Mai', x: 830, y: 450,
                                 characterId: 'mai', difficulty: 'Difficile',
                                 dialogo: [
                                     { chi: 'mai', testo: 'Mi hai restituito le Stelle senza chiedere nulla. Proprio per questo, in semifinale non accetterò che tu ti trattenga.' },
@@ -797,18 +863,18 @@ const storyCampaignsDatabase = [
                             },
                             {
                                 id: 'anime-2c-keith', kind: 'duel', icona: '🇺🇸',
-                                label: 'Semifinale: Bandit Keith', x: 885, y: 365,
+                                label: 'Semifinale: Bandit Keith', x: 975, y: 450,
                                 parallelo: true, sbloccaDopo: 'anime-2c-scena',
                                 characterId: 'bandit_keith', difficulty: 'Difficile',
                                 protagonista: { name: 'Joey Wheeler', title: 'Finalista del Regno dei Duellanti', image: 'images/characters/joeyWheeler.jpg', icon: '🎲' },
                                 dialogo: [
                                     { chi: 'bandit_keith', testo: 'Ho rubato la tua carta d’ingresso. Senza Gloria della Mano del Re non puoi nemmeno sederti al tavolo.' },
-                                    { io: true, testo: 'Mai me l’ha restituita. Ora resta solo il duello, Keith: niente scagnozzi e niente carte nascoste nel polsino.' }
+                                    { io: true, testo: 'Mai mi ha dato la sua prima di andarsene. Ora resta solo il duello, Keith: niente scagnozzi e niente carte nascoste nel polsino.' }
                                 ]
                             },
                             {
                                 id: 'anime-2c-joey', kind: 'duel', icona: '🎲',
-                                label: 'Finale: Joey Wheeler', x: 900, y: 270,
+                                label: 'Finale: Joey Wheeler', x: 902, y: 385,
                                 characterId: 'joey', difficulty: 'Difficile',
                                 dialogo: [
                                     { chi: 'joey', testo: 'Siamo arrivati in finale insieme, Yugi. Adesso niente favori: voglio vedere quanto sono cresciuto davvero.' },
@@ -846,7 +912,7 @@ const storyCampaignsDatabase = [
                                 chi: 'Seto Kaiba', chiId: 'kaiba',
                                 testo: [
                                     { chi: 'kaiba', testo: 'Ascoltate bene, duellanti di Domino City. Battle City è aperta: si duella per strada, col Duel Disk, e chi perde cede la propria carta migliore.' },
-                                    { chi: 'mokuba', testo: 'Per accedere alle finali servono sei Carte Locazione, che dicono dove si terrà la fase finale!' },
+                                    { chi: 'mokuba', testo: 'Per accedere alle finali servono sei Carte Localizzatrici: messe insieme, dicono dove si terrà la fase finale!' },
                                     { chi: 'kaiba', testo: 'Chi ne ha meno non arriva alle finali, e basta. Ho aperto io le iscrizioni, e non per generosità.' },
                                     { io: true, testo: 'C’è qualcosa che vuoi far uscire allo scoperto, vero?' },
                                     { chi: 'kaiba', testo: 'Tre Dei Egizi, Yugi. Uno ce l’ho io. Gli altri due li voglio.' }
@@ -876,13 +942,16 @@ const storyCampaignsDatabase = [
                             },
                             {
                                 id: 'anime-3-joey-seeker', kind: 'duel', icona: '🕶️',
-                                label: 'Joey contro Seeker', x: 405, y: 765,
+                                // Nell'anime Seeker batte Joey e gli prende il
+                                // Drago Nero Occhi Rossi (è per questo che poi
+                                // Yugi lo sfida): si gioca dalla parte di Seeker.
+                                label: 'Seeker contro Joey', x: 405, y: 765,
                                 parallelo: true, sbloccaDopo: 'anime-3-tavola-scena',
-                                characterId: 'seeker', difficulty: 'Medio',
-                                protagonista: { name: 'Joey Wheeler', title: 'Duellante di Battle City', image: 'images/characters/joeyWheeler.jpg', icon: '🎲' },
+                                characterId: 'joey', difficulty: 'Medio',
+                                protagonista: { name: 'Seeker', title: 'Cacciatore Raro', image: 'images/characters/seeker.jpg', icon: '🕶️' },
                                 dialogo: [
-                                    { chi: 'seeker', testo: 'Le mie carte contraffatte completeranno Exodia prima che tu possa reagire. In cambio prenderò il tuo Drago Nero.' },
-                                    { io: true, testo: 'Il Drago Nero Occhi Rossi non è merce per i Cacciatori Rari. Ti batterò prima che tu possa mettere insieme tutti i pezzi.' }
+                                    { chi: 'joey', testo: 'Il Drago Nero Occhi Rossi non è merce per i Cacciatori Rari. Ti batterò prima che tu possa mettere insieme tutti i pezzi.' },
+                                    { io: true, testo: 'Le mie carte completeranno Exodia prima che tu possa reagire. Il tuo Drago Nero, ragazzino, è già nella collezione di Marik.' }
                                 ]
                             },
                             {
@@ -898,8 +967,9 @@ const storyCampaignsDatabase = [
                             },
                             {
                                 id: 'anime-3-mako-joey', kind: 'duel', icona: '🌊',
+                                // Dopo Strings, come nell'anime (episodi 19-20).
                                 label: 'Joey contro Mako', x: 565, y: 500,
-                                parallelo: true, sbloccaDopo: 'anime-3-espa',
+                                parallelo: true, sbloccaDopo: 'anime-3-strings',
                                 characterId: 'mako', difficulty: 'Medio',
                                 protagonista: { name: 'Joey Wheeler', title: 'Duellante di Battle City', image: 'images/characters/joeyWheeler.jpg', icon: '🎲' },
                                 dialogo: [
@@ -907,23 +977,39 @@ const storyCampaignsDatabase = [
                                     { io: true, testo: 'Io metto in palio Jinzo e tu la Fortezza Balena. Uno di noi uscirà da qui con la sua seconda Carta Localizzatrice.' }
                                 ]
                             },
+                            // Arkana PRIMA di Strings, come nell'anime
+                            // (episodi 11-13 e 16-18): è Arkana il primo
+                            // burattino che Marik manda contro Yugi.
+                            {
+                                id: 'anime-3-arkana', kind: 'duel', icona: '🎭',
+                                label: 'Arkana', x: 420, y: 460,
+                                characterId: 'arkana', difficulty: 'Difficile',
+                                dialogo: [
+                                    { chi: 'arkana', testo: 'Marik mi restituirà Catherine quando il mio Mago Nero avrà sconfitto il tuo. Le seghe sotto i nostri piedi renderanno definitiva la sconfitta.' },
+                                    { io: true, testo: 'Marik ti ha ingannato e tu hai maltrattato le tue carte. Ti mostrerò quale Mago Nero possiede davvero la fiducia del suo duellante.' }
+                                ]
+                            },
+                            // Joey contro Weevil (episodi 14-15): Weevil bara
+                            // con una carta nascosta, e Joey vince lo stesso.
+                            {
+                                id: 'anime-3-joey-weevil', kind: 'duel', icona: '🐛',
+                                label: 'Joey contro Weevil', x: 525, y: 380,
+                                parallelo: true, sbloccaDopo: 'anime-3-arkana',
+                                characterId: 'weevil', difficulty: 'Medio',
+                                protagonista: { name: 'Joey Wheeler', title: 'Duellante di Battle City', image: 'images/characters/joeyWheeler.jpg', icon: '🎲' },
+                                dialogo: [
+                                    { chi: 'weevil', testo: 'Ti ricordi di me, Joey? Sono quello che ha buttato in mare l’Exodia di Yugi. Stavolta a perdere una carta sarai tu, e i miei insetti hanno fame.' },
+                                    { io: true, testo: 'Quella sulla nave te la devo ancora, Weevil. Puoi infilarmi tutti gli insetti che vuoi nel mazzo: io questo duello lo vinco lo stesso.' }
+                                ]
+                            },
                             {
                                 id: 'anime-3-strings', kind: 'duel', icona: '🧵',
-                                label: 'Strings', x: 420, y: 460,
+                                label: 'Strings', x: 270, y: 300,
                                 characterId: 'strings', difficulty: 'Difficile',
                                 dialogo: [
                                     { chi: 'strings', testo: '...' },
                                     { nome: 'Marik', icona: '☥', testo: 'Questo burattino non ha bisogno di parlare. Nella sua mano cresce il potere di Slifer il Drago del Cielo.' },
                                     { io: true, testo: 'Puoi controllare il suo corpo, Marik, ma non il cuore delle mie carte.' }
-                                ]
-                            },
-                            {
-                                id: 'anime-3-arkana', kind: 'duel', icona: '🎭',
-                                label: 'Arkana', x: 270, y: 300,
-                                characterId: 'arkana', difficulty: 'Difficile',
-                                dialogo: [
-                                    { chi: 'arkana', testo: 'Marik mi restituirà Catherine quando il mio Mago Nero avrà sconfitto il tuo. Le seghe sotto i nostri piedi renderanno definitiva la sconfitta.' },
-                                    { io: true, testo: 'Marik ti ha ingannato e tu hai maltrattato le tue carte. Ti mostrerò quale Mago Nero possiede davvero la fiducia del suo duellante.' }
                                 ]
                             },
                             {
@@ -963,12 +1049,35 @@ const storyCampaignsDatabase = [
                                     { io: true, testo: 'Non ti avrei mai fatto del male, amico. Mai.' },
                                     { chi: 'tea', testo: 'Marik ci aveva incatenati a un’ancora. Voleva costringere Yugi a scegliere chi salvare.' },
                                     { chi: 'joey', testo: 'Quel bastardo… e Yugi ha rifiutato di trattarmi da nemico.' },
-                                    { io: true, testo: 'Ognuno di noi avrebbe fatto lo stesso per un amico. Andiamo: le finali ci aspettano.' }
+                                    // Serenity arriva al molo proprio durante il
+                                    // duello (episodi 27-29), accompagnata da Duke:
+                                    // è la prima volta che Joey la vede da quando
+                                    // ha di nuovo la vista, cioè il motivo per cui
+                                    // ha combattuto nel Regno dei Duellanti.
+                                    { chi: 'serenity', testo: 'Joey! Sono io, Serenity! L’operazione è andata bene… adesso ti vedo!' },
+                                    { chi: 'joey', testo: 'Serenity… sei qui davvero. Allora ne è valsa la pena, ogni singolo duello.' },
+                                    { chi: 'duke', testo: 'L’ho accompagnata io, con Tristan. Quei Cacciatori Rari la stavano inseguendo per la città.' },
+                                    { io: true, testo: 'Grazie, Duke. Andiamo: le finali ci aspettano.' }
+                                ]
+                            },
+                            // L'inizio delle finali: lo stadio di Domino, gli
+                            // otto finalisti e il dirigibile. Senza questa
+                            // scena i quarti cominciavano dal nulla.
+                            {
+                                id: 'anime-3-finali', kind: 'scene', icona: '🎟️',
+                                label: 'Gli otto finalisti', x: 1380, y: 440,
+                                chi: 'Seto Kaiba', chiId: 'kaiba',
+                                testo: [
+                                    { chi: 'kaiba', testo: 'Sei Carte Localizzatrici, e la mappa porta qui, allo stadio di Domino. Le finali si giocano sul mio dirigibile.' },
+                                    { chi: 'mokuba', testo: 'Gli otto finalisti sono: Yugi, Seto, Joey, Mai, Bakura, Marik… un certo Namu, e l’ottavo posto è ancora vuoto.' },
+                                    { chi: 'ishizu', testo: 'L’ottavo posto è mio, Kaiba. Te l’avevo detto che ci saremmo rivisti.' },
+                                    { io: true, testo: 'Namu… quel ragazzo era con noi da giorni. Perché ho la sensazione che ci stia nascondendo qualcosa?' },
+                                    { chi: 'mokuba', testo: 'Gli abbinamenti li decide il sorteggio. Primo quarto di finale: Yugi contro Bakura!' }
                                 ]
                             },
                             {
                                 id: 'anime-3-bakura', kind: 'duel', icona: '💍',
-                                label: 'Ryo Bakura', x: 820, y: 500,
+                                label: 'Ryo Bakura', x: 1185, y: 115,
                                 characterId: 'bakura', difficulty: 'Difficile',
                                 dialogo: [
                                     { chi: 'bakura', testo: 'Il mio Tavolo del Destino scandirà le cinque lettere della tua sconfitta. Nei quarti voglio il tuo Puzzle e il potere di Marik.' },
@@ -988,18 +1097,22 @@ const storyCampaignsDatabase = [
                             },
                             {
                                 id: 'anime-3-bakura-marik', kind: 'duel', icona: '🌑',
-                                label: 'Bakura contro Marik', x: 940, y: 455,
-                                parallelo: true, sbloccaDopo: 'anime-3-bakura-bonz',
-                                characterId: 'marik', difficulty: 'Difficile',
-                                protagonista: { name: 'Yami Bakura', title: 'Lo spirito dell’Anello', image: 'images/characters/bakura.jpg', icon: '💍' },
+                                // Sul dirigibile, dopo Mai contro Marik (episodi
+                                // 47-48). Nell'anime vince il Marik oscuro, e
+                                // Bakura sparisce nell'Ombra: si gioca dalla sua
+                                // parte.
+                                label: 'Marik contro Bakura', x: 1560, y: 185,
+                                parallelo: true, sbloccaDopo: 'anime-3-mai-marik',
+                                characterId: 'bakura', difficulty: 'Difficile',
+                                protagonista: { name: 'Yami Marik', title: 'Il Padrone delle Ombre', image: 'images/characters/yamiMarik.jpg', icon: '🌑' },
                                 dialogo: [
-                                    { chi: 'marik', testo: 'La mia parte debole si è alleata con te, Bakura. Quando perderai, entrambi sarete cancellati dal Gioco delle Ombre.' },
-                                    { io: true, testo: 'Il ragazzo mi ha rivelato il segreto di Ra. Quando avrò sconfitto la tua parte oscura, prenderò anche la Barra del Millennio.' }
+                                    { chi: 'bakura', testo: 'Il ragazzo mi ha rivelato il segreto di Ra. Quando avrò sconfitto la tua parte oscura, prenderò anche la Barra del Millennio.' },
+                                    { io: true, testo: 'La mia parte debole si è alleata con te, Bakura. Quando perderai, sarete cancellati entrambi dal Gioco delle Ombre.' }
                                 ]
                             },
                             {
                                 id: 'anime-3-ishizu', kind: 'duel', icona: '📿',
-                                label: 'Ishizu Ishtar', x: 1020, y: 620,
+                                label: 'Ishizu Ishtar', x: 1250, y: 215,
                                 parallelo: true, sbloccaDopo: 'anime-3-bakura',
                                 characterId: 'ishizu', difficulty: 'Difficile',
                                 protagonista: { name: 'Seto Kaiba', title: 'Organizzatore di Battle City', image: 'images/characters/setoKaiba.jpg', icon: '🐉' },
@@ -1010,7 +1123,7 @@ const storyCampaignsDatabase = [
                             },
                             {
                                 id: 'anime-3-odion', kind: 'duel', icona: '🔥',
-                                label: 'Odion', x: 1290, y: 520,
+                                label: 'Odion', x: 1350, y: 245,
                                 parallelo: true, sbloccaDopo: 'anime-3-bakura',
                                 characterId: 'odion', difficulty: 'Difficile',
                                 protagonista: { name: 'Joey Wheeler', title: 'Finalista di Battle City', image: 'images/characters/joeyWheeler.jpg', icon: '🎲' },
@@ -1021,22 +1134,29 @@ const storyCampaignsDatabase = [
                             },
                             {
                                 id: 'anime-3-mai-marik', kind: 'duel', icona: '🌑',
-                                label: 'Mai contro Marik', x: 1370, y: 430,
+                                // Nell'anime vince il Marik oscuro, e Mai finisce
+                                // nel Regno delle Ombre (episodi 41-43): si gioca
+                                // dalla sua parte.
+                                label: 'Marik contro Mai', x: 1460, y: 225,
                                 parallelo: true, sbloccaDopo: 'anime-3-bakura',
-                                characterId: 'marik', difficulty: 'Difficile',
-                                protagonista: { name: 'Mai Valentine', title: 'Finalista di Battle City', image: 'images/characters/maiValentine.jpg', icon: '🦋' },
+                                characterId: 'mai', difficulty: 'Difficile',
+                                protagonista: { name: 'Yami Marik', title: 'Il Padrone delle Ombre', image: 'images/characters/yamiMarik.jpg', icon: '🌑' },
                                 dialogo: [
-                                    { chi: 'marik', testo: 'Nel mio Gioco delle Ombre ogni mostro perduto cancellerà un ricordo. Alla fine non saprai più nemmeno perché duelli.' },
-                                    { io: true, testo: 'Non sono arrivata alle finali per essere una comparsa. Prenderò Ra e dimostrerò che non ho bisogno di nessuno che mi salvi.' }
+                                    { chi: 'mai', testo: 'Non sono arrivata alle finali per essere una comparsa. Prenderò Ra e dimostrerò che non ho bisogno di nessuno che mi salvi.' },
+                                    { io: true, testo: 'Nel mio Gioco delle Ombre ogni mostro perduto cancellerà un ricordo. Alla fine non saprai più nemmeno perché duelli.' }
                                 ]
                             },
                             {
                                 id: 'anime-3-sei-carte', kind: 'scene', icona: '🃏',
-                                label: 'I finalisti', x: 1450, y: 330,
+                                label: 'I finalisti', x: 1275, y: 55,
                                 chi: 'Yami Yugi', chiId: 'yamiYugi',
                                 testo: [
                                     { chi: 'kaiba', testo: 'I quarti di finale sono finiti. Restano quattro duellanti: Yugi, Joey, Marik… e io.' },
-                                    { chi: 'mokuba', testo: 'Le semifinali si terranno alla Torre dei Duelli, Seto: Joey contro Marik, e poi tu contro Yugi.' },
+                                    { io: true, testo: 'E Namu era Marik fin dall’inizio. Ha viaggiato con noi per giorni, e noi gli abbiamo raccontato tutto.' },
+                                    // Gli abbinamenti delle semifinali NON si
+                                    // decidono qui: li decide la battaglia a
+                                    // quattro sulla Torre dei Duelli (Parte 2).
+                                    { chi: 'mokuba', testo: 'Le semifinali si giocheranno alla Torre dei Duelli, Seto. E gli abbinamenti li deciderà una battaglia a quattro.' },
                                     { io: true, testo: 'Marik ha ridotto Mai in quello stato. Questa volta non gli lascerò altre vittime.' },
                                     { chi: 'kaiba', testo: 'Bada ai tuoi duelli, Yugi. Il torneo è mio, non lo rovinerai con le tue crociate.' },
                                     { chi: 'mokuba', testo: 'Seto… i comandi non rispondono! Qualcosa sta prendendo il controllo del dirigibile!' }
@@ -1051,7 +1171,7 @@ const storyCampaignsDatabase = [
                             // sull'area 'virtuale' qui sotto.
                             {
                                 id: 'anime-4-scena', kind: 'scene', icona: '🛩️',
-                                label: 'Sul dirigibile', x: 1450, y: 105,
+                                label: 'Sul dirigibile', x: 1440, y: 100,
                                 io: true,
                                 testo: [
                                     { chi: 'mokuba', testo: 'Seto, guarda! Una fortezza è uscita dal mare e ha agganciato il dirigibile!' },
@@ -1117,10 +1237,14 @@ const storyCampaignsDatabase = [
                                 label: 'Nesbitt', x: 760, y: 830,
                                 parallelo: true, sbloccaDopo: 'anime-6-scena',
                                 characterId: 'nesbitt', difficulty: 'Difficile',
-                                protagonista: { name: 'Tristan Taylor', title: 'Prigioniero del mondo virtuale', image: 'images/characters/tristanTaylor.jpg', icon: '🔧' },
+                                // Nell'anime è un tre contro uno: Tristan cade per
+                                // primo, e a battere Nesbitt sono Duke e Serenity.
+                                // Si gioca con Serenity, che chiude il duello.
+                                protagonista: { name: 'Serenity Wheeler', title: 'Prigioniera del mondo virtuale', image: 'images/characters/serenityWheeler.jpg', icon: '🌸' },
                                 dialogo: [
-                                    { chi: 'nesbitt', testo: 'Quando perderete, prenderò il corpo di Serenity e abbandonerò per sempre questa macchina.' },
-                                    { io: true, testo: 'Duke, Serenity e io combatteremo insieme. Non metterai le mani sul corpo di nessuno di noi.' }
+                                    { chi: 'nesbitt', testo: 'Il vostro amico Tristan è già caduto. Quando avrò finito con voi due, prenderò il tuo corpo e abbandonerò per sempre questa macchina.' },
+                                    { chi: 'duke', testo: 'Non sei sola, Serenity. Io copro le tue spalle: tu pensa a vincere.' },
+                                    { io: true, testo: 'Mio fratello non si arrende mai, e io sono sua sorella. Riprenderemo anche il corpo di Tristan.' }
                                 ]
                             },
                             {
@@ -1143,6 +1267,20 @@ const storyCampaignsDatabase = [
                                 dialogo: [
                                     { chi: 'lector', testo: 'Hai estromesso noi Cinque dalla KaibaCorp. Con Jinzo come Deck Master prenderò il tuo corpo e anche l’azienda.' },
                                     { io: true, testo: 'Vi ho licenziati perché avete tradito la società. Ora cancellerò anche le vostre copie digitali.' }
+                                ]
+                            },
+                            // Battuti uno per uno, i Cinque si fondono nel Drago
+                            // a Cinque Teste e sfidano Yugi e Joey insieme.
+                            // Parla Gansley, che era il loro capo: è lui
+                            // l'avversario sul tavolo.
+                            {
+                                id: 'anime-6-cinque-uniti', kind: 'duel', icona: '🐲',
+                                label: 'I Cinque uniti', x: 905, y: 575,
+                                characterId: 'gansley', difficulty: 'Difficile',
+                                dialogo: [
+                                    { nome: 'I Cinque', icona: '🐲', testo: 'Separati ci avete battuti. Uniti siamo il Drago a Cinque Teste, e nessun mostro con un solo cuore può fermarlo.' },
+                                    { chi: 'joey', testo: 'Cinque contro due? Tipico di voi dirigenti. Yugi, io ci sono.' },
+                                    { io: true, testo: 'Il vostro drago ha cinque teste e nessuna amicizia, Gansley. Joey ed io ne abbiamo abbastanza per tutti e due.' }
                                 ]
                             },
                             {
@@ -1169,13 +1307,17 @@ const storyCampaignsDatabase = [
                             },
                             {
                                 id: 'anime-6-kaiba-noah', kind: 'duel', icona: '🐉',
-                                label: 'Kaiba contro Noah', x: 920, y: 210,
+                                // Nell'anime vince Noah: Kaiba e Mokuba finiscono
+                                // di pietra, e Yugi riprende il duello coi Life
+                                // Point rimasti a Kaiba. Si gioca dalla parte di
+                                // Noah.
+                                label: 'Noah contro Kaiba', x: 920, y: 210,
                                 parallelo: true, sbloccaDopo: 'anime-6-anime-prigioni',
-                                characterId: 'noah', difficulty: 'Difficile',
-                                protagonista: { name: 'Seto Kaiba', title: 'Presidente della KaibaCorp', image: 'images/characters/setoKaiba.jpg', icon: '🐉' },
+                                characterId: 'kaiba', difficulty: 'Difficile',
+                                protagonista: { name: 'Noah Kaiba', title: 'Il ragazzo del mondo virtuale', image: 'images/characters/noah.jpg', icon: '🧊' },
                                 dialogo: [
-                                    { chi: 'noah', testo: 'Sono il vero erede di Gozaburo. Userò Mokuba contro di te e dimostrerò che la KaibaCorp avrebbe dovuto appartenere a me.' },
-                                    { io: true, testo: 'Non sei mio fratello e non sei il mio successore. Libera Mokuba: regoleremo questa faccenda nel duello che volevi.' }
+                                    { chi: 'kaiba', testo: 'Non sei mio fratello e non sei il mio successore. Libera Mokuba: regoleremo questa faccenda nel duello che volevi.' },
+                                    { io: true, testo: 'Sono il vero erede di Gozaburo, Seto. Userò Mokuba contro di te e dimostrerò che la KaibaCorp avrebbe dovuto appartenere a me.' }
                                 ]
                             },
                             {
@@ -1187,19 +1329,38 @@ const storyCampaignsDatabase = [
                                     { chi: 'noah', testo: 'Padre… ma mi avevi promesso…' },
                                     { chi: 'gozaburo', testo: 'Eri solo lo strumento per intrappolarli qui. La mia coscienza si diffonderà in tutta la rete e prenderà il posto di ogni mente collegata.' },
                                     { chi: 'kaiba', testo: 'Gozaburo. Credevo di averti battuto una volta per tutte.' },
-                                    { chi: 'gozaburo', testo: 'Hai preso la mia azienda e l’hai trasformata in una fabbrica di giochi. Cancellerò tutto ciò che hai costruito, Seto, e il mondo reale sarà il mio nuovo corpo.' }
+                                    { chi: 'gozaburo', testo: 'Hai preso la mia azienda e l’hai trasformata in una fabbrica di giochi. Cancellerò tutto ciò che hai costruito, Seto, e il mondo reale sarà il mio nuovo corpo.' },
+                                    { chi: 'kaiba', testo: 'Allora regoliamo i conti come si deve, vecchio. Con un duello.' }
                                 ]
                             },
+                            // Nell'anime Gozaburo lo affronta Kaiba, da solo, e
+                            // vince (Exodia Necross contro i suoi Draghi). Era
+                            // una scena di fuga: è un duello vero, ed è il
+                            // momento in cui Kaiba chiude i conti col padre.
                             {
-                                id: 'anime-6-gozaburo', kind: 'scene', icona: '🏢',
-                                label: 'La fuga da Gozaburo', x: 1225, y: 140,
-                                chi: 'Seto Kaiba', chiId: 'kaiba',
+                                id: 'anime-6-kaiba-gozaburo', kind: 'duel', icona: '🏢',
+                                label: 'Kaiba contro Gozaburo', x: 1250, y: 175,
+                                characterId: 'gozaburo', difficulty: 'Difficile',
+                                protagonista: { name: 'Seto Kaiba', title: 'Presidente della KaibaCorp', image: 'images/characters/setoKaiba.jpg', icon: '🐉' },
+                                dialogo: [
+                                    { chi: 'gozaburo', testo: 'Ti ho insegnato tutto, Seto: a schiacciare chi è debole, a non perdonare. Exodia Necross non si può distruggere, come il mio impero.' },
+                                    { io: true, testo: 'Mi hai insegnato a vincere. Ed è esattamente quello che farò, l’ultima volta che ti vedo.' }
+                                ]
+                            },
+                            // Dopo la sconfitta di Gozaburo è Noah a salvarli: ha
+                            // visto chi era davvero suo padre, e resta indietro
+                            // per distruggere la rete mentre gli altri scappano.
+                            {
+                                id: 'anime-6-gozaburo', kind: 'scene', icona: '🛩️',
+                                label: 'La scelta di Noah', x: 430, y: 95,
+                                chi: 'Noah Kaiba', chiId: 'noah',
                                 testo: [
-                                    { chi: 'kaiba', testo: 'Gozaburo non vuole un duello. Sta usando la fortezza come ponte per caricare la sua mente sulla rete del mondo.' },
-                                    { io: true, testo: 'Dobbiamo tornare nei nostri corpi prima che il reattore virtuale collassi.' },
-                                    { chi: 'mokuba', testo: 'Seto, il dirigibile risponde ai comandi! Dobbiamo decollare subito!' },
-                                    { chi: 'kaiba', testo: 'Yugi, tenete aperta l’uscita. Mokuba viene con me. Mio padre non userà più nessuno dei due.' },
-                                    { io: true, testo: 'Andate, Kaiba. Ci vediamo sulla Torre dei Duelli.' }
+                                    { chi: 'noah', testo: 'Andate. Il dirigibile risponde di nuovo ai comandi: vi ho riaperto la strada verso i vostri corpi.' },
+                                    { chi: 'mokuba', testo: 'E tu, Noah? Vieni con noi!' },
+                                    { chi: 'noah', testo: 'Io non ho un corpo a cui tornare, Mokuba. Ma posso fare una cosa giusta: resto qui e cancello la rete, con mio padre dentro.' },
+                                    { chi: 'kaiba', testo: 'Noah…' },
+                                    { chi: 'noah', testo: 'Prenditi cura di tuo fratello, Seto. Io non ho avuto nessuno che lo facesse con me.' },
+                                    { io: true, testo: 'Grazie, Noah. Non dimenticheremo quello che hai fatto.' }
                                 ]
                             }
                         ]
@@ -1226,33 +1387,51 @@ const storyCampaignsDatabase = [
                                     { chi: 'kaiba', testo: 'Siamo tornati nei nostri corpi, e la fortezza è precipitata prima che Gozaburo potesse invadere la rete mondiale.' },
                                     { chi: 'mokuba', testo: 'Il dirigibile ha ripreso la rotta: stiamo arrivando alla Torre dei Duelli!' },
                                     { chi: 'joey', testo: 'Finalmente! Pensavo che quel Noah ci tenesse chiusi lì dentro per sempre.' },
-                                    { chi: 'kaiba', testo: 'Basta chiacchiere. Joey affronterà Marik; subito dopo, Yugi affronterà me. I vincitori saliranno in finale.' },
+                                    { chi: 'kaiba', testo: 'Basta chiacchiere. Prima delle semifinali, una battaglia a quattro sulla cima della torre: io, Yugi, Wheeler e Marik, tutti contro tutti. L’ordine in cui cadiamo deciderà gli abbinamenti.' },
                                     { io: true, testo: 'Nessun altro dirottamento, Kaiba?' },
                                     { chi: 'kaiba', testo: 'Nessuna scusa, stavolta. Il torneo riprende adesso.' }
                                 ]
                             },
+                            // La battaglia reale a quattro (Yugi, Kaiba, Joey,
+                            // Marik) che decide le semifinali. Sul tavolo è un
+                            // duello contro Marik, il rivale che conta.
                             {
-                                id: 'anime-4-joey', kind: 'duel', icona: '🎲',
-                                label: 'Semifinale: Marik', x: 1230, y: 700,
-                                parallelo: true, sbloccaDopo: 'anime-4b-scena',
+                                id: 'anime-4b-battaglia-reale', kind: 'duel', icona: '⚔️',
+                                label: 'La battaglia a quattro', x: 1300, y: 615,
                                 characterId: 'marik', difficulty: 'Difficile',
-                                protagonista: { name: 'Joey Wheeler', title: 'Finalista di Battle City', image: 'images/characters/joeyWheeler.jpg', icon: '🎲' },
                                 dialogo: [
-                                    { chi: 'marik', testo: 'Ogni mostro distrutto farà soffrire il suo proprietario. Prima della fine, Ra cancellerà il tuo corpo e la tua mente.' },
-                                    { io: true, testo: 'Puoi trasformare il duello in un incubo, ma non mi farai abbandonare. Ho promesso a Yugi che sarei arrivato fino in fondo.' }
+                                    { chi: 'kaiba', testo: 'Quattro duellanti, un campo solo. Ognuno attacca chi vuole, e nessuno fa favori a nessuno.' },
+                                    { chi: 'marik', testo: 'Che vi alleiate o no, il Faraone cadrà. Ra ha già visto come finisce questa notte.' },
+                                    { io: true, testo: 'Ra non ha visto niente, Marik. Stanotte decidiamo noi chi resta in piedi.' }
+                                ]
+                            },
+                            // Nell'anime è Marik a vincere: Joey crolla un istante
+                            // prima di dichiarare l'ultimo attacco. Si gioca dalla
+                            // parte di Marik.
+                            {
+                                id: 'anime-4-joey', kind: 'duel', icona: '🌑',
+                                label: 'Semifinale: Marik contro Joey', x: 1180, y: 705,
+                                parallelo: true, sbloccaDopo: 'anime-4b-battaglia-reale',
+                                characterId: 'joey', difficulty: 'Difficile',
+                                protagonista: { name: 'Yami Marik', title: 'Il Padrone delle Ombre', image: 'images/characters/yamiMarik.jpg', icon: '🌑' },
+                                dialogo: [
+                                    { chi: 'joey', testo: 'Puoi trasformare il duello in un incubo, ma non mi farai abbandonare. Ho promesso a Yugi che sarei arrivato fino in fondo.' },
+                                    { io: true, testo: 'Ogni mostro distrutto farà soffrire il suo proprietario. Prima della fine, Ra cancellerà il tuo corpo e la tua mente.' }
                                 ]
                             },
                             {
                                 id: 'anime-4b-amicizia', kind: 'scene', icona: '🤝',
-                                label: 'Una promessa mantenuta', x: 1120, y: 610,
-                                chi: 'Joey Wheeler', chiId: 'joey',
+                                label: 'Al capezzale di Joey', x: 1120, y: 610,
+                                chi: 'Serenity Wheeler', chiId: 'serenity',
+                                // Dopo la semifinale Joey resta privo di sensi
+                                // (si risveglia solo durante Yugi contro Kaiba):
+                                // a parlare sono gli altri, al suo capezzale.
                                 testo: [
-                                    { chi: 'joey', testo: 'Non guardarmi così, Yugi. Marik mi ha trascinato in un Gioco delle Ombre, ma non è riuscito a farmi smettere di duellare.' },
-                                    { io: true, testo: 'Hai combattuto fino all’ultimo, Joey. Ero fiero di te.' },
-                                    { chi: 'joey', testo: 'Avevo Jinzo pronto per l’ultimo attacco. Il mio corpo ha ceduto un istante prima che potessi dichiararlo.' },
-                                    { io: true, testo: 'Marik non ti ha battuto nello spirito. Questo è l’importante.' },
-                                    { chi: 'joey', testo: 'Kaiba ti aspetta più avanti, Yugi. Vuole dimostrare che il destino è una scusa.' },
-                                    { chi: 'joey', testo: 'Vai. Io sarò qui quando torni.' }
+                                    { chi: 'serenity', testo: 'Non si sveglia, Yugi. Stava per dichiarare l’ultimo attacco, e il suo corpo ha ceduto un istante prima.' },
+                                    { chi: 'tea', testo: 'Marik lo ha trascinato in un Gioco delle Ombre. Joey ha resistito fino alla fine, pur di non arrendersi.' },
+                                    { io: true, testo: 'Marik non lo ha battuto nello spirito, Serenity. Joey tornerà: ha promesso che sarebbe arrivato fino in fondo, e mantiene sempre le promesse.' },
+                                    { chi: 'tristan', testo: 'Kaiba ti aspetta sulla cima della torre. Vai, Yugi: restiamo noi con lui.' },
+                                    { io: true, testo: 'Vincerò anche per lui. Quando aprirà gli occhi, voglio che veda la finale.' }
                                 ]
                             },
                             {
@@ -1262,6 +1441,20 @@ const storyCampaignsDatabase = [
                                 dialogo: [
                                     { chi: 'kaiba', testo: 'Obelisk contro Slifer. Il vincitore prenderà la carta divina dello sconfitto e affronterà Marik nella finale che ho costruito.' },
                                     { io: true, testo: 'La tavola egizia raffigura questo scontro da tremila anni. Oggi non sarà il passato a deciderne il risultato.' }
+                                ]
+                            },
+                            // Il terzo posto: chi ha perso le due semifinali.
+                            // Nell'anime vince Kaiba, e si gioca dalla sua parte.
+                            // Ramo morto: non fa avanzare la storia.
+                            {
+                                id: 'anime-4b-terzo-posto', kind: 'duel', icona: '🥉',
+                                label: 'Terzo posto: Kaiba contro Joey', x: 1010, y: 425,
+                                parallelo: true, sbloccaDopo: 'anime-4-kaiba',
+                                characterId: 'joey', difficulty: 'Difficile',
+                                protagonista: { name: 'Seto Kaiba', title: 'Organizzatore di Battle City', image: 'images/characters/setoKaiba.jpg', icon: '🐉' },
+                                dialogo: [
+                                    { chi: 'joey', testo: 'Mi sono appena svegliato e mi fa male tutto, ma questo duello non me lo perdo, Kaiba. Da quando mi hai chiamato dilettante aspetto questo momento.' },
+                                    { io: true, testo: 'Il terzo posto non mi interessa, Wheeler. Mi interessa ricordarti la differenza fra un cane e un campione.' }
                                 ]
                             },
                             {
@@ -1283,6 +1476,24 @@ const storyCampaignsDatabase = [
                                 dialogo: [
                                     { chi: 'marik', testo: 'Ra diventerà una Fenice immortale e consumerà ogni ricordo del Faraone. La mia parte debole sparirà insieme a lui.' },
                                     { io: true, testo: 'Combatterò per Joey, Mai e per il vero Marik che hai imprigionato. I tre Dei porranno fine al tuo Gioco delle Ombre.' }
+                                ]
+                            },
+                            // Dopo la finale: il vero Marik si libera della sua
+                            // parte oscura e si arrende, Mai e Joey tornano dal
+                            // Regno delle Ombre, Kaiba se ne va. Prima la storia
+                            // saltava dritta al Mondo dei Ricordi.
+                            {
+                                id: 'anime-4b-epilogo', kind: 'scene', icona: '🌅',
+                                label: 'L’alba su Battle City', x: 615, y: 300,
+                                chi: 'Marik Ishtar', chiId: 'marik',
+                                testo: [
+                                    { testo: 'L’oscurità si ritira dal campo. Al centro resta un ragazzo stremato: il vero Marik, finalmente padrone di sé.' },
+                                    { nome: 'Marik', icona: '☥', testo: 'Mi arrendo, Faraone. La mia parte oscura è sparita con quell’ultimo attacco… e con lei tutto il male che ho fatto.' },
+                                    { chi: 'ishizu', testo: 'Fratello, sei tornato.' },
+                                    { nome: 'Marik', icona: '☥', testo: 'Ra è tuo, e anche la Barra del Millennio. Tutta la mia famiglia ha custodito un segreto per te: il modo per ritrovare la tua memoria.' },
+                                    { chi: 'joey', testo: 'Ehi… mi gira la testa, ma sono tutto intero. E anche Mai si è svegliata!' },
+                                    { chi: 'kaiba', testo: 'Il torneo è finito, e la torre salterà fra pochi minuti. Tieniti i tuoi Dei, Yugi. Quello che ci siamo detti oggi non cambia niente.' },
+                                    { io: true, testo: 'Ho i tre Dei Egizi. Adesso so dove andare: in Egitto, a cercare il mio nome.' }
                                 ]
                             }
                         ]
@@ -1349,15 +1560,50 @@ const storyCampaignsDatabase = [
                             },
                             {
                                 id: 'anime-9-mahad', kind: 'scene', icona: '🪄',
-                                label: 'Il sacrificio di Mahad', x: 560, y: 240,
+                                // Sotto il palazzo, dove il ladro è sceso nella
+                                // tomba del padre del Faraone: i fatti di
+                                // palazzo stanno tutti nella città in alto a
+                                // destra, così il sentiero non si aggroviglia.
+                                label: 'Il sacrificio di Mahad', x: 1075, y: 255,
                                 chi: 'Mahad',
                                 testo: [
                                     { nome: 'Mahad', testo: 'Il ladro è sceso nella tomba di vostro padre, mio Faraone. L’ho seguito là sotto.' },
                                     { io: true, testo: 'Mahad, non devi farlo. L’Anello del Millennio è troppo potente.' },
                                     { nome: 'Mahad', testo: 'Proprio per questo ne userò una magia che non ho mai usato. Unirò la mia anima al mio Ka.' },
-                                    { io: true, testo: 'Non ti perderò di nuovo, amico mio.' },
+                                    { io: true, testo: 'Sei il mio amico più fedele, Mahad. Non voglio perderti.' },
                                     { nome: 'Mahad', testo: 'Da stanotte non sarò più Mahad il sacerdote: sarò il Mago Nero, e continuerò a proteggervi anche oltre la morte.' },
                                     { nome: 'Mahad', testo: 'Quando avrete bisogno di me, chiamatemi. Risponderò, mio Faraone.' }
+                                ]
+                            },
+                            // Il sacerdote Seto, Kisara e Aknadin: l'origine del
+                            // Drago Bianco Occhi Blu e degli Oggetti del
+                            // Millennio. Senza questa scena, Kul Elna (nominata
+                            // da Bakura) restava un nome senza spiegazione.
+                            {
+                                id: 'anime-9-kisara', kind: 'scene', icona: '🐉',
+                                label: 'Kisara', x: 1375, y: 365,
+                                chi: 'Sacerdote Seto', chiId: 'priestSeto',
+                                testo: [
+                                    { chi: 'priestSeto', testo: 'Questa ragazza dai capelli bianchi custodisce dentro di sé un Ka che nessuno ha mai visto: un drago bianco, dagli occhi azzurri.' },
+                                    { nome: 'Kisara', testo: 'Mi avete salvata dagli schiavisti, sacerdote Seto. Non so perché quel drago viva in me, ma so che risponde quando siete in pericolo.' },
+                                    { nome: 'Aknadin', testo: 'Seto, figlio mio. Un Ka così potente non deve restare in una serva: strappalo dal suo corpo, e sarai tu il Faraone.' },
+                                    { chi: 'priestSeto', testo: 'Figlio? Che cosa stai dicendo, Aknadin?' },
+                                    { nome: 'Aknadin', testo: 'Sono stato io a forgiare i sette Oggetti del Millennio, fondendo gli abitanti di Kul Elna. Il prezzo è già stato pagato: non sprecarlo.' },
+                                    { testo: 'Aknadin colpisce. Kisara si getta davanti a Seto e muore al suo posto, e il suo Ka entra nella pietra: un Drago Bianco Occhi Blu che da quel giorno combatterà soltanto per lui.' },
+                                    { chi: 'priestSeto', testo: 'Kisara… ti giuro che il tuo drago non servirà mai l’odio di nessuno.' }
+                                ]
+                            },
+                            // Il sacerdote Seto affronta il Re dei Ladri col
+                            // drago di Kisara (Dawn of the Duel). Ramo laterale.
+                            {
+                                id: 'anime-9-seto-bakura', kind: 'duel', icona: '🐉',
+                                label: 'Seto contro il Re dei Ladri', x: 1475, y: 290,
+                                parallelo: true, sbloccaDopo: 'anime-9-kisara',
+                                characterId: 'bakura', difficulty: 'Difficile',
+                                protagonista: { name: 'Sacerdote Seto', title: 'Il Sommo Sacerdote', image: 'images/characters/priestSeto.jpg', icon: '🐉' },
+                                dialogo: [
+                                    { chi: 'bakura', testo: 'Il cagnolino del Faraone in persona. Diabound ha già divorato i Ka di mezzo palazzo: il tuo sarà il prossimo.' },
+                                    { io: true, testo: 'Il drago che porto non è mio, ladro. È di una ragazza che è morta per proteggermi. Non perderà contro di te.' }
                                 ]
                             },
                             // Il Gioco delle Ombre: la partita che Bakura ha
@@ -1378,7 +1624,9 @@ const storyCampaignsDatabase = [
                             },
                             {
                                 id: 'anime-9-nome', kind: 'scene', icona: '👑',
-                                label: 'Atem', x: 855, y: 430,
+                                // Sotto la scacchiera di Zorc, verso il tempio:
+                                // il nome ritrovato apre la strada all'ultima porta.
+                                label: 'Atem', x: 760, y: 650,
                                 chi: 'Il Faraone',
                                 testo: [
                                     { chi: 'yugiMuto', testo: 'Il tuo nome, Faraone! L’ho trovato! Atem!' },
@@ -1391,7 +1639,7 @@ const storyCampaignsDatabase = [
                             },
                             {
                                 id: 'anime-5-scena', kind: 'scene', icona: '🏛️',
-                                label: 'L\'ultima porta', x: 1225, y: 610,
+                                label: 'L\'ultima porta', x: 985, y: 765,
                                 chi: 'Il Faraone',
                                 testo: [
                                     { chi: 'yugiMuto', testo: 'Atem… manca un solo duello. E non è contro un nemico.' },
@@ -1407,12 +1655,29 @@ const storyCampaignsDatabase = [
                             // js/duel-session.js).
                             {
                                 id: 'anime-5-yamiyugi', kind: 'duel', icona: '👑',
-                                label: 'Il Duello Cerimoniale', x: 1060, y: 790,
+                                label: 'Il Duello Cerimoniale', x: 1150, y: 700,
                                 characterId: 'yamiYugi', difficulty: 'Difficile',
                                 protagonista: { name: 'Yugi Muto', title: 'Il ragazzo del Puzzle', image: 'images/characters/yugiMuto.jpg', icon: '🧩' },
                                 dialogo: [
                                     { chi: 'yamiYugi', testo: 'Per aprirmi la porta dell’aldilà devi sconfiggermi mentre combatto con tutta la mia forza, compresi i tre Dei Egizi.' },
                                     { io: true, testo: 'Non proverò a trattenerti e non ti chiederò di lasciarmi vincere. Questo sarà il duello che dimostrerà quanto siamo cresciuti entrambi.' }
+                                ]
+                            },
+                            // La fine della serie: Atem attraversa la porta.
+                            // Era l'ultima cosa che mancava — la campagna finiva
+                            // sul duello, senza il saluto.
+                            {
+                                id: 'anime-5-addio', kind: 'scene', icona: '🌟',
+                                label: 'La porta si apre', x: 1215, y: 555,
+                                chi: 'Il Faraone',
+                                testo: [
+                                    { chi: 'yugiMuto', testo: 'Ho vinto… ho vinto davvero. Allora è finita, vero?' },
+                                    { chi: 'yamiYugi', testo: 'Sì, Yugi. Hai dimostrato di non avere più bisogno di me. Sei diventato forte, e ora tocca a te camminare da solo.' },
+                                    { chi: 'joey', testo: 'Ehi, non puoi andartene così! Siamo una squadra!' },
+                                    { chi: 'yamiYugi', testo: 'E lo resteremo, Joey. Gli amici non smettono di esserlo solo perché non si vedono più.' },
+                                    { testo: 'L’Occhio di Wedjat si accende sulla porta. Atem la attraversa senza voltarsi: dall’altra parte lo aspettano i suoi sacerdoti, e Mahad, e suo padre.' },
+                                    { chi: 'yugiMuto', testo: 'Addio, Faraone. Grazie di tutto.' },
+                                    { testo: 'Il tempio crolla, e gli Oggetti del Millennio sprofondano con lui. È finita: il Re dei Giochi ha trovato la pace.' }
                                 ]
                             }
                         ]
@@ -1456,7 +1721,20 @@ const storyCampaignsDatabase = [
             { id: 'anime-duello-video-pegasus', dalla: 'principali-fine', area: 'anime-area-prologo', quante: 1 },
             { id: 'anime-bakura-isola', dalla: 'principali-inserite', area: 'anime-area-regno', prima: 'anime-2-mai', quante: 1 },
             { id: 'anime-falso-kaiba', dalla: 'principali-inserite', area: 'anime-area-regno', prima: 'anime-2-mai', quante: 1 },
-            { id: 'anime-duello-joey-molo', dalla: 'principali-inserite', area: 'anime-area-battlecity1', prima: 'anime-3-marik-molo', quante: 1 }
+            { id: 'anime-duello-joey-molo', dalla: 'principali-inserite', area: 'anime-area-battlecity1', prima: 'anime-3-marik-molo', quante: 1 },
+            // Revisione di fedeltà all'anime (2026-10-11). Con `ids` la voce
+            // dice ESATTAMENTE quali tappe sono nate, e la posizione si ricava
+            // da loro: vedi applicaSeparazioni in js/story/story-progress.js.
+            // Nella stessa area vanno in ordine di posizione.
+            { id: 'anime-fedelta-tempo-scaduto', dalla: 'principali-fine', area: 'anime-area-prologo', ids: ['anime-1-tempo-scaduto'] },
+            { id: 'anime-fedelta-parapetto', dalla: 'principali-inserite', area: 'anime-area-regno', ids: ['anime-2-kaiba-torre'] },
+            { id: 'anime-fedelta-otto-finalisti', dalla: 'principali-inserite', area: 'anime-area-battlecity1', ids: ['anime-3-finali'] },
+            { id: 'anime-fedelta-cinque-uniti', dalla: 'principali-inserite', area: 'anime-area-virtuale', ids: ['anime-6-cinque-uniti'] },
+            { id: 'anime-fedelta-gozaburo', dalla: 'principali-inserite', area: 'anime-area-virtuale', ids: ['anime-6-kaiba-gozaburo'] },
+            { id: 'anime-fedelta-battaglia-reale', dalla: 'principali-inserite', area: 'anime-area-battlecity2', ids: ['anime-4b-battaglia-reale'] },
+            { id: 'anime-fedelta-epilogo-bc', dalla: 'principali-fine', area: 'anime-area-battlecity2', ids: ['anime-4b-epilogo'] },
+            { id: 'anime-fedelta-kisara', dalla: 'principali-inserite', area: 'anime-area-cerimoniale', ids: ['anime-9-kisara'] },
+            { id: 'anime-fedelta-addio', dalla: 'principali-fine', area: 'anime-area-cerimoniale', ids: ['anime-5-addio'] }
         ],
         // Premio per aver finito la campagna. Accreditato una volta sola
         // (vedi story-progress.js): rigiocarla è permesso, ripagarla no.
