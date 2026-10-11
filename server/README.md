@@ -39,28 +39,19 @@ Vedrai:
 
 ## 3) Giocare via Internet con un amico lontano
 
-Per essere raggiungibile da fuori casa, il server deve girare su una macchina
-con un indirizzo pubblico. Il modo più semplice è usare un servizio di
-hosting gratuito che supporti Node.js e i WebSocket, ad esempio:
+Il relay ufficiale gira su Render ed è definito da `render.yaml`. Ogni push
+su `main` ridistribuisce automaticamente il servizio
+`millennium-duel-arena-relay`:
 
-- **Render.com** (piano gratuito "Web Service")
-- **Railway.app**
-- **Fly.io**
-- **Glitch.com**
+```text
+https://millennium-duel-arena-relay.onrender.com
+wss://millennium-duel-arena-relay.onrender.com
+```
 
-Passi generali (validi per la maggior parte di questi servizi):
-
-1. Crea un account sul servizio scelto.
-2. Crea un nuovo progetto/servizio e carica (o collega da GitHub) la cartella
-   `server/` di questo progetto.
-3. Come comando di avvio imposta: `node server.js`
-4. Il servizio ti darà un indirizzo pubblico tipo `https://tuo-progetto.onrender.com`.
-   Il WebSocket corrispondente sarà `wss://tuo-progetto.onrender.com`
-   (nota: `wss://`, con la "s", perché questi servizi espongono HTTPS —
-   il server supporta questo scenario perché la piattaforma di hosting fa da
-   proxy TLS davanti al nostro server in chiaro).
-5. Nella lobby del gioco (sia tu che il tuo amico), inserite quell'indirizzo
-   `wss://...` al posto di `ws://localhost:8787`.
+Il primo indirizzo risponde *"Server di Stanze attivo"*; il secondo è già il
+valore predefinito di `#mpServerUrl` in `multiplayer.html`. Per creare un relay
+separato si può collegare il repository privato a un altro servizio Node con
+supporto WebSocket e avviare `node server.js`.
 
 In alternativa, se preferisci restare in locale, puoi usare un tunnel come
 **ngrok** o **Cloudflare Tunnel** per esporre temporaneamente la porta 8787
@@ -73,13 +64,13 @@ del tuo computer con un indirizzo pubblico, senza dover "deployare" nulla.
 3. Lo condivide con l'avversario (chat, messaggio, voce...).
 4. L'altro giocatore va su **Entra in una Stanza**, inserisce il codice e
    clicca **Entra**.
-5. Appena entrambi sono connessi, il duello parte automaticamente. Chi ha
-   creato la stanza gioca per primo.
+5. Entrambi scelgono il mazzo e si dichiarano pronti. La morra cinese decide
+   chi sceglie il primo giocatore; soltanto dopo parte il duello.
 
-Durante la partita: le tue mosse (evocazioni, tributi, cambi posizione,
-magie/trappole, attacchi, cambi fase) vengono inviate in tempo reale
-all'avversario, e viceversa — incluse le animazioni epiche già presenti nel
-gioco (scontri, distruzioni, danni, Tributo, Battle Phase).
+Durante la partita entrambi i client eseguono lo stesso motore con mazzi e
+seme condivisi. Viaggiano soltanto comandi e decisioni numerati, in lotti:
+è il protocollo a passo comune versione 2. Il protocollo precedente basato
+su mosse raccontate e fotografie dello stato è stato rimosso.
 
 ## 5) Riconnessione automatica e anti-desync (Multiplayer Avanzato)
 
@@ -87,13 +78,11 @@ gioco (scontri, distruzioni, danni, Tributo, Battle Phase).
   sfarfalla, laptop in sospensione, cambio rete), il gioco prova da solo a
   riconnettersi (qualche tentativo, con attesa crescente) e torna nella
   STESSA stanza — l'avversario vede solo un breve avviso "in attesa che
-  torni", non l'interruzione della partita. Alla riconnessione, lo stato
-  pubblico del duello (Terreno, Cimitero, Life Points — mai il contenuto
-  della mano, sempre nascosto) viene rimesso in pari automaticamente.
-- Ogni mossa scambiata porta anche una piccola "impronta" dello stato: se i
-  due lati risultano disallineati (es. per un messaggio perso durante una
-  disconnessione), il gioco se ne accorge da solo e richiede subito un
-  aggiornamento invece di proseguire silenziosamente storto.
+  torni", non l'interruzione della partita. I lotti numerati permettono di
+  richiedere i passi mancanti e riprendere nello stesso ordine.
+- Ogni comando porta un riassunto dello stato del mittente. Se le due copie
+  divergono, il gioco si ferma esplicitamente: non esiste più una fotografia
+  legacy capace di sovrascrivere e nascondere una divergenza.
 - Limite dichiarato: questo copre la connessione che cade e torna, NON la
   chiusura vera della scheda/il riavvio del browser — a quel punto lo stato
   locale del giocatore è perso e la partita non è recuperabile (il server
@@ -109,5 +98,5 @@ gioco (scontri, distruzioni, danni, Tributo, Battle Phase).
 - Il server controlla solo che i messaggi abbiano una forma valida (e
   limita quanti messaggi al secondo accetta da ciascun client) — non
   verifica che una mossa rispetti davvero le regole del duello: quella
-  logica vive tutta nel client (vedi js/duel-engine.js), il server resta
+  logica vive tutta nel client (vedi `js/engine/duel-engine.js`), il server resta
   un postino.

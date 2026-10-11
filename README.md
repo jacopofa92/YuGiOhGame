@@ -1,4 +1,4 @@
-# Yu-Gi-Oh! Duel Arena — Multiplayer: guida rapida
+# Yu-Gi-Oh! Millennium Duel Arena — Multiplayer: guida rapida
 
 ## Perché serve un server?
 
@@ -26,7 +26,7 @@ node server.js
 Vedrai:
 
 ```
-🎴 Server Duel Arena in ascolto sulla porta 8787
+🎴 Server Millennium Duel Arena in ascolto sulla porta 8787
    WebSocket endpoint: ws://<indirizzo-server>:8787
 ```
 
@@ -44,15 +44,15 @@ con un indirizzo pubblico. Nel repository c'è già tutto il necessario:
 **`render.yaml`**, il "blueprint" che configura il servizio da sé.
 
 1. Vai su [render.com](https://render.com) e registrati con GitHub.
-2. **New → Blueprint**, scegli il repository `YuGiOhGame`, poi **Apply**.
+2. **New → Blueprint**, scegli il repository privato
+   `jacopofa92/millennium-duel-arena`, poi **Apply**.
    Render legge `render.yaml` e crea il servizio senza altre domande.
-3. Il servizio nasce su `https://<nome>.onrender.com`. Aprendolo nel browser
-   deve rispondere *"Server di Stanze attivo"*: è la conferma che è vivo.
-4. Quell'indirizzo, scritto con `wss://` al posto di `https://`, è quello da
-   usare nella lobby. È già il valore predefinito del campo "Indirizzo del
-   server" — **va cambiato solo se Render ha assegnato un nome diverso**
-   (succede se quel nome era già preso da qualcun altro): in quel caso
-   aggiorna il `value` dell'input `mpServerUrl` in `multiplayer.html`.
+3. `render.yaml` crea il servizio `millennium-duel-arena-relay`. Aprendo
+   `https://millennium-duel-arena-relay.onrender.com` nel browser deve
+   comparire *"Server di Stanze attivo"*: è la conferma che è vivo.
+4. La lobby usa già
+   `wss://millennium-duel-arena-relay.onrender.com`. Se il nome del servizio
+   cambia, aggiornare anche `#mpServerUrl` in `multiplayer.html`.
 
 Da quel momento né tu né i tuoi amici dovete più toccare nulla: la lobby
 punta già al server pubblico.
@@ -79,19 +79,25 @@ del tuo computer con un indirizzo pubblico, senza dover "deployare" nulla.
 3. Lo condivide con l'avversario (chat, messaggio, voce...).
 4. L'altro giocatore va su **Entra in una Stanza**, inserisce il codice e
    clicca **Entra**.
-5. Appena entrambi sono connessi, il duello parte automaticamente. Chi ha
-   creato la stanza gioca per primo.
+5. Entrambi scelgono il mazzo e si dichiarano pronti. La morra cinese decide
+   chi sceglie il primo giocatore; soltanto dopo parte il duello.
 
-Durante la partita: le tue mosse (evocazioni, tributi, cambi posizione,
-magie/trappole, attacchi, cambi fase) vengono inviate in tempo reale
-all'avversario, e viceversa — incluse le animazioni epiche già presenti nel
-gioco (scontri, distruzioni, danni, Tributo, Battle Phase).
+Durante la partita entrambi i client eseguono lo stesso motore con mazzi e
+seme condivisi. In rete viaggiano soltanto comandi e decisioni numerati; non
+viaggiano fotografie del campo o vecchie "mosse raccontate". Questo è il
+protocollo a passo comune versione 2.
 
-## 5) Limiti di questa prima versione
+## 5) Riconnessione e limiti
 
-- Non c'è (ancora) riconnessione automatica in caso di caduta della linea:
-  se un giocatore si disconnette, l'altro riceve un avviso a schermo e deve
-  tornare al menu per iniziare una nuova partita.
-- Le stanze inutilizzate scadono automaticamente dopo 30 minuti.
-- Il server tiene tutto in memoria (nessun database): se lo riavvii, tutte
-  le stanze attive vengono perse.
+- Se la linea cade mentre la scheda resta aperta, il client tenta la
+  riconnessione automatica e rientra nella stessa stanza entro la finestra
+  di grazia di 45 secondi. I lotti numerati permettono di riprendere dal
+  primo passo mancante.
+- Chiudere davvero la scheda o riavviare il browser perde invece lo stato
+  locale della partita: il relay non salva un duello completo.
+- Le stanze inutilizzate scadono dopo 30 minuti. Se il relay viene riavviato,
+  le stanze in memoria vanno perse.
+- Il server valida forma, dimensione e frequenza dei messaggi, ma non è un
+  arbitro delle regole: entrambi i client possiedono in memoria anche mazzo
+  e mano avversari. Per un competitivo anti-cheat servirebbe un motore
+  autorevole sul server.

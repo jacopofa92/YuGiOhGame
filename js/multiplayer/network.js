@@ -48,7 +48,7 @@
      * Rende utilizzabile l'indirizzo scritto dall'utente:
      * - accetta un host "nudo" (senza schema), scegliendo ws/wss da solo;
      * - promuove ws:// a wss:// quando la pagina è servita via HTTPS.
-     *   Serve per davvero: il gioco pubblicato su GitHub Pages è HTTPS, e
+     *   Serve per davvero: il gioco pubblicato su Cloudflare è HTTPS, e
      *   un browser blocca senza appello una connessione in chiaro aperta
      *   da una pagina sicura ("contenuto misto") — senza questa promozione
      *   il socket morirebbe prima ancora di partire, con un errore che

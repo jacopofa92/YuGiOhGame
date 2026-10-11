@@ -238,7 +238,8 @@ righe, actions.js 3.855, game-flow.js 3.797; 205 accessi al DOM e 85
       lo spec `multiplayer-attesa-remota` verifica coda, callback, pulizia e
       posizione desktop/mobile.
 - [x] Service worker più leggero e verificato (vedi «Peso e velocità»).
-- [ ] Tutorial o partita guidata (meglio dopo la Priorità 2).
+- [x] Tutorial: menu dedicato con lezione del nonno e lezioni brevi su
+      Catena, Fusione e mostri Flip (`tutorial.html`).
 - [x] Bilanciamento delle difficoltà con simulazioni bot contro bot: matrice
       completa post-intervento in `STORY_DECK_SIMULATION_REPORT_AFTER_BALANCE.json`.
       La scala media è 1,64 / 3,45 / 4,12 tentativi per duello e 19 incontri
@@ -281,10 +282,11 @@ Decisioni aperte dell'utente: i 6 PNG di avatar non usati; le regole del
       `waitForTimeout` fissi non sono stati rivisti: farlo se ne fallisce uno.
 - [x] Vecchie migrazioni della Storia anime tolte (salvataggi precedenti al
       timbro di base azzerati, 1.0.17-1.0.18).
-- [x] CI di GitHub verde (dal commit 275f0df, 1.0.33). Lo stato delle run si
-      legge senza login: `https://api.github.com/repos/jacopofa92/YuGiOhGame/actions/runs`
-      (i log dei singoli test invece richiedono l'accesso). Azioni portate a
-      v5 e Node 24, come in locale.
+- [x] CI GitHub con annotazioni leggibili e ripetizione singola dei test
+      instabili. Il repository è ora privato: run, annotazioni e log si
+      consultano autenticati su `jacopofa92/millennium-duel-arena`. A ogni
+      push gira soltanto la sintassi; la suite completa parte manualmente o
+      su pull request, per non consumare inutilmente i minuti GitHub Free.
 - [x] Controllo automatico pre-commit (`.githooks/pre-commit` →
       `scripts/pre-commit.js`): sintassi dei .js in stage, accenti corrotti
       nelle righe aggiunte, BOM, `cards.json` senza file generato. Su un
@@ -304,7 +306,8 @@ Decisioni aperte dell'utente: i 6 PNG di avatar non usati; le regole del
       chiusura. Verificato a occhio con screenshot (desktop e telefono in
       orizzontale): banda, velo e carte sopra il velo funzionano. Difetto
       minore: su telefono la banda copre in parte il nome dell'avversario.
-- [ ] Tutorial o partita guidata per chi non conosce Yu-Gi-Oh.
+- [x] Tutorial o partita guidata per chi non conosce Yu-Gi-Oh: quattro
+      lezioni isolate dal motore tramite `js/tutorial/tutorial-duel.js`.
 - [x] Velocità del bot regolabile (Normale/Veloce) in Impostazioni → Dispositivo.
       Accorcia solo le pause di ritmo in `js/ai/bot.js` (`botMs`).
 

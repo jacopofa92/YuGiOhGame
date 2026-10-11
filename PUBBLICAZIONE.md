@@ -153,6 +153,9 @@ Nome, pubblicazione e hosting
 - Suite completa su GitHub solo a mano o su pull request.
 
 Ancora da fare
-- Rinominare la cartella del progetto sul PC (`...\Sviluppo\YuGiOhGame` →
-  `millennium-duel-arena`), a VS Code chiuso.
 - Facoltativo: controllo Supabase lato server sui file (vedi sopra).
+
+La cartella locale è già stata rinominata in
+`...\Sviluppo\millennium-duel-arena`; i nomi `YuGiOhGameAndroid*` delle shell
+native restano invece intenzionalmente invariati perché sono percorsi tecnici
+esterni al repository.

@@ -1,4 +1,4 @@
-# YuGiOhGame — mappa tecnica persistente
+# Yu-Gi-Oh! Millennium Duel Arena — mappa tecnica persistente
 
 Ultimo aggiornamento verificato: 2026-10-11.
 
@@ -90,18 +90,21 @@ Bridge Android e quindi continua senza interruzioni quando la WebView cambia
 documento. Effetti, voci e jingle rimangono nella WebView e non si mescolano al
 player persistente.
 
-Le sorgenti native sono esterne a questo repository, nelle due shell:
+Le sorgenti native sono esterne a questo repository, nelle due shell storiche
 `C:\AndroidDev\YuGiOhGameAndroid` e `C:\AndroidDev\YuGiOhGameAndroidProd`.
 In entrambe il plugin è `android/app/src/main/java/com/jacopofa92/
 yugiohduelarena/NativeMusicPlugin.java`, registrato da `MainActivity.java`.
-Le build verificate sono dev `1.1.5-dev.4` e prod `1.1.5` (versionCode 23).
+La build di produzione verificata è `1.2.0` (`versionCode 24`), si chiama
+«Millennium Duel Arena» e carica il sito Cloudflare indicato in
+`PUBBLICAZIONE.md`. I nomi delle cartelle native non sono stati rinominati e
+non coincidono più col nome pubblico del gioco.
 
-Il Service Worker (`sw.js`, cache `v173`) non prova mai a salvare richieste
-con header `Range` o risposte HTTP 206: Cache Storage non supporta risposte
-parziali e il vecchio tentativo faceva fallire soundtrack perfettamente
-valide con `ERR_FAILED`. Anche un errore di `cache.put` non annulla più la
-risposta di rete. Guardrail: `service-worker-cache` e
-`audio-nativo-persistente`.
+La correzione introdotta con la cache `v173` impedisce al Service Worker di
+salvare richieste con header `Range` o risposte HTTP 206: Cache Storage non
+supporta risposte parziali e il vecchio tentativo faceva fallire soundtrack
+perfettamente valide con `ERR_FAILED`. Anche un errore di `cache.put` non
+annulla più la risposta di rete. La cache corrente è indicata in «Stato
+rapido». Guardrail: `service-worker-cache` e `audio-nativo-persistente`.
 
 ## Rework acquisizione carte
 
@@ -437,10 +440,10 @@ del protocollo corrente.
   `refactor/chiudi-ultime-carte`.
 - PWA tramite `manifest.json`, `sw.js` e `js/pwa-register.js`.
 - App Android/Capacitor: le shell dev e produzione includono `NativeMusic`;
-  la produzione nativa resta `1.1.5` (`versionCode 23`) e punta a GitHub Pages;
-  il contenuto web caricato dall'APK espone invece `GAME_VERSION` `1.2.0`. Gli APK
-  sono ignorati da Git e restano artefatti locali rigenerabili. La cache
-  WebView/PWA corrente è `ygo-duel-arena-v174`.
+  la produzione nativa è `1.2.0` (`versionCode 24`) e punta al sito
+  Cloudflare. Il contenuto web espone `GAME_VERSION` `1.2.0`. Gli APK sono
+  ignorati da Git e restano artefatti locali rigenerabili. La cache
+  WebView/PWA corrente è `ygo-duel-arena-v223`.
 - Cloud tramite Supabase; multiplayer tramite relay WebSocket Node nativo.
 - Le preferenze utente (`save.settings`: dettagli video, ologrammi, aptica,
   volume e mute musica/SFX) fanno parte del salvataggio unificato e quindi di
@@ -716,7 +719,7 @@ e ascoltano gli eventi del canale.
   `multiplayer.js`. Il duello si carica dentro `multiplayer.html`
   (`loadDuelArena` esegue gli script di `duelMonstersCore.html`).
 - Server: `server/server.js`, solo moduli Node nativi, su Render
-  (`render.yaml`, servizio `yugioh-duel-arena-relay`): si ridistribuisce da
+  (`render.yaml`, servizio `millennium-duel-arena-relay`): si ridistribuisce da
   solo col push su `main`.
 - Messaggi di stanza: `create-room`, `join-room`, `rejoin-room`,
   `game-action`, `leave-room`. Dentro `game-action` un elenco CHIUSO di tipi
