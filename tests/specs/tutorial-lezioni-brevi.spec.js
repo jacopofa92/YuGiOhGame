@@ -9,7 +9,7 @@ const path = require('path');
 
 const RADICE = path.join(__dirname, '..', '..');
 const DUELLO = 'file:///' + path.join(RADICE, 'duelMonstersCore.html').replace(/\\/g, '/')
-    + '?mode=tutorial&character=solomonMuto&difficulty=Facile&lezione=';
+    + '?mode=tutorial&character=solomonMuto&difficulty=Facile&field=citta.jpg&lezione=';
 const MENU = 'file:///' + path.join(RADICE, 'tutorial.html').replace(/\\/g, '/');
 
 const LEZIONI = {
@@ -89,6 +89,8 @@ module.exports = {
                 await page.reload();
                 await page.waitForSelector('#tutorialCoach', { timeout: 40000 });
                 t.assert(await page.evaluate(() => TutorialDuel.lezione) === id, `La pagina deve aprire la lezione "${id}"`);
+                const sfondo = await page.evaluate(() => getComputedStyle(document.body).backgroundImage);
+                t.assert(/citta\.jpg/.test(sfondo), `Lezione ${id}: si gioca sul campo "La Città" (${sfondo})`);
                 // Una lezione breve non è mai obbligatoria: si può uscire.
                 t.assert(await page.evaluate(() => getComputedStyle(document.getElementById('surrenderBtn')).display !== 'none'),
                     `Lezione ${id}: "Abbandona" deve esserci`);
@@ -122,6 +124,8 @@ module.exports = {
             const link = await page.$$eval('.tut-lezione', (els) => els.map((a) => a.getAttribute('href')));
             t.assert(['nonno', 'catena', 'fusione', 'flip'].every((id) => link.some((h) => h.endsWith('&lezione=' + id))),
                 `Il menu Tutorial deve elencare le quattro lezioni: ${JSON.stringify(link)}`);
+            t.assert(link.every((h) => /[?&]field=citta\.jpg(&|$)/.test(h)),
+                `Ogni lezione del menu si gioca in città: ${JSON.stringify(link)}`);
         } finally {
             await page.close();
         }
