@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { attendiScelta, otherHandCards, blockBanishFromField, findEquipTarget, equipToChosenTarget, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost } = window.CardEffectsShared;
+    const { collectEquipTargets, chooseFieldCardTargetWaiting, attendiScelta, otherHandCards, blockBanishFromField, findEquipTarget, equipToChosenTarget, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost } = window.CardEffectsShared;
 
     // ================================================================
     // 631 — Megamorfosi / Megamorph (Equipaggiamento)
@@ -1790,14 +1790,32 @@
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx, () => true) !== -1; },
         activate(ctx) {
-            const index = findEquipTarget(ctx, () => true);
-            if (index === -1) return;
-            const target = ctx.field(ctx.owner)[index].card;
-            ctx.card.targetOwner = ctx.owner;
-            ctx.card.targetIndex = index;
-            ctx.card.targetUid = target.uid;
-            ctx.card._targetDestroyedInBattle = false;
-            ctx.log(`📿 Collana del Comando equipaggiata a ${target.name}!`);
+            // A quale mostro agganciarla lo sceglie il giocatore (prima era
+            // sempre il primo idoneo da sinistra), con il checkpoint di
+            // targeting come ogni Equip. Mentre la lista è aperta la carta è
+            // già in campo senza bersaglio: `equipInScelta` impedisce al suo
+            // static() qui sotto di scambiarla per orfana e mandarla al
+            // Cimitero (stesso guasto corretto in equipToChosenTarget).
+            const candidati = collectEquipTargets(ctx, () => true);
+            if (candidati.length === 0) return;
+            const card = ctx.card;
+            card.equipInScelta = true;
+            const sceltaChiusa = () => { delete card.equipInScelta; };
+            chooseFieldCardTargetWaiting(ctx, candidati, {
+                title: '📿 Collana del Comando',
+                text: 'Scegli a quale tuo mostro equipaggiare questa carta.',
+                dichiara: true,
+                onNegato: sceltaChiusa
+            }, (scelto) => {
+                sceltaChiusa();
+                const slot = ctx.field(scelto.owner)[scelto.index];
+                if (!slot || slot.card.uid !== scelto.card.uid) return;
+                card.targetOwner = scelto.owner;
+                card.targetIndex = scelto.index;
+                card.targetUid = slot.card.uid;
+                card._targetDestroyedInBattle = false;
+                ctx.log(`📿 Collana del Comando equipaggiata a ${slot.card.name}!`);
+            });
         },
         // "Quando un mostro che controlli equipaggiato con questa carta
         // viene distrutto IN BATTAGLIA": ctx.card._targetDestroyedInBattle,
@@ -1815,6 +1833,8 @@
             ctx.card._targetDestroyedInBattle = true;
         },
         static(ctx) {
+            // Bersaglio ancora da scegliere: non è orfana (vedi activate).
+            if (ctx.card.equipInScelta) return;
             const targetSlot = ctx.card.targetOwner != null ? ctx.field(ctx.card.targetOwner)[ctx.card.targetIndex] : null;
             const validTarget = targetSlot && !targetSlot.isFaceDown && targetSlot.card.uid === ctx.card.targetUid;
             if (validTarget) return;

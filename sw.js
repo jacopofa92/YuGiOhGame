@@ -447,7 +447,8 @@
 // v226: Torre dei Duellanti (torre.html): 20 piani, LP che si portano, Ristoro o oggetto.
 // v227: Torre, conferma di abbandono con la finestra del gioco.
 // v228: Equip con piu' bersagli non finiscono piu' al Cimitero durante la scelta.
-const CACHE_NAME = 'ygo-duel-arena-v228';
+// v229: Collana del Comando e Carro Armato Ingranaggio Antico: il bersaglio lo sceglie il giocatore.
+const CACHE_NAME = 'ygo-duel-arena-v229';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { chooseFieldTargetsInSequence, chooseFieldCardTargetWaiting, attendiScelta, chooseOption, isHarpieLadySupport, findEquipTarget, equipToChosenTarget, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, chooseCardFromList, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost, maxRitualTributeLevel, performRitualTribute, releaseRelinquishedTarget, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach, destroyTargetingSpellIfItStays, victimChoosesDiscard } = window.CardEffectsShared;
+    const { collectEquipTargets, chooseFieldTargetsInSequence, chooseFieldCardTargetWaiting, attendiScelta, chooseOption, isHarpieLadySupport, findEquipTarget, equipToChosenTarget, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, chooseCardFromList, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost, maxRitualTributeLevel, performRitualTribute, releaseRelinquishedTarget, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach, destroyTargetingSpellIfItStays, victimChoosesDiscard } = window.CardEffectsShared;
 
     // ================================================================
     // 835 — Ingranaggio Antico / Ancient Gear
@@ -89,15 +89,34 @@
         continuous: true,
         canActivate(ctx) { return findEquipTarget(ctx, (c) => c.name && c.name.includes('Ingranaggio Antico')) !== -1; },
         activate(ctx) {
-            const index = findEquipTarget(ctx, (c) => c.name && c.name.includes('Ingranaggio Antico'));
-            if (index === -1) return;
-            const target = ctx.field(ctx.owner)[index].card;
-            ctx.card.targetOwner = ctx.owner;
-            ctx.card.targetIndex = index;
-            ctx.card.targetUid = target.uid;
-            ctx.log(`⚙️ Carro Armato Ingranaggio Antico equipaggiato a ${target.name}!`);
+            // A quale "Ingranaggio Antico" agganciarlo lo sceglie il
+            // giocatore (prima era il primo da sinistra). `equipInScelta`
+            // impedisce al static() qui sotto di scambiarlo per orfano mentre
+            // la lista è aperta: senza, andrebbe al Cimitero infliggendo
+            // pure i suoi 600 danni (stesso guasto di equipToChosenTarget).
+            const candidati = collectEquipTargets(ctx, (c) => c.name && c.name.includes('Ingranaggio Antico'));
+            if (candidati.length === 0) return;
+            const card = ctx.card;
+            card.equipInScelta = true;
+            const sceltaChiusa = () => { delete card.equipInScelta; };
+            chooseFieldCardTargetWaiting(ctx, candidati, {
+                title: '⚙️ Carro Armato Ingranaggio Antico',
+                text: 'Scegli a quale tuo "Ingranaggio Antico" equipaggiare questa carta.',
+                dichiara: true,
+                onNegato: sceltaChiusa
+            }, (scelto) => {
+                sceltaChiusa();
+                const slot = ctx.field(scelto.owner)[scelto.index];
+                if (!slot || slot.card.uid !== scelto.card.uid) return;
+                card.targetOwner = scelto.owner;
+                card.targetIndex = scelto.index;
+                card.targetUid = slot.card.uid;
+                ctx.log(`⚙️ Carro Armato Ingranaggio Antico equipaggiato a ${slot.card.name}!`);
+            });
         },
         static(ctx) {
+            // Bersaglio ancora da scegliere: non è orfano (vedi activate).
+            if (ctx.card.equipInScelta) return;
             const targetSlot = ctx.card.targetOwner != null ? ctx.field(ctx.card.targetOwner)[ctx.card.targetIndex] : null;
             const validTarget = targetSlot && !targetSlot.isFaceDown && targetSlot.card.uid === ctx.card.targetUid;
             if (validTarget) {

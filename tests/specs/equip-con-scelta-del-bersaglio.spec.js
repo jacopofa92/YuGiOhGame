@@ -179,8 +179,10 @@ module.exports = {
                         const slot = gameState.playerSTField.find((s) => s && s.card.id === idEquip);
                         return {
                             inCampo: !!slot,
-                            agganciata: !!(slot && slot.card.equippedToUid === uid),
-                            aChi: slot ? slot.card.equippedToUid : null,
+                            // Collana del Comando (688) e Carro Armato Ingranaggio Antico (838)
+                            // tengono il bersaglio in targetUid invece che in equippedToUid.
+                            agganciata: !!(slot && (slot.card.equippedToUid === uid || slot.card.targetUid === uid)),
+                            aChi: slot ? (slot.card.equippedToUid || slot.card.targetUid) : null,
                             nelCimitero: gameState.playerGraveyard.some((c) => c.id === idEquip)
                         };
                     }, [e.id, scelto]);
