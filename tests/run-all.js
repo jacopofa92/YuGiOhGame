@@ -133,12 +133,52 @@ async function main() {
     console.log(`\nEsecuzione di ${specPaths.length} test da tests/specs/...\n`);
     const browser = await chromium.launch();
     const results = [];
+    // Su GitHub Actions un test fallito si ripete UNA volta. La macchina di
+    // GitHub (Linux, lenta, condivisa) fa uscire ogni tanto dei fallimenti di
+    // TEMPI che qui non si vedono mai, e ognuno teneva la suite rossa per
+    // giorni. La ripetizione non nasconde nulla:
+    //  - se passa al secondo colpo, la suite resta verde ma il test esce
+    //    come "instabile" in un'annotazione ::warning pubblica, con l'errore
+    //    del primo tentativo — l'elenco di quelli da sistemare non si perde;
+    //  - se fallisce di nuovo, è un fallimento vero e la suite resta rossa.
+    // In locale non si ripete (risposta immediata a chi sta lavorando), a
+    // meno di chiederlo con RIPETI_FALLITI=1.
+    const ripeti = !!(process.env.GITHUB_ACTIONS || process.env.RIPETI_FALLITI);
+    const instabili = [];
     try {
         for (const specPath of specPaths) {
-            results.push(await runOne(browser, specPath));
+            let esito = await runOne(browser, specPath);
+            if (!esito.ok && ripeti) {
+                console.log(`    \x1b[33m↻ ripeto una volta: ${esito.name}\x1b[0m`);
+                // Modulo ricaricato da capo: uno spec può tenere stato fra
+                // una funzione e l'altra, e non deve ereditarlo dal tentativo
+                // fallito.
+                delete require.cache[require.resolve(specPath)];
+                const secondo = await runOne(browser, specPath);
+                if (secondo.ok) {
+                    instabili.push({ name: esito.name, error: esito.error });
+                    esito = secondo;
+                }
+            }
+            results.push(esito);
         }
     } finally {
         await browser.close();
+    }
+
+    // GitHub accetta una riga sola per annotazione: gli a capo vanno
+    // codificati (%0A), e per regola anche % e \r. Il titolo non può avere
+    // virgole e due punti (sono separatori della sintassi).
+    const codifica = (s) => String(s).replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
+    const titolo = (s) => codifica(s).replace(/[:,]/g, ' ');
+    if (instabili.length > 0) {
+        console.log(`\n\x1b[33m${instabili.length} test instabili (falliti al primo colpo, passati al secondo):\x1b[0m`);
+        instabili.forEach((r) => console.log(`  - ${r.name}: ${r.error}`));
+        if (process.env.GITHUB_ACTIONS) {
+            instabili.forEach((r) => {
+                console.log(`::warning title=${titolo('Test instabile: ' + r.name)}::${codifica('Fallito al primo tentativo, passato al secondo. Errore del primo: ' + String(r.error).slice(0, 1400))}`);
+            });
+        }
     }
 
     const passed = results.filter((r) => r.ok).length;
@@ -151,13 +191,10 @@ async function main() {
         // del job (comando "::error"). I log di un job si leggono solo da
         // loggati, le annotazioni invece sono pubbliche anche via API
         // (/check-runs/<id>/annotations): così si sa QUALE test è fallito
-        // e perché senza dover entrare in GitHub. GitHub accetta una riga
-        // sola per annotazione: gli a capo vanno codificati (%0A), e per
-        // regola anche % e \r.
+        // e perché senza dover entrare in GitHub.
         if (process.env.GITHUB_ACTIONS) {
-            const codifica = (s) => String(s).replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
             results.filter((r) => !r.ok).forEach((r) => {
-                console.log(`::error title=${codifica('Test fallito: ' + r.name).replace(/[:,]/g, ' ')}::${codifica(String(r.error).slice(0, 1500))}`);
+                console.log(`::error title=${titolo('Test fallito: ' + r.name)}::${codifica(String(r.error).slice(0, 1500))}`);
             });
         }
         process.exit(1);

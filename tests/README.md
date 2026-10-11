@@ -101,6 +101,15 @@ subito dopo senza toccare nulla. Se un test fallisce da solo, isolato,
 la prima cosa da fare è rilanciare `npm test` una volta prima di mettersi
 a caccia di un bug vero.
 
+**Su GitHub Actions questo lo fa il runner da solo**: un test fallito si
+ripete una volta. Se passa al secondo colpo la suite resta verde, ma il
+test esce come "instabile" in un'annotazione `::warning` con l'errore del
+primo tentativo; se fallisce di nuovo la suite è rossa. Ogni test fallito
+diventa anche un'annotazione `::error`. Le annotazioni sono pubbliche
+(`https://api.github.com/repos/<proprietario>/<repo>/check-runs/<id-job>/annotations`),
+i log del job no: è da lì che si legge quale test fallisce senza entrare
+in GitHub. In locale la ripetizione si chiede con `RIPETI_FALLITI=1`.
+
 ## Un'insidia reale già presa in questa suite
 
 `resolveChain()` (duel-engine.js) è asincrona: ogni link della Chain
