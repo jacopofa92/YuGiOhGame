@@ -33,24 +33,34 @@ module.exports = {
             const anime = storyCampaignsDatabase.find((campaign) => campaign.id === 'anime');
             const chapter = anime.capitoli.find((entry) => entry.id === 'battlecity1');
             const area = chapter.tappe.find((entry) => entry.id === 'anime-area-battlecity1');
-            const duels = area.tappe.filter((entry) => wanted.includes(entry.characterId));
+            // Un Rare Hunter può comparire anche come PROTAGONISTA: nel ramo
+            // parallelo "Seeker contro Joey" si gioca dalla parte di Seeker,
+            // che nell'anime vince (regola dei laterali dalla parte di chi
+            // vince, vedi storia-anime-coerenza-narrativa).
+            const cacciatore = (entry) => {
+                if (wanted.includes(entry.characterId)) return entry.characterId;
+                const nome = entry.protagonista && entry.protagonista.name;
+                const pg = nome && characterDatabase.find((c) => c.name === nome);
+                return pg && wanted.includes(pg.id) ? pg.id : null;
+            };
+            const duels = area.tappe.filter((entry) => entry.kind === 'duel' && cacciatore(entry));
             return {
-                ids: duels.map((entry) => entry.characterId),
+                ids: duels.map(cacciatore),
                 dialogues: duels.every((entry) => Array.isArray(entry.dialogo) && entry.dialogo.length >= 2),
                 migrations: anime.separazioni.filter((entry) => [
                     'battle-city-seeker', 'battle-city-strings', 'battle-city-maschere'
                 ].includes(entry.id)).map((entry) => entry.id)
             };
         }, ids);
-        // Seeker compare due volte di proposito: prima nel ramo parallelo
-        // Joey vs Seeker e poi nel percorso di Yugi. Per verificare l'ordine
+        // Seeker compare due volte di proposito: nel percorso di Yugi e nel
+        // ramo parallelo Seeker contro Joey (dove è lui il protagonista). Per verificare l'ordine
         // del roster si confrontano le prime occorrenze, senza cancellare un
         // duello canonico solo per far tornare il conteggio del test.
         const uniqueStoryIds = story.ids.filter((id, index, all) => all.indexOf(id) === index);
         t.assert(uniqueStoryIds.join(',') === ids.join(','),
             `Ordine Rare Hunter incoerente nella Storia: ${story.ids.join(', ')}`);
         t.assert(story.ids.filter((id) => id === 'seeker').length >= 2,
-            'La Storia deve conservare sia Yugi vs Seeker sia il ramo parallelo Joey vs Seeker');
+            'La Storia deve conservare sia Yugi vs Seeker sia il ramo parallelo Seeker contro Joey');
         t.assert(story.dialogues, 'Ogni Rare Hunter deve avere un dialogo introduttivo nella Storia');
         // Le migrazioni di queste tre tappe sono state tolte di proposito: un
         // salvataggio precedente al timbro di base della Storia anime si

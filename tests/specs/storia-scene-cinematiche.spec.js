@@ -129,19 +129,23 @@ module.exports = {
             });
 
             // --- 1) la scena si apre come intermezzo -------------------
+            // Attese da 25 secondi, non 10: sulla macchina di GitHub (Linux,
+            // più lenta, con la polvere dorata di "Alti" accesa) 10 secondi
+            // non bastavano e il test falliva solo lì — lo hanno mostrato le
+            // annotazioni dei test falliti (vedi tests/run-all.js).
             await page.click('.nm-node--corrente');
-            await page.waitForSelector('.sc-scena', { timeout: 10000 });
+            await page.waitForSelector('.sc-scena', { timeout: 25000 });
             // Il cartello d'apertura dura un attimo prima del dialogo.
             await page.waitForFunction(() => {
                 const el = document.querySelector('.sc-chi');
                 return !!(el && el.textContent.trim());
-            }, null, { timeout: 10000 });
+            }, null, { timeout: 25000 });
 
             // Il sigillo compare quando l'immagine FALLISCE il caricamento,
             // che è un evento asincrono: leggerlo subito dopo la comparsa
             // del nome lo coglierebbe prima che il browser si sia accorto
             // del file mancante.
-            await page.waitForFunction(() => !!document.querySelector('.sc-ritratto.is-sigillo'), null, { timeout: 10000 });
+            await page.waitForFunction(() => !!document.querySelector('.sc-ritratto.is-sigillo'), null, { timeout: 25000 });
 
             const scena = await page.evaluate(() => {
                 const s = document.querySelector('.sc-scena');
@@ -195,7 +199,7 @@ module.exports = {
             // La cosa da sorvegliare non è più "il duello è bloccato" ma
             // "rifarlo non muove la storia": rivincere una tappa già
             // superata sbloccherebbe la successiva senza giocarla.
-            await page.waitForSelector('.nm-node--corrente', { timeout: 10000 });
+            await page.waitForSelector('.nm-node--corrente', { timeout: 25000 });
             const cliccabili = await page.evaluate(() => {
                 const fatti = Array.from(document.querySelectorAll('.nm-node--fatta'));
                 return {
@@ -252,7 +256,7 @@ module.exports = {
             }, CAMPAGNA);
             assert(indiceScena >= 0, 'Nessuna scena già vista da rileggere: il test non proverebbe nulla');
             await page.evaluate((i) => document.querySelectorAll('.nm-node')[i].click(), indiceScena);
-            await page.waitForSelector('.sc-scena', { timeout: 10000 });
+            await page.waitForSelector('.sc-scena', { timeout: 25000 });
             await chiudiScena(page, assert, 'rilettura di una scena gia vista');
             const dopoRilettura = await page.evaluate((c) => SaveManager.getStoryState(c).completate, CAMPAGNA);
             assert(dopoRilettura === primaDiRileggere,
