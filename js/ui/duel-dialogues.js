@@ -81,7 +81,7 @@
         paradoxBrothers: 'mystic', mai: 'proud', bandit_keith: 'proud', pegasus: 'trickster', duke: 'trickster', espaRoba: 'mystic', arkana: 'dark',
         seeker: 'trickster', strings: 'cold', lumis: 'trickster', umbra: 'dark',
         bakura: 'dark', ishizu: 'mystic', odion: 'warrior', marik: 'dark', noah: 'cold', gansley: 'trickster', johnson: 'wild', nesbitt: 'warrior',
-        crump: 'cold', lector: 'mystic', simonMuran: 'mystic', jono: 'warrior', teana: 'hero', shadi: 'mystic', priestessIsis: 'mystic',
+        crump: 'cold', lector: 'mystic', simonMuran: 'mystic', jono: 'warrior', teana: 'hero', shadi: 'mystic', priestessIsis: 'mystic', mageSoldier: 'warrior',
         oceanMage: 'mystic', highMageSecmeton: 'proud', forestMage: 'mystic', highMageAnubisius: 'dark', mountainMage: 'warrior', highMageAtenza: 'proud',
         desertMage: 'mystic', highMageMartis: 'dark', meadowMage: 'warrior', highMageKepura: 'proud', labyrinthMage: 'trickster', sebek: 'warrior', neku: 'cold',
         heishin: 'dark', darkNite: 'dark', mirror: 'cold', robertoGiacobbo: 'mystic',

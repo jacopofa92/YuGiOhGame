@@ -4292,3 +4292,10 @@ sorveglia `storia-anime-coerenza-narrativa`. Per inserire tappe principali in
 un'area si usa una voce `separazioni` con `ids: [...]` (la posizione si ricava
 dalle tappe stesse, anche con più inserimenti nella stessa area): vedi
 `applicaSeparazioni` e lo spec `storia-anime-migrazione-fedelta`.
+
+Memorie Proibite (2026-10-11) segue la trama del gioco PS1: Seto tradisce solo
+alla fine (discende dagli stregoni, vuole DarkNite), Heishin vuole gli Oggetti
+per sé e finge la sconfitta, i finalisti del torneo portano sei Oggetti (Shadi ne
+ha due), la Sacerdotessa Isis non è nel passato. Mage Soldier è un personaggio
+nuovo con ritratto segnaposto (`images/characters/mageSoldier.jpg`). Spec
+`storia-fm-fedelta` (trama + migrazione, anche dentro il torneo).

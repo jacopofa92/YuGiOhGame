@@ -3035,6 +3035,114 @@ const characterDeckDatabase = {
         }
     },
 
+    // Mage Soldier, il soldato-mago di Heishin (Forbidden Memories): la
+    // ronda che ferma il principe appena tornato in Egitto. Incantatori e
+    // Guerrieri armati di magia, con Distruttore il Guerriero Magico come
+    // carta simbolo. Stessa ossatura di Magie/Trappole dei mazzi del passato.
+    mageSoldier: {
+        flagship: 131, // Distruttore, il Guerriero Magico — stessa quantità in tutti e tre i livelli
+        easy: {
+            main: [
+                { id: 131, qty: 2 }, // Distruttore, il Guerriero Magico
+                { id: 591, qty: 3 }, // Cappello Magico Bianco
+                { id: 242, qty: 2 }, // Stregone di Fuoco
+                { id: 338, qty: 3 }, // Dama della Fede
+                { id: 508, qty: 2 }, // Strega della Foresta Nera
+                { id: 1038, qty: 2 }, // Evocatore di Illusioni
+                { id: 431, qty: 2 }, // Saggi il Pagliaccio Oscuro
+                { id: 737, qty: 2 }, // Mago Apprendista
+                { id: 108, qty: 2 }, // Guerriero da Battaglia
+                { id: 304, qty: 1 }, // Hurricail
+                { id: 539, qty: 1 }, // Signore delle Fiamme
+                { id: 344, qty: 1 }, // Spada Leggendaria
+                { id: 8, qty: 1 }, // Spada Rivelatrice
+                { id: 820, qty: 2 }, // Nega Attacco
+                { id: 434, qty: 2 }, // Capro Espiatorio
+                { id: 503, qty: 2 }, // Waboku
+                { id: 143, qty: 1 }, // Mura del Castello
+                { id: 35, qty: 1 }, // Rinascita del Mostro
+                { id: 36, qty: 1 }, // Vaso dell'Avidità
+                { id: 272, qty: 1 }, // Carità Aggraziata
+                { id: 40, qty: 1 }, // Buco Trappola
+                { id: 595, qty: 1 }, // Il Guardiano Affidabile
+                { id: 546, qty: 2 }, // Dian Keto la Maestra delle Cure
+                { id: 600, qty: 1 }, // Trappola Fasulla
+                { id: 875, qty: 1 } // Libro della Luna
+            ],
+            extra: []
+        },
+        medium: {
+            main: [
+                { id: 131, qty: 2 }, // Distruttore, il Guerriero Magico
+                { id: 744, qty: 1 }, // Mago a Fuoco Rapido
+                { id: 742, qty: 2 }, // Mago dell'Esplosione
+                { id: 554, qty: 1 }, // Stregone dei Dannati
+                { id: 551, qty: 2 }, // Neo lo Spadaccino Magico
+                { id: 591, qty: 2 }, // Cappello Magico Bianco
+                { id: 338, qty: 2 }, // Dama della Fede
+                { id: 508, qty: 2 }, // Strega della Foresta Nera
+                { id: 242, qty: 2 }, // Stregone di Fuoco
+                { id: 1038, qty: 1 }, // Evocatore di Illusioni
+                { id: 108, qty: 2 }, // Guerriero da Battaglia
+                { id: 431, qty: 1 }, // Saggi il Pagliaccio Oscuro
+                { id: 304, qty: 1 }, // Hurricail
+                { id: 344, qty: 1 }, // Spada Leggendaria
+                { id: 313, qty: 1 }, // Rinvigorimento
+                { id: 35, qty: 1 }, // Rinascita del Mostro
+                { id: 36, qty: 2 }, // Vaso dell'Avidità
+                { id: 272, qty: 1 }, // Carità Aggraziata
+                { id: 40, qty: 1 }, // Buco Trappola
+                { id: 793, qty: 1 }, // Armatura Sakuretsu
+                { id: 7, qty: 1 }, // Buco Nero
+                { id: 8, qty: 1 }, // Spada Rivelatrice
+                { id: 820, qty: 1 }, // Nega Attacco
+                { id: 10, qty: 1 }, // Cilindro Magico
+                { id: 434, qty: 1 }, // Capro Espiatorio
+                { id: 503, qty: 1 }, // Waboku
+                { id: 143, qty: 1 }, // Mura del Castello
+                { id: 600, qty: 1 }, // Trappola Fasulla
+                { id: 599, qty: 1 }, // Sette Attrezzi del Bandito
+                { id: 646, qty: 1 }, // Tempesta Pesante
+                { id: 546, qty: 1 } // Dian Keto la Maestra delle Cure
+            ],
+            extra: []
+        },
+        hard: {
+            main: [
+                { id: 131, qty: 2 }, // Distruttore, il Guerriero Magico
+                { id: 551, qty: 2 }, // Neo lo Spadaccino Magico
+                { id: 744, qty: 2 }, // Mago a Fuoco Rapido
+                { id: 742, qty: 2 }, // Mago dell'Esplosione
+                { id: 1066, qty: 1 }, // Elfa Oscura
+                { id: 736, qty: 2 }, // Abile Mago Oscuro
+                { id: 554, qty: 2 }, // Stregone dei Dannati
+                { id: 550, qty: 1 }, // Il Mistico Severo
+                { id: 591, qty: 2 }, // Cappello Magico Bianco
+                { id: 338, qty: 2 }, // Dama della Fede
+                { id: 108, qty: 2 }, // Guerriero da Battaglia
+                { id: 242, qty: 2 }, // Stregone di Fuoco
+                { id: 344, qty: 1 }, // Spada Leggendaria
+                { id: 313, qty: 1 }, // Rinvigorimento
+                { id: 35, qty: 1 }, // Rinascita del Mostro
+                { id: 36, qty: 2 }, // Vaso dell'Avidità
+                { id: 272, qty: 1 }, // Carità Aggraziata
+                { id: 40, qty: 1 }, // Buco Trappola
+                { id: 793, qty: 1 }, // Armatura Sakuretsu
+                { id: 7, qty: 1 }, // Buco Nero
+                { id: 8, qty: 1 }, // Spada Rivelatrice
+                { id: 820, qty: 1 }, // Nega Attacco
+                { id: 10, qty: 1 }, // Cilindro Magico
+                { id: 434, qty: 1 }, // Capro Espiatorio
+                { id: 143, qty: 1 }, // Mura del Castello
+                { id: 600, qty: 1 }, // Trappola Fasulla
+                { id: 599, qty: 1 }, // Sette Attrezzi del Bandito
+                { id: 646, qty: 1 }, // Tempesta Pesante
+                { id: 382, qty: 1 } // Forza dello Specchio
+            ],
+            extra: []
+        }
+    },
+
     // Teana, l'amica del principe (la Téa dell'antico Egitto): Elfe e Fate
     // gentili (Elfi Gemelli, Elfa Mistica, Spirito dell'Arpa, Piccola Angela), una delle
     // avversarie più morbide di Forbidden Memories.
