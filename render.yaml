@@ -7,7 +7,7 @@
 #
 # Procedura, una volta sola:
 #   1. render.com -> Sign up con GitHub
-#   2. New -> Blueprint -> scegli il repository YuGiOhGame -> Apply
+#   2. New -> Blueprint -> scegli il repository millennium-duel-arena -> Apply
 #   3. Il servizio nasce all'indirizzo https://<name>.onrender.com
 #      Se quel nome risultasse già preso da qualcun altro, Render ne
 #      assegna uno diverso: in quel caso va aggiornato il valore
@@ -36,7 +36,11 @@ services:
     # compare in alcun indirizzo.
     # Cambiarlo NON rinomina il servizio esistente: alla sincronizzazione
     # successiva Render ne creerebbe un SECONDO, lasciando il primo attivo.
-    name: yugioh-duel-arena-relay
+    # 2026-10-11: rinominato da "yugioh-duel-arena-relay" col nuovo nome del
+    # gioco (Millennium Duel Arena). Come detto qui sopra, Render ha creato un
+    # servizio NUOVO con questo nome: il vecchio si elimina a mano dal
+    # pannello, dopo aver spostato su questo l'indirizzo in multiplayer.html.
+    name: millennium-duel-arena-relay
     runtime: node
     plan: free
     region: frankfurt # il più vicino all'Italia tra quelli disponibili
