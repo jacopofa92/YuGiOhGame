@@ -85,8 +85,8 @@ module.exports = {
             .filter((f) => /TutorialDuel|tutorial-duel/.test(fs.readFileSync(path.join(cartellaMotore, f), 'utf8')));
         t.assert(citazioni.length === 0, `Nessun file del motore deve citare il tutorial: ${citazioni.join(', ')}`);
         const indice = fs.readFileSync(path.join(RADICE, 'index.html'), 'utf8');
-        t.assert(/label: 'Lezione col nonno', action: 'link', href: TUTORIAL_URL/.test(indice),
-            'Il menu Duelli deve avere la voce "Lezione col nonno"');
+        t.assert(/label: 'Tutorial', action: 'link', href: 'tutorial\.html'/.test(indice),
+            'Il menu Duelli deve avere la voce "Tutorial"');
 
         // --- Primo avvio: obbligatoria ----------------------------------
         let { page, errori } = await apri(t, { daFare: true, completata: false, premiata: false });

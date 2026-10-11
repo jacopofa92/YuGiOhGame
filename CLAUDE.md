@@ -4272,3 +4272,13 @@ mai modale; i nodi seguono il numero di frasi di attesa già emesse, non stati
 inventati del relay. Responsive verticale/orizzontale e movimento ridotto.
 Guardrail `multiplayer-kaibacorp-connection-ui` più end-to-end relay verde;
 cache `v203`.
+
+Menu Tutorial (`tutorial.html`, voce Duelli › Tutorial): la lezione col nonno
+più tre lezioni brevi (Catena, Fusione, Flip), tutte in
+`js/tutorial/tutorial-duel.js` con `?lezione=nonno|catena|fusione|flip`. Ogni
+lezione è una preparazione (stato iniziale scritto al posto di
+`preparaManiIniziali`) più un elenco di passi; quelle brevi finiscono con un
+passo `fine` che segna `save.tutorial.lezioni[id]` e torna al menu. Nessun
+file di `js/engine/` le conosce (lo controlla lo spec della lezione col
+nonno): una lezione nuova si aggiunge solo lì e in `tutorial.html`. Spec
+`tutorial-lezioni-brevi`.

@@ -139,7 +139,7 @@
     // passo di sola spiegazione, si prosegue col pulsante; `pronto` dice
     // quando il pulsante può comparire.
     // ------------------------------------------------------------------
-    const PASSI = [
+    const PASSI_NONNO = [
         {
             testo: 'Benvenuto nella mia bottega! Prima di lasciarti andare per il mondo, facciamo un piccolo duello insieme: ti mostro come si gioca, un passo alla volta.',
             avanti: true
@@ -233,6 +233,240 @@
         }
     ];
 
+    // ==================================================================
+    // LE LEZIONI BREVI (menu Tutorial, tutorial.html). Una situazione già
+    // pronta sul Terreno, una sola cosa da imparare, e alla fine un
+    // pannello "Lezione completata" invece di un duello da vincere: dopo
+    // l'ultimo passo il duello resta lì, fermo dietro al cancello.
+    // Stessi pezzi della lezione col nonno: cambiano solo la preparazione
+    // e i passi.
+    // ==================================================================
+    const ID = {
+        drago: 1,          // Drago Bianco Occhi Blu, 3000
+        celtico: 4,
+        gaia: 14,          // Gaia il Cavaliere Feroce
+        maledizione: 15,   // Maledizione del Drago
+        insetto: 23,       // Insetto Divoratore (FLIP)
+        elfi: 24,
+        fusione: 38,
+        gaiaCampione: 254, // Gaia il Drago Campione (Fusione di 14 + 15)
+        raigeki: 409,
+        giudizio: 448,     // Giudizio Solenne
+        servo: 526,
+        robolady: 528
+    };
+
+    function mostro(id, posizione) {
+        const card = istanzia(id);
+        if (!card) return null;
+        return {
+            card: card,
+            // "coperto" è sempre Difesa coperta, come in duel-sandbox.js.
+            position: posizione === 'coperto' ? 'defense' : (posizione || 'attack'),
+            isFaceDown: posizione === 'coperto',
+            hasAttacked: false,
+            canChangePosition: true
+        };
+    }
+    /** Trappola coperta già attivabile: piazzata "in un turno passato". */
+    function copertaPronta(id) {
+        const card = istanzia(id);
+        return card ? { card: card, isFaceDown: true, setOnTurn: 0 } : null;
+    }
+
+    /**
+     * Base comune delle lezioni brevi: mani, mazzi di riempitivi, campi
+     * vuoti tranne ciò che la lezione mette. Comincia sempre il giocatore.
+     */
+    function preparaBreve(op) {
+        gameState.currentPlayer = 'player';
+        gameState.playerHand = carte(op.manoGiocatore || []);
+        gameState.botHand = carte(op.manoNonno || []);
+        const riempitivi = [ID.servo, ID.robolady, ID.servo, ID.robolady, ID.servo, ID.robolady, ID.servo, ID.robolady];
+        ['player', 'bot'].forEach((posto) => {
+            gameState[Tavolo.chiave(posto, 'Deck')] = carte(riempitivi);
+            gameState[Tavolo.chiave(posto, 'DeckCount')] = riempitivi.length;
+            gameState[Tavolo.chiave(posto, 'ExtraDeck')] = [];
+        });
+        if (op.extraGiocatore) gameState[Tavolo.chiave('player', 'ExtraDeck')] = carte(op.extraGiocatore);
+        (op.mostriGiocatore || []).forEach((s, i) => { gameState[Tavolo.chiave('player', 'MonsterField')][i] = s; });
+        (op.mostriNonno || []).forEach((s, i) => { gameState[Tavolo.chiave('bot', 'MonsterField')][i] = s; });
+        (op.mtGiocatore || []).forEach((s, i) => { gameState[Tavolo.chiave('player', 'STField')][i] = s; });
+    }
+
+    const SEL_EXTRA = '#playerFieldBoard .field-slot[data-owner="player"][data-zone="fusion"]';
+    const pickerAperto = () => !!document.querySelector('#cardListPickerModal.open');
+    function elNelPicker(uid) {
+        const el = uid && document.querySelector(`#cardListPickerRow [data-uid="${uid}"]`);
+        return el ? (el.closest('.card-list-item') || el) : null;
+    }
+    const uidInCampo = (posto, id) => {
+        const s = (Tavolo.mostri(posto) || []).find((x) => x && x.card && x.card.id === id);
+        return s ? s.card.uid : null;
+    };
+    function casellaMT(id) {
+        const i = (Tavolo.magieTrappole('player') || []).findIndex((s) => s && s.card && s.card.id === id);
+        return i < 0 ? null : document.querySelector(`${SEL_MT}[data-index="${i}"]`);
+    }
+    const catenaVuota = () => !(gameState.chain && gameState.chain.links && gameState.chain.links.length);
+
+    // --- La Catena ---------------------------------------------------
+    // Il giocatore ha due mostri e Giudizio Solenne coperto; il nonno ha in
+    // mano solo Raigeki. Passato il turno, l'IA vera lo attiva (è la sua
+    // unica Magia, e i mostri del giocatore valgono la rimozione): si
+    // risponde con Giudizio, che si risolve per primo e lo annulla.
+    function preparaCatena() {
+        preparaBreve({
+            manoGiocatore: [ID.servo, ID.robolady],
+            manoNonno: [ID.raigeki],
+            mostriGiocatore: [mostro(ID.drago), mostro(ID.celtico)],
+            mtGiocatore: [copertaPronta(ID.giudizio)]
+        });
+    }
+    const PASSI_CATENA = [
+        {
+            testo: 'Oggi ti spiego la Catena. Quando un giocatore attiva una carta, l\'avversario può rispondere attivandone un\'altra, e poi ancora l\'altro: le attivazioni si agganciano una all\'altra come gli anelli di una catena.',
+            avanti: true,
+            pronto: () => gameState.phase === 'main1' && gameState.currentPlayer === 'player',
+            attesa: 'Un attimo, il turno si sta preparando…'
+        },
+        {
+            testo: 'Hai una Trappola coperta: Giudizio Solenne. Paghi metà dei tuoi Life Point e annulli l\'attivazione di una Magia o di una Trappola dell\'avversario. Una risposta perfetta.',
+            bersaglio: () => casellaMT(ID.giudizio),
+            avanti: true
+        },
+        {
+            testo: 'Le Trappole servono nel turno dell\'avversario. Passa il turno: tocca "Fine".',
+            bersaglio: () => document.querySelector('.phase-step[data-phase="end"]'),
+            consenti: () => ['.phase-step[data-phase="end"]'],
+            fatto: () => gameState.currentPlayer === 'bot'
+        },
+        {
+            testo: 'Adesso tocca a me. Guarda cosa faccio…',
+            bersaglio: () => document.getElementById('botFieldBoard'),
+            consenti: () => ['#activateModal'],
+            fatto: () => modaleAperto() || nelCimitero('player', ID.giudizio)
+        },
+        {
+            testo: 'Ho attivato Raigeki: è il primo anello della catena, e distruggerebbe tutti i tuoi mostri. Ma prima che si risolva puoi rispondere: attiva Giudizio Solenne, che diventa il secondo anello. Premi "Attiva".',
+            bersaglio: () => document.getElementById('activateConfirmBtn'),
+            consenti: () => ['#activateConfirmBtn'],
+            fatto: () => nelCimitero('player', ID.giudizio)
+        },
+        {
+            testo: 'Visto? La catena si risolve al contrario: l\'ultimo anello aggiunto si risolve per primo. Giudizio Solenne ha annullato Raigeki prima che facesse qualcosa, e i tuoi mostri sono salvi. Ti è costato metà dei Life Point: una buona risposta ha sempre un prezzo.',
+            bersaglio: () => document.getElementById('playerFieldBoard'),
+            avanti: true,
+            pronto: () => catenaVuota() && nelCimitero('bot', ID.raigeki),
+            attesa: 'La catena si sta risolvendo, dall\'ultimo anello al primo…'
+        },
+        {
+            fine: true,
+            testo: 'Lezione completata! Ricorda: quando l\'avversario attiva una carta, chiediti sempre se hai qualcosa per rispondere.'
+        }
+    ];
+
+    // --- La Fusione --------------------------------------------------
+    function preparaFusione() {
+        preparaBreve({
+            manoGiocatore: [ID.gaia, ID.maledizione, ID.fusione],
+            extraGiocatore: [ID.gaiaCampione],
+            mostriNonno: [mostro(ID.elfi)]
+        });
+    }
+    const PASSI_FUSIONE = [
+        {
+            testo: 'Oggi ti mostro la Fusione: due o più mostri si uniscono in un mostro molto più forte, che aspetta nel tuo Extra Deck invece che nel mazzo.',
+            avanti: true,
+            pronto: () => gameState.phase === 'main1' && gameState.currentPlayer === 'player',
+            attesa: 'Un attimo, il turno si sta preparando…'
+        },
+        {
+            testo: 'Questo è il tuo Extra Deck. Dentro c\'è Gaia il Drago Campione: per evocarlo servono Gaia il Cavaliere Feroce e Maledizione del Drago, i suoi materiali.',
+            bersaglio: () => document.querySelector(SEL_EXTRA),
+            avanti: true
+        },
+        {
+            testo: 'I due materiali li hai in mano, insieme alla Magia che li unisce: Fusione.',
+            bersaglio: () => document.getElementById('playerHand'),
+            avanti: true
+        },
+        {
+            testo: 'Tocca Fusione e attivala. I materiali vanno al Cimitero e dall\'Extra Deck arriva il Mostro Fusione.',
+            bersaglio: () => (modaleAperto() ? document.getElementById('activateConfirmBtn')
+                : popoverAperto() || elCartaInMano(ID.fusione)),
+            consenti: () => [selCartaInMano(ID.fusione), SEL_POPOVER, '#activateConfirmBtn', '#activateModal', '#cardListPickerModal'],
+            fatto: () => inCampo('player', ID.gaiaCampione)
+        },
+        {
+            testo: 'Ecco Gaia il Drago Campione, 2600 ATK: più forte di ciascuno dei suoi materiali. E non hai usato la tua Evocazione Normale del turno: potresti ancora evocare un altro mostro.',
+            bersaglio: () => casellaConMostro(ID.gaiaCampione),
+            avanti: true,
+            pronto: () => catenaVuota()
+        },
+        {
+            fine: true,
+            testo: 'Lezione completata! Prima di comprare un mostro Fusione, controlla di avere nel mazzo i suoi materiali e una carta Fusione.'
+        }
+    ];
+
+    // --- I mostri Flip -----------------------------------------------
+    function preparaFlip() {
+        preparaBreve({
+            manoGiocatore: [ID.servo, ID.robolady],
+            mostriGiocatore: [mostro(ID.insetto, 'coperto')],
+            mostriNonno: [mostro(ID.elfi), mostro(ID.drago)]
+        });
+    }
+    const PASSI_FLIP = [
+        {
+            testo: 'Oggi parliamo dei mostri Flip. Hanno un effetto che si attiva quando vengono girati a faccia in su: per questo di solito si Posizionano coperti, e si aspetta il momento giusto.',
+            avanti: true,
+            pronto: () => gameState.phase === 'main1' && gameState.currentPlayer === 'player',
+            attesa: 'Un attimo, il turno si sta preparando…'
+        },
+        {
+            testo: 'Il tuo mostro coperto è un Insetto Divoratore. Il suo effetto FLIP: quando viene scoperto, distrugge 1 mostro sul Terreno. Io ho il mio Drago Bianco Occhi Blu, 3000 ATK…',
+            bersaglio: () => casellaConMostro(ID.insetto),
+            avanti: true
+        },
+        {
+            testo: 'Scoprilo con un\'Evocazione Flip: tocca l\'Insetto e poi il pulsante della spada, la Posizione di Attacco.',
+            bersaglio: () => (popoverAperto() ? popoverAperto() : casellaConMostro(ID.insetto)),
+            consenti: () => [SEL_MOSTRI, SEL_POPOVER, '#cardListPickerModal'],
+            fatto: () => pickerAperto() || nelCimitero('bot', ID.drago)
+        },
+        {
+            testo: 'L\'effetto si attiva! Scegli il mio Drago Bianco Occhi Blu: è il mostro più pericoloso.',
+            bersaglio: () => elNelPicker(uidInCampo('bot', ID.drago)),
+            consenti: () => ['#cardListPickerModal'],
+            fatto: () => nelCimitero('bot', ID.drago)
+        },
+        {
+            testo: 'Distrutto! Un mostro Flip scatta anche quando viene attaccato mentre è coperto: chi ti attacca senza sapere cosa c\'è sotto rischia una brutta sorpresa.',
+            bersaglio: () => document.getElementById('botFieldBoard'),
+            avanti: true,
+            pronto: () => catenaVuota()
+        },
+        {
+            fine: true,
+            testo: 'Lezione completata! Un mostro coperto non è mai solo un muro: può essere una trappola con le zampe.'
+        }
+    ];
+
+    const LEZIONI = {
+        nonno: { prepara: preparaLezione, passi: PASSI_NONNO },
+        catena: { prepara: preparaCatena, passi: PASSI_CATENA },
+        fusione: { prepara: preparaFusione, passi: PASSI_FUSIONE },
+        flip: { prepara: preparaFlip, passi: PASSI_FLIP }
+    };
+    const LEZIONE = (function () {
+        const p = new URLSearchParams(window.location.search).get('lezione');
+        return LEZIONI[p] ? p : 'nonno';
+    })();
+    const PASSI = LEZIONI[LEZIONE].passi;
+    const MENU_TUTORIAL = 'tutorial.html';
+
     // ------------------------------------------------------------------
     // Il riquadro del nonno e il riflettore.
     // ------------------------------------------------------------------
@@ -270,15 +504,20 @@
         img.onerror = () => img.remove();
         elCoach.querySelector('.tut-avanti').onclick = () => {
             const p = PASSI[passo];
+            if (p && p.fine) { lasciaPagina(MENU_TUTORIAL); return; }
             if (p && p.avanti && (!p.pronto || p.pronto())) vaiA(passo + 1);
         };
-        elCoach.querySelector('.tut-ricomincia').onclick = () => {
-            // La lezione non è una partita da difendere: ricominciarla non
-            // deve chiedere conferme del browser.
-            window.onbeforeunload = null;
-            if (window.DuelSession) DuelSession.finished = true;
-            window.location.reload();
-        };
+        elCoach.querySelector('.tut-ricomincia').onclick = () => lasciaPagina(null);
+    }
+
+    /** Esce dalla pagina (o la ricarica, con `url` nullo) senza la conferma di uscita del browser. */
+    function lasciaPagina(url) {
+        // La lezione non è una partita da difendere: lasciarla non deve
+        // chiedere conferme del browser.
+        window.onbeforeunload = null;
+        if (window.DuelSession) DuelSession.finished = true;
+        if (url) window.location.replace(url);
+        else window.location.reload();
     }
 
     function vaiA(i) {
@@ -286,6 +525,13 @@
         inizioPasso = Date.now();
         elCoach.classList.remove('tut-coach--fermo');
         if (passo >= PASSI.length) { spegni(); return; }
+        const p = PASSI[passo];
+        if (p.fine) {
+            // Arrivati in fondo la lezione è fatta, anche se poi si chiude
+            // la pagina invece di premere il pulsante.
+            if (window.SaveManager) SaveManager.setTutorial({ lezioni: { [LEZIONE]: true } });
+            elCoach.classList.add('tut-coach--fine');
+        }
         aggiornaTesto();
     }
 
@@ -294,9 +540,11 @@
         if (!p) return;
         const pronto = !p.pronto || p.pronto();
         elCoach.querySelector('.tut-testo').textContent = (!pronto && p.attesa) ? p.attesa : p.testo;
-        elCoach.querySelector('.tut-passo').textContent = `· ${passo + 1}/${PASSI.length}`;
+        elCoach.querySelector('.tut-passo').textContent = p.fine ? '· ✓' : `· ${passo + 1}/${PASSI.length - (PASSI[PASSI.length - 1].fine ? 1 : 0)}`;
         const avanti = elCoach.querySelector('.tut-avanti');
-        avanti.hidden = !(p.avanti && pronto);
+        avanti.textContent = p.fine ? 'Torna alle lezioni ›' : 'Avanti ›';
+        avanti.hidden = !((p.avanti || p.fine) && pronto);
+        elCoach.querySelector('.tut-ricomincia').textContent = p.fine ? '↻ Rifalla' : '↻ Ricomincia';
     }
 
     function posiziona() {
@@ -325,6 +573,7 @@
         if (!attivo) return;
         if (typeof gameState !== 'undefined' && gameState && gameState.gameOver) { spegni(); return; }
         const p = PASSI[passo];
+        if (p && p.fine) return;
         if (p && p.fatto && p.fatto()) { vaiA(passo + 1); return; }
         aggiornaTesto();
         // Un passo fermo da molto: si offre il Ricomincia in evidenza.
@@ -386,11 +635,12 @@
     // ------------------------------------------------------------------
     function avvia() {
         const t = window.SaveManager ? SaveManager.getTutorial() : { daFare: false, completata: false };
-        obbligatoria = t.daFare && !t.completata;
+        // Obbligatoria è solo la prima lezione col nonno, e solo al primo avvio.
+        obbligatoria = LEZIONE === 'nonno' && t.daFare && !t.completata;
         // Le battute automatiche dei duellanti parlerebbero sopra il nonno.
         // Ogni chiamata nel gioco è già protetta da `if (window.DuelDialogues)`.
         window.DuelDialogues = null;
-        window.preparaManiIniziali = preparaLezione;
+        window.preparaManiIniziali = LEZIONI[LEZIONE].prepara;
         initGame();
         if (obbligatoria) {
             // Al primo avvio la lezione non si salta: niente Abbandona, e il
@@ -406,12 +656,18 @@
     function chiudi(vinto, abbandono) {
         spegni();
         if (!window.SaveManager) return [];
+        // Una lezione breve si chiude dal suo pannello finale: arrivare qui
+        // vuol dire che è stata abbandonata (o, per caso, vinta) a metà.
+        // Non tocca mai lo stato della lezione col nonno.
+        if (LEZIONE !== 'nonno') {
+            return [{ nota: true, icon: '🔁', rule: 'Lezione interrotta: puoi rifarla quando vuoi dal menu Tutorial.' }];
+        }
         if (!vinto) {
             return [{
                 nota: true,
                 icon: '🔁',
                 rule: abbandono
-                    ? 'Lezione interrotta: puoi rifarla quando vuoi da Duelli › Lezione col nonno.'
+                    ? 'Lezione interrotta: puoi rifarla quando vuoi da Duelli › Tutorial.'
                     : 'Lezione non completata: riprova, il nonno ti aspetta.'
             }];
         }
@@ -431,5 +687,21 @@
         }];
     }
 
-    window.TutorialDuel = { avvia: avvia, chiudi: chiudi, _passi: PASSI, _passo: () => passo };
+    /**
+     * Dove torna la schermata finale: al menu principale dopo la lezione
+     * obbligatoria del primo avvio (è il punto in cui il gioco comincia
+     * davvero), al menu Tutorial in ogni altro caso.
+     */
+    function urlRitorno() {
+        return obbligatoria ? 'index.html' : MENU_TUTORIAL;
+    }
+
+    window.TutorialDuel = {
+        avvia: avvia,
+        chiudi: chiudi,
+        urlRitorno: urlRitorno,
+        lezione: LEZIONE,
+        _passi: PASSI,
+        _passo: () => passo
+    };
 })();

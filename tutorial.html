@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<!-- Opt-in STATICO alla View Transitions API — deve stare qui, non iniettato via JS in ritardo (vedi js/audio/audio-manager.js per la storia completa del bug che questo risolve). -->
+<style>@view-transition { navigation: auto; }</style>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="images/icons/icon-192.png">
+<link rel="apple-touch-icon" href="images/icons/icon-180.png">
+<meta name="theme-color" content="#0b0d14">
+<style>html, body { background: #0b0d14; }</style>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Duel Arena">
+<script src="js/ui/error-recovery.js"></script>
+<!-- Accesso obbligatorio (js/cloud/auth-gate.js). -->
+<script src="js/vendor/supabase.min.js"></script>
+<script src="js/cloud/supabase-config.js"></script>
+<script src="js/cloud/cloud-sync.js"></script>
+<script src="js/cloud/auto-sync.js"></script>
+<script src="js/cloud/auth-gate.js"></script>
+<script src="js/pwa-register.js"></script>
+<link rel="stylesheet" href="js/ui/page-loader.css">
+<link rel="stylesheet" href="js/ui/topbar.css">
+<link rel="stylesheet" href="js/ui/deck-switcher.css">
+<title>Yu-Gi-Oh! Duel Arena — Tutorial</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; overscroll-behavior: none; overscroll-behavior-y: none; }
+    html, body { min-height: 100%; }
+    :root {
+        --gold: #f7d774;
+        --gold-strong: #f39c12;
+        --ink: #f3ecd9;
+        --ink-dim: #b9ae92;
+        --panel: rgba(16, 13, 9, 0.82);
+        --line: rgba(247, 215, 116, 0.28);
+        --done: #7fd18b;
+    }
+    body {
+        font-family: 'Arial', sans-serif;
+        color: var(--ink);
+        background: #0b0d14 url('images/background/ra.jpg') center/cover fixed no-repeat;
+        min-height: 100vh;
+    }
+    body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        background: linear-gradient(180deg, rgba(6,7,12,0.62) 0%, rgba(6,7,12,0.76) 60%, rgba(4,5,8,0.88) 100%);
+        pointer-events: none;
+    }
+    main {
+        position: relative;
+        z-index: 1;
+        width: min(760px, 100%);
+        margin: 0 auto;
+        padding: 22px 16px 48px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+    .tut-intro {
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        color: var(--ink-dim);
+        font-size: 0.95rem;
+        line-height: 1.45;
+    }
+    .tut-intro img {
+        width: 58px;
+        height: 58px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid var(--gold);
+        box-shadow: 0 0 14px rgba(247, 215, 116, 0.35);
+        flex: none;
+    }
+    .tut-sezione {
+        font-family: Georgia, 'Times New Roman', serif;
+        color: var(--gold);
+        font-size: 0.82rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        margin-top: 4px;
+    }
+    .tut-elenco { display: flex; flex-direction: column; gap: 10px; }
+    .tut-lezione {
+        display: grid;
+        grid-template-columns: 54px 1fr auto;
+        gap: 14px;
+        align-items: center;
+        padding: 14px 16px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--panel);
+        color: inherit;
+        text-decoration: none;
+        transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+    }
+    .tut-lezione:hover, .tut-lezione:focus-visible {
+        border-color: var(--gold);
+        box-shadow: 0 0 18px rgba(247, 215, 116, 0.18);
+        outline: none;
+    }
+    .tut-lezione:active { transform: scale(0.985); }
+    .tut-lezione--principale { border-color: rgba(247, 215, 116, 0.55); }
+    .tut-emblema {
+        width: 54px;
+        height: 54px;
+        display: grid;
+        place-items: center;
+        font-size: 1.6rem;
+        border-radius: 50%;
+        background: radial-gradient(circle at 35% 30%, rgba(247,215,116,0.32), rgba(80,55,15,0.35) 70%);
+        border: 1px solid var(--line);
+    }
+    .tut-titolo {
+        font-family: Georgia, 'Times New Roman', serif;
+        font-size: 1.12rem;
+        color: var(--gold);
+        text-wrap: balance;
+    }
+    .tut-desc { font-size: 0.9rem; color: var(--ink-dim); line-height: 1.4; margin-top: 3px; }
+    .tut-meta { font-size: 0.75rem; color: var(--ink-dim); margin-top: 6px; letter-spacing: 0.04em; }
+    .tut-stato {
+        font-size: 0.78rem;
+        white-space: nowrap;
+        padding: 4px 10px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        color: var(--ink-dim);
+    }
+    .tut-stato--fatta { color: var(--done); border-color: rgba(127, 209, 139, 0.5); }
+    @media (max-width: 520px) {
+        .tut-lezione { grid-template-columns: 44px 1fr; padding: 12px; gap: 12px; }
+        .tut-emblema { width: 44px; height: 44px; font-size: 1.3rem; }
+        .tut-stato { grid-column: 2; justify-self: start; }
+    }
+    @media (prefers-reduced-motion: reduce) { .tut-lezione { transition: none; } }
+</style>
+</head>
+<body>
+    <script src="js/ui/page-loader.js"></script>
+    <div id="topbarMount"></div>
+
+    <main>
+        <div class="tut-intro">
+            <img src="images/characters/solomonMuto.jpg" alt="" onerror="this.remove()">
+            <p>Ogni lezione è un piccolo duello preparato: il nonno ti spiega una cosa alla volta e ti indica cosa toccare. Puoi rifarle quando vuoi.</p>
+        </div>
+        <div class="tut-sezione">Le basi</div>
+        <div class="tut-elenco" id="elencoBasi"></div>
+        <div class="tut-sezione">Lezioni brevi</div>
+        <div class="tut-elenco" id="elencoBrevi"></div>
+    </main>
+
+<script src="js/save-manager.js"></script>
+<script src="js/audio/audio-manager.js"></script>
+<script src="js/native/app-back-button.js"></script>
+<script src="js/native/haptics.js"></script>
+<script src="js/native/native-save-backup.js"></script>
+<script src="js/ui/icon-library.js"></script>
+<script src="js/ui/deck-switcher.js"></script>
+<script src="js/ui/topbar.js"></script>
+<script>
+    PageTopbar.render('#topbarMount', { icon: 'rules', title: 'Tutorial' });
+    initAudioManager();
+    Icons.hydrate();
+
+    // Le lezioni: l'id è il valore di ?lezione= letto da
+    // js/tutorial/tutorial-duel.js, che ne contiene preparazione e passi.
+    const LEZIONI = [
+        { id: 'nonno', gruppo: 'basi', emblema: '🎓', titolo: 'Lezione col nonno', desc: 'Evocare, piazzare una Trappola, attaccare: il primo duello completo, passo per passo.', durata: '5 minuti' },
+        { id: 'catena', gruppo: 'brevi', emblema: '⛓️', titolo: 'La Catena', desc: 'Rispondere a una carta dell\'avversario, e perché l\'ultima attivata si risolve per prima.', durata: '2 minuti' },
+        { id: 'fusione', gruppo: 'brevi', emblema: '🌀', titolo: 'La Fusione', desc: 'Unire due mostri in un Mostro Fusione dell\'Extra Deck.', durata: '1 minuto' },
+        { id: 'flip', gruppo: 'brevi', emblema: '🐛', titolo: 'I mostri Flip', desc: 'Un mostro coperto che, girato a faccia in su, scatena il suo effetto.', durata: '1 minuto' }
+    ];
+    const URL_DUELLO = 'duelMonstersCore.html?mode=tutorial&character=solomonMuto&difficulty=Facile';
+
+    const stato = SaveManager.getTutorial();
+    const fatta = (l) => (l.id === 'nonno' ? stato.completata : !!stato.lezioni[l.id]);
+
+    LEZIONI.forEach((l) => {
+        const a = document.createElement('a');
+        a.className = 'tut-lezione' + (l.gruppo === 'basi' ? ' tut-lezione--principale' : '');
+        a.href = URL_DUELLO + '&lezione=' + l.id;
+        a.dataset.lezione = l.id;
+        a.innerHTML = `
+            <div class="tut-emblema" aria-hidden="true">${l.emblema}</div>
+            <div>
+                <div class="tut-titolo"></div>
+                <div class="tut-desc"></div>
+                <div class="tut-meta">⏱ ${l.durata}</div>
+            </div>
+            <div class="tut-stato${fatta(l) ? ' tut-stato--fatta' : ''}">${fatta(l) ? '✓ Completata' : 'Da fare'}</div>`;
+        a.querySelector('.tut-titolo').textContent = l.titolo;
+        a.querySelector('.tut-desc').textContent = l.desc;
+        a.addEventListener('click', () => { if (window.NativeHaptics) NativeHaptics.light(); });
+        document.getElementById(l.gruppo === 'basi' ? 'elencoBasi' : 'elencoBrevi').appendChild(a);
+    });
+</script>
+</body>
+</html>

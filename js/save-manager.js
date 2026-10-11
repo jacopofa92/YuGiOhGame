@@ -888,16 +888,28 @@
      * modo (un backup importato, un test) non deve finire chiuso dentro
      * una lezione obbligatoria. Un salvataggio senza il campo — tutti
      * quelli nati prima del tutorial — vale "niente da fare".
+     * `lezioni` ({ catena: true, ... }): le lezioni brevi del menu Tutorial
+     * già completate almeno una volta. Non hanno premi: servono solo alla
+     * spunta nell'elenco.
      */
     function getTutorial() {
         const save = load();
         const t = (save && save.tutorial) || {};
-        return { daFare: !!t.daFare, completata: !!t.completata, premiata: !!t.premiata };
+        return {
+            daFare: !!t.daFare,
+            completata: !!t.completata,
+            premiata: !!t.premiata,
+            lezioni: Object.assign({}, t.lezioni || {})
+        };
     }
 
     function setTutorial(campi) {
         const save = load() || createNew();
+        const lezioniPrima = (save.tutorial && save.tutorial.lezioni) || {};
         save.tutorial = Object.assign({}, save.tutorial || {}, campi);
+        // `lezioni` si unisce invece di sostituirsi: segnare una lezione
+        // non deve cancellare le altre.
+        if (campi && campi.lezioni) save.tutorial.lezioni = Object.assign({}, lezioniPrima, campi.lezioni);
         touch(save);
         return getTutorial();
     }

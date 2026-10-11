@@ -637,7 +637,10 @@
                 const save = SaveManager.load();
                 if (save) SaveManager.touch(save);
             }
-            const torna = () => window.location.replace(session.returnUrl);
+            // Dove tornare lo decide il tutorial: il menu principale dopo la
+            // lezione obbligatoria del primo avvio, il menu Tutorial altrimenti.
+            const url = (window.TutorialDuel && TutorialDuel.urlRitorno && TutorialDuel.urlRitorno()) || session.returnUrl;
+            const torna = () => window.location.replace(url);
             if (window.DuelCinematics) {
                 DuelCinematics.showOutcome({ playerWon: playerWon, session: session, record: null, rewards: premi, onContinue: torna });
             } else {
