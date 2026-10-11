@@ -169,7 +169,20 @@ module.exports = {
         // registro del duello: è da lì che si capirà la causa vera.
         const asura1 = await t.evaluate(() => {
             const slot = gameState.playerMonsterField[0];
-            if (slot && slot.card && slot.card.uid === 'asura') return { presente: true, puoAncora: !slot.hasAttacked };
+            if (slot && slot.card && slot.card.uid === 'asura') {
+                return {
+                    presente: true,
+                    puoAncora: !slot.hasAttacked,
+                    // Per capire un fallimento visto solo su GitHub: il
+                    // registro degli attacchi vale solo col timbro del turno
+                    // corrente (vedi attackedEnemyUidsOf in battaglia.js).
+                    turno: gameState.turn,
+                    timbroRegistro: slot.attackedEnemyUidsTurn,
+                    registro: slot.attackedEnemyUids ? Array.from(slot.attackedEnemyUids) : null,
+                    avversari: gameState.botMonsterField.map((s) => s && s.card && s.card.uid),
+                    fase: gameState.phase, diChi: gameState.currentPlayer
+                };
+            }
             const dove = (z) => (gameState[z] || []).some((c) => c && (c.uid === 'asura' || (c.card && c.card.uid === 'asura')));
             const log = Array.from(document.querySelectorAll('#gameLog .log-entry, #gameLog p, #gameLog div')).slice(-8).map((e) => e.textContent.trim()).filter(Boolean);
             return {
@@ -181,7 +194,7 @@ module.exports = {
             };
         });
         t.assert(asura1.presente, `Il Sacerdote di Asura deve essere ancora in campo dopo il primo attacco: ${JSON.stringify(asura1)}`);
-        t.assert(asura1.puoAncora, 'Dopo aver attaccato un mostro, il Sacerdote di Asura può attaccare ancora (resta un altro mostro)');
+        t.assert(asura1.puoAncora, `Dopo aver attaccato un mostro, il Sacerdote di Asura può attaccare ancora (resta un altro mostro): ${JSON.stringify(asura1)}`);
         await t.evaluate(() => { window.__battleDone = false; resolveAttack('player', 0, 1, () => { window.__battleDone = true; }); });
         await t.page.waitForFunction(() => window.__battleDone === true, null, { timeout: 8000 });
         const asura2 = await t.evaluate(() => new Promise((ok) => {
