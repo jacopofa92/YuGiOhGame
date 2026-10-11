@@ -361,6 +361,31 @@
         }
         content.addEventListener('scroll', aggiornaIndicatoreScorrimento, { passive: true });
         window.addEventListener('resize', aggiornaIndicatoreScorrimento);
+
+        // Il titolo deve stare sempre nel suo riquadro, QUALUNQUE font usi
+        // il dispositivo. La dimensione in CSS è tarata su Arial: dove Arial
+        // non c'è (Linux, alcuni Android) il browser ripiega su un carattere
+        // più largo e "SCONFITTA" usciva dai bordi a 360px — è così che la
+        // suite di test su GitHub, che gira su Linux, ha cominciato a
+        // fallire. Nessuna regola CSS sa rimpicciolire un testo finché non
+        // entra, quindi lo si misura qui: se trabocca, si riduce in
+        // proporzione. La trasformazione d'entrata (scale) non conta: la
+        // larghezza misurata è quella del layout, non quella disegnata.
+        function adattaTitolo() {
+            if (!overlay.isConnected) {
+                window.removeEventListener('resize', adattaTitolo);
+                return;
+            }
+            title.style.fontSize = '';
+            const disponibile = title.clientWidth;
+            const necessario = title.scrollWidth;
+            if (disponibile > 0 && necessario > disponibile) {
+                const attuale = parseFloat(getComputedStyle(title).fontSize);
+                title.style.fontSize = Math.floor(attuale * (disponibile / necessario) * 0.97) + 'px';
+            }
+        }
+        adattaTitolo();
+        window.addEventListener('resize', adattaTitolo);
         // Dopo il primo layout, non prima: appena inserito nel documento
         // scrollHeight e clientHeight non sono ancora quelli definitivi.
         requestAnimationFrame(aggiornaIndicatoreScorrimento);

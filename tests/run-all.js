@@ -147,6 +147,19 @@ async function main() {
     if (failed > 0) {
         console.log(`\x1b[31m${failed} test falliti:\x1b[0m`);
         results.filter((r) => !r.ok).forEach((r) => console.log(`  - ${r.name}: ${r.error}`));
+        // Su GitHub Actions ogni test fallito diventa anche un'ANNOTAZIONE
+        // del job (comando "::error"). I log di un job si leggono solo da
+        // loggati, le annotazioni invece sono pubbliche anche via API
+        // (/check-runs/<id>/annotations): così si sa QUALE test è fallito
+        // e perché senza dover entrare in GitHub. GitHub accetta una riga
+        // sola per annotazione: gli a capo vanno codificati (%0A), e per
+        // regola anche % e \r.
+        if (process.env.GITHUB_ACTIONS) {
+            const codifica = (s) => String(s).replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
+            results.filter((r) => !r.ok).forEach((r) => {
+                console.log(`::error title=${codifica('Test fallito: ' + r.name).replace(/[:,]/g, ' ')}::${codifica(String(r.error).slice(0, 1500))}`);
+            });
+        }
         process.exit(1);
     }
     process.exit(0);

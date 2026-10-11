@@ -11,10 +11,16 @@
 const path = require('path');
 const RADICE = path.join(__dirname, '..', '..');
 const URL = 'file:///' + path.join(RADICE, 'duelMonstersCore.html').replace(/\\/g, '/');
+// `fontLargo`: un carattere più largo di Arial (Verdana) imposto sul titolo,
+// che è ciò che succede dove Arial non c'è: su Linux, dove gira la suite di
+// GitHub, il titolo usciva dai bordi e la suite falliva, mentre su Windows
+// passava. Il titolo deve adattarsi da solo (vedi adattaTitolo in
+// js/ui/duel-cinematics.js), non affidarsi al font del dispositivo.
 const VISTE = [
     { n: 'desktop', w: 1366, h: 820 },
     { n: 'telefono verticale', w: 360, h: 640, m: true },
-    { n: 'telefono orizzontale', w: 740, h: 360, m: true }
+    { n: 'telefono orizzontale', w: 740, h: 360, m: true },
+    { n: 'telefono verticale con font largo', w: 360, h: 640, m: true, fontLargo: true }
 ];
 
 module.exports = {
@@ -30,6 +36,9 @@ module.exports = {
             try {
                 await page.goto(URL);
                 await page.waitForFunction(() => window.DuelCinematics && typeof gameState !== 'undefined' && gameState.playerHand && gameState.playerHand.length >= 5, null, { timeout: 30000 });
+                if (v.fontLargo) {
+                    await page.addStyleTag({ content: '#duelOutcomeOverlay .do-title { font-family: Verdana, "DejaVu Sans", sans-serif !important; letter-spacing: 0.14em !important; }' });
+                }
                 for (const esito of [true, false, 'draw']) {
                     await page.evaluate((esito) => {
                         const rewards = [];
