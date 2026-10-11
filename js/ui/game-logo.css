@@ -128,6 +128,19 @@ game-logo[variante="splash"] {
     -webkit-text-stroke: 0;
     filter: drop-shadow(0 2px 2px rgba(35, 20, 5, 0.72)) drop-shadow(0 0 10px rgba(205, 151, 50, 0.18));
 }
+/* Terza riga, "DUEL ARENA": stessa voce della prima (piccola, spaziata,
+   oro chiaro), un filo più grande, così il nome si legge in tre tempi —
+   YU-GI-OH! / MILLENNIUM / DUEL ARENA. */
+.gl-riga3 {
+    display: block;
+    font-size: calc(var(--gl-riga1) * 1.12);
+    letter-spacing: 0.42em;
+    margin-right: -0.42em;
+    color: #e8cf8a;
+    font-weight: 700;
+    white-space: nowrap;
+    text-shadow: 0 0 10px rgba(210, 160, 62, 0.22);
+}
 /* Il riflesso: una copia della stessa scritta sopra la prima, colorata da
    una banda di luce che scorre. Stessa larghezza e stessa spaziatura per
    costruzione (è lo stesso testo con lo stesso stile), quindi combacia
@@ -203,6 +216,7 @@ game-logo[variante="splash"] .gl-lettera {
 game-logo[variante="splash"] .gl-riga1::before,
 game-logo[variante="splash"] .gl-riga1::after { animation: glComparsa 0.5s ease-out 1.6s both; }
 game-logo[variante="splash"] .gl-riga2 { animation: glSvela 0.55s cubic-bezier(.3, .7, .2, 1) 1.65s both; }
+game-logo[variante="splash"] .gl-riga3 { animation: glComparsa 0.45s ease-out 2.0s both; }
 
 @keyframes glComparsa { from { opacity: 0; } to { opacity: 1; } }
 @keyframes glComparsaTacche { from { opacity: 0; } to { opacity: 0.55; } }

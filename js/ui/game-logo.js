@@ -117,10 +117,15 @@
         // dopo l'altra (--i è l'indice, letto dal CSS per il ritardo).
         const riga1 = Array.from('YU-GI-OH!').map((c, i) =>
             `<span class="gl-lettera" style="--i:${i}">${c}</span>`).join('');
+        // "Yu-Gi-Oh! Millennium Duel Arena": la riga grande è MILLENNIUM
+        // (dieci lettere, quante ne aveva "DUEL ARENA": stessa misura e
+        // nessun rischio di uscire dai bordi), e sotto, piccola e spaziata
+        // come la prima riga, DUEL ARENA.
         return `
 <div class="gl-scritta">
     <span class="gl-riga1">${riga1}</span>
-    <span class="gl-riga2" data-testo="DUEL ARENA">DUEL ARENA</span>
+    <span class="gl-riga2" data-testo="MILLENNIUM">MILLENNIUM</span>
+    <span class="gl-riga3">DUEL ARENA</span>
 </div>`;
     }
 
@@ -133,7 +138,7 @@
             this.__disegnato = true;
             if (!this.getAttribute('variante')) this.setAttribute('variante', 'menu');
             this.setAttribute('role', 'img');
-            this.setAttribute('aria-label', 'Yu-Gi-Oh! Duel Arena');
+            this.setAttribute('aria-label', 'Yu-Gi-Oh! Millennium Duel Arena');
             this.innerHTML = emblema(++contatore) + scritta();
         }
     }

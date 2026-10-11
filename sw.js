@@ -441,7 +441,8 @@
 // v219: Storia anime riallineata all'anime (duelli mancanti, laterali dalla parte di chi vince).
 // v221: avatar definitivi e sinergie IA/deck di Mage Soldier.
 // v222: Duello Sandbox visibile solo all'amministratore.
-const CACHE_NAME = 'ygo-duel-arena-v222';
+// v223: nuovo nome, Yu-Gi-Oh! Millennium Duel Arena (logo, titoli, nome dell'app).
+const CACHE_NAME = 'ygo-duel-arena-v223';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

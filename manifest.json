@@ -1,7 +1,7 @@
 {
     "id": ".",
-    "name": "Yu-Gi-Oh! Duel Arena",
-    "short_name": "Duel Arena",
+    "name": "Yu-Gi-Oh! Millennium Duel Arena",
+    "short_name": "Millennium",
     "description": "Un gioco di carte Yu-Gi-Oh! completo e installabile: Duello Demo, Duello Libero contro 40 duellanti a tema, Creazione Deck, Cartoteca e Multiplayer.",
     "start_url": "./index.html",
     "scope": "./",
