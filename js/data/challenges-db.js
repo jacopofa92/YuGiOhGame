@@ -1117,6 +1117,53 @@ const challengesDatabase = [
         description: 'Ottieni tutte le medaglie delle Rivincite',
         type: 'rivincitaWon', match: {}, target: 30,
         reward: { credits: 1400 }
+    },
+
+    // Torre dei Duellanti (js/modes/torre.js, torre-mode.js):
+    //   'torreFloor'      un piano vinto in una scalata (match: { piano });
+    //   'torreBoss'       un boss battuto (match: { piano } o {});
+    //   'torreCompleted'  la Torre conquistata, tutti i piani in una scalata.
+    {
+        id: 'torre-piano-5', sezione: 'modalita', modalita: 'torre',
+        icon: '🗼', label: 'Il primo boss',
+        description: 'Supera il piano 5 della Torre dei Duellanti',
+        type: 'torreFloor', match: { piano: 5 }, target: 1,
+        reward: { credits: 200 }
+    },
+    {
+        id: 'torre-piano-10', sezione: 'modalita', modalita: 'torre',
+        icon: '🗼', label: 'A metà della Torre',
+        description: 'Supera il piano 10 della Torre dei Duellanti',
+        type: 'torreFloor', match: { piano: 10 }, target: 1,
+        reward: { credits: 450 }
+    },
+    {
+        id: 'torre-piano-15', sezione: 'modalita', modalita: 'torre',
+        icon: '🌑', label: 'Oltre le Ombre',
+        description: 'Supera il piano 15 della Torre dei Duellanti',
+        type: 'torreFloor', match: { piano: 15 }, target: 1,
+        reward: { credits: 750 }
+    },
+    {
+        id: 'torre-boss-10', sezione: 'modalita', modalita: 'torre',
+        icon: '👑', label: 'Cacciatore di boss',
+        description: 'Batti 10 boss della Torre, in qualunque scalata',
+        type: 'torreBoss', match: {}, target: 10,
+        reward: { credits: 800 }
+    },
+    {
+        id: 'torre-conquistata', sezione: 'modalita', modalita: 'torre',
+        icon: '🏔️', label: 'In cima alla Torre',
+        description: 'Conquista la Torre dei Duellanti: tutti i piani in una sola scalata',
+        type: 'torreCompleted', match: {}, target: 1,
+        reward: { credits: 1500 }
+    },
+    {
+        id: 'torre-conquistata-3', sezione: 'modalita', modalita: 'torre',
+        icon: '🏆', label: 'Re della Torre',
+        description: 'Conquista la Torre dei Duellanti 3 volte',
+        type: 'torreCompleted', match: {}, target: 3,
+        reward: { credits: 2500 }
     }
 ];
 

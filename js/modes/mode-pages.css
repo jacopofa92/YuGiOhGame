@@ -134,6 +134,61 @@ body::before {
     .mp-medaglie { grid-column: 2; }
 }
 
+/* Torre: pannello della scalata e griglia dei piani (dal basso in alto). */
+.mp-pannello {
+    padding: 14px 16px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--panel);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.mp-pannello h2 { font-family: Georgia, 'Times New Roman', serif; color: var(--gold); font-weight: normal; font-size: 1.15rem; text-wrap: balance; }
+.mp-pannello p { color: var(--ink-dim); font-size: 0.9rem; line-height: 1.45; }
+.mp-pannello--esito { border-color: rgba(247, 215, 116, 0.6); }
+.mp-riga { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.mp-lp { display: flex; flex-direction: column; gap: 4px; min-width: 180px; flex: 1; }
+.mp-lp-testo { font-size: 0.85rem; color: var(--ink-dim); }
+.mp-lp-testo strong { color: var(--gold); font-variant-numeric: tabular-nums; font-size: 1.05rem; }
+.mp-lp-barra { height: 8px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+.mp-lp-riempi { height: 100%; background: linear-gradient(90deg, #c0392b, #f39c12 45%, #7fd18b); border-radius: inherit; }
+.mp-oggetti { display: flex; flex-wrap: wrap; gap: 6px; }
+.mp-oggetto { font-size: 0.78rem; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink); background: rgba(247, 215, 116, 0.06); }
+.mp-torre { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; width: min(100%, 520px); margin: 0 auto; }
+.mp-piano {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: rgba(16, 13, 9, 0.7);
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    color: var(--ink-dim);
+}
+.mp-piano img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 20%; opacity: 0.85; }
+.mp-piano-num {
+    position: absolute;
+    left: 5px;
+    bottom: 4px;
+    z-index: 1;
+    font-size: 0.72rem;
+    font-weight: bold;
+    color: var(--ink);
+    text-shadow: 0 1px 3px #000;
+    font-variant-numeric: tabular-nums;
+}
+.mp-piano-ignoto { font-size: 1.3rem; opacity: 0.5; }
+.mp-piano.is-boss { border-color: rgba(243, 156, 18, 0.7); }
+.mp-piano.is-boss::after { content: '👑'; position: absolute; top: 3px; right: 4px; font-size: 0.8rem; z-index: 1; }
+.mp-piano.is-fatto img { filter: grayscale(1) brightness(0.55); }
+.mp-piano.is-fatto::before { content: '✓'; position: absolute; inset: 0; display: grid; place-items: center; z-index: 1; color: var(--done); font-size: 1.6rem; text-shadow: 0 1px 4px #000; }
+.mp-piano.is-attuale { border: 2px solid var(--gold); box-shadow: 0 0 16px rgba(247, 215, 116, 0.45); }
+.mp-carte { display: flex; flex-direction: column; gap: 6px; max-height: 50vh; overflow-y: auto; }
+.mp-carta { padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); background: rgba(247,215,116,0.05); color: var(--ink); text-align: left; font: inherit; font-size: 0.88rem; cursor: pointer; }
+.mp-carta:hover, .mp-carta:focus-visible { border-color: var(--gold); outline: none; }
+
 /* Pulsanti delle pagine (Torre, scelta livello delle Rivincite). */
 .mp-btn {
     display: inline-flex;
@@ -198,8 +253,8 @@ body::before {
 }
 .mp-scelta:hover, .mp-scelta:focus-visible { border-color: var(--gold); outline: none; box-shadow: 0 0 14px rgba(247,215,116,0.2); }
 .mp-scelta-icona { font-size: 1.5rem; text-align: center; }
-.mp-scelta-nome { font-family: Georgia, 'Times New Roman', serif; color: var(--gold); font-size: 1rem; }
-.mp-scelta-desc { font-size: 0.82rem; color: var(--ink-dim); margin-top: 2px; line-height: 1.35; }
+.mp-scelta-nome { display: block; font-family: Georgia, 'Times New Roman', serif; color: var(--gold); font-size: 1rem; }
+.mp-scelta-desc { display: block; font-size: 0.82rem; color: var(--ink-dim); margin-top: 2px; line-height: 1.35; }
 
 @media (max-width: 520px) {
     .mp-voce { grid-template-columns: 44px 1fr; padding: 12px; gap: 12px; }

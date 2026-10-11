@@ -444,7 +444,8 @@
 // v223: nuovo nome, Yu-Gi-Oh! Millennium Duel Arena (logo, titoli, nome dell'app).
 // v224: modalità Puzzle (puzzle.html, js/modes/), sezione Modalità nelle Sfide.
 // v225: modalità Rivincite (rivincite.html): duelli dell'anime col mazzo del personaggio.
-const CACHE_NAME = 'ygo-duel-arena-v225';
+// v226: Torre dei Duellanti (torre.html): 20 piani, LP che si portano, Ristoro o oggetto.
+const CACHE_NAME = 'ygo-duel-arena-v226';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -468,6 +469,7 @@ const APP_SHELL = [
     'tutorial.html',
     'puzzle.html',
     'rivincite.html',
+    'torre.html',
     'storia.html',
     'tornei.html',
     'torneo-regno-duellanti.html',
@@ -570,6 +572,9 @@ const APP_SHELL = [
     'js/modes/puzzle-mode.js',
     'js/data/rivincite-db.js',
     'js/modes/rivincita-mode.js',
+    'js/data/torre-db.js',
+    'js/modes/torre.js',
+    'js/modes/torre-mode.js',
     'js/ui/effects.js',
     'js/ui/error-recovery.js',
     'js/ui/icon-library.js',

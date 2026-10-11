@@ -110,6 +110,61 @@ interface StatoRivincite {
     [id: string]: { vinte: { [livello: string]: boolean } };
 }
 
+/** Un piano della Torre: chi si affronta, a che livello, su quale campo. */
+interface PianoTorre {
+    avversario: string;
+    livello: LivelloDuello;
+    campo?: string;
+}
+
+/** Un tratto della Torre fra due boss: gli avversari si pescano da qui. */
+interface FasciaTorre {
+    daPiano: number;
+    aPiano: number;
+    livello: LivelloDuello;
+    campo?: string;
+    avversari: string[];
+}
+
+/** Un oggetto della Torre: cambia solo la preparazione del duello. */
+interface OggettoTorre {
+    id: 'mano' | 'primo' | 'lpAvversario' | 'carta';
+    icona: string;
+    nome: string;
+    descrizione: string;
+    /** Quante volte lo si può prendere nella stessa scalata. */
+    max: number;
+}
+
+/** Una delle due scelte offerte dopo un piano vinto. */
+type PremioTorre =
+    | { tipo: 'ristoro'; lp: number }
+    | { tipo: 'oggetto'; oggetto: OggettoTorre['id'] };
+
+/** La scalata in corso (SaveManager.getModeState('torre').inCorso). */
+interface ScalataTorre {
+    /** Il piano da giocare adesso (1-20). */
+    piano: number;
+    /** Life Point con cui si comincia il prossimo duello. */
+    lp: number;
+    /** L'avversario di ogni piano, sorteggiato all'inizio della scalata (indice 0 = piano 1). */
+    avversari: string[];
+    /** Quante volte è stato preso ogni oggetto. */
+    oggetti: { mano: number; primo: number; lpAvversario: number; carta: number };
+    /** Id della "Carta fidata", se scelta. */
+    cartaFidata: number | null;
+    /** Le due scelte dopo un piano vinto: finché ci sono, non si sale. */
+    sceltaInSospeso: PremioTorre[] | null;
+}
+
+/** Tutto lo stato salvato della Torre. */
+interface StatoTorre {
+    inCorso: ScalataTorre | null;
+    /** Com'è finita l'ultima scalata, finché la pagina non l'ha mostrata. */
+    ultimoEsito: { piano: number; conquistata: boolean } | null;
+    record: { pianoMassimo: number; tentativi: number; conquiste: number };
+}
+
 // Le funzioni della partita usate dalle modalità (initGame, endDuel,
 // preparaManiIniziali, getCharacterDeck, buildDeckFromSpec...) NON si
 // dichiarano qui: sono scritte in file js/ inclusi nel controllo, e una
@@ -124,6 +179,8 @@ interface Window {
     ModalitaDuello?: { [mode: string]: ModalitaDuello };
     puzzlesDatabase: PuzzleDef[];
     rivinciteDatabase: RivincitaDef[];
+    torreDatabase: typeof torreDatabase;
+    Torre: typeof Torre;
     SaveManager: any;
     ChallengeTracker: any;
     DuelSession: any;

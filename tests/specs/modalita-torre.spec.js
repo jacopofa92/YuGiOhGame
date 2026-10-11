@@ -1,0 +1,168 @@
+// Torre dei Duellanti (js/modes/torre.js, torre-mode.js, torre.html).
+// Il percorso vero: si comincia una scalata dalla pagina, si gioca il piano
+// (vinto chiudendo il duello con endDuel, la funzione pubblica di ogni fine
+// partita), si torna alla pagina e si sceglie il premio. Poi gli oggetti
+// devono cambiare davvero la preparazione del duello successivo: Life Point
+// portati dal piano prima, una carta in più, la Carta fidata in mano,
+// l'avversario con meno Life Point, nessuna morra con la "Prima mossa".
+// Infine: una sconfitta chiude la scalata, un link vecchio non conta, il
+// catalogo ha personaggi con i loro mazzi e campi che esistono.
+const fs = require('fs');
+const path = require('path');
+
+const RADICE = path.join(__dirname, '..', '..');
+const PAGINA = 'file:///' + path.join(RADICE, 'torre.html').replace(/\\/g, '/');
+
+async function nuovaPagina(t) {
+    const page = await t.browser.newPage({ viewport: { width: 1280, height: 860 } });
+    const errori = [];
+    page.on('pageerror', (e) => errori.push(e.message));
+    page.on('dialog', (d) => d.accept());
+    await page.addInitScript(() => { window.AUTH_GATE_SKIP = true; window.DUEL_FAST_OPENING = true; window.DUEL_RPS_SKIP = true; });
+    return { page, errori };
+}
+
+async function aspettaDuello(page) {
+    try { await page.click('.di-skip', { timeout: 4000 }); } catch (e) { /* nessuna intro */ }
+    await page.waitForFunction(() => typeof gameState !== 'undefined' && (gameState.playerHand || []).length >= 5 && !!window.DuelSession && DuelSession.started, null, { timeout: 30000 });
+    await page.waitForTimeout(400);
+}
+
+module.exports = {
+    standalone: true,
+    name: 'Torre: scalata dalla pagina, LP portati, premio scelto, oggetti che cambiano davvero la preparazione',
+    async run(t) {
+        const { page, errori } = await nuovaPagina(t);
+        try {
+            await page.goto(PAGINA);
+            await page.evaluate(() => {
+                if (!SaveManager.hasSave()) SaveManager.createNew('Scalatore');
+                SaveManager.setModeState('torre', null);
+            });
+            await page.reload();
+            await page.click('#iniziaScalata');
+            const sc = await page.evaluate(() => Torre.stato().inCorso);
+            t.assert(sc && sc.piano === 1 && sc.lp === 8000 && sc.avversari.length === 20, `Scalata nuova al piano 1 con 8000 LP: ${JSON.stringify(sc)}`);
+            t.assert(sc.avversari[4] === 'bandit_keith' && sc.avversari[19] === 'yamiYugi', 'I boss dei piani 5 e 20 sono quelli del catalogo');
+            t.assert(await page.$$eval('.mp-piano', (els) => els.length) === 20, 'La griglia mostra 20 piani');
+
+            // Piano 1: si gioca e si vince, finendo con 6500 LP.
+            await Promise.all([page.waitForURL(/duelMonstersCore\.html\?mode=torre&piano=1/), page.click('#sfidaPiano')]);
+            await aspettaDuello(page);
+            t.assert(await page.evaluate(() => gameState.playerLP === 8000 && gameState.botLP === 8000), 'Piano 1: 8000 LP per entrambi');
+            await page.evaluate(() => { gameState.playerLP = 6500; endDuel(true); });
+            await page.waitForFunction(() => { const s = Torre.stato().inCorso; return s && s.piano === 2; }, null, { timeout: 15000 });
+            const dopo = await page.evaluate(() => Torre.stato().inCorso);
+            t.assert(dopo.lp === 6500 && dopo.sceltaInSospeso && dopo.sceltaInSospeso.length === 2 && dopo.sceltaInSospeso[0].tipo === 'ristoro',
+                `Vinto il piano 1: si sale al 2 con 6500 LP e due scelte, la prima il Ristoro: ${JSON.stringify(dopo)}`);
+            const progresso = await page.evaluate(() => SaveManager.getChallengeProgress('torre-piano-5'));
+            t.assert(!progresso.completed, 'Il piano 1 non completa la Sfida del piano 5');
+
+            // Un link al piano 1, ormai superato, non conta e riporta alla Torre.
+            await page.goto(page.url().replace(/torre\.html.*/, '') + 'duelMonstersCore.html?mode=torre&piano=1&character=rex&difficulty=Facile');
+            try { await page.click('.di-skip', { timeout: 4000 }); } catch (e) { /* nessuna intro */ }
+            await page.waitForURL(/torre\.html/, { timeout: 20000 });
+
+            // Il premio: la pagina apre la scelta e non lascia salire prima.
+            await page.waitForSelector('#premio:not([hidden])');
+            t.assert(await page.$$eval('#premioScelte .mp-scelta', (els) => els.length) === 2, 'Due scelte dopo il piano vinto');
+            await page.click('#premioScelte .mp-scelta[data-premio="ristoro"]');
+            const ristorato = await page.evaluate(() => Torre.stato().inCorso);
+            t.assert(ristorato.lp === 8000 && !ristorato.sceltaInSospeso, `Il Ristoro riporta a 8000 (6500 + 2500, col tetto): ${ristorato.lp}`);
+
+            // Gli oggetti: si preparano a mano per provarli tutti insieme.
+            const carta = await page.evaluate(() => {
+                const mazzo = SaveManager.getActiveDeck();
+                const id = mazzo && mazzo.main && mazzo.main.length ? mazzo.main[mazzo.main.length - 1].id : null;
+                const s = Torre.stato();
+                s.inCorso.lp = 3300;
+                s.inCorso.oggetti = { mano: 2, primo: 1, lpAvversario: 2, carta: id == null ? 0 : 1 };
+                s.inCorso.cartaFidata = id;
+                SaveManager.setModeState('torre', s);
+                return id;
+            });
+            await page.reload();
+            await Promise.all([page.waitForURL(/mode=torre&piano=2/), page.click('#sfidaPiano')]);
+            await aspettaDuello(page);
+            const prep = await page.evaluate((carta) => ({
+                lp: gameState.playerLP,
+                lpAvv: gameState.botLP,
+                mano: gameState.playerHand.length,
+                comincia: gameState.currentPlayer,
+                ruolo: window.DUEL_STARTING_ROLE,
+                cartaInMano: carta == null || gameState.playerHand.some((c) => c.id === carta)
+            }), carta);
+            t.assert(prep.lp === 3300, `Piano 2: si parte coi Life Point della scalata (${prep.lp})`);
+            t.assert(prep.lpAvv === 6000, `Avversario indebolito due volte: 8000 - 2000 = ${prep.lpAvv}`);
+            t.assert(prep.ruolo === 'player', `Prima mossa: comincia il giocatore senza morra (${prep.ruolo})`);
+            t.assert(prep.mano >= 8, `Mano iniziale con 2 carte in più: 6 di chi comincia + 2 = ${prep.mano}`);
+            t.assert(prep.cartaInMano, 'La Carta fidata è nella mano iniziale');
+
+            // Sconfitta: la scalata finisce e il record lo ricorda.
+            await page.evaluate(() => endDuel(false));
+            await page.waitForFunction(() => !Torre.stato().inCorso, null, { timeout: 15000 });
+            const fine = await page.evaluate(() => Torre.stato());
+            t.assert(fine.ultimoEsito && fine.ultimoEsito.piano === 2 && !fine.ultimoEsito.conquistata && fine.record.pianoMassimo === 1,
+                `Persa al piano 2: scalata chiusa, record piano 1: ${JSON.stringify(fine)}`);
+            await page.goto(PAGINA);
+            t.assert(await page.isVisible('#iniziaScalata'), 'Dopo la sconfitta la pagina propone una scalata nuova');
+            t.assert(/piano 2/.test(await page.textContent('#esito')), 'La pagina dice dove è finita la scalata');
+            t.assert(errori.length === 0, `Nessun errore in pagina: ${JSON.stringify(errori)}`);
+        } finally {
+            await page.close();
+        }
+
+        // Ultimo piano vinto: Torre conquistata e Sfida completata.
+        {
+            const { page: p } = await nuovaPagina(t);
+            try {
+                await p.goto(PAGINA);
+                await p.evaluate(() => {
+                    if (!SaveManager.hasSave()) SaveManager.createNew('Scalatore');
+                    const s = Torre.nuovaScalata();
+                    s.inCorso.piano = 20;
+                    SaveManager.setModeState('torre', s);
+                });
+                await p.reload();
+                await Promise.all([p.waitForURL(/mode=torre&piano=20/), p.click('#sfidaPiano')]);
+                await aspettaDuello(p);
+                t.assert(await p.evaluate(() => DuelSession.opponent.id) === 'yamiYugi', 'Al piano 20 il boss è Yami Yugi');
+                await p.evaluate(() => endDuel(true));
+                await p.waitForFunction(() => Torre.stato().record.conquiste === 1, null, { timeout: 15000 });
+                const s = await p.evaluate(() => ({ stato: Torre.stato(), sfida: SaveManager.getChallengeProgress('torre-conquistata') }));
+                t.assert(!s.stato.inCorso && s.stato.ultimoEsito.conquistata && s.sfida.completed, `Torre conquistata e Sfida completata: ${JSON.stringify(s)}`);
+            } finally {
+                await p.close();
+            }
+        }
+
+        // Catalogo: personaggi con i loro mazzi, campi esistenti, Sfide in crediti.
+        {
+            const { page: p } = await nuovaPagina(t);
+            try {
+                await p.goto(PAGINA.replace('torre.html', 'duelMonstersCore.html'));
+                await p.waitForFunction(() => typeof getCharacterDeck === 'function' && typeof torreDatabase !== 'undefined', null, { timeout: 30000 });
+                const cat = await p.evaluate(() => {
+                    const ids = new Set();
+                    torreDatabase.fasce.forEach((f) => f.avversari.forEach((a) => ids.add(a)));
+                    Object.values(torreDatabase.boss).forEach((b) => ids.add(b.avversario));
+                    const campi = torreDatabase.fasce.map((f) => f.campo).concat(Object.values(torreDatabase.boss).map((b) => b.campo)).filter(Boolean);
+                    const senzaMazzo = [];
+                    ids.forEach((id) => {
+                        if (!characterDatabase.some((c) => c.id === id)) senzaMazzo.push(id + ': personaggio mancante');
+                        ['easy', 'medium', 'hard'].forEach((l) => { const s = getCharacterDeck(id, l); if (!s || !(s.main || []).length) senzaMazzo.push(id + ':' + l); });
+                    });
+                    return { senzaMazzo, campi };
+                });
+                t.assert(cat.senzaMazzo.length === 0, `Avversari della Torre senza mazzo: ${JSON.stringify(cat.senzaMazzo)}`);
+                cat.campi.forEach((c) => t.assert(fs.existsSync(path.join(RADICE, 'images', 'fields', c)), `Il campo ${c} esiste`));
+            } finally {
+                await p.close();
+            }
+            const db = fs.readFileSync(path.join(RADICE, 'js', 'data', 'challenges-db.js'), 'utf8');
+            const sezione = db.slice(db.indexOf("modalita: 'torre'") - 200);
+            t.assert(!/starChips|locatorCards|millenniumCards|cards:/.test(sezione.slice(0, sezione.lastIndexOf('];'))),
+                'Le Sfide della Torre pagano solo crediti');
+        }
+    }
+};

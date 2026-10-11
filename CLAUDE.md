@@ -4321,3 +4321,22 @@ APP_SHELL esista. `npm run verifica-pubblicazione` confronta ogni pagina della
 copia con l'originale; `YGO_RADICE_GIOCO=dist` fa giocare la suite sulla copia.
 Una cartella nuova che il gioco legge va aggiunta a CARTELLE in pubblica.js.
 Piano di hosting privato in memoria (Cloudflare Pages + controllo Supabase).
+
+Modalità aggiuntive (2026-10-11): Puzzle (`puzzle.html`), Rivincite
+(`rivincite.html`) e Torre dei Duellanti (`torre.html`), voci di Duelli. REGOLA
+DELL'UTENTE, la più importante: il motore di Duel Monsters (`js/engine/`,
+effetti delle carte, IA, dati carte) NON si tocca, perché va riusato così com'è.
+Ogni modalità vive in `js/modes/` (dati in `js/data/puzzles-db.js`,
+`rivincite-db.js`, `torre-db.js`) e cambia solo la preparazione del duello,
+avvolgendo `preparaManiIniziali` come il Tutorial; registra le sue voci in
+`window.ModalitaDuello[<mode>]`, lette dal solo blocco "EXTRA — MODALITÀ
+AGGIUNTIVE" (`ModalitaExtra`) di `js/duel-session.js`. Contratto e forme in
+`types/modalita.d.ts`, file sotto `// @ts-check`. Stato salvato con
+`SaveManager.getModeState/setModeState`. Gli oggetti della Torre sono solo di
+preparazione (+1 carta, prima mossa, avversario −1000 LP, carta fidata in mano):
+niente bonus di statistiche. Premi: solo i crediti normali (e quelli della prima
+soluzione di un puzzle); le Sfide delle modalità (sezione "Modalità" in
+sfide.html) pagano solo crediti, i premi speciali arriveranno con carte nuove.
+Lo sorveglia `guardrail-modalita-fuori-dal-motore`; spec `modalita-puzzle`,
+`modalita-rivincite`, `modalita-torre`. Un puzzle nuovo va aggiunto anche allo
+spec dei puzzle, con la sua soluzione.

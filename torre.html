@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<!-- Opt-in STATICO alla View Transitions API — deve stare qui, non iniettato via JS in ritardo (vedi js/audio/audio-manager.js per la storia completa del bug che questo risolve). -->
+<style>@view-transition { navigation: auto; }</style>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="images/icons/icon-192.png">
+<link rel="apple-touch-icon" href="images/icons/icon-180.png">
+<meta name="theme-color" content="#0b0d14">
+<style>html, body { background: #0b0d14; }</style>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Millennium">
+<script src="js/ui/error-recovery.js"></script>
+<!-- Accesso obbligatorio (js/cloud/auth-gate.js). -->
+<script src="js/vendor/supabase.min.js"></script>
+<script src="js/cloud/supabase-config.js"></script>
+<script src="js/cloud/cloud-sync.js"></script>
+<script src="js/cloud/auto-sync.js"></script>
+<script src="js/cloud/auth-gate.js"></script>
+<script src="js/pwa-register.js"></script>
+<link rel="stylesheet" href="js/ui/page-loader.css">
+<link rel="stylesheet" href="js/ui/topbar.css">
+<link rel="stylesheet" href="js/ui/deck-switcher.css">
+<link rel="stylesheet" href="js/modes/mode-pages.css">
+<title>Yu-Gi-Oh! Millennium Duel Arena — Torre dei Duellanti</title>
+</head>
+<body>
+    <script src="js/ui/page-loader.js"></script>
+    <div id="topbarMount"></div>
+
+    <main class="mp-main">
+        <div class="mp-riepilogo" id="record"></div>
+        <div id="esito"></div>
+        <div id="contenuto"></div>
+    </main>
+
+    <!-- Il premio dopo un piano vinto: due scelte, e per la Carta fidata la carta. -->
+    <div class="mp-fondo" id="premio" hidden>
+        <div class="mp-finestra" role="dialog" aria-modal="true" aria-labelledby="premioTitolo">
+            <h2 id="premioTitolo">Piano superato!</h2>
+            <p id="premioTesto">Prima di salire, scegli una delle due:</p>
+            <div class="mp-scelte" id="premioScelte"></div>
+            <div class="mp-carte" id="premioCarte" hidden></div>
+        </div>
+    </div>
+
+<script src="js/data/cards-data.generated.js"></script>
+<script src="js/data/characters-db.js"></script>
+<script src="js/data/torre-db.js"></script>
+<script src="js/save-manager.js"></script>
+<script src="js/modes/torre.js"></script>
+<script src="js/audio/audio-manager.js"></script>
+<script src="js/native/app-back-button.js"></script>
+<script src="js/native/haptics.js"></script>
+<script src="js/native/native-save-backup.js"></script>
+<script src="js/ui/icon-library.js"></script>
+<script src="js/ui/deck-switcher.js"></script>
+<script src="js/ui/topbar.js"></script>
+<script>
+    PageTopbar.render('#topbarMount', { icon: 'tower', title: 'Torre dei Duellanti' });
+    initAudioManager();
+    Icons.hydrate();
+
+    const LIVELLI = { Facile: 'Facile', Medio: 'Normale', Difficile: 'Difficile' };
+    const pers = (id) => characterDatabase.find((c) => c.id === id) || { name: id, image: null };
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const haptic = () => { if (window.NativeHaptics) NativeHaptics.light(); };
+
+    function disegna() {
+        const s = Torre.stato();
+        document.getElementById('record').innerHTML =
+            `<span>🏔️ Record <strong>piano ${s.record.pianoMassimo}/${Torre.piani()}</strong></span>` +
+            `<span>🔁 Scalate <strong>${s.record.tentativi}</strong></span>` +
+            `<span>👑 Conquiste <strong>${s.record.conquiste}</strong></span>`;
+        disegnaEsito(s);
+        const box = document.getElementById('contenuto');
+        box.innerHTML = '';
+        if (!s.inCorso) { box.appendChild(introduzione()); return; }
+        box.appendChild(pannelloScalata(s.inCorso));
+        box.appendChild(griglia(s.inCorso));
+        if (s.inCorso.sceltaInSospeso) apriPremio(s.inCorso);
+    }
+
+    /** Com'è finita l'ultima scalata, una volta sola. */
+    function disegnaEsito(s) {
+        const box = document.getElementById('esito');
+        box.innerHTML = '';
+        if (!s.ultimoEsito) return;
+        const e = s.ultimoEsito;
+        const p = document.createElement('section');
+        p.className = 'mp-pannello mp-pannello--esito';
+        p.innerHTML = e.conquistata
+            ? `<h2>👑 Torre conquistata!</h2><p>Hai superato tutti i ${Torre.piani()} piani in una sola scalata, senza mai ricaricare i Life Point.</p>`
+            : `<h2>La scalata è finita al piano ${e.piano}</h2><p>Ogni scalata riparte dal piano 1, con i Life Point pieni e senza oggetti.</p>`;
+        const ok = document.createElement('button');
+        ok.type = 'button';
+        ok.className = 'mp-btn mp-btn--secondario';
+        ok.textContent = 'Ho capito';
+        ok.onclick = () => { Torre.esitoMostrato(); disegna(); };
+        p.appendChild(ok);
+        box.appendChild(p);
+    }
+
+    function introduzione() {
+        const p = document.createElement('section');
+        p.className = 'mp-pannello';
+        p.innerHTML = `
+            <h2>Venti piani, una sola scalata</h2>
+            <p>Sali piano dopo piano con il tuo mazzo. I Life Point <strong>non si ricaricano</strong> fra un duello e l'altro: ogni danno subito te lo porti al piano dopo. Ogni cinque piani ti aspetta un boss.</p>
+            <p>Dopo ogni piano vinto scegli fra un <strong>Ristoro</strong> (Life Point recuperati) e un <strong>oggetto</strong> che ti aiuta nei duelli successivi: una carta in più in mano, la prima mossa, un avversario più debole, una carta sempre in mano. Se perdi, si ricomincia dal piano 1.</p>
+            <p>Premi: i soliti crediti di fine duello a ogni piano.</p>`;
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'mp-btn';
+        b.id = 'iniziaScalata';
+        b.textContent = '🗼 Inizia la scalata';
+        b.onclick = () => { haptic(); Torre.nuovaScalata(); disegna(); };
+        p.appendChild(b);
+        return p;
+    }
+
+    function pannelloScalata(sc) {
+        const p = document.createElement('section');
+        p.className = 'mp-pannello';
+        const prossimo = Torre.pianoDi(sc, sc.piano);
+        const avv = pers(prossimo.avversario);
+        const boss = Torre.eBoss(sc.piano);
+        const oggetti = torreDatabase.oggetti.filter((o) => sc.oggetti[o.id] > 0).map((o) =>
+            `<span class="mp-oggetto" title="${esc(o.descrizione)}">${o.icona} ${esc(o.nome)}${sc.oggetti[o.id] > 1 ? ' ×' + sc.oggetti[o.id] : ''}</span>`);
+        const carta = sc.cartaFidata != null ? (cardDatabase.find((c) => c.id === sc.cartaFidata) || {}).name : null;
+        p.innerHTML = `
+            <h2>Piano ${sc.piano} di ${Torre.piani()}${boss ? ' — 👑 Boss' : ''}</h2>
+            <div class="mp-riga">
+                <div class="mp-lp">
+                    <span class="mp-lp-testo">Life Point <strong>${sc.lp}</strong> / ${torreDatabase.lpIniziali}</span>
+                    <div class="mp-lp-barra"><div class="mp-lp-riempi" style="width:${Math.round(sc.lp / torreDatabase.lpIniziali * 100)}%"></div></div>
+                </div>
+            </div>
+            <p>Prossimo avversario: <strong>${esc(avv.name)}</strong>, livello ${esc(LIVELLI[prossimo.livello] || prossimo.livello)}.</p>
+            <div class="mp-oggetti">${oggetti.join('') || '<span class="mp-lp-testo">Nessun oggetto, per ora.</span>'}</div>
+            ${carta ? `<p>📌 Carta fidata: <strong>${esc(carta)}</strong></p>` : ''}`;
+        const azioni = document.createElement('div');
+        azioni.className = 'mp-riga';
+        const sfida = document.createElement('a');
+        sfida.className = 'mp-btn';
+        sfida.id = 'sfidaPiano';
+        sfida.href = Torre.urlDuello(sc);
+        sfida.textContent = `⚔️ Sfida il piano ${sc.piano}`;
+        sfida.onclick = haptic;
+        const lascia = document.createElement('button');
+        lascia.type = 'button';
+        lascia.className = 'mp-btn mp-btn--pericolo';
+        lascia.textContent = 'Abbandona la scalata';
+        lascia.onclick = () => {
+            if (confirm('Abbandonare la scalata? Ricomincerai dal piano 1.')) { Torre.abbandona(); disegna(); }
+        };
+        azioni.append(sfida, lascia);
+        p.appendChild(azioni);
+        return p;
+    }
+
+    /** I venti piani a riquadri, dal basso (1) verso l'alto (20). Gli avversari futuri restano un mistero, tranne i boss. */
+    function griglia(sc) {
+        const g = document.createElement('div');
+        g.className = 'mp-torre';
+        g.setAttribute('aria-label', 'I piani della Torre');
+        const n = Torre.piani();
+        for (let riga = Math.ceil(n / 5) - 1; riga >= 0; riga--) {
+            for (let col = 0; col < 5; col++) {
+                const piano = riga * 5 + col + 1;
+                if (piano > n) continue;
+                const fatto = piano < sc.piano;
+                const attuale = piano === sc.piano;
+                const boss = Torre.eBoss(piano);
+                const t = document.createElement('div');
+                t.className = 'mp-piano' + (fatto ? ' is-fatto' : '') + (attuale ? ' is-attuale' : '') + (boss ? ' is-boss' : '');
+                t.dataset.piano = String(piano);
+                const visibile = fatto || attuale || boss;
+                const p = visibile ? pers(Torre.pianoDi(sc, piano).avversario) : null;
+                if (p && p.image) {
+                    const img = document.createElement('img');
+                    img.alt = '';
+                    img.onerror = () => img.remove();
+                    img.src = p.image;
+                    t.appendChild(img);
+                } else if (!visibile) {
+                    const q = document.createElement('span');
+                    q.className = 'mp-piano-ignoto';
+                    q.textContent = '?';
+                    t.appendChild(q);
+                }
+                const num = document.createElement('span');
+                num.className = 'mp-piano-num';
+                num.textContent = String(piano);
+                t.appendChild(num);
+                t.title = visibile && p ? `Piano ${piano}: ${p.name}` : `Piano ${piano}`;
+                g.appendChild(t);
+            }
+        }
+        return g;
+    }
+
+    /** La scelta dopo un piano vinto: non si sale finché non si sceglie. */
+    function apriPremio(sc) {
+        const fondo = document.getElementById('premio');
+        const scelte = document.getElementById('premioScelte');
+        const carte = document.getElementById('premioCarte');
+        scelte.innerHTML = '';
+        carte.hidden = true;
+        scelte.hidden = false;
+        document.getElementById('premioTitolo').textContent = `Piano ${sc.piano - 1} superato!`;
+        document.getElementById('premioTesto').textContent = `Hai ${sc.lp} Life Point. Prima di salire al piano ${sc.piano}, scegli una delle due:`;
+        sc.sceltaInSospeso.forEach((premio, i) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'mp-scelta';
+            b.dataset.premio = premio.tipo === 'ristoro' ? 'ristoro' : premio.oggetto;
+            let icona = '❤️';
+            let nome = 'Ristoro';
+            let desc = `Recuperi ${premio.lp} Life Point (fino a ${torreDatabase.lpIniziali}): da ${sc.lp} a ${Math.min(torreDatabase.lpIniziali, sc.lp + premio.lp)}.`;
+            if (premio.tipo === 'oggetto') {
+                const o = Torre.oggetto(premio.oggetto);
+                icona = o.icona; nome = o.nome; desc = o.descrizione + ' Vale per tutta la scalata.';
+            }
+            b.innerHTML = `<span class="mp-scelta-icona">${icona}</span><span><span class="mp-scelta-nome">${esc(nome)}</span><span class="mp-scelta-desc">${esc(desc)}</span></span>`;
+            b.onclick = () => {
+                haptic();
+                if (premio.tipo === 'oggetto' && premio.oggetto === 'carta') { sceltaCarta(i); return; }
+                Torre.scegli(i);
+                fondo.hidden = true;
+                disegna();
+            };
+            scelte.appendChild(b);
+        });
+        fondo.hidden = false;
+    }
+
+    /** Carta fidata: si sceglie una carta del mazzo attivo. */
+    function sceltaCarta(indice) {
+        const fondo = document.getElementById('premio');
+        const scelte = document.getElementById('premioScelte');
+        const carte = document.getElementById('premioCarte');
+        const mazzo = SaveManager.getActiveDeck();
+        const ids = mazzo ? Array.from(new Set((mazzo.main || []).map((e) => e.id))) : [];
+        const voci = ids.map((id) => cardDatabase.find((c) => c.id === id)).filter(Boolean)
+            .sort((a, b) => a.name.localeCompare(b.name, 'it'));
+        document.getElementById('premioTesto').textContent = voci.length
+            ? 'Quale carta del tuo mazzo vuoi sempre nella mano iniziale?'
+            : 'Non hai un mazzo salvato da cui scegliere: l\'oggetto resta senza carta.';
+        scelte.hidden = true;
+        carte.hidden = false;
+        carte.innerHTML = '';
+        voci.forEach((c) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'mp-carta';
+            b.dataset.carta = String(c.id);
+            b.textContent = c.name;
+            b.onclick = () => { haptic(); Torre.scegli(indice, c.id); fondo.hidden = true; disegna(); };
+            carte.appendChild(b);
+        });
+        if (!voci.length) {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'mp-btn mp-btn--secondario';
+            b.textContent = 'Va bene';
+            b.onclick = () => { Torre.scegli(indice, null); fondo.hidden = true; disegna(); };
+            carte.appendChild(b);
+        }
+    }
+
+    disegna();
+</script>
+</body>
+</html>
