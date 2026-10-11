@@ -118,8 +118,15 @@ module.exports = {
                     // navigazione, ricaricamenti compresi, e riazzerando
                     // la preferenza ad ogni giro renderebbe impossibile
                     // provare proprio che sopravvive a un ricaricamento.
-                    if (sessionStorage.getItem('__statoInizialeImpostato')) return;
-                    sessionStorage.setItem('__statoInizialeImpostato', '1');
+                    //
+                    // Il segno "già fatto" sta in window.name, non in
+                    // sessionStorage: sulle pagine aperte da file, Chromium
+                    // su Linux (dove gira la suite di GitHub) non garantiva
+                    // che sessionStorage sopravvivesse al ricaricamento, lo
+                    // script ripartiva e rimetteva "chiuso" proprio prima
+                    // della verifica. window.name resta alla scheda.
+                    if (window.name === '__statoInizialeImpostato') return;
+                    window.name = '__statoInizialeImpostato';
                     if (aperti === null) localStorage.removeItem('ygoStoriaDettagliAperti');
                     else localStorage.setItem('ygoStoriaDettagliAperti', aperti ? '1' : '0');
                 } catch (e) { /* niente */ }
