@@ -304,13 +304,20 @@
      */
     function getSezioni() {
         const tutte = getAllWithProgress();
-        const generiche = tutte.filter((c) => c.sezione !== 'storia');
+        const generiche = tutte.filter((c) => c.sezione !== 'storia' && c.sezione !== 'modalita');
         const perStoria = {};
         tutte.filter((c) => c.sezione === 'storia').forEach((c) => {
             const id = c.campaignId || 'altro';
             (perStoria[id] = perStoria[id] || []).push(c);
         });
-        return { generiche: generiche, storie: perStoria };
+        // Le sfide delle modalità (Puzzle, Rivincite, Torre): una sezione
+        // per modalità, come le storie lo sono per campagna.
+        const perModalita = {};
+        tutte.filter((c) => c.sezione === 'modalita').forEach((c) => {
+            const id = c.modalita || 'altro';
+            (perModalita[id] = perModalita[id] || []).push(c);
+        });
+        return { generiche: generiche, storie: perStoria, modalita: perModalita };
     }
 
     window.ChallengeTracker = {

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<!-- Opt-in STATICO alla View Transitions API — deve stare qui, non iniettato via JS in ritardo (vedi js/audio/audio-manager.js per la storia completa del bug che questo risolve). -->
+<style>@view-transition { navigation: auto; }</style>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="images/icons/icon-192.png">
+<link rel="apple-touch-icon" href="images/icons/icon-180.png">
+<meta name="theme-color" content="#0b0d14">
+<style>html, body { background: #0b0d14; }</style>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Millennium">
+<script src="js/ui/error-recovery.js"></script>
+<!-- Accesso obbligatorio (js/cloud/auth-gate.js). -->
+<script src="js/vendor/supabase.min.js"></script>
+<script src="js/cloud/supabase-config.js"></script>
+<script src="js/cloud/cloud-sync.js"></script>
+<script src="js/cloud/auto-sync.js"></script>
+<script src="js/cloud/auth-gate.js"></script>
+<script src="js/pwa-register.js"></script>
+<link rel="stylesheet" href="js/ui/page-loader.css">
+<link rel="stylesheet" href="js/ui/topbar.css">
+<link rel="stylesheet" href="js/ui/deck-switcher.css">
+<link rel="stylesheet" href="js/modes/mode-pages.css">
+<title>Yu-Gi-Oh! Millennium Duel Arena — Puzzle</title>
+</head>
+<body>
+    <script src="js/ui/page-loader.js"></script>
+    <div id="topbarMount"></div>
+
+    <main class="mp-main">
+        <p class="mp-intro">Una situazione già pronta e un solo turno a disposizione: porta a zero i Life Point dell'avversario prima di passare il turno. Tre stelle se lo risolvi al primo tentativo.</p>
+        <div class="mp-riepilogo" id="riepilogo"></div>
+        <div id="elenco"></div>
+    </main>
+
+<script src="js/data/characters-db.js"></script>
+<script src="js/data/puzzles-db.js"></script>
+<script src="js/save-manager.js"></script>
+<script src="js/audio/audio-manager.js"></script>
+<script src="js/native/app-back-button.js"></script>
+<script src="js/native/haptics.js"></script>
+<script src="js/native/native-save-backup.js"></script>
+<script src="js/ui/icon-library.js"></script>
+<script src="js/ui/deck-switcher.js"></script>
+<script src="js/ui/topbar.js"></script>
+<script>
+    PageTopbar.render('#topbarMount', { icon: 'puzzle', title: 'Puzzle' });
+    initAudioManager();
+    Icons.hydrate();
+
+    const LIVELLI = { 1: 'Per cominciare', 2: 'Ci vuole un\'idea', 3: 'Da maestri' };
+    const stato = SaveManager.getModeState('puzzle') || {};
+    const nomeDi = (id) => {
+        const c = (typeof characterDatabase !== 'undefined') ? characterDatabase.find((x) => x.id === id) : null;
+        return c ? c.name : '';
+    };
+
+    let risolti = 0;
+    let stelleTotali = 0;
+    puzzlesDatabase.forEach((p) => {
+        const s = stato[p.id] || {};
+        if (s.risolto) risolti++;
+        stelleTotali += s.stelle || 0;
+    });
+    document.getElementById('riepilogo').innerHTML =
+        `<span>🧩 Risolti <strong>${risolti}/${puzzlesDatabase.length}</strong></span>` +
+        `<span>⭐ Stelle <strong>${stelleTotali}/${puzzlesDatabase.length * 3}</strong></span>`;
+
+    const elenco = document.getElementById('elenco');
+    [1, 2, 3].forEach((liv) => {
+        const voci = puzzlesDatabase.filter((p) => (p.difficolta || 1) === liv);
+        if (!voci.length) return;
+        const titolo = document.createElement('div');
+        titolo.className = 'mp-sezione';
+        titolo.textContent = LIVELLI[liv];
+        elenco.appendChild(titolo);
+        const lista = document.createElement('div');
+        lista.className = 'mp-elenco';
+        voci.forEach((p) => {
+            const s = stato[p.id] || {};
+            const a = document.createElement('a');
+            a.className = 'mp-voce' + (s.risolto ? ' is-fatta' : '');
+            a.dataset.puzzle = p.id;
+            a.href = 'duelMonstersCore.html?mode=puzzle&puzzle=' + encodeURIComponent(p.id)
+                + '&character=' + encodeURIComponent(p.personaggio || 'kaiba');
+            a.innerHTML = `
+                <div class="mp-emblema" aria-hidden="true">${p.emblema || '🧩'}</div>
+                <div>
+                    <div class="mp-titolo"></div>
+                    <div class="mp-desc"></div>
+                    <div class="mp-meta"></div>
+                </div>
+                <div class="mp-stato"></div>`;
+            a.querySelector('.mp-titolo').textContent = p.titolo;
+            a.querySelector('.mp-desc').textContent = p.descrizione;
+            a.querySelector('.mp-meta').textContent = 'Avversario: ' + nomeDi(p.personaggio)
+                + (s.tentativi ? ' · tentativi: ' + s.tentativi : '');
+            const st = a.querySelector('.mp-stato');
+            if (s.risolto) {
+                st.textContent = '★'.repeat(s.stelle || 1) + '☆'.repeat(3 - (s.stelle || 1));
+                st.classList.add('mp-stato--stelle');
+            } else {
+                st.textContent = 'Da risolvere';
+            }
+            a.addEventListener('click', () => { if (window.NativeHaptics) NativeHaptics.light(); });
+            lista.appendChild(a);
+        });
+        elenco.appendChild(lista);
+    });
+</script>
+</body>
+</html>

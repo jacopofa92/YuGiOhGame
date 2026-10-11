@@ -1,8 +1,8 @@
 /**
  * sfide-view.js — La schermata delle Sfide, una sola per tutto il gioco.
  * =====================================================================
- * `SfideView.mount(contenitore)` disegna l'intera schermata — le quattro
- * sezioni (Oggi, Settimana, Sfide, Storie), il riepilogo, quanto manca
+ * `SfideView.mount(contenitore)` disegna l'intera schermata — le cinque
+ * sezioni (Oggi, Settimana, Sfide, Storie, Modalità), il riepilogo, quanto manca
  * alla prossima rotazione, la griglia a riquadri e il pannello di
  * dettaglio — e torna `{ refresh }` per ridisegnarla.
  *
@@ -49,7 +49,17 @@
         { id: 'giornaliere', etichetta: '☀️ Oggi' },
         { id: 'settimanali', etichetta: '📅 Settimana' },
         { id: 'generiche', etichetta: '🏆 Sfide' },
-        { id: 'storie', etichetta: '📖 Storie' }
+        { id: 'storie', etichetta: '📖 Storie' },
+        { id: 'modalita', etichetta: '🎮 Modalità' }
+    ];
+
+    // Titolo e ordine dei gruppi nella sezione "Modalità": la chiave è il
+    // campo `modalita` delle sfide in challenges-db.js. Una modalità non
+    // elencata qui compare comunque, in fondo, col suo id.
+    const MODALITA = [
+        { id: 'puzzle', titolo: '🧩 Puzzle' },
+        { id: 'rivincite', titolo: '⚔️ Rivincite' },
+        { id: 'torre', titolo: '🗼 Torre dei Duellanti' }
     ];
 
     function escape(s) {
@@ -243,6 +253,26 @@
             riepilogo('Sfide delle storie', fatte, totali);
         }
 
+        /** Una sezione per modalità (Puzzle, Rivincite, Torre). */
+        function renderModalita() {
+            const perModalita = ChallengeTracker.getSezioni().modalita || {};
+            const ordine = MODALITA.map((m) => m.id).filter((id) => perModalita[id])
+                .concat(Object.keys(perModalita).filter((id) => !MODALITA.some((m) => m.id === id)));
+            let totali = 0;
+            let fatte = 0;
+            const gruppi = ordine.map((id) => {
+                const voci = perModalita[id];
+                const m = MODALITA.find((x) => x.id === id);
+                totali += voci.length;
+                fatte += voci.filter((c) => c.completed).length;
+                return { titolo: m ? m.titolo : id, voci: voci };
+            });
+            const griglia = q('griglia');
+            griglia.innerHTML = '';
+            disegnaGruppi(griglia, gruppi);
+            riepilogo('Sfide delle modalità', fatte, totali);
+        }
+
         function refresh() {
             renderRotazione();
             if (sezioneAttiva === 'giornaliere' || sezioneAttiva === 'settimanali') {
@@ -250,6 +280,7 @@
                 return;
             }
             if (sezioneAttiva === 'storie') { renderStorie(); return; }
+            if (sezioneAttiva === 'modalita') { renderModalita(); return; }
             const sfide = ChallengeTracker.getSezioni().generiche;
             riepilogo('Sfide completate', sfide.filter((c) => c.completed).length, sfide.length);
             const griglia = q('griglia');

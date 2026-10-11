@@ -1022,7 +1022,58 @@ const challengesDatabase = [
                 target: 1, reward: { credits: r(5000), starChips: s(10), locatorCards: s(3), millenniumCards: s(3) }
             }
         ]);
-    }, [])
+    }, []),
+
+    // =================================================================
+    // SFIDE DELLE MODALITÀ — Puzzle, Rivincite, Torre dei Duellanti
+    // =================================================================
+    // `sezione: 'modalita'` e `modalita: <id>`: sfide.html le mostra nella
+    // sezione "Modalità", un gruppo per modalità. Premi SOLO in crediti, per
+    // scelta esplicita dell'utente: i premi speciali di queste modalità
+    // (carte nuove) arriveranno più avanti.
+    //
+    // Puzzle (js/modes/puzzle-mode.js):
+    //   'puzzleSolved'      la PRIMA volta che un puzzle viene risolto
+    //                       (match: { puzzleId } o {} per "uno qualsiasi");
+    //   'puzzleThreeStars'  la prima volta che un puzzle arriva a tre stelle.
+    // Il traguardo "tutti" vale il numero di puzzle in js/data/puzzles-db.js
+    // (8): aggiungendo puzzle va alzato qui, e lo spec modalita-puzzle lo
+    // controlla.
+    {
+        id: 'puzzle-primo', sezione: 'modalita', modalita: 'puzzle',
+        icon: '🧩', label: 'Il primo enigma',
+        description: 'Risolvi un puzzle',
+        type: 'puzzleSolved', match: {}, target: 1,
+        reward: { credits: 150 }
+    },
+    {
+        id: 'puzzle-quattro', sezione: 'modalita', modalita: 'puzzle',
+        icon: '🧠', label: 'Mente da duellante',
+        description: 'Risolvi 4 puzzle diversi',
+        type: 'puzzleSolved', match: {}, target: 4,
+        reward: { credits: 350 }
+    },
+    {
+        id: 'puzzle-tutti', sezione: 'modalita', modalita: 'puzzle',
+        icon: '🔺', label: 'Il Puzzle completato',
+        description: 'Risolvi tutti i puzzle',
+        type: 'puzzleSolved', match: {}, target: 8,
+        reward: { credits: 700 }
+    },
+    {
+        id: 'puzzle-tre-stelle', sezione: 'modalita', modalita: 'puzzle',
+        icon: '⭐', label: 'Al primo colpo',
+        description: 'Risolvi un puzzle al primo tentativo (tre stelle)',
+        type: 'puzzleThreeStars', match: {}, target: 1,
+        reward: { credits: 200 }
+    },
+    {
+        id: 'puzzle-tre-stelle-tutti', sezione: 'modalita', modalita: 'puzzle',
+        icon: '🌟', label: 'Nessun errore',
+        description: 'Porta tutti i puzzle a tre stelle',
+        type: 'puzzleThreeStars', match: {}, target: 8,
+        reward: { credits: 900 }
+    }
 ];
 
 window.challengesDatabase = challengesDatabase;

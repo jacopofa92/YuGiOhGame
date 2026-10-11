@@ -863,6 +863,32 @@
         return state;
     }
 
+    /**
+     * Stato persistente di UNA modalità di gioco (Puzzle, Rivincite, Torre
+     * dei Duellanti — vedi js/modes/): { [modeId]: <forma libera> }, null
+     * se non è mai stata giocata. Contenitore generico come save.tournaments,
+     * ma in un campo SUO: una modalità non è un torneo, e un id in comune
+     * non deve poter mescolare le due cose. Non serve un recupero in load():
+     * chi legge regge l'assenza del campo, chi scrive lo crea.
+     */
+    function getModeState(modeId) {
+        const save = load();
+        return (save && save.modalita && save.modalita[modeId]) || null;
+    }
+
+    /** Sovrascrive lo stato di UNA modalità; `state` null lo azzera. */
+    function setModeState(modeId, state) {
+        const save = load() || createNew();
+        save.modalita = save.modalita || {};
+        if (state == null) {
+            delete save.modalita[modeId];
+        } else {
+            save.modalita[modeId] = state;
+        }
+        touch(save);
+        return state;
+    }
+
     /** Statistiche persistenti di UN torneo: { attempts, completions }, mai null — sopravvivono ad Abbandona/Ricomincia (vedi il commento su save.tournamentStats in load()). */
     function getTournamentStats(tournamentId) {
         const save = load();
@@ -1247,6 +1273,8 @@
         getTournamentState: getTournamentState,
         setTournamentState: setTournamentState,
         getTournamentStats: getTournamentStats,
+        getModeState: getModeState,
+        setModeState: setModeState,
         getTutorial: getTutorial,
         setTutorial: setTutorial,
         getStoryState: getStoryState,

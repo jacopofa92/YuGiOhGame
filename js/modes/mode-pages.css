@@ -1,0 +1,193 @@
+/*
+ * mode-pages.css — Le pagine di scelta delle modalità (puzzle.html,
+ * rivincite.html, torre.html). Stesso linguaggio oro/egizio del menu
+ * Tutorial (tutorial.html), da cui prende misure e colori, in un file
+ * condiviso: tre copie dello stesso stile andrebbero alla deriva.
+ */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
+html, body { min-height: 100%; }
+:root {
+    --gold: #f7d774;
+    --gold-strong: #f39c12;
+    --ink: #f3ecd9;
+    --ink-dim: #b9ae92;
+    --panel: rgba(16, 13, 9, 0.82);
+    --line: rgba(247, 215, 116, 0.28);
+    --done: #7fd18b;
+    --danger: #e0806b;
+}
+body {
+    font-family: 'Arial', sans-serif;
+    color: var(--ink);
+    background: #0b0d14 url('../../images/background/ra.jpg') center/cover fixed no-repeat;
+    min-height: 100vh;
+}
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background: linear-gradient(180deg, rgba(6,7,12,0.62) 0%, rgba(6,7,12,0.76) 60%, rgba(4,5,8,0.88) 100%);
+    pointer-events: none;
+}
+.mp-main {
+    position: relative;
+    z-index: 1;
+    width: min(780px, 100%);
+    margin: 0 auto;
+    padding: 22px 16px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.mp-intro { color: var(--ink-dim); font-size: 0.95rem; line-height: 1.45; }
+.mp-riepilogo {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 22px;
+    padding: 10px 14px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--panel);
+    font-size: 0.9rem;
+    color: var(--ink-dim);
+}
+.mp-riepilogo strong { color: var(--gold); font-variant-numeric: tabular-nums; }
+.mp-sezione {
+    font-family: Georgia, 'Times New Roman', serif;
+    color: var(--gold);
+    font-size: 0.82rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin: 10px 0 8px;
+}
+.mp-elenco { display: flex; flex-direction: column; gap: 10px; }
+.mp-voce {
+    display: grid;
+    grid-template-columns: 54px 1fr auto;
+    gap: 14px;
+    align-items: center;
+    padding: 14px 16px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--panel);
+    color: inherit;
+    text-decoration: none;
+    text-align: left;
+    font: inherit;
+    width: 100%;
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+}
+.mp-voce:hover, .mp-voce:focus-visible {
+    border-color: var(--gold);
+    box-shadow: 0 0 18px rgba(247, 215, 116, 0.18);
+    outline: none;
+}
+.mp-voce:active { transform: scale(0.985); }
+.mp-voce.is-fatta { border-color: rgba(127, 209, 139, 0.45); }
+.mp-emblema {
+    width: 54px;
+    height: 54px;
+    display: grid;
+    place-items: center;
+    font-size: 1.6rem;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, rgba(247,215,116,0.32), rgba(80,55,15,0.35) 70%);
+    border: 1px solid var(--line);
+    overflow: hidden;
+}
+.mp-emblema img { width: 100%; height: 100%; object-fit: cover; object-position: center 20%; }
+.mp-titolo {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.1rem;
+    color: var(--gold);
+    text-wrap: balance;
+}
+.mp-desc { font-size: 0.88rem; color: var(--ink-dim); line-height: 1.4; margin-top: 3px; }
+.mp-meta { font-size: 0.75rem; color: var(--ink-dim); margin-top: 6px; letter-spacing: 0.03em; }
+.mp-stato {
+    font-size: 0.78rem;
+    white-space: nowrap;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    color: var(--ink-dim);
+}
+.mp-stato--stelle { color: var(--gold); border-color: rgba(247, 215, 116, 0.5); letter-spacing: 0.08em; }
+.mp-stato--fatta { color: var(--done); border-color: rgba(127, 209, 139, 0.5); }
+
+/* Pulsanti delle pagine (Torre, scelta livello delle Rivincite). */
+.mp-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 1px solid rgba(247, 215, 116, 0.55);
+    background: linear-gradient(180deg, rgba(247,215,116,0.22), rgba(243,156,18,0.12));
+    color: var(--gold);
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1rem;
+    cursor: pointer;
+    text-decoration: none;
+}
+.mp-btn:hover, .mp-btn:focus-visible { border-color: var(--gold); box-shadow: 0 0 16px rgba(247,215,116,0.25); outline: none; }
+.mp-btn:active { transform: scale(0.97); }
+.mp-btn--secondario { background: transparent; border-color: var(--line); color: var(--ink-dim); font-family: Arial, sans-serif; font-size: 0.85rem; }
+.mp-btn--pericolo { border-color: rgba(224,128,107,0.5); color: var(--danger); background: transparent; font-family: Arial, sans-serif; font-size: 0.85rem; }
+
+/* Finestra di scelta (livello delle Rivincite, premio della Torre). */
+.mp-fondo {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    background: rgba(4, 5, 8, 0.72);
+}
+.mp-fondo[hidden] { display: none; }
+.mp-finestra {
+    width: min(460px, 100%);
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+    padding: 20px;
+    border-radius: 14px;
+    border: 1px solid rgba(247, 215, 116, 0.45);
+    background: rgba(16, 13, 9, 0.97);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.mp-finestra h2 { font-family: Georgia, 'Times New Roman', serif; color: var(--gold); font-size: 1.2rem; font-weight: normal; text-wrap: balance; }
+.mp-finestra p { color: var(--ink-dim); font-size: 0.9rem; line-height: 1.45; }
+.mp-scelte { display: flex; flex-direction: column; gap: 10px; }
+.mp-scelta {
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    gap: 12px;
+    align-items: center;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: rgba(247, 215, 116, 0.06);
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.mp-scelta:hover, .mp-scelta:focus-visible { border-color: var(--gold); outline: none; box-shadow: 0 0 14px rgba(247,215,116,0.2); }
+.mp-scelta-icona { font-size: 1.5rem; text-align: center; }
+.mp-scelta-nome { font-family: Georgia, 'Times New Roman', serif; color: var(--gold); font-size: 1rem; }
+.mp-scelta-desc { font-size: 0.82rem; color: var(--ink-dim); margin-top: 2px; line-height: 1.35; }
+
+@media (max-width: 520px) {
+    .mp-voce { grid-template-columns: 44px 1fr; padding: 12px; gap: 12px; }
+    .mp-emblema { width: 44px; height: 44px; font-size: 1.3rem; }
+    .mp-stato { grid-column: 2; justify-self: start; }
+}
+@media (prefers-reduced-motion: reduce) { .mp-voce, .mp-btn { transition: none; } }

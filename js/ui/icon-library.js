@@ -136,6 +136,27 @@
             <circle cx="10.2" cy="18" r="1" fill="#0b0d1c" opacity="0.6"/>
             <circle cx="13.4" cy="19.2" r="0.7" fill="#0b0d1c" opacity="0.6"/>
         `,
+        // Puzzle — il Puzzle del Millennio: piramide ROVESCIATA con l'Occhio
+        // (dritta, con un punto al centro, si leggeva come un cartello di
+        // pericolo).
+        puzzle: `
+            <path d="M2.8 3.4 H21.2 L12 21.2 Z" fill="currentColor"/>
+            <path d="M7.6 8.6 C9.4 6.7 14.6 6.7 16.4 8.6 C14.6 10.5 9.4 10.5 7.6 8.6 Z" fill="#0b0d1c" opacity="0.75"/>
+            <circle cx="12" cy="8.6" r="1.1" fill="currentColor"/>
+            <path d="M12 10.6 V15.2" stroke="#0b0d1c" stroke-width="1.2" opacity="0.6"/>
+        `,
+        // Rivincite — due carte incrociate.
+        rematch: `
+            <rect x="3.5" y="5" width="9.5" height="14" rx="1.4" fill="currentColor" transform="rotate(-12 8.2 12)"/>
+            <rect x="11" y="5" width="9.5" height="14" rx="1.4" fill="currentColor" opacity="0.82" transform="rotate(12 15.8 12)"/>
+            <path d="M10 12 H14 M12 10 V14" stroke="#0b0d1c" stroke-width="1.4" stroke-linecap="round"/>
+        `,
+        // Torre dei Duellanti — torre a gradoni.
+        tower: `
+            <path d="M8 21.4 V8.5 L12 3 L16 8.5 V21.4 Z" fill="currentColor"/>
+            <path d="M5 21.4 V14 H8 M19 21.4 V14 H16" stroke="currentColor" stroke-width="1.8" fill="none"/>
+            <path d="M10.3 12 H13.7 M10.3 16 H13.7" stroke="#0b0d1c" stroke-width="1.3" opacity="0.6"/>
+        `,
         // Portafoglio — sacchetto con monete.
         wallet: `
             <path d="M6 9 C6 6 8.5 3.4 12 3.4 C15.5 3.4 18 6 18 9 L19 9.4 C20 9.8 20.3 11 19.6 11.8 L18.4 13.1 C18.9 17.3 15.9 20.6 12 20.6 C8.1 20.6 5.1 17.3 5.6 13.1 L4.4 11.8 C3.7 11 4 9.8 5 9.4 Z" fill="currentColor"/>

@@ -74,6 +74,68 @@
         kaibaTournament: 'torneo-kaiba.html'
     };
 
+    // =================================================================
+    // EXTRA — MODALITÀ AGGIUNTIVE (Puzzle, Rivincite, Torre dei Duellanti)
+    // =================================================================
+    // Tutto ciò che questo file sa delle modalità aggiuntive sta in QUESTO
+    // blocco. Nel resto del file restano solo chiamate di una riga a
+    // `ModalitaExtra`, ciascuna marcata "EXTRA modalità". Senza una
+    // modalità registrata ogni funzione qui sotto risponde "niente da fare"
+    // e il file si comporta esattamente come prima che esistessero.
+    //
+    // Ogni modalità vive in un file suo in js/modes/ e si registra PRIMA
+    // di questo file in window.ModalitaDuello[<mode>] (contratto tipizzato
+    // in types/modalita.d.ts, `ModalitaDuello`). Il motore di Duel
+    // Monsters (js/engine/, effetti delle carte, IA) non sa che le
+    // modalità esistono e resta riusabile così com'è: cambiano soltanto la
+    // preparazione del duello e ciò che succede intorno.
+    const ModalitaExtra = (function () {
+        /** @type {any} */
+        const m = (window.ModalitaDuello && window.ModalitaDuello[mode]) || null;
+        return {
+            /** La pagina a cui si torna a fine duello, o null. */
+            urlRitorno: () => (m && m.urlRitorno) || null,
+            /** Chi sei in questo duello, se non sei te stesso (null altrimenti). */
+            giocatore: () => (m && typeof m.giocatore === 'function' ? m.giocatore() : null),
+            /** Prepara e avvia il duello al posto di initGame; false se non tocca a lei. */
+            avvia: () => {
+                if (!m || typeof m.avvia !== 'function') return false;
+                m.avvia();
+                return true;
+            },
+            /** Niente battute automatiche dei duellanti (il Puzzle). */
+            senzaDialoghi: () => !!(m && m.senzaDialoghi),
+            /** 'player'/'bot' se la modalità decide chi comincia, null per la morra. */
+            chiComincia: () => {
+                const chi = m && typeof m.chiComincia === 'function' ? m.chiComincia() : null;
+                return chi === 'player' || chi === 'bot' ? chi : null;
+            },
+            /** Vero se la fine del duello è tutta della modalità (niente record, Sfide generiche, premi normali). */
+            esclusiva: () => !!(m && m.esclusiva),
+            /** Fine duello: la modalità aggiorna il suo stato e torna le voci da mostrare. */
+            chiudi: (vinto, abbandono) => (m && typeof m.chiudi === 'function' ? (m.chiudi(vinto, abbandono) || []) : []),
+            /**
+             * Fine di un duello di una modalità ESCLUSIVA: le sue voci, il
+             * salvataggio "toccato" e la schermata finale. Stesso schema del
+             * Tutorial in finish(), qui per non spargere la modalità nel file.
+             */
+            finisciEsclusiva: (playerWon, abbandono) => {
+                const premi = m && typeof m.chiudi === 'function' ? (m.chiudi(playerWon === true, abbandono) || []) : [];
+                if (window.SaveManager) {
+                    const save = SaveManager.load();
+                    if (save) SaveManager.touch(save);
+                }
+                const torna = () => window.location.replace(session.returnUrl);
+                if (window.DuelCinematics) {
+                    DuelCinematics.showOutcome({ playerWon: playerWon, session: session, record: null, rewards: premi, onContinue: torna });
+                } else {
+                    torna();
+                }
+            }
+        };
+    })();
+    // ======================== FINE EXTRA =============================
+
     // Avversari "senza volto": modalità in cui non stiamo sfidando un
     // personaggio del database ma un generico Bot o un giocatore online.
     const GENERIC_OPPONENTS = {
@@ -162,6 +224,9 @@
             image: 'images/characters/mirror.jpg',
             icon: '👤'
         };
+        // EXTRA modalità: nelle Rivincite giochi nei panni di qualcun altro.
+        const altro = ModalitaExtra.giocatore();
+        if (altro && altro.name) return Object.assign({}, io, altro);
         if (mode !== 'story' || typeof storyCampaignsDatabase === 'undefined') return io;
         const campagna = storyCampaignsDatabase.find((c) => c.id === params.get('campaign'));
         if (!campagna) return io;
@@ -312,7 +377,8 @@
                     // Da una prova di torneo si torna DENTRO il torneo, non
                     // sulla mappa della campagna: è lì che si sta giocando.
                     + (params.get('torneo') ? '&torneo=' + encodeURIComponent(params.get('torneo')) : '')
-                : (RETURN_URLS[mode] || 'index.html')),
+                // EXTRA modalità: ognuna torna alla sua pagina.
+                : (ModalitaExtra.urlRitorno() || RETURN_URLS[mode] || 'index.html')),
         started: false,
         finished: false
     };
@@ -560,11 +626,13 @@
                 // Mani, mazzi e Life Point preparati, poi il nonno che
                 // spiega passo per passo (js/tutorial/tutorial-duel.js).
                 TutorialDuel.avvia();
+            } else if (ModalitaExtra.avvia()) {
+                // EXTRA modalità: la modalità ha preparato e avviato il duello.
             } else if (typeof initGame === 'function') {
                 initGame();
             }
             if (typeof setupPhaseStepper === 'function') setupPhaseStepper();
-            if (mode !== 'sandbox' && mode !== 'tutorial' && window.DuelDialogues) {
+            if (mode !== 'sandbox' && mode !== 'tutorial' && !ModalitaExtra.senzaDialoghi() && window.DuelDialogues) {
                 setTimeout(() => DuelDialogues.battleStart(), 900);
             }
         };
@@ -593,6 +661,14 @@
             // imparare a evocare e a mettere la Trappola nel primo turno.
             if (mode === 'tutorial') {
                 window.DUEL_STARTING_ROLE = 'player';
+                beginMatch();
+                return null;
+            }
+            // EXTRA modalità: il Puzzle (e la Torre con l'oggetto "parti
+            // per primo") decide da sé chi comincia, senza morra.
+            const giaDeciso = ModalitaExtra.chiComincia();
+            if (giaDeciso) {
+                window.DUEL_STARTING_ROLE = giaDeciso;
                 beginMatch();
                 return null;
             }
@@ -648,6 +724,10 @@
             }
             return;
         }
+
+        // EXTRA modalità: il Puzzle non è una partita normale (niente
+        // record, Sfide generiche o premi di fine duello), decide tutto lui.
+        if (ModalitaExtra.esclusiva()) { ModalitaExtra.finisciEsclusiva(playerWon, abbandono); return; }
 
         let record = null;
         if (playerWon !== 'draw' && session.opponent.id && typeof recordCharacterResult === 'function') {
@@ -728,6 +808,9 @@
                     + ' — si sblocca battendolo in un Torneo o nella Storia.'
             });
         }
+        // EXTRA modalità: Rivincite e Torre aggiornano il loro stato (la
+        // rivincita vinta, il piano raggiunto) e aggiungono le loro voci.
+        rewards = rewards.concat(ModalitaExtra.chiudi(playerWon === true, abbandono));
         // A fine duello il salvataggio va sempre "toccato" (aggiorna
         // l'Ultimo salvataggio in Profilo), anche per un Duello Demo/Bot
         // generico senza record da aggiornare — recordCharacterResult qui

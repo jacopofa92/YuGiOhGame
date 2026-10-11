@@ -4088,6 +4088,7 @@
     <script src="js/ui/bot-speed.js"></script>
     <link rel="stylesheet" href="js/ui/duel-dialogues.css">
 <link rel="stylesheet" href="js/tutorial/tutorial-duel.css">
+<link rel="stylesheet" href="js/modes/modes.css">
     <!-- Visualizzazione ologramma (js/ui/hologram-setting.js): stessa
          ragione di posizione del file qui sopra — scrive `data-ologramma`
          su <html> e va letto prima che il Terreno nasca. -->
@@ -4627,6 +4628,13 @@
 <!-- Morra cinese pre-duello (decide chi gioca per primo): deve stare
      PRIMA di js/duel-session.js, che la chiama in start(). -->
 <script src="js/ui/duel-rps.js"></script>
+<!-- Modalità con un file loro (Puzzle, Rivincite, Torre dei Duellanti): come
+     il Tutorial cambiano solo la preparazione del duello e ciò che succede
+     intorno, mai il motore. Devono stare PRIMA di js/duel-session.js, che le
+     legge da window.ModalitaDuello quando viene caricato. Fuori dalla loro
+     modalità non fanno nulla. -->
+<script src="js/data/puzzles-db.js"></script>
+<script src="js/modes/puzzle-mode.js"></script>
 <script src="js/duel-session.js"></script>
 <script src="js/ui/duel-dialogues.js"></script>
 <!-- Lezione guidata col nonno (?mode=tutorial): come la sandbox, un file a

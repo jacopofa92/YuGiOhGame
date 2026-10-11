@@ -1,0 +1,77 @@
+/*
+ * modes.css — Gli elementi a schermo delle modalità (js/modes/) durante il
+ * duello: per ora il riquadro dell'obiettivo del Puzzle. Sta sopra il
+ * Terreno e i riscontri del duello (z-index 10040) ma SOTTO i modali
+ * (100000): una scelta di carta deve poterlo coprire.
+ */
+/* In alto a sinistra, sotto il riquadro dell'avversario: è l'unico angolo
+ * che non copre né i mostri né la barra delle fasi (provato guardando lo
+ * schermo, a sinistra a metà altezza copriva entrambi). */
+.pz-obiettivo {
+    position: fixed;
+    left: 12px;
+    top: 118px;
+    z-index: 10050;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    max-width: min(300px, calc(100vw - 24px));
+    font-family: Arial, sans-serif;
+}
+.pz-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(247, 215, 116, 0.6);
+    background: linear-gradient(180deg, rgba(40, 30, 12, 0.94), rgba(16, 12, 6, 0.94));
+    color: #f7d774;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45), 0 0 12px rgba(247, 215, 116, 0.18);
+}
+.pz-chip:active { transform: scale(0.97); }
+.pz-pannello {
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(247, 215, 116, 0.35);
+    background: rgba(14, 11, 7, 0.92);
+    color: #f3ecd9;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
+}
+.pz-pannello[hidden] { display: none; }
+.pz-titolo {
+    font-family: Georgia, 'Times New Roman', serif;
+    color: #f7d774;
+    font-size: 1rem;
+    margin-bottom: 4px;
+}
+.pz-desc, .pz-indizio { font-size: 0.85rem; line-height: 1.4; color: #d9cfb6; }
+.pz-indizio {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed rgba(247, 215, 116, 0.3);
+    color: #f3e2a6;
+}
+.pz-indizio[hidden] { display: none; }
+.pz-azioni { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.pz-btn {
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(247, 215, 116, 0.4);
+    background: rgba(247, 215, 116, 0.1);
+    color: #f7d774;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+.pz-btn:hover, .pz-btn:focus-visible { background: rgba(247, 215, 116, 0.2); outline: none; }
+@media (max-width: 900px) {
+    .pz-obiettivo { left: 8px; top: 64px; max-width: min(260px, calc(100vw - 16px)); }
+    .pz-chip { font-size: 0.78rem; padding: 6px 10px; }
+    .pz-pannello { padding: 10px 12px; }
+    .pz-desc, .pz-indizio { font-size: 0.8rem; }
+}
