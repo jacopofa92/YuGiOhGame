@@ -2,6 +2,17 @@
 
 Ultimo aggiornamento verificato: 2026-10-11.
 
+## Nuovo nome, repository privato, sito su Cloudflare (2026-10-11)
+
+Il gioco si chiama **Yu-Gi-Oh! Millennium Duel Arena**. Il repository è ora
+privato (`jacopofa92/millennium-duel-arena`); il sito non sta più su GitHub
+Pages ma su Cloudflare Workers, che a ogni push su `main` esegue
+`npm run pubblica` e pubblica la copia minificata in `dist/`. Server
+Multiplayer: `millennium-duel-arena-relay` su Render. Suite completa su GitHub
+solo a mano o su pull request. Tutto il dettaglio (come funziona, cosa fare
+aggiungendo file o cartelle, cosa è cambiato oggi in Tutorial, Storia anime,
+Memorie Proibite, test e hosting) sta in **`PUBBLICAZIONE.md`**.
+
 ## Mage Soldier: identita' visiva e deck (2026-10-11)
 
 Il placeholder di Mage Soldier e' stato sostituito da un ritratto definitivo

@@ -1,13 +1,19 @@
-# AGENTS.md — istruzioni per un agente che lavora su YuGiOhGame
+# AGENTS.md — istruzioni per un agente che lavora su Yu-Gi-Oh! Millennium Duel Arena
 
 Duello Yu-Gi-Oh in HTML/CSS/JavaScript puro: nessun framework, nessun
 bundler, nessuna build. Ogni pagina `.html` si apre anche da `file://`, con
 `<script src>` classici in un ordine che fa parte dell'architettura. Autore
-unico (Jacopo, jacopofa92). Branch di lavoro: `main` (pubblicato da GitHub
-Pages; il server Multiplayer su Render si ridistribuisce col push su `main`).
+unico (Jacopo, jacopofa92). Repository **privato**
+`jacopofa92/millennium-duel-arena` (prima `YuGiOhGame`). Branch di lavoro:
+`main`. A ogni push Cloudflare ricrea e pubblica la copia minificata del
+gioco (GitHub Pages non si usa più) e Render ridistribuisce il server
+Multiplayer: **leggi `PUBBLICAZIONE.md`** per come funziona e per l'elenco
+completo di cosa è cambiato il 2026-10-11.
 
 ## Prima di toccare qualcosa, leggi nell'ordine
 
+0. `PUBBLICAZIONE.md` — dove gira il gioco, cosa succede a ogni push, cosa
+   fare aggiungendo file o cartelle, e i cambiamenti del 2026-10-11.
 1. `PROJECT_MAP.md` — la mappa corrente. In cima c'è la sezione
    **«Passaggio di consegne (2026-10-06)»**: cosa è stato rifatto negli
    ultimi giorni, dove sta, cosa resta da fare.
@@ -48,7 +54,14 @@ node scripts/build-cards-data.js      # dopo OGNI modifica a data/cards.json
 node tools/duello-senza-testa.js      # duelli IA contro IA in Node
 node tools/duello-gemello.js          # due motori a passo comune in Node
 node tools/impronta-partite.js f.txt  # impronta di 60 partite (prima/dopo un refactor)
+npm run pubblica                      # copia minificata in dist/ (la fa anche Cloudflare a ogni push)
+npm run verifica-pubblicazione        # confronta ogni pagina di dist/ con l'originale
 ```
+
+- Una cartella nuova letta dal gioco va aggiunta a `CARTELLE` in
+  `scripts/pubblica.js`, o online mancherà.
+- La suite su GitHub parte solo a mano o su pull request (repository privato,
+  2.000 minuti al mese): a ogni push gira solo il controllo di sintassi.
 
 ## Trappole tecniche già pagate
 
