@@ -5106,7 +5106,9 @@
                     // singole carte/condizioni di Evocazione a mano, senza
                     // passare da un vero mazzo/pescata — vedi
                     // duello-sandbox.html e js/engine/duel-sandbox.js.
-                    { icon: 'sandbox', label: 'Demo Duello Sandbox', action: 'link', href: 'duello-sandbox.html' }
+                    // `soloAdmin`: strumento di prova, lo vede solo
+                    // l'amministratore (anche la pagina lo controlla).
+                    { icon: 'sandbox', label: 'Demo Duello Sandbox', action: 'link', href: 'duello-sandbox.html', soloAdmin: true }
                 ]
             },
             {
@@ -5183,13 +5185,19 @@
             if (obbligaLezioneSeDaFare()) return;
             const list = document.getElementById('menuList');
             list.innerHTML = '';
+            // Le voci `soloAdmin` (oggi il Duello Sandbox) le vede solo un
+            // amministratore: il menu si ridisegna ad ogni apertura, quindi
+            // basta controllarlo qui, nel momento del disegno.
+            const admin = !!(window.CloudSync && CloudSync.isAdmin());
             if (openSubmenu) {
                 list.appendChild(buildBackButton(openSubmenu.label));
-                openSubmenu.children.forEach((item) => list.appendChild(buildMenuButton(item)));
+                openSubmenu.children
+                    .filter((item) => !item.soloAdmin || admin)
+                    .forEach((item) => list.appendChild(buildMenuButton(item)));
             } else {
                 const items = (window.SaveManager && SaveManager.hasSave()) ? FULL_MENU_ITEMS : NEW_PLAYER_MENU_ITEMS;
                 items.forEach((item) => list.appendChild(buildMenuButton(item)));
-                if (window.CloudSync && CloudSync.isAdmin()) list.appendChild(buildMenuButton(ADMIN_ITEM));
+                if (admin) list.appendChild(buildMenuButton(ADMIN_ITEM));
             }
             if (window.Icons) Icons.hydrate(list);
         }

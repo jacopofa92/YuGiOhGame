@@ -25,6 +25,30 @@
 <script src="js/cloud/cloud-sync.js"></script>
 <script src="js/cloud/auto-sync.js"></script>
 <script src="js/cloud/auth-gate.js"></script>
+<!-- Il Duello Sandbox è uno strumento di prova per l'amministratore: la voce
+     del menu la vede solo lui (index.html), e chi apre questa pagina
+     scrivendo l'indirizzo viene rimandato al menu. Stesso controllo di
+     admin.html: si decide DOPO ensureApprovedSession(), perché prima
+     isAdmin() può ancora rispondere "no" (il profilo arriva in asincrono).
+     La pagina resta nascosta finché la risposta non arriva, così un
+     giocatore non la vede nemmeno per un istante. AUTH_GATE_SKIP (solo la
+     suite di test) salta anche questo controllo, come salta il gate. -->
+<script>
+(function () {
+    if (window.AUTH_GATE_SKIP) return;
+    var radice = document.documentElement;
+    radice.style.visibility = 'hidden';
+    function vaiAlMenu() { window.location.replace('index.html'); }
+    if (!window.CloudSync || !CloudSync.available) { vaiAlMenu(); return; }
+    CloudSync.waitForUser().then(function (user) {
+        if (!user) { vaiAlMenu(); return; }
+        return CloudSync.ensureApprovedSession().then(function (approvato) {
+            if (!approvato || !CloudSync.isAdmin()) { vaiAlMenu(); return; }
+            radice.style.visibility = '';
+        });
+    }).catch(vaiAlMenu);
+})();
+</script>
 <script src="js/pwa-register.js"></script>
 <link rel="stylesheet" href="js/ui/page-loader.css">
 <link rel="stylesheet" href="js/ui/topbar.css">
