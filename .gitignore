@@ -6,3 +6,7 @@ test-results/
 # ma sono ~5 MB di binario rigenerabile in un minuto con Gradle — in
 # git non ci devono finire mai.
 *.apk
+
+# Copia minificata da pubblicare (scripts/pubblica.js): si rigenera ogni
+# volta da zero, non va mai in git.
+dist/

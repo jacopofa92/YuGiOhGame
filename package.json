@@ -9,9 +9,12 @@
     "hooks": "git config core.hooksPath .githooks",
     "precommit": "node scripts/pre-commit.js",
     "sync-scripts": "node scripts/sync-script-groups.js",
-    "typecheck": "tsc -p jsconfig.json"
+    "typecheck": "tsc -p jsconfig.json",
+    "pubblica": "node scripts/pubblica.js",
+    "verifica-pubblicazione": "node scripts/verifica-pubblicazione.js"
   },
   "devDependencies": {
+    "esbuild": "^0.25.10",
     "playwright": "^1.62.1",
     "typescript": "^5.9.3"
   }

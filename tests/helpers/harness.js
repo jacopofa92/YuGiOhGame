@@ -17,7 +17,13 @@
 const path = require('path');
 
 const PROJECT_ROOT = path.resolve(__dirname, '..', '..');
-const GAME_URL = 'file:///' + path.join(PROJECT_ROOT, 'duelMonstersCore.html').split(path.sep).join('/');
+// La cartella da cui si apre il GIOCO: di solito il progetto stesso, ma
+// con YGO_RADICE_GIOCO=dist la suite gioca sulla copia minificata preparata
+// da scripts/pubblica.js — è così che si verifica che la versione da
+// pubblicare funzioni davvero, non solo che si apra. I file sorgente letti
+// dai guardrail restano quelli del progetto (PROJECT_ROOT).
+const GAME_ROOT = process.env.YGO_RADICE_GIOCO ? path.resolve(PROJECT_ROOT, process.env.YGO_RADICE_GIOCO) : PROJECT_ROOT;
+const GAME_URL = 'file:///' + path.join(GAME_ROOT, 'duelMonstersCore.html').split(path.sep).join('/');
 
 /**
  * Apre duelMonstersCore.html su `page`, salta l'eventuale intro, e aspetta che

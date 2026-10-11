@@ -4299,3 +4299,14 @@ per sé e finge la sconfitta, i finalisti del torneo portano sei Oggetti (Shadi 
 ha due), la Sacerdotessa Isis non è nel passato. Mage Soldier è un personaggio
 nuovo con ritratto segnaposto (`images/characters/mageSoldier.jpg`). Spec
 `storia-fm-fedelta` (trama + migrazione, anche dentro il torneo).
+
+Pubblicazione minificata (2026-10-11): il progetto resta senza build; la copia
+da mettere online la crea `npm run pubblica` in `dist/` (ignorata da git):
+solo pagine .html della radice, manifest.json, sw.js e le cartelle js, images,
+audio, video, assets (elenco di ciò che ENTRA, in `scripts/pubblica.js`);
+JS/CSS/HTML minificati con esbuild file per file, nomi di primo livello
+intatti, nessun commento, nessuna source map; controlla anche che ogni voce di
+APP_SHELL esista. `npm run verifica-pubblicazione` confronta ogni pagina della
+copia con l'originale; `YGO_RADICE_GIOCO=dist` fa giocare la suite sulla copia.
+Una cartella nuova che il gioco legge va aggiunta a CARTELLE in pubblica.js.
+Piano di hosting privato in memoria (Cloudflare Pages + controllo Supabase).

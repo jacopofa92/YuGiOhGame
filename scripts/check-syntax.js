@@ -36,7 +36,10 @@ const RADICE = path.join(__dirname, '..');
 // js/vendor/ sono librerie di terze parti minificate (gsap, howler, pixi,
 // supabase): non le scriviamo noi, e minificate possono usare costrutti
 // che non ha senso giudicare qui. node_modules per gli stessi motivi.
-const CARTELLE_ESCLUSE = new Set(['node_modules', '.git', 'vendor']);
+// dist/ è la copia minificata da pubblicare (scripts/pubblica.js): si
+// rigenera ogni volta, e la sua correttezza la controlla
+// scripts/verifica-pubblicazione.js, non questo script.
+const CARTELLE_ESCLUSE = new Set(['node_modules', '.git', 'vendor', 'dist']);
 
 function raccogliFile(dir, trovati) {
     for (const voce of fs.readdirSync(dir, { withFileTypes: true })) {
