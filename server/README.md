@@ -1,4 +1,4 @@
-# Yu-Gi-Oh! Duel Arena — Multiplayer: guida rapida
+# Yu-Gi-Oh! Millennium Duel Arena — Multiplayer: guida rapida
 
 ## Perché serve un server?
 
@@ -26,7 +26,7 @@ node server.js
 Vedrai:
 
 ```
-🎴 Server Duel Arena in ascolto sulla porta 8787
+🎴 Server Millennium Duel Arena in ascolto sulla porta 8787
    WebSocket endpoint: ws://<indirizzo-server>:8787
 ```
 

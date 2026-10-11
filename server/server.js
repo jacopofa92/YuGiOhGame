@@ -1,5 +1,5 @@
 /**
- * server.js — Server di Stanze per Yu-Gi-Oh! Duel Arena (Multiplayer)
+ * server.js — Server di Stanze per Yu-Gi-Oh! Millennium Duel Arena (Multiplayer)
  * =====================================================================
  * Server WebSocket "puro", scritto solo con moduli nativi di Node.js
  * (http, crypto, net) — NESSUNA dipendenza esterna, quindi non serve
@@ -402,7 +402,7 @@ function handleClientMessage(socket, raw) {
 
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Yu-Gi-Oh! Duel Arena — Server di Stanze attivo.\nConnettiti via WebSocket per giocare.');
+    res.end('Yu-Gi-Oh! Millennium Duel Arena — Server di Stanze attivo.\nConnettiti via WebSocket per giocare.');
 });
 
 server.on('upgrade', (req, socket) => {
@@ -462,7 +462,7 @@ cleanupInterval.unref(); // non deve impedire la chiusura del processo (es. dura
 
 if (require.main === module) {
     server.listen(PORT, () => {
-        console.log(`🎴 Server Duel Arena in ascolto sulla porta ${PORT}`);
+        console.log(`🎴 Server Millennium Duel Arena in ascolto sulla porta ${PORT}`);
         console.log(`   WebSocket endpoint: ws://<indirizzo-server>:${PORT}`);
     });
 }
