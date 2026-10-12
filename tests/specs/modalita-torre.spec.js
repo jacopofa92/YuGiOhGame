@@ -66,6 +66,8 @@ module.exports = {
                 document.querySelector('.tw-piano.is-attuale') && document.querySelector('.tw-piano.is-attuale').dataset.piano
             ]);
             t.assert(sfide[0] && sfide[0] === sfide[1] && sfide[2] === '1', `"Sfida" sul piano attuale (1) porta al duello giusto: ${JSON.stringify(sfide)}`);
+            t.assert(/[?&]field=torreCastelloPegasus\.jpg(?:&|$)/.test(sfide[0]),
+                `Ogni piano della Torre deve svolgersi nel field torreCastelloPegasus: ${sfide[0]}`);
 
             // Piano 1: si gioca e si vince, finendo con 6500 LP.
             await Promise.all([page.waitForURL(/duelMonstersCore\.html\?mode=torre&piano=1/), page.click('#sfidaPiano')]);
@@ -207,6 +209,8 @@ module.exports = {
                 });
                 t.assert(cat.senzaMazzo.length === 0, `Avversari della Torre senza mazzo: ${JSON.stringify(cat.senzaMazzo)}`);
                 cat.campi.forEach((c) => t.assert(fs.existsSync(path.join(RADICE, 'images', 'fields', c)), `Il campo ${c} esiste`));
+                t.assert(cat.campi.length > 0 && cat.campi.every((c) => c === 'torreCastelloPegasus.jpg'),
+                    `Fasce e boss devono condividere il field della Torre di Pegasus: ${JSON.stringify(cat.campi)}`);
             } finally {
                 await p.close();
             }

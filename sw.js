@@ -449,7 +449,8 @@
 // v228: Equip con piu' bersagli non finiscono piu' al Cimitero durante la scelta.
 // v229: Collana del Comando e Carro Armato Ingranaggio Antico: il bersaglio lo sceglie il giocatore.
 // v230: Torre dei Duellanti disegnata come una vera torre da scalare.
-const CACHE_NAME = 'ygo-duel-arena-v230';
+// v231: UI Torre rinnovata e ambienti field più organici, con vento continuo sul Dirigibile.
+const CACHE_NAME = 'ygo-duel-arena-v231';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

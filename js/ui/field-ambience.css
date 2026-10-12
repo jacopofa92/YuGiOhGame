@@ -147,6 +147,12 @@
             var(--fa-tinta) 41px 42.4px,
             transparent 42.4px 113px);
 }
+.fa-sabbia-strisce {
+    background-image: var(--fa-sabbia-scie);
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    mix-blend-mode: screen;
+}
 
 /* =====================================================================
    VENTO — il Dirigibile di Kaiba
@@ -178,6 +184,14 @@
     mix-blend-mode: screen;
     -webkit-mask-image: radial-gradient(ellipse 76% 64% at 50% 50%, #000 30%, transparent 88%);
     mask-image: radial-gradient(ellipse 76% 64% at 50% 50%, #000 30%, transparent 88%);
+}
+.fa-vento-nube,
+.fa-vento-correnti {
+    /* Lastra procedurale diversa a ogni ingresso nel field. Anche la nube
+       usa filamenti curvi: nessuna banda uniforme scorre sul Dirigibile. */
+    background-image: var(--fa-vento-textura);
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
 }
 
 /* =====================================================================
@@ -325,6 +339,27 @@
     mix-blend-mode: screen;
 }
 .fa-atmo-foglie { background-size: 157px 211px, 239px 173px, 311px 257px, 197px 293px, 373px 229px; }
+
+/* Le classi particellari ricevono dal JS una trama canvas non periodica.
+   `cover` evita che la stessa costellazione venga ripetuta in griglia. */
+.fa-atmo-moti,
+.fa-atmo-foglie,
+.fa-atmo-neve,
+.fa-atmo-braci,
+.fa-atmo-cenere,
+.fa-atmo-bolle {
+    background-image: var(--fa-trama-organica);
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+.fa-atmo-caustiche,
+.fa-atmo-rune,
+.fa-atmo-scariche,
+.fa-atmo-riflessi {
+    background-image: var(--fa-trama-organica);
+    background-size: cover;
+    background-repeat: no-repeat;
+}
 
 /* =====================================================================
    FRONTE DI GUERRA — eventi localizzati per i due field Grande Guerra.
@@ -487,6 +522,14 @@
     background-size: 251px 183px, 347px 271px, 419px 307px, 293px 229px, 487px 353px;
     mix-blend-mode: screen;
 }
+.fa-firma-onde,
+.fa-firma-scariche,
+.fa-firma-raggi,
+.fa-firma-riflessi {
+    background-image: var(--fa-trama-organica);
+    background-size: cover;
+    background-repeat: no-repeat;
+}
 .fa-firma-foglie { transform: skewX(-12deg); }
 .fa-firma-petali {
     --fa-tinta: rgba(255,183,222,.92) !important;
@@ -507,6 +550,16 @@
     background-size: 220px 220px, 330px 330px, 410px 410px;
 }
 .fa-firma-braci { --fa-tinta: rgba(255,173,50,.96) !important; background-size: 113px 197px, 181px 271px, 239px 337px, 151px 229px, 293px 401px; }
+.fa-firma-foglie,
+.fa-firma-petali,
+.fa-firma-pollini,
+.fa-firma-lucciole,
+.fa-firma-cristalli,
+.fa-firma-braci {
+    background-image: var(--fa-trama-organica);
+    background-size: cover;
+    background-repeat: no-repeat;
+}
 .fa-firma-raggi {
     background:
         conic-gradient(from 202deg at 50% -18%, transparent 0 7%, var(--fa-tinta-debole) 8% 10%, transparent 11% 17%, var(--fa-tinta-debole) 18% 20%, transparent 21% 100%);

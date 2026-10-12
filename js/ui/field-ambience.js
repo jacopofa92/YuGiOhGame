@@ -274,6 +274,23 @@
         }
     };
 
+    // Sul Dirigibile il vento non è un evento che compare ogni tanto: è il
+    // movimento stesso del mezzo. Una timeline lunga tiene sempre viva una
+    // corrente leggera; circa una passata su tre diventa una raffica forte.
+    // Gli altri field della famiglia vento (montagna/Torre) conservano invece
+    // le pause naturali del loro profilo.
+    PROFILI.dirigibile = {
+        coreografia: 'ventoContinuo',
+        pausa: [60, 260],
+        ritmoCasuale: 'vento-continuo',
+        tinta: PROFILI.vento.tinta,
+        strati: [
+            { classe: 'fa-vento-nube', piano: 'fondo', quota: .38, durata: 10.5, ritardo: 0, deriva: 18 },
+            { classe: 'fa-vento-correnti', piano: 'fondo', quota: .6, durata: 7.8, ritardo: .1, deriva: 30 },
+            { classe: 'fa-vento-correnti', piano: 'primopiano', quota: .3, durata: 5.9, ritardo: .35, deriva: 48 }
+        ]
+    };
+
     // Variante industriale della scansione KaibaCorp: conserva la base
     // tecnologica ma aggiunge un livello dedicato alle scariche locali.
     PROFILI.industria = {
@@ -297,7 +314,7 @@
         ['arenaCastelloPegasus.jpg', 'castello-candele', 'fuoco', 'candele-viola'],
         ['torreCastelloPegasus.jpg', 'torre-vento-verde', 'natura', 'petali-alti'],
         ['stadioKaiba.jpg', 'stadio-flash-spalti', 'spalti', 'spalti-kaiba'],
-        ['dirigibileKaibaCorp.jpg', 'dirigibile-alta-quota', 'vento', 'vento-blu'],
+        ['dirigibileKaibaCorp.jpg', 'dirigibile-alta-quota', 'dirigibile', 'vento-blu'],
         ['torreDeiDuelli.jpg', 'torre-cielo', 'vento', 'vento-solare'],
         ['torreDeiDuelliColosseo.jpg', 'torre-colosseo', 'tech', 'tech-celeste'],
         ['torreDeiDuelliShadow.jpg', 'torre-shadow', 'ombra', 'vuoto-viola'],
@@ -333,8 +350,9 @@
         guerra: { piena: 'rgba(255,210,112,.96)', debole: 'rgba(91,87,78,.56)' },
         energia: { piena: 'rgba(255,116,176,.92)', debole: 'rgba(120,35,215,.5)' },
         citta: { piena: 'rgba(234,255,184,.82)', debole: 'rgba(100,190,145,.34)' },
-        industria: { piena: 'rgba(173,231,255,.86)', debole: 'rgba(255,87,64,.36)' }
-        ,spalti: { piena: 'rgba(235,249,255,.98)', debole: 'rgba(97,190,255,.48)' }
+        dirigibile: { piena: 'rgba(255,255,255,.88)', debole: 'rgba(224,240,255,.5)' },
+        industria: { piena: 'rgba(173,231,255,.86)', debole: 'rgba(255,87,64,.36)' },
+        spalti: { piena: 'rgba(235,249,255,.98)', debole: 'rgba(97,190,255,.48)' }
     };
 
     // Terzo accento visivo: è la "firma" del luogo, non del profilo.
@@ -520,6 +538,125 @@
         return `url("${tela.toDataURL('image/png')}")`;
     }
 
+    /**
+     * Le particelle dei profili organici non devono rivelare la piastrella
+     * regolare dei radial-gradient CSS. Ogni ingresso nel field costruisce
+     * quindi una trama diversa: posizioni, dimensioni, inclinazioni e vuoti
+     * sono casuali. Il canvas viene rasterizzato una volta sola; durante il
+     * duello GSAP continua ad animare soltanto transform e opacity.
+     */
+    function texturaAtmosfera(tinta, classe, variante) {
+        const tela = document.createElement('canvas');
+        tela.width = 1024;
+        tela.height = 560;
+        const ctx = tela.getContext('2d');
+        if (!ctx) return null;
+        const bolle = /bolle|onde/.test(classe);
+        const cristalli = /neve|cristalli/.test(classe);
+        const calde = /braci|cenere|lucciole|pollini/.test(classe);
+        const foglie = /foglie|petali/.test(classe);
+        const scariche = /scariche/.test(classe);
+        const simboli = /rune/.test(classe);
+        const fasci = /raggi|riflessi/.test(classe);
+        const acqua = /caustiche/.test(classe);
+
+        if (scariche) {
+            for (let i = 0; i < 5 + Math.floor(Math.random() * 5); i++) {
+                let x = fraDueNumeri(40, tela.width - 40);
+                let y = fraDueNumeri(20, tela.height * .45);
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                for (let tratto = 0; tratto < 4 + Math.floor(Math.random() * 5); tratto++) {
+                    x += fraDueNumeri(-46, 46);
+                    y += fraDueNumeri(22, 68);
+                    ctx.lineTo(x, y);
+                }
+                ctx.strokeStyle = Math.random() < .5 ? tinta.piena : tinta.debole;
+                ctx.globalAlpha = fraDueNumeri(.26, .72);
+                ctx.lineWidth = fraDueNumeri(.8, 2.1);
+                ctx.stroke();
+            }
+            return `url("${tela.toDataURL('image/png')}")`;
+        }
+        if (simboli || acqua) {
+            const quantiSegni = acqua ? 14 : 9;
+            for (let i = 0; i < quantiSegni; i++) {
+                const x = Math.random() * tela.width;
+                const y = Math.random() * tela.height;
+                const rx = fraDueNumeri(18, acqua ? 92 : 54);
+                const ry = rx * fraDueNumeri(.35, .82);
+                ctx.beginPath();
+                ctx.ellipse(x, y, rx, ry, fraDueNumeri(-.5, .5), fraDueNumeri(0, 1.2), fraDueNumeri(3.7, 6.1));
+                ctx.strokeStyle = Math.random() < .5 ? tinta.piena : tinta.debole;
+                ctx.globalAlpha = fraDueNumeri(.12, .42);
+                ctx.lineWidth = fraDueNumeri(.7, 1.8);
+                ctx.stroke();
+            }
+            return `url("${tela.toDataURL('image/png')}")`;
+        }
+        if (fasci) {
+            for (let i = 0; i < 4 + Math.floor(Math.random() * 4); i++) {
+                const x = fraDueNumeri(-100, tela.width);
+                const largo = fraDueNumeri(18, 80);
+                const deriva = fraDueNumeri(-170, 170);
+                const grad = ctx.createLinearGradient(x, 0, x + deriva, tela.height);
+                grad.addColorStop(0, 'rgba(255,255,255,0)');
+                grad.addColorStop(.5, Math.random() < .5 ? tinta.piena : tinta.debole);
+                grad.addColorStop(1, 'rgba(255,255,255,0)');
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x + largo, 0);
+                ctx.lineTo(x + deriva + largo * .35, tela.height);
+                ctx.lineTo(x + deriva, tela.height);
+                ctx.closePath();
+                ctx.globalAlpha = fraDueNumeri(.06, .22);
+                ctx.fillStyle = grad;
+                ctx.fill();
+            }
+            return `url("${tela.toDataURL('image/png')}")`;
+        }
+        const quanti = bolle ? 34 : cristalli ? 62 : foglie ? 48 : calde ? 72 : 54;
+
+        for (let i = 0; i < quanti; i++) {
+            const x = Math.random() * tela.width;
+            const y = Math.random() * tela.height;
+            const misura = .8 + Math.pow(Math.random(), 1.8) * (foglie ? 6.5 : cristalli ? 4.2 : 3.8);
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(Math.random() * Math.PI);
+            ctx.globalAlpha = .18 + Math.random() * .65;
+            ctx.strokeStyle = Math.random() < .46 ? tinta.piena : tinta.debole;
+            ctx.fillStyle = ctx.strokeStyle;
+            if (bolle) {
+                ctx.lineWidth = .7 + Math.random() * 1.2;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, misura, misura * fraDueNumeri(.72, 1.25), 0, 0, Math.PI * 2);
+                ctx.stroke();
+            } else if (cristalli) {
+                ctx.beginPath();
+                ctx.moveTo(0, -misura * 1.5);
+                ctx.lineTo(misura * .7, 0);
+                ctx.lineTo(0, misura * 1.5);
+                ctx.lineTo(-misura * .7, 0);
+                ctx.closePath();
+                ctx.fill();
+            } else if (foglie) {
+                ctx.beginPath();
+                ctx.ellipse(0, 0, misura * 1.7, misura * .55, 0, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                ctx.beginPath();
+                ctx.arc(0, 0, misura, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+        // Una trama non periodica per field: cover, mai repeat. La variante
+        // partecipa indirettamente rigenerando il canvas a ogni cambio arena.
+        void variante;
+        return `url("${tela.toDataURL('image/png')}")`;
+    }
+
     function creaElementi(ambiente, campo) {
         const tinta = ambiente.tinta ? ambiente.tinta(campo) : { piena: '#fff', debole: 'rgba(255,255,255,0.3)' };
         // La grana serve solo a chi la usa davvero (oggi la sabbia): per
@@ -533,9 +670,17 @@
             el.style.setProperty('--fa-tinta', tinta.piena);
             el.style.setProperty('--fa-tinta-debole', tinta.debole);
             if (grana) el.style.setProperty('--fa-grana', grana);
-            if (strato.classe === 'fa-vento-correnti') {
+            if (strato.classe === 'fa-vento-correnti' || strato.classe === 'fa-vento-nube') {
                 const vento = texturaVento(tinta, strato.piano === 'primopiano');
                 if (vento) el.style.setProperty('--fa-vento-textura', vento);
+            }
+            if (strato.classe === 'fa-sabbia-strisce') {
+                const scie = texturaVento(tinta, true);
+                if (scie) el.style.setProperty('--fa-sabbia-scie', scie);
+            }
+            if (/fa-(?:atmo-(?:moti|foglie|neve|braci|cenere|bolle|caustiche|rune|scariche|riflessi)|firma-(?:foglie|petali|pollini|lucciole|cristalli|braci|onde|scariche|raggi|riflessi))/.test(strato.classe)) {
+                const trama = texturaAtmosfera(tinta, strato.classe, ambiente.variante);
+                if (trama) el.style.setProperty('--fa-trama-organica', trama);
             }
             el.setAttribute('aria-hidden', 'true');
             document.body.appendChild(el);
@@ -668,6 +813,50 @@
         });
     }
 
+    /**
+     * Corrente d'alta quota continua del Dirigibile. La direzione rimane
+     * coerente (il mezzo avanza), ma ogni lastra curva a quote diverse e
+     * una minoranza delle passate accelera e illumina le scie: sono i colpi
+     * di vento forti richiesti, non un metronomo che alterna acceso/spento.
+     */
+    function ventoContinuo(tl) {
+        const rafficaForte = Math.random() < .34;
+        const forza = rafficaForte ? fraDueNumeri(.82, 1.08) : fraDueNumeri(.36, .58);
+        const velocita = rafficaForte ? fraDueNumeri(.66, .84) : fraDueNumeri(.92, 1.18);
+
+        elementi.forEach(({ el, cfg }, indice) => {
+            const corsa = Math.max(0, el.offsetWidth - window.innerWidth);
+            const durata = cfg.durata * velocita * fraDueNumeri(.92, 1.08);
+            const deviazione = cfg.deriva * fraDueNumeri(.45, 1.15) * (Math.random() < .5 ? -1 : 1);
+            const picco = cfg.quota * forza;
+            gsap.set(el, { x: -corsa, y: -deviazione * .25, rotation: fraDueNumeri(-.7, .7), opacity: 0 });
+            tl.to(el, { opacity: picco * .72, duration: .45, ease: 'sine.out' }, cfg.ritardo)
+              .to(el, {
+                  x: -corsa * .68, y: deviazione * .28,
+                  rotation: fraDueNumeri(-1.1, 1.1), duration: durata * .3, ease: 'none'
+              }, cfg.ritardo)
+              .to(el, {
+                  x: -corsa * .32, y: -deviazione * .18,
+                  rotation: fraDueNumeri(-.65, .65), duration: durata * .38, ease: 'sine.inOut'
+              }, cfg.ritardo + durata * .3)
+              .to(el, {
+                  x: 0, y: deviazione * .22, rotation: 0,
+                  duration: durata * .32, ease: 'none'
+              }, cfg.ritardo + durata * .68)
+              .to(el, { opacity: 0, duration: .4, ease: 'sine.in' }, cfg.ritardo + durata - .4);
+
+            // La raffica forte ha due spinte irregolari sovrapposte alla
+            // corrente base; sugli altri cicli l'opacità resta più stabile.
+            if (rafficaForte) {
+                const t = cfg.ritardo + durata * fraDueNumeri(.2, .46);
+                tl.to(el, { opacity: Math.min(1, picco), duration: .18, ease: 'power2.out' }, t)
+                  .to(el, { opacity: picco * fraDueNumeri(.48, .68), duration: fraDueNumeri(.55, 1.1), ease: 'sine.out' }, t + .18);
+            } else if (indice > 0) {
+                tl.to(el, { opacity: picco * fraDueNumeri(.78, 1), duration: .9, ease: 'sine.inOut' }, cfg.ritardo + durata * .48);
+            }
+        });
+    }
+
     // =================================================================
     // Coreografia 'scansione' — il campo olografico della KaibaCorp
     // =================================================================
@@ -684,6 +873,8 @@
      */
     function scansione(tl) {
         const durata = fraDueNumeri(2.4, 3.4);
+        const verso = Math.random() < .5 ? 1 : -1;
+        const inclinazione = fraDueNumeri(-1.6, 1.6);
         // Quanto deve percorrere la lama: l'altezza VERA della fascia, non
         // una percentuale ricopiata dal CSS. La si prende dalla griglia,
         // che è l'unico strato alto quanto tutta la fascia (la lama è
@@ -715,10 +906,10 @@
                 // scena per intero alle due estremità, invece di comparire
                 // e sparire a metà.
                 const alta = el.offsetHeight || 0;
-                const giu = fascia / 2 + alta;
-                gsap.set(el, { opacity: 0, y: giu });
+                const giu = (fascia / 2 + alta) * verso;
+                gsap.set(el, { opacity: 0, y: giu, rotation: inclinazione });
                 tl.to(el, { opacity: cfg.quota, duration: 0.2 }, 0.35)
-                  .to(el, { y: -giu, duration: durata, ease: 'power1.inOut' }, 0.35)
+                  .to(el, { y: -giu, x: fraDueNumeri(-18, 18), duration: durata, ease: 'power1.inOut' }, 0.35)
                   .to(el, { opacity: 0, duration: 0.3 }, durata + 0.25);
             } else {
                 // I blocchi dati: due lampi secchi mentre la lama passa,
@@ -769,11 +960,20 @@
             const dy = cfg.dy || 0;
             const scala = cfg.scala || 0;
             const rotazione = (cfg.rotazione || 0) * (Math.random() < .5 ? -1 : 1);
-            const inizio = indice * fraDueNumeri(.08, .28);
+            // Gli strati non entrano più ordinatamente uno dopo l'altro:
+            // ciascuno ha il proprio attacco, e raramente l'accento più
+            // vicino salta una passata intera lasciando respirare il field.
+            const omettiAccento = indice > 0 && Math.random() < .16;
+            const inizio = fraDueNumeri(0, Math.min(1.1, durata * .18));
             const deviazioneX = fraDueNumeri(-42, 42);
             const deviazioneY = fraDueNumeri(-36, 36);
-            gsap.set(el, { opacity: 0, x: -dx / 2, y: -dy / 2, scale: 1 - scala / 2, rotation: -rotazione / 2 });
-            tl.to(el, { opacity: cfg.quota * intensita, duration: durata * .2, ease: 'sine.out' }, inizio)
+            gsap.set(el, {
+                opacity: 0, x: -dx / 2, y: -dy / 2,
+                scale: 1 - scala / 2, rotation: -rotazione / 2,
+                transformOrigin: `${fraDueNumeri(28,72)}% ${fraDueNumeri(28,72)}%`
+            });
+            if (omettiAccento) return;
+            tl.to(el, { opacity: cfg.quota * intensita * fraDueNumeri(.78, 1), duration: durata * .2, ease: 'sine.out' }, inizio)
               .to(el, {
                   x: deviazioneX, y: deviazioneY,
                   scale: 1 + scala * .15, rotation: -rotazione * .35,
@@ -1014,7 +1214,7 @@
     }
 
     const COREOGRAFIE = {
-        attraversa, scansione, atmosfera, guerra, spalti,
+        attraversa, ventoContinuo, scansione, atmosfera, guerra, spalti,
         tempioOscuro, industria
     };
 
@@ -1055,6 +1255,16 @@
             attesa = sorte < .34 ? fraDueNumeri(min, 3800)
                 : sorte < .86 ? fraDueNumeri(4200, 9800)
                 : fraDueNumeri(10500, max);
+        } else if (ambienteAttivo.ritmoCasuale === 'vento-continuo') {
+            attesa = fraDueNumeri(min, max);
+        } else if (ambienteAttivo.coreografia === 'atmosfera') {
+            // Ambienti organici a gruppi: a volte un secondo accento segue
+            // presto il primo, più spesso arriva una pausa normale, e ogni
+            // tanto il luogo rimane quieto a lungo. Nessun metronomo.
+            const sorte = Math.random();
+            attesa = sorte < .2 ? fraDueNumeri(1200, Math.max(1800, min * .45))
+                : sorte < .86 ? fraDueNumeri(min, max * .76)
+                : fraDueNumeri(max * .82, max * 1.32);
         } else {
             attesa = fraDueNumeri(min, max);
         }
@@ -1096,7 +1306,8 @@
         // Breve però: se il giocatore ha acceso i Dettagli "Alti" apposta,
         // deve vedere entro pochi secondi che qualcosa è cambiato.
         clearTimeout(prossima);
-        prossima = setTimeout(raffica, fraDueNumeri(2500, 5000));
+        prossima = setTimeout(raffica, ambiente.ritmoCasuale === 'vento-continuo'
+            ? 120 : fraDueNumeri(2500, 5000));
         return true;
     }
 

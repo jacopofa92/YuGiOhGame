@@ -27,14 +27,14 @@
 <link rel="stylesheet" href="js/modes/mode-pages.css">
 <title>Yu-Gi-Oh! Millennium Duel Arena — Torre dei Duellanti</title>
 </head>
-<body>
+<body class="modalita-torre">
     <script src="js/ui/page-loader.js"></script>
     <div id="topbarMount"></div>
 
-    <main class="mp-main">
+    <main class="mp-main torre-main">
         <div class="mp-riepilogo" id="record"></div>
         <div id="esito"></div>
-        <div id="contenuto"></div>
+        <div id="contenuto" class="torre-layout"></div>
     </main>
 
     <!-- Conferma prima di abbandonare la scalata, con la grafica del gioco
@@ -85,9 +85,9 @@
     function disegna() {
         const s = Torre.stato();
         document.getElementById('record').innerHTML =
-            `<span>🏔️ Record <strong>piano ${s.record.pianoMassimo}/${Torre.piani()}</strong></span>` +
-            `<span>🔁 Scalate <strong>${s.record.tentativi}</strong></span>` +
-            `<span>👑 Conquiste <strong>${s.record.conquiste}</strong></span>`;
+            `<span class="torre-record"><i aria-hidden="true">◆</i><small>Record</small><strong>${s.record.pianoMassimo}<b>/${Torre.piani()}</b></strong></span>` +
+            `<span class="torre-record"><i aria-hidden="true">↻</i><small>Scalate</small><strong>${s.record.tentativi}</strong></span>` +
+            `<span class="torre-record"><i aria-hidden="true">♛</i><small>Conquiste</small><strong>${s.record.conquiste}</strong></span>`;
         disegnaEsito(s);
         const box = document.getElementById('contenuto');
         box.innerHTML = '';
@@ -120,17 +120,21 @@
 
     function introduzione() {
         const p = document.createElement('section');
-        p.className = 'mp-pannello';
+        p.className = 'mp-pannello torre-intro';
         p.innerHTML = `
+            <div class="torre-sigillo" aria-hidden="true"><span>20</span><small>PIANI</small></div>
+            <span class="torre-sopratitolo">La sfida del castello</span>
             <h2>Venti piani, una sola scalata</h2>
             <p>Sali piano dopo piano con il tuo mazzo. I Life Point <strong>non si ricaricano</strong> fra un duello e l'altro: ogni danno subito te lo porti al piano dopo. Ogni cinque piani ti aspetta un boss.</p>
             <p>Dopo ogni piano vinto scegli fra un <strong>Ristoro</strong> (Life Point recuperati) e un <strong>oggetto</strong> che ti aiuta nei duelli successivi: una carta in più in mano, la prima mossa, un avversario più debole, una carta sempre in mano. Se perdi, si ricomincia dal piano 1.</p>
-            <p>Premi: i soliti crediti di fine duello a ogni piano.</p>`;
+            <div class="torre-regole" aria-label="Regole rapide">
+                <span><b>LP</b> persistenti</span><span><b>Boss</b> ogni 5 piani</span><span><b>Premio</b> dopo ogni vittoria</span>
+            </div>`;
         const b = document.createElement('button');
         b.type = 'button';
         b.className = 'mp-btn';
         b.id = 'iniziaScalata';
-        b.textContent = '🗼 Inizia la scalata';
+        b.textContent = 'Entra nella Torre';
         b.onclick = () => { haptic(); Torre.nuovaScalata(); disegna(); };
         p.appendChild(b);
         return p;
@@ -138,7 +142,7 @@
 
     function pannelloScalata(sc) {
         const p = document.createElement('section');
-        p.className = 'mp-pannello';
+        p.className = 'mp-pannello torre-stato';
         const prossimo = Torre.pianoDi(sc, sc.piano);
         const avv = pers(prossimo.avversario);
         const boss = Torre.eBoss(sc.piano);
@@ -146,14 +150,19 @@
             `<span class="mp-oggetto" title="${esc(o.descrizione)}">${o.icona} ${esc(o.nome)}${sc.oggetti[o.id] > 1 ? ' ×' + sc.oggetti[o.id] : ''}</span>`);
         const carta = sc.cartaFidata != null ? (cardDatabase.find((c) => c.id === sc.cartaFidata) || {}).name : null;
         p.innerHTML = `
-            <h2>Piano ${sc.piano} di ${Torre.piani()}${boss ? ' — 👑 Boss' : ''}</h2>
+            <span class="torre-sopratitolo">Scalata in corso</span>
+            <div class="torre-stato-titolo"><h2>Piano ${sc.piano} <small>di ${Torre.piani()}</small></h2>${boss ? '<span class="torre-boss-badge">Boss</span>' : ''}</div>
+            <div class="torre-progresso" aria-label="Progresso della Torre"><i style="width:${Math.max(2, Math.round(sc.piano / Torre.piani() * 100))}%"></i></div>
             <div class="mp-riga">
                 <div class="mp-lp">
                     <span class="mp-lp-testo">Life Point <strong>${sc.lp}</strong> / ${torreDatabase.lpIniziali}</span>
                     <div class="mp-lp-barra"><div class="mp-lp-riempi" style="width:${Math.round(sc.lp / torreDatabase.lpIniziali * 100)}%"></div></div>
                 </div>
             </div>
-            <p>Prossimo avversario: <strong>${esc(avv.name)}</strong>, livello ${esc(LIVELLI[prossimo.livello] || prossimo.livello)}.</p>
+            <div class="torre-avversario">
+                <span class="torre-avversario-ritratto">${avv.image ? `<img src="${esc(avv.image)}" alt="">` : '<b>?</b>'}</span>
+                <span><small>Guardiano del piano</small><strong>${esc(avv.name)}</strong><em>${esc(LIVELLI[prossimo.livello] || prossimo.livello)}</em></span>
+            </div>
             <div class="mp-oggetti">${oggetti.join('') || '<span class="mp-lp-testo">Nessun oggetto, per ora.</span>'}</div>
             ${carta ? `<p>📌 Carta fidata: <strong>${esc(carta)}</strong></p>` : ''}`;
         const azioni = document.createElement('div');

@@ -24,22 +24,25 @@ const torreDatabase = {
     lpIniziali: 8000,
     /** Quanti Life Point ridà il premio "Ristoro" (mai oltre i Life Point iniziali). */
     recuperoLp: 2500,
-    // I tratti fra un boss e l'altro: avversari possibili, livello, campo.
+    // La scalata si svolge tutta dentro il Castello di Pegasus: cambiano
+    // avversari e difficoltà, non il luogo. Tenere il campo esplicito in
+    // ogni fascia/boss conserva la forma PianoTorre e rende leggibile il
+    // catalogo anche senza conoscere la pagina che lo consumerà.
     fasce: [
-        { daPiano: 1, aPiano: 4, livello: 'Facile', campo: 'campoPrato.jpg',
+        { daPiano: 1, aPiano: 4, livello: 'Facile', campo: 'torreCastelloPegasus.jpg',
             avversari: ['rex', 'weevil', 'mako', 'bonz', 'panik', 'tea', 'tristan'] },
-        { daPiano: 6, aPiano: 9, livello: 'Medio', campo: 'arenaRegnoDeiDuellanti.jpg',
+        { daPiano: 6, aPiano: 9, livello: 'Medio', campo: 'torreCastelloPegasus.jpg',
             avversari: ['mai', 'joey', 'espaRoba', 'paradoxBrothers', 'duke'] },
-        { daPiano: 11, aPiano: 14, livello: 'Medio', campo: 'citta.jpg',
+        { daPiano: 11, aPiano: 14, livello: 'Medio', campo: 'torreCastelloPegasus.jpg',
             avversari: ['bakura', 'arkana', 'strings', 'odion', 'lumis', 'umbra'] },
-        { daPiano: 16, aPiano: 19, livello: 'Difficile', campo: 'torreDeiDuelli.jpg',
+        { daPiano: 16, aPiano: 19, livello: 'Difficile', campo: 'torreCastelloPegasus.jpg',
             avversari: ['kaiba', 'ishizu', 'noah', 'gozaburo', 'joey', 'mai'] }
     ],
     boss: {
-        5: { avversario: 'bandit_keith', livello: 'Medio', campo: 'stadioKaiba.jpg' },
-        10: { avversario: 'pegasus', livello: 'Medio', campo: 'arenaCastelloPegasus.jpg' },
-        15: { avversario: 'marik', livello: 'Difficile', campo: 'torreDeiDuelliShadow.jpg' },
-        20: { avversario: 'yamiYugi', livello: 'Difficile', campo: 'torreDeiDuelliColosseo.jpg' }
+        5: { avversario: 'bandit_keith', livello: 'Medio', campo: 'torreCastelloPegasus.jpg' },
+        10: { avversario: 'pegasus', livello: 'Medio', campo: 'torreCastelloPegasus.jpg' },
+        15: { avversario: 'marik', livello: 'Difficile', campo: 'torreCastelloPegasus.jpg' },
+        20: { avversario: 'yamiYugi', livello: 'Difficile', campo: 'torreCastelloPegasus.jpg' }
     },
     oggetti: [
         { id: 'mano', icona: '🃏', nome: 'Mano più ricca', max: 2,

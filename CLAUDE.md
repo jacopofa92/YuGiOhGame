@@ -4341,6 +4341,14 @@ Lo sorveglia `guardrail-modalita-fuori-dal-motore`; spec `modalita-puzzle`,
 `modalita-rivincite`, `modalita-torre`. Un puzzle nuovo va aggiunto anche allo
 spec dei puzzle, con la sua soluzione.
 
+Revamp Torre/field (2026-10-12): `torre.html` ha una UI dedicata a due colonne
+su desktop e lineare su mobile, con stato della scalata, progresso, guardiano
+corrente e torre in profondità ma strutturalmente immobile. Tutti i 20 duelli
+usano `torreCastelloPegasus.jpg`. In `field-ambience.js` il Dirigibile ha vento
+continuo con raffiche forti irregolari (`ventoContinuo`); gli altri ambienti
+non-WW1 usano trame canvas procedurali e ritmi meno uniformi. I due field
+Grande Guerra sono rimasti invariati per richiesta esplicita.
+
 Equip con scelta asincrona (2026-10-11, bug segnalato giocando): con due o più
 bersagli la lista si apre e la scelta è asincrona, ma la Carta Equipaggiamento
 è già nella sua casella senza aggancio, e la pulizia degli Equip orfani in

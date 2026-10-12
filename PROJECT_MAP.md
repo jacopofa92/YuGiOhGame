@@ -1160,6 +1160,17 @@ Quinto gruppo:
 
 ## Ambienti dei field
 
+- passata organica 2026-10-12: gli strati di particelle, caustiche, rune,
+  riflessi, scariche e scie di sabbia sono raster procedurali diversi a ogni
+  ingresso nel field, non più pattern ripetuti riconoscibili; gli ambienti
+  atmosferici alternano accenti ravvicinati, pause normali e silenzi lunghi;
+- `dirigibileKaibaCorp.jpg` usa la coreografia dedicata `ventoContinuo`: una
+  corrente leggera accompagna sempre il movimento del mezzo e raffiche più
+  forti arrivano con intensità e cadenza irregolari. Il vento è composto da
+  filamenti curvi canvas e non da linee parallele;
+- le scansioni tecnologiche possono cambiare verso e inclinazione. Le
+  coreografie dei due field Grande Guerra non sono state modificate;
+
 - tutti i 36 field di `ArenaOptions.FIELDS` hanno una configurazione
   ambientale individuale in `js/ui/field-ambience.js`; le immagini mobile
   condividono il nome file e quindi la stessa configurazione coerente;
