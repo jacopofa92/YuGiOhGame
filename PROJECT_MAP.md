@@ -2,6 +2,16 @@
 
 Ultimo aggiornamento verificato: 2026-10-12.
 
+## Consultazione carte durante il duello (2026-10-12)
+
+Il pannello informazioni ora distingue centralmente la consultazione da un
+comando di gioco. Tap e hover normali continuano a mostrare la carta, anche
+fuori dalla Main Phase; durante attacchi, Tributi, scarti, piazzamenti e
+decisioni obbligatorie il click raggiunge invece soltanto l'azione richiesta.
+L'inizio di una scelta chiude un eventuale dettaglio rimasto aperto e una
+breve memoria del pointerup impedisce al click sintetico successivo a un
+attacco di riaprirlo. Regressione: `card-info-solo-consultazione`.
+
 ## Completamento carte TCG prima serie (2026-10-12)
 
 Il perimetro LOB/MRD/SRL/PSV/LON/LOD/PGD è stato completato sul branch

@@ -456,7 +456,8 @@
 // v234: rarità, fonti di acquisizione, imprese firma e Forgia delle Fusioni
 // per il nuovo lotto; invalida la cache perché cambiano Negozio e Cartoteca.
 // v235: correzioni X/Y/Z e selettore obbligatorio Attacco/Difesa.
-const CACHE_NAME = 'ygo-duel-arena-v235';
+// v236: box info carta escluso durante attacchi e selezioni di gioco.
+const CACHE_NAME = 'ygo-duel-arena-v236';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

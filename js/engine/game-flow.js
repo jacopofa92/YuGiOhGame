@@ -187,6 +187,31 @@ function canInspectCardOnHover() {
     return !window.matchMedia || window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 }
 
+// Un pointerup che conclude un attacco viene normalmente seguito da un
+// `click` sintetico sulla carta sotto al puntatore. A quel punto
+// isDraggingAttack e' gia' tornato false: senza questa breve memoria il click
+// riaprirebbe il pannello informazioni proprio mentre parte la battaglia.
+let cardInspectionSuppressedUntil = 0;
+
+function suppressCardInspectionFor(durationMs = 500) {
+    cardInspectionSuppressedUntil = Math.max(cardInspectionSuppressedUntil, performance.now() + durationMs);
+    updateCardInfoPanel(null);
+}
+
+/**
+ * Fonte unica per distinguere una consultazione volontaria da un click che
+ * sta rispondendo a una scelta del duello. Durante queste scelte la carta e'
+ * un comando (Tributo, scarto, bersaglio, posizione...), non un collegamento
+ * al suo dettaglio: aprire anche il pannello copriva il campo e, su mobile,
+ * faceva sembrare che il tap non fosse stato recepito.
+ */
+function isGameplaySelectionActive() {
+    if (performance.now() < cardInspectionSuppressedUntil || isDraggingAttack) return true;
+    if (gameState.pendingTributeSummon || gameState.pendingTributePlacement
+        || gameState.pendingHandDiscard || gameState.pendingSummon) return true;
+    return !!(window.Decisioni && typeof Decisioni.inSospeso === 'function' && Decisioni.inSospeso());
+}
+
 // Click fuori dal pannello descrizione carta -> lo chiude. Esclude i click
 // su una QUALUNQUE carta (.card): quelli sono l'azione che apre/aggiorna il
 // pannello (vedi handleCardClick/onmouseenter sulle carte), non un "click
@@ -939,7 +964,7 @@ function renderFields() {
                 }
             };
             fieldSpellCardEl.onmouseenter = () => {
-                if (dragState || !canInspectCardOnHover()) return;
+                if (dragState || !canInspectCardOnHover() || isGameplaySelectionActive()) return;
                 updateCardInfoPanel(fieldSpellSlotState.card, { sourceType: 'field-spell', sourceOwner: owner, isFaceDown: visuallyFaceDown });
             };
             firstSpecial.appendChild(fieldSpellCardEl);
@@ -995,7 +1020,7 @@ function renderFields() {
                     }
                 };
                 cardEl.onmouseenter = () => {
-                    if (dragState || !canInspectCardOnHover()) return;
+                    if (dragState || !canInspectCardOnHover() || isGameplaySelectionActive()) return;
                     updateCardInfoPanel(slot.card, { sourceType: slotType, sourceOwner: owner, isFaceDown: visuallyFaceDown });
                 };
                 if (isMonsterRow && owner === 'player' && gameState.phase === 'battle' && !slot.hasAttacked && slot.position === 'attack' && !(window.DuelEngine && DuelEngine.cannotAttack('player'))) {
@@ -1315,6 +1340,7 @@ function startAttackDrag(event, attackerIndex) {
     const attackerSlot = gameState.playerMonsterField[attackerIndex];
     if (!attackerSlot || attackerSlot.hasAttacked || gameState.phase !== 'battle') return;
 
+    suppressCardInspectionFor(700);
     isDraggingAttack = true;
     attackDragStart.attackerIndex = attackerIndex;
 
@@ -1453,6 +1479,9 @@ function clearAttackTargetHighlight() {
 
 function endAttackDrag(event) {
     if (!isDraggingAttack) return;
+    // Copre il click di compatibilita' emesso DOPO il pointerup, quando il
+    // flag di trascinamento verra' gia' azzerato poche righe piu sotto.
+    suppressCardInspectionFor(700);
     isDraggingAttack = false;
     attackArrowSVG.style.display = 'none';
     hideDirectAttackHint();
@@ -1866,7 +1895,7 @@ function renderPlayerHand() {
             startHandCardDrag(event, card, index, 'player');
         };
         cardEl.onmouseenter = () => {
-            if (dragState || !canInspectCardOnHover()) return;
+            if (dragState || !canInspectCardOnHover() || isGameplaySelectionActive()) return;
             updateCardInfoPanel(card, { sourceType: 'hand', sourceOwner: 'player', isFaceDown: false });
         };
         if (gameState.selectedCard.type === 'hand' && gameState.selectedCard.index === index) {

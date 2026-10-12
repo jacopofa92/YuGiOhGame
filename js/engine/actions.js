@@ -40,6 +40,9 @@ EventiDuello.ascolta('decisioni-a-schermo', (tipo) => {
 });
 EventiDuello.ascolta('decisione', (r, rispondi) => {
     const ui = window.DuelEngineUI;
+    // La nuova decisione sostituisce qualunque consultazione passiva rimasta
+    // aperta: il giocatore deve vedere senza ostacoli candidati e comandi.
+    if (typeof updateCardInfoPanel === 'function') updateCardInfoPanel(null);
     const annulla = r.annullabile ? () => rispondi(null) : undefined;
     switch (r.tipo) {
         case 'carte': {
@@ -148,7 +151,17 @@ function handleCardClickInner(card, sourceType, sourceIndex, sourceOwner, isFace
     // anche fuori dalla Main Phase e mentre gioca l'avversario. Questo e'
     // particolarmente importante su touch, dove non esiste l'hover che su
     // desktop mostrava comunque il pannello informativo.
-    updateCardInfoPanel(card, { sourceType, sourceOwner, isFaceDown });
+    // Se il tap sta rispondendo a una selezione attiva, deve fare SOLO
+    // quell'azione. Il pannello resta invece disponibile nei tap normali,
+    // anche fuori Main Phase e durante il turno avversario.
+    const selected = gameState.selectedCard;
+    const startsSelectedTribute = sourceType === 'monster' && sourceOwner === 'player'
+        && selected && selected.type === 'hand' && selected.card && selected.card.type === 'monster'
+        && getTributesRequired(selected.card) > 0;
+    const gameplayOnly = (typeof isGameplaySelectionActive === 'function' && isGameplaySelectionActive())
+        || startsSelectedTribute;
+    if (gameplayOnly) updateCardInfoPanel(null);
+    else updateCardInfoPanel(card, { sourceType, sourceOwner, isFaceDown });
     if (gameState.currentPlayer !== 'player' || isDraggingAttack) return;
     const isMainPhase = gameState.phase === 'main1' || gameState.phase === 'main2';
     // Le Magie Veloci (subtype 'quick-play') sono per testo reale attivabili
@@ -901,7 +914,9 @@ function startTributeSelection(card, handIndex, tributesNeeded, fromRect) {
     gameState.pendingTributeSummon = { card, handIndex, tributesNeeded, selected: [], fromRect };
     addToLog(`🔺 ${card.name} richiede ${tributesNeeded} Tribut${tributesNeeded > 1 ? 'i' : 'o'}. Seleziona i mostri da Sacrificare sul tuo Terreno.`);
     showTributePrompt(card.name, tributesNeeded, 0);
-    updateCardInfoPanel(card, { sourceType: 'hand', sourceOwner: 'player', isFaceDown: false });
+    // Da qui in avanti i tocchi sul Terreno sono scelte di Sacrificio: il
+    // dettaglio della carta lascerebbe meno spazio proprio ai candidati.
+    updateCardInfoPanel(null);
     updateUI();
 }
 

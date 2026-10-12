@@ -32,6 +32,10 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.3.2 — Il box informazioni carta resta disponibile nei tap di
+ *   consultazione, ma non si apre più sopra attacchi, Tributi, scarti e
+ *   altre selezioni obbligatorie del duello.
+ *
  * 1.3.1 — Cannoni X/Y/Z fedeli ai materiali TCG, distacco volontario dei
  *   Mostri Union e scelta Attacco/Difesa non più perdibile cliccando fuori.
  *
@@ -643,4 +647,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.3.1';
+window.GAME_VERSION = '1.3.2';
