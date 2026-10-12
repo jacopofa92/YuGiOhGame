@@ -806,10 +806,16 @@
         const scene = document.createElement('div');
         scene.className = 'fx-mirror-force' + (attackerOwner === 'player' ? ' fx-mirror-force--bottom' : '');
         scene.setAttribute('aria-hidden', 'true');
-        scene.innerHTML = '<div class="fx-mirror-force-shade"></div><div class="fx-mirror-disc"><i></i><b></b></div>';
-        document.body.appendChild(scene);
+        scene.dataset.targetCount = String(targets.length);
         const mirrorX = window.innerWidth / 2;
-        const mirrorY = attackerOwner === 'player' ? window.innerHeight * 0.69 : window.innerHeight * 0.31;
+        // Lo specchio nasce davanti al DIFENSORE e riflette verso la fila
+        // attaccante. Prima, nel caso piu' comune, compariva quasi sul lato
+        // dell'attaccante e i raggi CSS partivano da un'altra coordinata.
+        const mirrorY = attackerOwner === 'player' ? window.innerHeight * 0.37 : window.innerHeight * 0.63;
+        scene.style.setProperty('--mirror-x', `${mirrorX}px`);
+        scene.style.setProperty('--mirror-y', `${mirrorY}px`);
+        scene.innerHTML = '<div class="fx-mirror-force-shade"></div><div class="fx-mirror-aura"></div><div class="fx-mirror-disc"><i></i><b></b><em></em></div><div class="fx-mirror-flare"></div>';
+        document.body.appendChild(scene);
         targets.forEach((rect, index) => {
             const ray = document.createElement('span');
             ray.className = 'fx-mirror-ray';
@@ -817,17 +823,33 @@
             const y = rect.top + rect.height / 2;
             const dx = x - mirrorX;
             const dy = y - mirrorY;
+            Object.assign(ray.style, { left: `${mirrorX}px`, top: `${mirrorY}px` });
             ray.style.setProperty('--ray-length', `${Math.hypot(dx, dy)}px`);
             ray.style.setProperty('--ray-angle', `${Math.atan2(dy, dx) * 180 / Math.PI}deg`);
             ray.style.setProperty('--ray-delay', `${360 + index * 55}ms`);
             scene.appendChild(ray);
+            const impact = document.createElement('span');
+            impact.className = 'fx-mirror-impact';
+            impact.style.left = `${x}px`;
+            impact.style.top = `${y}px`;
+            impact.style.setProperty('--impact-delay', `${760 + index * 55}ms`);
+            impact.innerHTML = '<i></i><b></b>';
+            scene.appendChild(impact);
         });
+        for (let i = 0; i < 22; i++) {
+            const shard = document.createElement('em');
+            shard.className = 'fx-mirror-shard';
+            shard.style.setProperty('--shard-angle', `${i * (360 / 22)}deg`);
+            shard.style.setProperty('--shard-distance', `${90 + (i % 6) * 24}px`);
+            shard.style.setProperty('--shard-delay', `${520 + (i % 5) * 35}ms`);
+            scene.appendChild(shard);
+        }
         if (window.SFX && typeof SFX.activateTrap === 'function') SFX.activateTrap();
         setTimeout(() => {
             scene.remove();
             endSummonCinematic();
-        }, 1550);
-        return 1550;
+        }, 2200);
+        return 2200;
     }
 
     /** Cilindro Magico: due grandi portali deviano il colpo verso la mano dell'attaccante. */

@@ -1562,19 +1562,30 @@
 }
 
 /* Forza dello Specchio */
+.fx-mirror-aura {
+    position: absolute;
+    left: var(--mirror-x); top: var(--mirror-y);
+    width: clamp(330px, 64vw, 920px);
+    aspect-ratio: 1;
+    transform: translate(-50%,-50%) scale(.2);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,.72) 0 2%, rgba(137,204,255,.3) 12%, rgba(80,118,255,.16) 31%, transparent 67%);
+    filter: drop-shadow(0 0 55px rgba(121,190,255,.9));
+    animation: fxMirrorAura 2.1s ease-out forwards;
+}
 .fx-mirror-disc {
     position: absolute;
-    left: 50%; top: 50%;
-    width: clamp(190px, 26vw, 430px);
-    aspect-ratio: 1.45;
+    left: var(--mirror-x); top: var(--mirror-y);
+    width: clamp(300px, 52vw, 720px);
+    aspect-ratio: 1.38;
     transform: translate(-50%, -50%) rotateX(63deg) scale(.12);
     border-radius: 50%;
-    border: 4px solid rgba(222, 244, 255, .94);
+    border: 7px solid rgba(236, 250, 255, .98);
     background:
         radial-gradient(ellipse at 42% 32%, #fff 0 3%, rgba(191,234,255,.82) 4% 15%, transparent 38%),
         conic-gradient(from 30deg, rgba(181,223,255,.25), rgba(255,255,255,.88), rgba(89,141,222,.38), rgba(237,250,255,.9), rgba(181,223,255,.25));
-    box-shadow: inset 0 0 38px #fff, inset 0 0 80px rgba(86,153,255,.7), 0 0 35px #d9f4ff, 0 0 100px rgba(86,139,255,.85);
-    animation: fxMirrorRise 1.45s cubic-bezier(.16,.8,.24,1) forwards;
+    box-shadow: inset 0 0 55px #fff, inset 0 0 120px rgba(86,153,255,.78), 0 0 48px #fff, 0 0 135px rgba(86,139,255,.95);
+    animation: fxMirrorRise 2.08s cubic-bezier(.16,.8,.24,1) forwards;
 }
 .fx-mirror-disc::before,
 .fx-mirror-disc::after,
@@ -1589,31 +1600,67 @@
 .fx-mirror-disc::after { inset: 23%; border-style: dashed; animation: fxMirrorSpin 2.4s linear infinite; }
 .fx-mirror-disc i { inset: -9%; border: 2px solid rgba(123,192,255,.48); animation: fxMirrorSpin 3.2s linear infinite reverse; }
 .fx-mirror-disc b { inset: 39%; background: #fff; box-shadow: 0 0 40px 14px #b9e7ff; border: 0; }
-.fx-mirror-force--bottom .fx-mirror-disc { top: 62%; }
+.fx-mirror-disc em { position: absolute; inset: -19%; border: 3px double rgba(197,231,255,.58); border-radius: 50%; animation: fxMirrorSpin 5s linear infinite; }
+.fx-mirror-flare {
+    position: absolute;
+    left: var(--mirror-x); top: var(--mirror-y);
+    width: clamp(180px, 34vw, 520px); height: 10px;
+    transform: translate(-50%,-50%) scaleX(0);
+    background: linear-gradient(90deg, transparent, #bceaff, #fff, #bceaff, transparent);
+    box-shadow: 0 0 24px #fff, 0 0 70px #70b8ff;
+    animation: fxMirrorFlare 1.15s ease-out .38s forwards;
+}
 .fx-mirror-ray {
     position: absolute;
-    left: 50%; top: 50%;
-    width: var(--ray-length); height: 8px;
+    width: var(--ray-length); height: clamp(12px, 1.7vw, 24px);
     transform-origin: 0 50%;
     transform: rotate(var(--ray-angle)) scaleX(0);
     border-radius: 50%;
     background: linear-gradient(90deg, #fff, #b9eaff 45%, rgba(102,157,255,.85) 80%, transparent);
-    box-shadow: 0 0 8px #fff, 0 0 24px #76baff;
-    animation: fxMirrorRay .72s ease-out var(--ray-delay) forwards;
+    box-shadow: 0 0 12px #fff, 0 0 34px #76baff, 0 0 72px rgba(71,120,255,.82);
+    animation: fxMirrorRay 1.05s ease-out var(--ray-delay) forwards;
 }
-.fx-mirror-force--bottom .fx-mirror-ray { top: 62%; }
+.fx-mirror-impact {
+    position: absolute;
+    width: clamp(70px, 12vw, 170px); aspect-ratio: 1;
+    transform: translate(-50%,-50%) scale(.1);
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff 0 8%, #cceeff 12%, rgba(89,150,255,.72) 28%, transparent 68%);
+    box-shadow: 0 0 30px #fff, 0 0 80px #6ebcff;
+    animation: fxMirrorImpact .95s ease-out var(--impact-delay) forwards;
+}
+.fx-mirror-impact i, .fx-mirror-impact b {
+    position: absolute; content: ''; inset: -20%; border: 3px solid rgba(216,245,255,.9); border-radius: 50%;
+    animation: fxMirrorImpactRing .72s ease-out var(--impact-delay) forwards;
+}
+.fx-mirror-impact b { inset: -48%; animation-delay: calc(var(--impact-delay) + 90ms); }
+.fx-mirror-shard {
+    position: absolute;
+    left: var(--mirror-x); top: var(--mirror-y);
+    width: clamp(7px, 1vw, 14px); height: clamp(22px, 4vw, 58px);
+    clip-path: polygon(50% 0, 100% 72%, 38% 100%, 0 58%);
+    background: linear-gradient(145deg, #fff, rgba(151,220,255,.88) 45%, rgba(69,104,220,.25));
+    box-shadow: 0 0 14px #bdeaff;
+    opacity: 0;
+    animation: fxMirrorShard 1s ease-out var(--shard-delay) forwards;
+}
 @keyframes fxMirrorRise {
     0% { opacity: 0; transform: translate(-50%,-50%) rotateX(78deg) scale(.12); }
     26% { opacity: 1; transform: translate(-50%,-50%) rotateX(58deg) scale(1.08); }
     72% { opacity: 1; transform: translate(-50%,-50%) rotateX(63deg) scale(1); filter: brightness(1.45); }
     100% { opacity: 0; transform: translate(-50%,-50%) rotateX(70deg) scale(1.28); }
 }
+@keyframes fxMirrorAura { 0% { opacity: 0; transform: translate(-50%,-50%) scale(.2); } 25%,72% { opacity: 1; transform: translate(-50%,-50%) scale(1); } 100% { opacity: 0; transform: translate(-50%,-50%) scale(1.35); } }
+@keyframes fxMirrorFlare { 0% { opacity: 0; transform: translate(-50%,-50%) scaleX(0); } 30%,68% { opacity: 1; transform: translate(-50%,-50%) scaleX(1); } 100% { opacity: 0; transform: translate(-50%,-50%) scaleX(1.35); } }
 @keyframes fxMirrorSpin { to { transform: rotate(360deg); } }
 @keyframes fxMirrorRay {
     0% { opacity: 0; transform: rotate(var(--ray-angle)) scaleX(0); }
     18%, 56% { opacity: 1; transform: rotate(var(--ray-angle)) scaleX(1); }
     100% { opacity: 0; transform: rotate(var(--ray-angle)) scaleX(1); filter: blur(4px); }
 }
+@keyframes fxMirrorImpact { 0% { opacity: 0; transform: translate(-50%,-50%) scale(.1); } 28% { opacity: 1; transform: translate(-50%,-50%) scale(1.3); } 58% { transform: translate(-50%,-50%) scale(.92); } 100% { opacity: 0; transform: translate(-50%,-50%) scale(1.55); } }
+@keyframes fxMirrorImpactRing { 0% { opacity: 1; transform: scale(.15); } 100% { opacity: 0; transform: scale(1.8); } }
+@keyframes fxMirrorShard { 0% { opacity: 0; transform: translate(-50%,-50%) rotate(var(--shard-angle)) translateY(0) scale(.2); } 18% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%,-50%) rotate(var(--shard-angle)) translateY(calc(var(--shard-distance) * -1)) rotateX(160deg) scale(.8); } }
 
 /* Cilindro Magico */
 .fx-cylinder-vignette {

@@ -32,6 +32,9 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.3.7 — Forza dello Specchio diventa una grande barriera sul lato del
+ *   difensore, con raggi ramificati, impatti e frammenti sui mostri nemici.
+ *
  * 1.3.6 — Cilindro Magico ridisegnato come grande deviazione energetica:
  *   portali, sigillo e impatto convergono sulla mano dell'attaccante.
  *
@@ -662,4 +665,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.3.6';
+window.GAME_VERSION = '1.3.7';

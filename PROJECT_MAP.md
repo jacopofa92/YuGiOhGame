@@ -2,6 +2,13 @@
 
 Ultimo aggiornamento verificato: 2026-10-12.
 
+## Revamp Forza dello Specchio (2026-10-12)
+
+`FX.playMirrorForce` colloca la barriera davanti al lato difensore e usa
+quella stessa coordinata come origine reale dei raggi. Il disco e' piu' ampio;
+ogni mostro in Attacco riceve fascio e impatto dedicati, con aura, flare e
+frammenti prospettici. La scena dura 2200 ms senza cambiare la regola TCG.
+
 ## Revamp Cilindro Magico (2026-10-12)
 
 `FX.playMagicCylinder` usa come destinazione `#playerHand`/`#botHand` del

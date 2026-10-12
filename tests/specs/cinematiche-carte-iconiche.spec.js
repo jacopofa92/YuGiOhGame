@@ -109,18 +109,23 @@ module.exports = {
             FX.playTorrentialTribute();
             await new Promise((resolve) => setTimeout(resolve, 80));
             const cilindro = document.querySelector('.fx-magic-cylinder');
+            const specchio = document.querySelector('.fx-mirror-force');
             const presenti = [
                 '.fx-mirror-force', '.fx-magic-cylinder', '.fx-monster-reborn',
                 '.fx-trap-hole', '.fx-torrential'
             ].every((selector) => !!document.querySelector(selector));
             const bersaglioCilindro = cilindro && cilindro.dataset.target;
             const grande = cilindro && parseFloat(getComputedStyle(cilindro.querySelector('.fx-cylinder')).width) >= 108;
+            const specchioGrande = specchio && parseFloat(getComputedStyle(specchio.querySelector('.fx-mirror-disc')).width) >= 300;
+            const bersagliSpecchio = specchio && Number(specchio.dataset.targetCount);
             await new Promise((resolve) => setTimeout(resolve, 2350));
-            return { presenti, bersaglioCilindro, grande, sbloccato: !FX.isCinematicPlaying() };
+            return { presenti, bersaglioCilindro, grande, specchioGrande, bersagliSpecchio, sbloccato: !FX.isCinematicPlaying() };
         });
         t.assert(smoke.presenti, 'Le cinque scene devono poter convivere senza errori DOM');
         t.assert(smoke.bersaglioCilindro === 'playerHand' && smoke.grande,
             `Cilindro Magico deve puntare la mano con portali grandi: ${JSON.stringify(smoke)}`);
+        t.assert(smoke.specchioGrande && smoke.bersagliSpecchio === 1,
+            `Forza dello Specchio deve usare una scena ampia e un impatto per bersaglio: ${JSON.stringify(smoke)}`);
         t.assert(smoke.sbloccato, 'Ogni cinematica deve liberare il blocco al termine');
     }
 };
