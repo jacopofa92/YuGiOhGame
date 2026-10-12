@@ -447,7 +447,7 @@ del protocollo corrente.
 
 ## Stato rapido
 
-- Versione dichiarata: `1.2.0` (`package.json` e `js/version.js`).
+- Versione dichiarata: `1.3.0` (`package.json` e `js/version.js`).
 - Applicazione HTML/CSS/JavaScript puro: nessun framework, bundler o build del
   frontend. Gli script globali devono essere caricati nell'ordine giusto.
 - 19 pagine HTML, 104 file JS applicativi sotto `js/` (esclusi i vendor),
@@ -459,9 +459,9 @@ del protocollo corrente.
 - PWA tramite `manifest.json`, `sw.js` e `js/pwa-register.js`.
 - App Android/Capacitor: le shell dev e produzione includono `NativeMusic`;
   la produzione nativa è `1.2.0` (`versionCode 24`) e punta al sito
-  Cloudflare. Il contenuto web espone `GAME_VERSION` `1.2.0`. Gli APK sono
+  Cloudflare. Il contenuto web espone `GAME_VERSION` `1.3.0`. Gli APK sono
   ignorati da Git e restano artefatti locali rigenerabili. La cache
-  WebView/PWA corrente è `ygo-duel-arena-v223`.
+  WebView/PWA corrente è `ygo-duel-arena-v234`.
 - Cloud tramite Supabase; multiplayer tramite relay WebSocket Node nativo.
 - Le preferenze utente (`save.settings`: dettagli video, ologrammi, aptica,
   volume e mute musica/SFX) fanno parte del salvataggio unificato e quindi di
@@ -1351,6 +1351,21 @@ Sono coordinate del mondo mappa, quindi coincidono con quelle esportate anche
 se viewport, zoom e scorrimento cambiano. Lo spec
 `editor-mappa-storia-admin` verifica il valore prima del rilascio del mouse,
 non soltanto il riepilogo finale.
+
+## Economia del lotto TCG prima serie (ID 1131-1160)
+
+La fonte di verità resta divisa fra `js/data/card-rarity.js` per le rarità,
+`js/economy/card-acquisition.js` per fonti e imprese e
+`js/economy/shop-catalog.js` per rotazioni e buste. Il censimento del lotto è
+documentato in `docs/economy/CARD_ACQUISITION.md` e verificato dallo spec
+`nuove-carte-economia`.
+
+Due carte richiedono una prima copia tematica prima di entrare nel commercio:
+Parassita Paracida dopo 15 vittorie contro Weevil a Difficile e Golem di Lava
+dopo 20 contro Marik a Difficile. Le Fusioni e i quattro Materiali aggiunti
+sono raccolti anche nella busta `fusioni` («Forgia delle Fusioni»), così non
+dipendono soltanto dai pool generici molto ampi. Ogni carta espone la propria
+fonte nella Cartoteca e conserva il limite globale di tre copie.
 
 ## Come mantenere questa memoria
 

@@ -453,7 +453,9 @@
 // v233: completamento delle carte TCG della prima serie (30 nuove risorse
 // incluse le quattro Fusion Material mancanti). v232 resta riservata al
 // branch VFX parallelo, così i due lavori non pubblicano la stessa cache.
-const CACHE_NAME = 'ygo-duel-arena-v233';
+// v234: rarità, fonti di acquisizione, imprese firma e Forgia delle Fusioni
+// per il nuovo lotto; invalida la cache perché cambiano Negozio e Cartoteca.
+const CACHE_NAME = 'ygo-duel-arena-v234';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

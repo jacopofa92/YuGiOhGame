@@ -48,7 +48,8 @@
     /** Iconiche/boss: possono comparire soltanto nelle fasce più costose. */
     const LEGENDARY_IDS = new Set([
         1, 2, 12, 17, 29, 102, 123, 167, 188, 207, 409,
-        291, 382, 656, 886
+        291, 382, 656, 886,
+        1133  // Golem di Lava — carta firma/boss di Marik
     ]);
 
     /**
@@ -68,10 +69,17 @@
         136,  // Richiamo degli Infestati — idem, dal proprio Cimitero
         886,  // Metamorfosi — trasforma un mostro in uno dall'Extra Deck
         130,  // Controllo Mentale — ruba un mostro, in modo permanente
-        874   // Confisca — guarda la mano avversaria e ne scarta una carta
+        874,  // Confisca — guarda la mano avversaria e ne scarta una carta
+        1155  // Ryu Senshi — Fusione con doppia negazione
     ]);
 
-    const SUPER_IDS = new Set([40, 128, 173, 238, 251, 272, 300, 371, 492, 624, 633, 669, 671, 725, 793, 820]);
+    const SUPER_IDS = new Set([
+        40, 128, 173, 238, 251, 272, 300, 371, 492, 624, 633, 669, 671, 725, 793, 820,
+        1131, // Esiliatore della Luce — floodgate globale
+        1137, // Giara Trasformante #2 — reset simultaneo dei Terreni
+        1139, // Parassita Paracida — carta firma di Weevil
+        1153  // Mietitore dell'Incubo — Fusione con protezione/scarto
+    ]);
 
     /**
      * RARE curate a mano: forti ma non decisive da sole. Anche qui si
@@ -94,7 +102,11 @@
         669,  // Libro della Vita
         820,  // Nega Attacco
         600,  // Trappola Fasulla
-        690   // Ritorno di Fiamma
+        690,  // Ritorno di Fiamma
+        // Nuovo lotto prima serie: utility situazionale e Fusioni che
+        // richiedono comunque materiali specifici + una carta Fusione.
+        1132, 1134, 1135, 1136, 1138, 1140,
+        1142, 1143, 1144, 1145, 1147, 1149, 1150, 1151, 1152, 1154, 1156
     ]);
 
     /**

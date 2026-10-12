@@ -11,7 +11,11 @@
 
     const EXODIA = [11, 41, 42, 43, 44];
     const SPIRIT_BY_CHAPTER = { regno: 867, battlecity1: 868, virtuale: 869, battlecity2: 870 };
-    const SIGNATURE_GATED = new Set([1, 2, 12, 123, 291]);
+    const SIGNATURE_GATED = new Set([
+        1, 2, 12, 123, 291,
+        1133, // Golem di Lava: prima copia da Marik
+        1139  // Parassita Paracida: prima copia da Weevil
+    ]);
     const CARD_CAP = 3;
     const RULES = Object.freeze({
         // Triplicate dopo il primo audit di farming: il percorso generico
@@ -22,7 +26,8 @@
         seekerGuaranteeEvery: 10,
         elephantPremiumChance: 0.002,
         ra: Object.freeze({ marikHard: 40, controlled: 10, maxLpLost: 2000, tournamentHard: 3 }),
-        slifer: Object.freeze({ stringsHard: 30, healthyWins: 1, minFinalLp: 4000 })
+        slifer: Object.freeze({ stringsHard: 30, healthyWins: 1, minFinalLp: 4000 }),
+        signaturesFirstSeries: Object.freeze({ lavaGolemMarikHard: 20, parasiteWeevilHard: 15 })
     });
 
     function state() {
@@ -114,6 +119,12 @@
             s.counters.sliferStringsHard = (s.counters.sliferStringsHard || 0) + 1;
             if ((o.playerLP || 0) >= RULES.slifer.minFinalLp) s.counters.sliferStringsHealthy = (s.counters.sliferStringsHealthy || 0) + 1;
         }
+        if (hard && opponent === 'marik') {
+            s.counters.lavaGolemMarikHard = (s.counters.lavaGolemMarikHard || 0) + 1;
+        }
+        if (hard && opponent === 'weevil') {
+            s.counters.parasiteWeevilHard = (s.counters.parasiteWeevilHard || 0) + 1;
+        }
 
         // Exodia può uscire da qualunque duellante PvE. Seeker raddoppia
         // la probabilità a Difficile e garantisce un pezzo mancante ogni
@@ -173,6 +184,14 @@
     function checkMilestones() {
         const s = state();
         const out = [];
+        if ((s.counters.parasiteWeevilHard || 0) >= RULES.signaturesFirstSeries.parasiteWeevilHard) {
+            const got = award(1139, '15 vittorie contro Weevil a Difficile', 'parasite-weevil-hard', true);
+            if (got) out.push(got);
+        }
+        if ((s.counters.lavaGolemMarikHard || 0) >= RULES.signaturesFirstSeries.lavaGolemMarikHard) {
+            const got = award(1133, '20 vittorie contro Marik a Difficile', 'lava-golem-marik-hard', true);
+            if (got) out.push(got);
+        }
         if (s.completedChaptersByDifficulty['battlecity1:difficile']
             && (s.counters.sliferStringsHard || 0) >= RULES.slifer.stringsHard
             && (s.counters.sliferStringsHealthy || 0) >= RULES.slifer.healthyWins) {
@@ -217,7 +236,9 @@
         2: 'Ottieni una copia a 50 e una a 100 vittorie complessive contro Yugi Muto o Yami Yugi a Difficile. Dopo il primo sblocco può apparire raramente nel Negozio.',
         12: 'Sconfiggi Joey 50 volte a Difficile. Dopo il primo sblocco può apparire raramente nel Negozio.',
         123: 'Sconfiggi Pegasus 50 volte a Difficile. Dopo il primo sblocco può apparire raramente nel Negozio.',
-        291: 'Sconfiggi Mai 50 volte a Difficile. Dopo il primo sblocco può apparire raramente nel Negozio.'
+        291: 'Sconfiggi Mai 50 volte a Difficile. Dopo il primo sblocco può apparire raramente nel Negozio.',
+        1133: 'Prima copia: sconfiggi Marik 20 volte a Difficile. Poi può apparire come Leggendaria nelle buste e nella rotazione del Negozio, fino a 3 copie.',
+        1139: 'Prima copia: sconfiggi Weevil 15 volte a Difficile. Poi può apparire come Super Rara nelle buste e nella rotazione del Negozio, fino a 3 copie.'
     };
 
     EXODIA.forEach((id) => {
@@ -251,6 +272,8 @@
         if (id === 31) return `Battle City I Difficile: ${s.completedChaptersByDifficulty['battlecity1:difficile'] ? 'completata' : 'da completare'} · Strings: ${Math.min(c.sliferStringsHard || 0, 30)}/30 · vittoria con almeno 4000 LP: ${Math.min(c.sliferStringsHealthy || 0, 1)}/1`;
         if (id === 472) return `Battle City II Difficile: ${s.completedChaptersByDifficulty['battlecity2:difficile'] ? 'completata' : 'da completare'} · tornei Battle City: ${Math.min(c.battleCityHardWins || 0, 3)}/3 · Marik: ${Math.min(c.raMarikHard || 0, 40)}/40 · vittorie controllate: ${Math.min(c.raMarikControlled || 0, 10)}/10`;
         if (id === 30) return `Ricompensa: ${s.claimed['obelisk-anime'] ? 'ottenuta' : 'non ancora ottenuta'}`;
+        if (id === 1133) return `Marik a Difficile: ${Math.min(c.lavaGolemMarikHard || 0, RULES.signaturesFirstSeries.lavaGolemMarikHard)}/${RULES.signaturesFirstSeries.lavaGolemMarikHard}`;
+        if (id === 1139) return `Weevil a Difficile: ${Math.min(c.parasiteWeevilHard || 0, RULES.signaturesFirstSeries.parasiteWeevilHard)}/${RULES.signaturesFirstSeries.parasiteWeevilHard}`;
         const capitolo = Object.keys(SPIRIT_BY_CHAPTER).find((key) => SPIRIT_BY_CHAPTER[key] === id);
         if (capitolo) return `Capitolo richiesto: ${s.completedChapters[capitolo] ? 'completato' : 'da completare'}`;
         return '';
@@ -268,7 +291,18 @@
             const db = typeof cardDatabase !== 'undefined' ? cardDatabase : (window.cardDatabase || []);
             const card = db.find((c) => c.id === id);
             if (card && card.origin === 'ww1') return 'Contenuto della Grande Guerra: non usa rotazioni, buste o requisiti Yu-Gi-Oh.';
-            return SOURCES[id] || 'Buste tematiche, rotazione del Negozio o Sfide coerenti con la carta.';
+            if (SOURCES[id]) return SOURCES[id];
+            const rarity = window.CardRarity ? CardRarity.of(id) : 'common';
+            const cadence = {
+                common: 'rotazione quotidiana (Comune) e Buste Base o superiori',
+                rare: 'rotazione quotidiana (Rara) e Buste Base o superiori',
+                super: 'rotazione ogni 2 giorni (Super Rara) e Buste Avanzate o superiori',
+                ultra: 'rotazione settimanale (Ultra Rara) e Buste Leggendarie/tematiche',
+                legendary: 'rotazione ogni 2 settimane (Leggendaria) e fonti Premium o Busta Leggendaria al 5%'
+            };
+            const fusionTheme = card && ((id >= 1141 && id <= 1160) || card.extraDeck || /fusione/i.test((card.name || '') + ' ' + (card.effect || '')))
+                ? ' Può inoltre uscire dalla busta tematica Forgia delle Fusioni quando è in rotazione.' : '';
+            return `Negozio: ${cadence[rarity] || 'fonte speciale indicata dalla rarità'}.${fusionTheme}`;
         }
     };
 })();

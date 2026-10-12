@@ -29,7 +29,7 @@ Segrete e Mitiche non entrano nelle buste generiche.
   900 + 5 + 2 Carte Locazione, col 5% di Leggendaria.
 - Ogni settimana: 2 tematiche da 1050 + 4 Stelle e 1 Premium da
   1800 + 8 Stelle + 1 Carta Locazione. Temi: Draghi, Incantatori, Macchine,
-  Non-Morti, Guerrieri, Acqua, Arpie/Amazzoni e Toon.
+  Non-Morti, Guerrieri, Acqua, Arpie/Amazzoni, Toon e Fusioni.
 - Ogni tematica contiene soltanto carte del proprio soggetto. Quattro slot
   sono creature base deboli; nella Premium gli slot base sono due.
 - Le illustrazioni delle confezioni usano lo sprite originale
@@ -41,6 +41,39 @@ Segrete e Mitiche non entrano nelle buste generiche.
 Le carte firma entrano nel commercio soltanto dopo la prima copia ottenuta
 dalla relativa impresa. I boss come Genesi del Vampiro sono Leggendari e
 possono uscire da fonti premium coerenti.
+
+## Lotto TCG prima serie (ID 1131-1160)
+
+Il lotto aggiunto per completare LOB/MRD/SRL/PSV/LON/LOD/PGD è censito così:
+
+| Rarità | Carte |
+|---|---|
+| Leggendaria | Golem di Lava |
+| Ultra Rara | Ryu Senshi |
+| Super Rara | Esiliatore della Luce, Giara Trasformante #2, Parassita Paracida, Mietitore dell'Incubo |
+| Rara | Insetto Perforatore, Creatura dell'Umidità, Patrizio dell'Oscurità, Principessa Serpentina, Guardia Misteriosa, Rifornimento, Cyber Saurus, Drago Fuoconero, Squalo degli Abissi, Imperatrice Giudice, Lupo dei Fiori, Attacco Kaminari, Guerriero Karbonala, Drago di Metallo, Aquila Punita, Serpente Oceanico Ruggente, Cavaliere Teschio |
+| Comune | Cavaliere di Fuoco Charubin, Fantasma di Fiamma, Fusionista, Piccolo Drago, Spine del Mondo Oscuro, Drago Minore, Cervello Antico |
+
+Le rarità tengono conto sia della forza nel motore sia del costo reale di
+Evocazione: le vecchie Fusioni Normali non diventano automaticamente Ultra
+solo perché appartengono all'Extra Deck. Il catalogo completo contiene 797
+Comuni, 91 Rare, 182 Super, 9 Ultra e 16 Leggendarie: affidarsi soltanto alla
+rotazione generica renderebbe soprattutto Comuni e Super poco leggibili.
+
+Per questo il lotto ha anche questi percorsi:
+
+- **Forgia delle Fusioni**: busta tematica che raccoglie le Fusioni storiche,
+  il loro supporto e i quattro Materiali Normali aggiunti col lotto. Il pool
+  attuale è di 33 Comuni, 15 Rare, 7 Super, 1 Ultra e 4 Leggendarie.
+- **Parassita Paracida**: prima copia dopo 15 vittorie contro Weevil a
+  Difficile; poi può comparire come Super Rara fino al limite di 3 copie.
+- **Golem di Lava**: prima copia dopo 20 vittorie contro Marik a Difficile;
+  poi può comparire come Leggendaria fino al limite di 3 copie.
+- Tutte le altre carte possono arrivare dalla rotazione e dalle buste ammesse
+  dalla loro rarità; la Cartoteca mostra la fonte precisa carta per carta.
+
+Le due imprese firma assegnano una sola prima copia: altre vittorie non
+duplicano il premio. Anche qui resta valido il tetto globale di tre copie.
 
 ## Carte firma (sempre a Difficile)
 

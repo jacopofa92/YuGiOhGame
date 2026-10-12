@@ -9,9 +9,13 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
 - [x] Carte firma, Spirit Message, Carte Dio ed Exodia con pity.
 - [x] Simulare il farming necessario (`docs/economy/FARMING_REPORT.md`, 50.000 profili).
 - [x] Animazione epica finto 3D per l'ottenimento di una carta speciale.
-- [ ] Dopo il completamento del nuovo lotto TCG prima serie, rifare l'audit
-      Negozio/Cartoteca/ottenibilità: rotazioni, buste, rarità, prezzi,
-      stelle e carte che non hanno ancora una fonte di acquisizione.
+- [x] Censire rarità e ottenibilità del nuovo lotto TCG prima serie:
+      rotazioni, nuova busta Forgia delle Fusioni, prima copia di Parassita
+      Paracida da Weevil e Golem di Lava da Marik. Fonti verificabili dalla
+      Cartoteca e test mirato in `tests/specs/nuove-carte-economia.spec.js`.
+- [ ] Audit globale futuro di Negozio/Cartoteca sulle carte precedenti:
+      prezzi, Stelle, tempi delle rotazioni e carte senza fonte. Non va
+      confuso col censimento, ora concluso, dei 30 nuovi ID 1131-1160.
 - [ ] Dopo lo stesso lotto, rieseguire il bilanciamento dei deck avversari
       Facile/Medio/Difficile e dell'IA: mantenere Starter/Structure invariati,
       rispettare la lore dei personaggi e misurare prima di modificare.

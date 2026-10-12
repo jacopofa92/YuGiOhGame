@@ -35,6 +35,8 @@ stato necessario cambiare le percentuali concordate.
 
 | Carta/traguardo | Vittorie richieste | Stima a 8 min |
 |---|---:|---:|
+| Parassita Paracida contro Weevil | 15 | 2 h |
+| Golem di Lava contro Marik | 20 | 2,7 h |
 | Destiny Board / Elefante Volante | 25 | 3,3 h |
 | Prima carta firma | 50 | 6,7 h |
 | Seconda soglia Kaiba/Yugi | 100 totali | 13,3 h totali |
@@ -45,6 +47,12 @@ Per Ra le dieci vittorie con perdita massima di 2000 LP sono comprese nelle
 40: se il giocatore le manca, il tempo sale soltanto delle ulteriori partite
 necessarie. Il costo dei tre tornei e della Storia è separato perché dipende
 fortemente da sconfitte, rami e durata delle partite.
+
+Parassita Paracida e Golem di Lava rappresentano il tempo minimo per ottenere
+la **prima** copia: la simulazione conta vittorie, quindi le sconfitte
+allungano il tempo reale. Il premio non si ripete; seconda e terza copia
+dipendono poi da rotazione e buste, mantenendo valore sia al farming del
+personaggio sia al Negozio.
 
 ## Esito
 

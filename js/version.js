@@ -32,6 +32,10 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.3.0 — completamento del catalogo TCG della prima serie con 30 carte,
+ *   censimento delle rarità, fonti in Cartoteca, imprese firma per Golem di
+ *   Lava e Parassita Paracida e busta tematica Forgia delle Fusioni.
+ *
  * 1.2.0 — rework anime controllato dell'archetipo Toon: Starter Pegasus
  *   invariato, nuovi effetti, IA per Abbandonato/Mille Occhi e deck
  *   avversari Pegasus ribilanciati sulle tre difficoltà.
@@ -636,4 +640,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.2.0';
+window.GAME_VERSION = '1.3.0';
