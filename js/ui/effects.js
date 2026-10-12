@@ -830,11 +830,14 @@
         return 1550;
     }
 
-    /** Cilindro Magico: due portali inclinati deviano il colpo verso i LP. */
+    /** Cilindro Magico: due grandi portali deviano il colpo verso la mano dell'attaccante. */
     function playMagicCylinder(attackerOwner, attackerIndex, damagedOwner, damage) {
         const boardId = attackerOwner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
         const attacker = document.querySelector(`#${boardId} .field-slot[data-owner="${attackerOwner}"][data-type="monster"][data-index="${attackerIndex}"] .card`);
-        const damageAnchor = document.querySelector(damagedOwner === 'player' ? '#playerInfo' : '#botInfo');
+        // La destinazione visiva e' la MANO del duellante che subisce il
+        // contraccolpo, non il suo avatar/riquadro LP. Oltre a rispettare la
+        // regia richiesta, la traiettoria attraversa davvero il tavolo.
+        const damageAnchor = document.querySelector(damagedOwner === 'player' ? '#playerHand' : '#botHand');
         if (!attacker || !damageAnchor) return 0;
         beginSummonCinematic();
         const from = centerOf(attacker);
@@ -842,9 +845,12 @@
         const scene = document.createElement('div');
         scene.className = 'fx-magic-cylinder';
         scene.setAttribute('aria-hidden', 'true');
-        scene.innerHTML = '<i class="fx-cylinder fx-cylinder--in"></i><i class="fx-cylinder fx-cylinder--out"></i><b class="fx-cylinder-beam fx-cylinder-beam--in"></b><b class="fx-cylinder-beam fx-cylinder-beam--out"></b><strong></strong>';
-        const entrance = { x: from.x + (to.x - from.x) * 0.34, y: from.y + (to.y - from.y) * 0.22 };
-        const exit = { x: from.x + (to.x - from.x) * 0.68, y: from.y + (to.y - from.y) * 0.66 };
+        scene.dataset.target = damagedOwner === 'player' ? 'playerHand' : 'botHand';
+        scene.style.setProperty('--cylinder-target-x', `${to.x}px`);
+        scene.style.setProperty('--cylinder-target-y', `${to.y}px`);
+        scene.innerHTML = '<div class="fx-cylinder-vignette"></div><div class="fx-cylinder-sigil"></div><i class="fx-cylinder fx-cylinder--in"></i><i class="fx-cylinder fx-cylinder--out"></i><b class="fx-cylinder-beam fx-cylinder-beam--in"></b><b class="fx-cylinder-beam fx-cylinder-beam--bridge"></b><b class="fx-cylinder-beam fx-cylinder-beam--out"></b><div class="fx-cylinder-impact"><i></i><b></b></div><strong></strong>';
+        const entrance = { x: from.x + (to.x - from.x) * 0.28, y: from.y + (to.y - from.y) * 0.24 };
+        const exit = { x: from.x + (to.x - from.x) * 0.64, y: from.y + (to.y - from.y) * 0.62 };
         const placeBeam = (el, a, b) => {
             const dx = b.x - a.x;
             const dy = b.y - a.y;
@@ -854,17 +860,27 @@
         Object.assign(cylinders[0].style, { left: `${entrance.x}px`, top: `${entrance.y}px` });
         Object.assign(cylinders[1].style, { left: `${exit.x}px`, top: `${exit.y}px` });
         placeBeam(scene.querySelector('.fx-cylinder-beam--in'), { x: from.x, y: from.y }, entrance);
+        placeBeam(scene.querySelector('.fx-cylinder-beam--bridge'), entrance, exit);
         placeBeam(scene.querySelector('.fx-cylinder-beam--out'), exit, { x: to.x, y: to.y });
+        const impact = scene.querySelector('.fx-cylinder-impact');
+        Object.assign(impact.style, { left: `${to.x}px`, top: `${to.y}px` });
+        for (let i = 0; i < 18; i++) {
+            const spark = document.createElement('em');
+            spark.style.setProperty('--spark-angle', `${i * 20 + Math.random() * 10}deg`);
+            spark.style.setProperty('--spark-distance', `${55 + Math.random() * 95}px`);
+            spark.style.setProperty('--spark-delay', `${760 + Math.random() * 180}ms`);
+            impact.appendChild(spark);
+        }
         const label = scene.querySelector('strong');
         label.textContent = damage ? `-${damage} LP` : '';
         Object.assign(label.style, { left: `${to.x}px`, top: `${to.y}px` });
         document.body.appendChild(scene);
-        if (window.SFX && typeof SFX.directHit === 'function') setTimeout(() => SFX.directHit(), 620);
+        if (window.SFX && typeof SFX.directHit === 'function') setTimeout(() => SFX.directHit(), 900);
         setTimeout(() => {
             scene.remove();
             endSummonCinematic();
-        }, 1700);
-        return 1700;
+        }, 2200);
+        return 2200;
     }
 
     /**

@@ -2,6 +2,13 @@
 
 Ultimo aggiornamento verificato: 2026-10-12.
 
+## Revamp Cilindro Magico (2026-10-12)
+
+`FX.playMagicCylinder` usa come destinazione `#playerHand`/`#botHand` del
+duellante che riceve il danno, mai l'avatar. La scena comprende due portali
+piu' grandi, tre segmenti di energia, sigillo prospettico, impatto, onde e
+particelle; durata e test sono stati riallineati a 2200 ms.
+
 ## Seconda correzione flicker e consultazione carte (2026-10-12)
 
 - Nessun pulsante informativo permanente: sul Terreno una pressione di

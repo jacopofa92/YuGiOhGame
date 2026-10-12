@@ -108,14 +108,19 @@ module.exports = {
             FX.playTrapHole('bot', 0, card);
             FX.playTorrentialTribute();
             await new Promise((resolve) => setTimeout(resolve, 80));
+            const cilindro = document.querySelector('.fx-magic-cylinder');
             const presenti = [
                 '.fx-mirror-force', '.fx-magic-cylinder', '.fx-monster-reborn',
                 '.fx-trap-hole', '.fx-torrential'
             ].every((selector) => !!document.querySelector(selector));
-            await new Promise((resolve) => setTimeout(resolve, 1950));
-            return { presenti, sbloccato: !FX.isCinematicPlaying() };
+            const bersaglioCilindro = cilindro && cilindro.dataset.target;
+            const grande = cilindro && parseFloat(getComputedStyle(cilindro.querySelector('.fx-cylinder')).width) >= 108;
+            await new Promise((resolve) => setTimeout(resolve, 2350));
+            return { presenti, bersaglioCilindro, grande, sbloccato: !FX.isCinematicPlaying() };
         });
         t.assert(smoke.presenti, 'Le cinque scene devono poter convivere senza errori DOM');
+        t.assert(smoke.bersaglioCilindro === 'playerHand' && smoke.grande,
+            `Cilindro Magico deve puntare la mano con portali grandi: ${JSON.stringify(smoke)}`);
         t.assert(smoke.sbloccato, 'Ogni cinematica deve liberare il blocco al termine');
     }
 };

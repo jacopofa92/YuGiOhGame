@@ -1616,16 +1616,36 @@
 }
 
 /* Cilindro Magico */
+.fx-cylinder-vignette {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at var(--cylinder-target-x) var(--cylinder-target-y), rgba(220,105,255,.34), transparent 28%),
+        radial-gradient(ellipse at center, transparent 28%, rgba(8,0,18,.72) 100%);
+    animation: fxCylinderVignette 2.15s ease-in-out forwards;
+}
+.fx-cylinder-sigil {
+    position: absolute;
+    left: var(--cylinder-target-x); top: var(--cylinder-target-y);
+    width: clamp(190px, 38vw, 560px);
+    aspect-ratio: 1;
+    border: 3px solid rgba(223,143,255,.52);
+    border-radius: 50%;
+    transform: translate(-50%,-50%) rotateX(67deg) scale(.15);
+    background: repeating-conic-gradient(from 12deg, transparent 0 12deg, rgba(211,105,255,.38) 13deg 15deg, transparent 16deg 30deg);
+    box-shadow: inset 0 0 45px rgba(207,94,255,.48), 0 0 65px rgba(178,65,242,.72);
+    animation: fxCylinderSigil 2.05s cubic-bezier(.16,.8,.22,1) forwards;
+}
 .fx-cylinder {
     position: absolute;
-    width: clamp(72px, 8vw, 130px);
+    width: clamp(108px, 15vw, 230px);
     aspect-ratio: .62;
     transform: translate(-50%,-50%) rotateX(62deg) rotateZ(-18deg) scale(.15);
-    border: 4px solid #e9b6ff;
+    border: 6px solid #f1ceff;
     border-radius: 50% / 18%;
     background: repeating-linear-gradient(90deg, #33105d 0 9%, #9d51d1 10% 18%, #2b0c50 19% 28%);
-    box-shadow: inset 0 0 25px #08000f, 0 0 18px #fff, 0 0 48px #ad55ef;
-    animation: fxCylinderEnter 1.48s cubic-bezier(.16,.8,.22,1) forwards;
+    box-shadow: inset 0 0 38px #08000f, inset 0 0 70px rgba(190,70,255,.45), 0 0 24px #fff, 0 0 78px #ad55ef;
+    animation: fxCylinderEnter 1.95s cubic-bezier(.16,.8,.22,1) forwards;
 }
 .fx-cylinder::before,
 .fx-cylinder::after {
@@ -1642,15 +1662,51 @@
 .fx-cylinder--out { animation-delay: 110ms; transform: translate(-50%,-50%) rotateX(62deg) rotateZ(162deg) scale(.15); }
 .fx-cylinder-beam {
     position: absolute;
-    height: 12px;
+    height: clamp(14px, 2.2vw, 28px);
     transform-origin: 0 50%;
     border-radius: 50%;
     background: linear-gradient(180deg, transparent, #fff 42%, #d786ff 54%, transparent);
-    box-shadow: 0 0 12px #fff, 0 0 28px #bd5cff;
+    box-shadow: 0 0 16px #fff, 0 0 38px #d477ff, 0 0 76px rgba(158,45,255,.8);
     opacity: 0;
     animation: fxCylinderBeam .75s ease-in 400ms forwards;
 }
 .fx-cylinder-beam--out { animation-delay: 720ms; }
+.fx-cylinder-beam--bridge { animation-delay: 570ms; }
+.fx-cylinder-impact {
+    position: absolute;
+    width: clamp(100px, 17vw, 250px);
+    aspect-ratio: 1;
+    transform: translate(-50%,-50%) scale(.1);
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff 0 7%, #efc3ff 9% 18%, rgba(184,66,255,.72) 26%, transparent 68%);
+    box-shadow: 0 0 35px #fff, 0 0 90px #bd5cff, 0 0 150px rgba(122,31,218,.8);
+    animation: fxCylinderImpact 1.15s cubic-bezier(.15,.78,.22,1) .78s forwards;
+}
+.fx-cylinder-impact::before,
+.fx-cylinder-impact::after,
+.fx-cylinder-impact i,
+.fx-cylinder-impact b {
+    content: '';
+    position: absolute;
+    inset: -24%;
+    border: 3px solid rgba(235,194,255,.82);
+    border-radius: 50%;
+    animation: fxCylinderShockwave .9s ease-out .88s forwards;
+}
+.fx-cylinder-impact::after { inset: -52%; animation-delay: 1s; }
+.fx-cylinder-impact i { inset: 10%; border-style: dashed; animation: fxCylinderImpactSpin 1.2s linear infinite; }
+.fx-cylinder-impact b { inset: 28%; border-width: 5px; animation-delay: .82s; }
+.fx-cylinder-impact em {
+    position: absolute;
+    left: 50%; top: 50%;
+    width: clamp(5px, .7vw, 10px); height: clamp(22px, 4vw, 64px);
+    border-radius: 999px;
+    background: linear-gradient(#fff, #d672ff, transparent);
+    box-shadow: 0 0 12px #fff, 0 0 25px #bc50ff;
+    opacity: 0;
+    transform-origin: 50% 0;
+    animation: fxCylinderSpark .72s ease-out var(--spark-delay) forwards;
+}
 .fx-magic-cylinder strong {
     position: absolute;
     transform: translate(-50%,-50%) scale(.4);
@@ -1658,7 +1714,13 @@
     font: 900 clamp(1rem, 2.5vw, 2.1rem) Georgia, serif;
     text-shadow: 0 0 8px #fff, 0 0 20px #d255ff, 0 3px 8px #000;
     opacity: 0;
-    animation: fxCylinderDamage .65s ease-out .9s forwards;
+    animation: fxCylinderDamage .85s ease-out 1.05s forwards;
+}
+@keyframes fxCylinderVignette { 0%,100% { opacity: 0; } 16%,78% { opacity: 1; } }
+@keyframes fxCylinderSigil {
+    0% { opacity: 0; transform: translate(-50%,-50%) rotateX(72deg) rotateZ(-35deg) scale(.15); }
+    28%,76% { opacity: .9; transform: translate(-50%,-50%) rotateX(67deg) rotateZ(18deg) scale(1); }
+    100% { opacity: 0; transform: translate(-50%,-50%) rotateX(63deg) rotateZ(60deg) scale(1.2); }
 }
 @keyframes fxCylinderEnter {
     0% { opacity: 0; filter: blur(7px); }
@@ -1675,6 +1737,22 @@
     0% { opacity: 0; scale: 0 1; }
     18%, 64% { opacity: 1; scale: 1 1; }
     100% { opacity: 0; scale: 1 .2; }
+}
+@keyframes fxCylinderImpact {
+    0% { opacity: 0; transform: translate(-50%,-50%) scale(.1) rotate(-20deg); }
+    30% { opacity: 1; transform: translate(-50%,-50%) scale(1.28) rotate(4deg); }
+    58% { transform: translate(-50%,-50%) scale(.92) rotate(0); filter: brightness(1.5); }
+    100% { opacity: 0; transform: translate(-50%,-50%) scale(1.55); filter: blur(3px); }
+}
+@keyframes fxCylinderShockwave {
+    0% { opacity: .95; transform: scale(.2); }
+    100% { opacity: 0; transform: scale(2.1); }
+}
+@keyframes fxCylinderImpactSpin { to { transform: rotate(360deg); } }
+@keyframes fxCylinderSpark {
+    0% { opacity: 0; transform: rotate(var(--spark-angle)) translateY(0) scaleY(.15); }
+    20% { opacity: 1; }
+    100% { opacity: 0; transform: rotate(var(--spark-angle)) translateY(calc(var(--spark-distance) * -1)) scaleY(1); }
 }
 @keyframes fxCylinderDamage { 0% { opacity: 0; transform: translate(-50%,-50%) scale(.4); } 35% { opacity: 1; transform: translate(-50%,-50%) scale(1.18); } 100% { opacity: 0; transform: translate(-50%,-70%) scale(1); } }
 

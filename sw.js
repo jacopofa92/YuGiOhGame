@@ -461,7 +461,8 @@
 // delle carte sul Terreno senza interferire con le azioni di gioco.
 // v238: filmati alleggeriti e grafica sottostante sospesa durante i video.
 // v239: long-press informazioni, prompt ripulito e rendering mano stabile.
-const CACHE_NAME = 'ygo-duel-arena-v239';
+// v240: revamp ampio di Cilindro Magico diretto alla mano avversaria.
+const CACHE_NAME = 'ygo-duel-arena-v240';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

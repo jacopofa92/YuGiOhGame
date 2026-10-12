@@ -32,6 +32,9 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.3.6 — Cilindro Magico ridisegnato come grande deviazione energetica:
+ *   portali, sigillo e impatto convergono sulla mano dell'attaccante.
+ *
  * 1.3.5 — Consultazione carte sul Terreno con pressione prolungata/clic
  *   destro, prompt Posizione ripulito e nodi della mano conservati tra i
  *   ridisegni. Il video compare con un cambio di layer atomico.
@@ -659,4 +662,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.3.5';
+window.GAME_VERSION = '1.3.6';
