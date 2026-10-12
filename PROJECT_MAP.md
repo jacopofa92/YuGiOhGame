@@ -1,6 +1,24 @@
 # Yu-Gi-Oh! Millennium Duel Arena — mappa tecnica persistente
 
-Ultimo aggiornamento verificato: 2026-10-11.
+Ultimo aggiornamento verificato: 2026-10-12.
+
+## Completamento carte TCG prima serie (2026-10-12)
+
+Il perimetro LOB/MRD/SRL/PSV/LON/LOD/PGD è stato completato sul branch
+`feature/carte-prima-serie-tcg`: alle 26 carte mancanti si sono aggiunti i
+quattro Mostri Normali richiesti come Materiali dalle nuove Fusioni, per un
+totale reale di 30 carte (id 1131-1160), tutte con artwork ufficiale locale.
+Le 16 Fusioni usano il percorso condiviso dell'Extra Deck; le dieci carte
+Effetto hanno introdotto agganci generici per pescata sostituita, ritorno nel
+Deck, numero reale di Tributi, Materiali da Fusione, Special Summon sul
+Terreno avversario e scelta difensiva del bersaglio d'attacco. Guardrail:
+`prima-serie-fusioni-mancanti` e `prima-serie-effetti-mancanti`.
+
+Il seguito è già segnato in `docs/planning/WORK_IN_PROGRESS.md`: prima un
+nuovo audit di Negozio/Cartoteca/ottenibilità e farming delle carte, poi la
+simulazione dei deck avversari Facile/Medio/Difficile e dell'IA. Starter e
+Structure restano invariati; ogni eventuale modifica ai deck avversari deve
+restare coerente con la lore e partire da misure riproducibili.
 
 ## Nuovo nome, repository privato, sito su Cloudflare (2026-10-11)
 

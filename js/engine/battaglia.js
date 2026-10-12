@@ -212,6 +212,53 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
         done();
         return;
     }
+    // Patrizio dell'Oscurità: soltanto dopo aver convalidato l'attaccante,
+    // il difensore sceglie il bersaglio. La scelta passa da Decisioni,
+    // quindi funziona anche per persona e posto remoto. Il token evita di
+    // riaprire il prompt nella chiamata ricorsiva col bersaglio deciso.
+    const patricianPresent = defenderField.some((slot) => slot && !slot.isFaceDown
+        && DuelEngine.getDefinition(slot.card.id)?.controllerChoosesOpponentAttackTargets);
+    const patricianKey = `${gameState.turn}:${attackerSlot.card.uid}`;
+    gameState.patricianAttackChoiceDone = gameState.patricianAttackChoiceDone || new Set();
+    if (patricianPresent && !gameState.patricianAttackChoiceDone.has(patricianKey)) {
+        const forced = DuelEngine.forcedAttackTargetIndexes ? DuelEngine.forcedAttackTargetIndexes(defenderOwner) : [];
+        const attackerDefinition = DuelEngine.getDefinition(attackerSlot.card.id);
+        const filterRequired = attackerDefinition && typeof attackerDefinition.mustTargetFilterIfPresent === 'function'
+            && defenderField.some((slot) => slot && !slot.isFaceDown && attackerDefinition.mustTargetFilterIfPresent(slot.card, attackerOwner));
+        const alreadyAttacked = attackerDefinition && attackerDefinition.attacksEachEnemyOnce
+            ? attackedEnemyUidsOf(attackerSlot) : null;
+        const candidates = defenderField.map((slot, index) => {
+            if (!slot) return null;
+            const blocked = gameState.cannotBeAttackTargetUids && gameState.cannotBeAttackTargetUids[slot.card.uid];
+            const isBlocked = typeof blocked === 'function' ? blocked(attackerSlot.card) : !!blocked;
+            if (isBlocked || (forced.length > 0 && !forced.includes(index))) return null;
+            if (filterRequired && (slot.isFaceDown || !attackerDefinition.mustTargetFilterIfPresent(slot.card, attackerOwner))) return null;
+            if (alreadyAttacked && alreadyAttacked.has(slot.card.uid)) return null;
+            return { slot, index, card: slot.card };
+        }).filter(Boolean);
+        if (candidates.length > 0) {
+            Decisioni.chiedi({
+                chi: defenderOwner,
+                tipo: 'carte',
+                candidati: candidates.map((candidate) => candidate.card),
+                titolo: '🌑 Patrizio dell’Oscurità',
+                testo: 'Scegli quale tuo mostro verrà attaccato.',
+                // Il database usa attack/defense (non le abbreviazioni
+                // stampate ATK/DEF): il difensore IA sceglie il muro più
+                // alto, comportamento prudente e riproducibile.
+                automatica: (list) => list.slice().sort((a, b) => Math.max(b.attack || 0, b.defense || 0) - Math.max(a.attack || 0, a.defense || 0))[0],
+                automaticaSeUnica: true
+            }, (chosen) => {
+                if (!chosen) { done(); return; }
+                const chosenCandidate = candidates.find((candidate) => candidate.card.uid === chosen.uid);
+                if (!chosenCandidate) { done(); return; }
+                gameState.patricianAttackChoiceDone.add(patricianKey);
+                resolveAttack(attackerOwner, attackerIndex, chosenCandidate.index, done);
+            });
+            return;
+        }
+    }
+    gameState.patricianAttackChoiceDone.delete(patricianKey);
     // Divieto di essere scelto come BERSAGLIO per QUESTO SOLO mostro
     // difensore (es. Capitano Predone id 714: "l'avversario non può
     // bersagliare i Guerrieri con gli attacchi, eccetto questa carta") —

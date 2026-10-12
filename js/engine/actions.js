@@ -1560,7 +1560,9 @@ function offerSpecialSummonBanishChoice(card, handIndex, filters) {
  */
 function offerSpecialSummonTributeChoice(card, handIndex, filters) {
     const ctx = DuelEngine.makeContext('player', { card: card, handIndex: handIndex });
-    const field = ctx.field(ctx.owner);
+    const def = DuelEngine.getDefinition(card.id);
+    const tributeOwner = def && def.specialSummonTributeFromOpponent ? ctx.opponent : ctx.owner;
+    const field = ctx.field(tributeOwner);
     const totalMatching = filters.reduce((sum, f) => sum + field.filter((s) => s && f(s.card)).length, 0);
     if (totalMatching <= filters.length) return false;
     const chosenUids = [];

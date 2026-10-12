@@ -9,6 +9,25 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
 - [x] Carte firma, Spirit Message, Carte Dio ed Exodia con pity.
 - [x] Simulare il farming necessario (`docs/economy/FARMING_REPORT.md`, 50.000 profili).
 - [x] Animazione epica finto 3D per l'ottenimento di una carta speciale.
+- [ ] Dopo il completamento del nuovo lotto TCG prima serie, rifare l'audit
+      Negozio/Cartoteca/ottenibilità: rotazioni, buste, rarità, prezzi,
+      stelle e carte che non hanno ancora una fonte di acquisizione.
+- [ ] Dopo lo stesso lotto, rieseguire il bilanciamento dei deck avversari
+      Facile/Medio/Difficile e dell'IA: mantenere Starter/Structure invariati,
+      rispettare la lore dei personaggi e misurare prima di modificare.
+
+## Completamento prima serie TCG
+
+- [x] Aggiungere le 26 carte TCG rimaste nel perimetro LOB/MRD/SRL/PSV/
+      LON/LOD/PGD, con dati e immagini ufficiali, effetti verificati e test
+      mirati. Il catalogo ha richiesto anche 4 Materiali da Fusione normali
+      assenti: il lotto reale è quindi di 30 carte. Lavoro sul branch
+      `feature/carte-prima-serie-tcg`.
+- [x] Completare prima Fusioni e carte coperte dagli hook esistenti.
+- [x] Implementare Lava Golem e Parasite Paracide con percorsi generici e
+      compatibili con IA/Multiplayer.
+- [x] Affrontare per ultime Banisher of the Light e Patrician of Darkness:
+      sono le due carte con il maggiore impatto strutturale sul motore.
 
 ## Bilanciamento Storia per deck
 

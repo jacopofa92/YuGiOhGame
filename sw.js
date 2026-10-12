@@ -450,7 +450,10 @@
 // v229: Collana del Comando e Carro Armato Ingranaggio Antico: il bersaglio lo sceglie il giocatore.
 // v230: Torre dei Duellanti disegnata come una vera torre da scalare.
 // v231: UI Torre rinnovata e ambienti field più organici, con vento continuo sul Dirigibile.
-const CACHE_NAME = 'ygo-duel-arena-v231';
+// v233: completamento delle carte TCG della prima serie (30 nuove risorse
+// incluse le quattro Fusion Material mancanti). v232 resta riservata al
+// branch VFX parallelo, così i due lavori non pubblicano la stessa cache.
+const CACHE_NAME = 'ygo-duel-arena-v233';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
