@@ -2,6 +2,15 @@
 
 Ultimo aggiornamento verificato: 2026-10-12.
 
+## Login e paginazione Cartoteca (2026-10-12)
+
+- Il gate iniziale conserva lo stesso flusso cloud, ma presenta una card piu'
+  leggibile e coerente con l'arena: introduzione, etichette persistenti,
+  focus evidente, gerarchia visiva e variante compatta per schermi bassi.
+- `cartoteca.html` mostra al massimo 300 carte per pagina; filtri e ordinamento
+  continuano a riportare alla prima pagina, mentre i pager mantengono la pagina
+  scelta dall'utente.
+
 ## Revamp Forza dello Specchio (2026-10-12)
 
 `FX.playMirrorForce` colloca la barriera davanti al lato difensore e usa

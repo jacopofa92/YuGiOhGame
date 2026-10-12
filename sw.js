@@ -463,7 +463,8 @@
 // v239: long-press informazioni, prompt ripulito e rendering mano stabile.
 // v240: revamp ampio di Cilindro Magico diretto alla mano avversaria.
 // v241: revamp epico e riallineato di Forza dello Specchio.
-const CACHE_NAME = 'ygo-duel-arena-v241';
+// v242: login rinnovata e Cartoteca a 300 carte per pagina.
+const CACHE_NAME = 'ygo-duel-arena-v242';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

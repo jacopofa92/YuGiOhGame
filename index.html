@@ -613,15 +613,49 @@
         gap: clamp(14px, 3vh, 26px);
     }
     .gate-card {
-        width: min(92vw, 380px);
+        position: relative;
+        width: min(92vw, 430px);
         display: flex;
         flex-direction: column;
-        gap: 14px;
-        background: linear-gradient(165deg, rgba(20,20,30,0.55), rgba(12,13,20,0.55));
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 18px;
-        padding: 16px;
-        box-shadow: 0 20px 50px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05);
+        gap: 18px;
+        overflow: hidden;
+        background:
+            radial-gradient(circle at 50% -20%, rgba(247,215,116,0.16), transparent 48%),
+            linear-gradient(165deg, rgba(22,22,31,0.94), rgba(8,10,17,0.96));
+        border: 1px solid rgba(247,215,116,0.28);
+        border-radius: 22px;
+        padding: 22px;
+        box-shadow: 0 24px 70px rgba(0,0,0,0.55), 0 0 34px rgba(243,156,18,0.08), inset 0 1px 0 rgba(255,255,255,0.07);
+    }
+    .gate-card::before {
+        content: '';
+        position: absolute;
+        inset: 0 18% auto;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(247,215,116,0.9), transparent);
+        box-shadow: 0 0 12px rgba(247,215,116,0.5);
+    }
+    .gate-intro { text-align: center; }
+    .gate-kicker {
+        margin: 0 0 5px;
+        color: rgba(247,215,116,0.72);
+        font-size: 0.64rem;
+        font-weight: 900;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+    }
+    .gate-heading {
+        margin: 0;
+        color: #fff4ce;
+        font-size: clamp(1.05rem, 4vw, 1.3rem);
+        letter-spacing: 0.035em;
+    }
+    .gate-copy {
+        margin: 6px auto 0;
+        max-width: 32em;
+        color: rgba(219,230,255,0.6);
+        font-size: 0.76rem;
+        line-height: 1.45;
     }
     /* Due tab (Accedi/Registrati) con un fondo che scivola dietro quella
        attiva — niente libreria di animazione, solo transition su
@@ -663,6 +697,41 @@
         animation: gatePanelIn 0.28s ease both;
     }
     .gate-panel.active { display: flex; }
+    .gate-field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .gate-field-label {
+        color: rgba(230,235,247,0.76);
+        font-size: 0.68rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+    .gate-field-control { position: relative; }
+    .gate-field-control .menu-name-input {
+        width: 100%;
+        margin: 0;
+        padding: 12px 42px 12px 14px;
+        border-color: rgba(247,215,116,0.18);
+        background: rgba(4,6,12,0.58);
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+    .gate-field-control .menu-name-input:hover { border-color: rgba(247,215,116,0.34); }
+    .gate-field-control .menu-name-input:focus {
+        border-color: rgba(247,215,116,0.72);
+        background: rgba(7,10,18,0.82);
+        box-shadow: 0 0 0 3px rgba(247,215,116,0.1), 0 0 18px rgba(243,156,18,0.08);
+    }
+    .gate-input-icon {
+        position: absolute;
+        right: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: rgba(247,215,116,0.46);
+        pointer-events: none;
+    }
     @keyframes gatePanelIn {
         from { opacity: 0; transform: translateY(4px); }
         to   { opacity: 1; transform: translateY(0); }
@@ -820,7 +889,14 @@
         .menu-item-arrow { font-size: 1rem; }
         .menu-footer { position: static; margin-top: 10px; transform: none; }
         .gate-shell { min-height: auto; padding: 10px 16px 18px; gap: 4px; }
-        .gate-card { gap: 7px; }
+        .gate-card { gap: 8px; padding: 13px 16px; }
+        .gate-copy { display: none; }
+        .gate-kicker { margin-bottom: 2px; }
+        .gate-heading { font-size: 1rem; }
+        .gate-panel { gap: 7px; }
+        .gate-field { gap: 3px; }
+        .gate-field-label { font-size: 0.6rem; }
+        .gate-field-control .menu-name-input { padding-block: 8px; }
         .gate-btn { padding: 9px 16px; font-size: 0.82rem; }
         .menu-name-input { margin-bottom: 8px; padding: 8px 12px; }
     }
@@ -1008,6 +1084,11 @@
         </div>
 
         <div class="gate-card" id="gateCloudCard">
+            <div class="gate-intro">
+                <p class="gate-kicker">Area Duellanti</p>
+                <h2 class="gate-heading">Entra nell'arena</h2>
+                <p class="gate-copy">Accedi per ritrovare mazzi, carte e progressi sincronizzati.</p>
+            </div>
             <!-- Due tab separate (Accedi/Registrati), non più un mini-form
                  condiviso: segnalato dall'utente come "un giochetto strano"
                  (il campo Conferma password restava visibile passando ad
@@ -1020,17 +1101,17 @@
             </div>
 
             <div class="gate-panel active" id="gateLoginPanel">
-                <input type="email" id="gateEmailInput" class="menu-name-input" placeholder="Email" autocomplete="username" style="margin-bottom:0;">
-                <input type="password" id="gatePasswordInput" class="menu-name-input" placeholder="Password" autocomplete="current-password" style="margin-bottom:0;">
+                <label class="gate-field" for="gateEmailInput"><span class="gate-field-label">Email</span><span class="gate-field-control"><input type="email" id="gateEmailInput" class="menu-name-input" placeholder="duellante@email.it" autocomplete="username"><span class="gate-input-icon" data-icon="profile"></span></span></label>
+                <label class="gate-field" for="gatePasswordInput"><span class="gate-field-label">Password</span><span class="gate-field-control"><input type="password" id="gatePasswordInput" class="menu-name-input" placeholder="La tua password" autocomplete="current-password"><span class="gate-input-icon" data-icon="login"></span></span></label>
                 <button type="button" class="gate-btn signin" id="gateSignInBtn"><span data-icon="login"></span> Accedi</button>
                 <button type="button" class="gate-forgot-link" id="gateForgotLink">Password dimenticata?</button>
                 <div class="gate-status" id="gateLoginStatus"></div>
             </div>
 
             <div class="gate-panel" id="gateRegisterPanel">
-                <input type="email" id="gateRegisterEmailInput" class="menu-name-input" placeholder="Email" autocomplete="username" style="margin-bottom:0;">
-                <input type="password" id="gateRegisterPasswordInput" class="menu-name-input" placeholder="Password" autocomplete="new-password" style="margin-bottom:0;">
-                <input type="password" id="gateRegisterPasswordConfirmInput" class="menu-name-input" placeholder="Conferma password" autocomplete="new-password" style="margin-bottom:0;">
+                <label class="gate-field" for="gateRegisterEmailInput"><span class="gate-field-label">Email</span><span class="gate-field-control"><input type="email" id="gateRegisterEmailInput" class="menu-name-input" placeholder="duellante@email.it" autocomplete="username"><span class="gate-input-icon" data-icon="profile"></span></span></label>
+                <label class="gate-field" for="gateRegisterPasswordInput"><span class="gate-field-label">Password</span><span class="gate-field-control"><input type="password" id="gateRegisterPasswordInput" class="menu-name-input" placeholder="Minimo 6 caratteri" autocomplete="new-password"><span class="gate-input-icon" data-icon="login"></span></span></label>
+                <label class="gate-field" for="gateRegisterPasswordConfirmInput"><span class="gate-field-label">Conferma password</span><span class="gate-field-control"><input type="password" id="gateRegisterPasswordConfirmInput" class="menu-name-input" placeholder="Ripeti la password" autocomplete="new-password"><span class="gate-input-icon" data-icon="login"></span></span></label>
                 <button type="button" class="gate-btn signup" id="gateSignUpBtn"><span data-icon="signup"></span> Crea account</button>
                 <p class="gate-register-hint">Dopo la registrazione un amministratore dovrà approvare il tuo account prima che tu possa accedere.</p>
                 <div class="gate-status" id="gateRegisterStatus"></div>
