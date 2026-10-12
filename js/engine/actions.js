@@ -2123,12 +2123,9 @@ window.DuelEngineUI = {
                 <button type="button" class="quick-popover-btn attack icon-round" id="qpPositionAttack" title="Scoperta in Attacco"><span data-icon="attackPos"></span></button>
                 <button type="button" class="quick-popover-btn defense icon-round" id="qpPositionDefense" title="Coperta in Difesa"><span data-icon="defensePos"></span></button>
             </div>
-        // Questa finestra arriva DOPO che una carta/effetto ha già scelto
-        // quale mostro Evocare. Non è quindi una domanda annullabile: un
-        // click sul campo non deve far sparire il prompt lasciando la carta
-        // in una zona intermedia e il flusso senza callback. È lo stesso
-        // vincolo già applicato all'Evocazione Tributo in openSummonModal.
         `, { bare: true, dismissible: false });
+        // La carta e' gia' stata scelta: la Posizione resta obbligatoria e
+        // il click esterno non deve lasciare un'Evocazione a meta'.
         // Stesso refresh leggero (mai il vero updateUI(), vedi il commento
         // su questo in openCardListPicker qui sopra) dopo ogni scelta
         // asincrona — bug reale della stessa famiglia: un mostro appena

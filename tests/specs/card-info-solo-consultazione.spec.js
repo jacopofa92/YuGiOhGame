@@ -26,7 +26,17 @@ module.exports = {
         });
         assert(normale, 'Un tap normale deve continuare ad aprire le informazioni');
 
-        const tributo = await page.evaluate(() => {
+        const manoStabile = await page.evaluate(() => {
+            const carta = { ...cardDatabase.find((c) => c.type === 'spell'), uid: 'mano-no-flicker' };
+            gameState.playerHand = [carta];
+            updateUI();
+            const prima = document.querySelector('#playerHand .card');
+            updateUI();
+            return prima === document.querySelector('#playerHand .card');
+        });
+        assert(manoStabile, 'Una carta immutata in mano deve conservare lo stesso nodo DOM fra due render');
+
+        const tributo = await page.evaluate(async () => {
             const sacrificio = { ...cardDatabase.find((c) => c.type === 'monster' && c.level <= 4), uid: 'info-tributo-materiale' };
             const evocato = { ...cardDatabase.find((c) => c.type === 'monster' && c.level >= 5 && c.level <= 6), uid: 'info-tributo-evocato' };
             gameState.playerMonsterField[0] = { card: sacrificio, position: 'attack', isFaceDown: false };
@@ -35,13 +45,17 @@ module.exports = {
             // non avvia animazioni asincrone che contaminerebbero il caso
             // di scarto verificato subito dopo.
             startTributeSelection(evocato, 0, 2, null);
-            // Il comando "i" è una consultazione esplicita: deve aprire il
-            // dettaglio senza scegliere il mostro come Tributo.
-            const infoButton = document.querySelector('#playerFieldBoard .field-slot[data-type="monster"][data-index="0"] .card-inspect-button');
-            if (infoButton) infoButton.click();
+            // Pressione prolungata: consulta senza scegliere il Tributo e
+            // senza lasciare pulsanti permanenti sopra le carte.
+            const cardEl = document.querySelector('#playerFieldBoard .field-slot[data-type="monster"][data-index="0"] .card');
+            cardEl.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerType: 'touch', clientX: 20, clientY: 20 }));
+            await new Promise((resolve) => setTimeout(resolve, 580));
+            cardEl.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerType: 'touch', clientX: 20, clientY: 20 }));
+            cardEl.click();
             const consultato = document.getElementById('cardInfoPanel').classList.contains('visible')
-                && gameState.pendingTributeSummon.selected.length === 0;
-            handleCardClick(sacrificio, 'monster', 0, 'player', false);
+                && gameState.pendingTributeSummon.selected.length === 0
+                && !document.querySelector('.card-inspect-button');
+            cardEl.click();
             return {
                 consultato,
                 info: document.getElementById('cardInfoPanel').classList.contains('visible'),

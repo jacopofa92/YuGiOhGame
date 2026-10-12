@@ -32,6 +32,10 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.3.5 — Consultazione carte sul Terreno con pressione prolungata/clic
+ *   destro, prompt Posizione ripulito e nodi della mano conservati tra i
+ *   ridisegni. Il video compare con un cambio di layer atomico.
+ *
  * 1.3.4 — Filmati del duello fluidi: primo frame sincronizzato, compositing
  *   alleggerito e ambiente/ologrammi sospesi durante la riproduzione.
  *
@@ -655,4 +659,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.3.4';
+window.GAME_VERSION = '1.3.5';

@@ -134,6 +134,7 @@ module.exports = {
                 document.getElementById('quickPopoverCatcher').click();
                 const dopoFuori = {
                     prompt: !!document.getElementById('quickPopover'),
+                    testo: document.getElementById('quickPopover').textContent,
                     callback,
                     nelCimitero: gameState.playerGraveyard.some((c) => c.uid === card.uid),
                     inCampo: gameState.playerMonsterField.some((s) => s && s.card.uid === card.uid)
@@ -149,6 +150,8 @@ module.exports = {
             assert(posizione.dopoFuori.prompt && posizione.dopoFuori.callback === 0
                 && posizione.dopoFuori.nelCimitero && !posizione.dopoFuori.inCampo,
             'Cliccare fuori non deve chiudere né consumare la scelta obbligatoria della Posizione');
+            assert(!/Questa finestra|callback|vincolo/.test(posizione.dopoFuori.testo),
+                `Il popover non deve mostrare commenti tecnici: ${posizione.dopoFuori.testo}`);
             assert(!posizione.promptFinale && posizione.callback === 1 && posizione.slot
                 && posizione.slot.position === 'defense' && posizione.slot.isFaceDown,
             'Dopo il click fuori, scegliere Difesa deve comunque completare una sola Evocazione');

@@ -601,7 +601,7 @@
                 resumeBackgroundGraphics();
             }
             if (typeof onDone === 'function') onDone();
-        }, 220); // poco oltre la transizione CSS da 180ms
+        }, 0);
     };
 
     video.addEventListener('ended', cleanup);

@@ -322,15 +322,13 @@
     justify-content: center;
     background: #000;
 
-    opacity: 0;
+    visibility: hidden;
     /* Il blur fullscreen ricreava una texture enorme proprio mentre il
        decoder video iniziava a lavorare, causando lampi e frame persi. */
-    transition: opacity 180ms linear;
     contain: strict;
     isolation: isolate;
     transform: translateZ(0);
     backface-visibility: hidden;
-    will-change: opacity;
 }
 
 /* Distruzione Magie/Trappole: scossa, perdita di segnale e dissoluzione
@@ -352,7 +350,7 @@
 @keyframes fxStDataDrift { 15% { opacity: .72; } 100% { opacity: 0; transform: translate(var(--fx-st-dx), var(--fx-st-dy)) rotate(var(--fx-st-rot)) scale(.35); } }
 
 .fx-video-backdrop.show {
-    opacity: 1;
+    visibility: visible;
 }
 
 
@@ -364,13 +362,11 @@
     height: 100vh;     /* altezza = 100% viewport */
     object-fit: cover; /* riempie lo schermo senza distorsioni */
 
-    opacity: 0;
-    transition: opacity 140ms linear;
+    opacity: 1;
 
     contain: paint;
     transform: translateZ(0);
     backface-visibility: hidden;
-    will-change: opacity;
 
     /* FEATHER ELLITTICO (fade dei bordi più naturale) */
     /* Nessuna mask/ombra fullscreen: entrambe forzavano una superficie

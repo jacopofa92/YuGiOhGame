@@ -2,6 +2,18 @@
 
 Ultimo aggiornamento verificato: 2026-10-12.
 
+## Seconda correzione flicker e consultazione carte (2026-10-12)
+
+- Nessun pulsante informativo permanente: sul Terreno una pressione di
+  520 ms (oppure il clic destro) apre il dettaglio senza eseguire il comando
+  di gioco; il tap breve continua a scegliere, attaccare o sacrificare.
+- `renderPlayerHand` e `renderBotHand` riconciliano i nodi per uid/posizione:
+  una carta immutata conserva immagine decodificata e layer fra due `updateUI`.
+- Il player video non usa piu' transizioni di opacita': backdrop e primo
+  frame diventano visibili insieme con un cambio atomico di `visibility`.
+- Rimosso dal template del popover Attacco/Difesa un commento JavaScript che
+  veniva erroneamente mostrato come testo, come documentato dalla foto mobile.
+
 ## Filmati del duello senza flicker (2026-10-12)
 
 - `js/ui/effects.js` prepara il video con `preload=auto` e mostra player e

@@ -213,29 +213,54 @@ function isGameplaySelectionActive() {
 }
 
 /**
- * Pulsante esplicito del Terreno: separa senza ambiguità "usa/seleziona
- * questa carta" da "fammi leggere questa carta". È soprattutto importante
- * su touch e in Battle Phase, dove il pointerdown sulla carta può già essere
- * l'inizio della freccia d'attacco.
+ * Gesto esplicito del Terreno: pressione prolungata su touch oppure clic
+ * destro su desktop. Il tap breve resta interamente dedicato al comando di
+ * gioco corrente (attacco, Tributo, bersaglio e cosi' via).
  */
-function createFieldInspectButton(card, options) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'card-inspect-button';
-    button.textContent = 'i';
-    button.title = `Informazioni: ${card.name}`;
-    button.setAttribute('aria-label', `Mostra informazioni di ${card.name}`);
-    button.onpointerdown = (event) => {
-        event.preventDefault();
-        event.stopPropagation();
+function enableFieldCardInspectionGesture(cardEl, card, options) {
+    const HOLD_MS = 520;
+    const MOVE_TOLERANCE = 12;
+    let timer = null;
+    let startX = 0;
+    let startY = 0;
+    let consumed = false;
+
+    const cancelTimer = () => {
+        clearTimeout(timer);
+        timer = null;
     };
-    button.onclick = (event) => {
+
+    cardEl.addEventListener('pointerdown', (event) => {
+        if (event.pointerType === 'mouse' && event.button !== 0) return;
+        consumed = false;
+        startX = event.clientX;
+        startY = event.clientY;
+        cancelTimer();
+        timer = setTimeout(() => {
+            consumed = true;
+            updateCardInfoPanel(card, options);
+            if (window.NativeHaptics) NativeHaptics.light();
+        }, HOLD_MS);
+    }, true);
+    cardEl.addEventListener('pointermove', (event) => {
+        if (Math.hypot(event.clientX - startX, event.clientY - startY) > MOVE_TOLERANCE) cancelTimer();
+    }, true);
+    cardEl.addEventListener('pointerup', cancelTimer, true);
+    cardEl.addEventListener('pointercancel', cancelTimer, true);
+    cardEl.addEventListener('click', (event) => {
+        if (!consumed) return;
+        consumed = false;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+    }, true);
+    cardEl.addEventListener('contextmenu', (event) => {
+        cancelTimer();
+        consumed = true;
         event.preventDefault();
         event.stopPropagation();
         updateCardInfoPanel(card, options);
         if (window.NativeHaptics) NativeHaptics.light();
-    };
-    return button;
+    });
 }
 
 // Click fuori dal pannello descrizione carta -> lo chiude. Esclude i click
@@ -994,9 +1019,9 @@ function renderFields() {
                 updateCardInfoPanel(fieldSpellSlotState.card, { sourceType: 'field-spell', sourceOwner: owner, isFaceDown: visuallyFaceDown });
             };
             firstSpecial.appendChild(fieldSpellCardEl);
-            firstSpecial.appendChild(createFieldInspectButton(fieldSpellSlotState.card, {
+            enableFieldCardInspectionGesture(fieldSpellCardEl, fieldSpellSlotState.card, {
                 sourceType: 'field-spell', sourceOwner: owner, isFaceDown: visuallyFaceDown
-            }));
+            });
         }
         const secondSpecial = createSlotElement(owner, specialConfig.secondZone.type, -1, {
             special: true,
@@ -1057,9 +1082,9 @@ function renderFields() {
                     cardEl.onpointerdown = (event) => startAttackDrag(event, index);
                 }
                 slotEl.appendChild(cardEl);
-                slotEl.appendChild(createFieldInspectButton(slot.card, {
+                enableFieldCardInspectionGesture(cardEl, slot.card, {
                     sourceType: slotType, sourceOwner: owner, isFaceDown: visuallyFaceDown
-                }));
+                });
                 // Richiamo degli Infestati (id 136): il legame è uno stato
                 // vero della Trappola Continua (targetUid), non una durata
                 // grafica. Ricrearlo da quello stato a ogni render lo fa
@@ -1888,6 +1913,30 @@ function fitHandCardsInOneRow(handEl) {
         c.style.marginLeft = `-${cappedOverlap}px`;
     });
 }
+
+/**
+ * Conserva i nodi delle carte che non sono cambiate. Svuotare la mano a
+ * ogni updateUI obbligava il WebView a ricollegare e ridipingere tutte le
+ * immagini, producendo il breve flicker visibile anche senza un video.
+ */
+function reconcileHandCards(handEl, nuoveCarte) {
+    const vecchie = Array.from(handEl.children);
+    vecchie.forEach((el) => { el.style.marginLeft = ''; });
+    const usate = new Set();
+    const fragment = document.createDocumentFragment();
+    nuoveCarte.forEach((nuova, index) => {
+        const uid = nuova.dataset.uid;
+        let vecchia = uid ? vecchie.find((el) => !usate.has(el) && el.dataset.uid === uid) : vecchie[index];
+        if (vecchia && !usate.has(vecchia) && vecchia.outerHTML === nuova.outerHTML) {
+            usate.add(vecchia);
+            trasferisciGestori(vecchia, nuova);
+            fragment.appendChild(vecchia);
+        } else {
+            fragment.appendChild(nuova);
+        }
+    });
+    handEl.replaceChildren(fragment);
+}
 window.addEventListener('resize', () => {
     clearTimeout(window.__handFitResizeTimeout);
     window.__handFitResizeTimeout = setTimeout(() => {
@@ -1901,7 +1950,7 @@ window.addEventListener('resize', () => {
 function renderPlayerHand() {
     const handEl = document.getElementById('playerHand');
     if (!handEl) return;
-    handEl.innerHTML = '';
+    const nuoveCarte = [];
     gameState.playerHand.forEach((card, index) => {
         const cardEl = createCardElement(card);
         const pendingDraw = gameState._pendingDrawAnimation;
@@ -1933,8 +1982,9 @@ function renderPlayerHand() {
         if (gameState.selectedCard.type === 'hand' && gameState.selectedCard.index === index) {
             cardEl.classList.add('selected');
         }
-        handEl.appendChild(cardEl);
+        nuoveCarte.push(cardEl);
     });
+    reconcileHandCards(handEl, nuoveCarte);
     fitHandCardsInOneRow(handEl);
 }
 
@@ -1956,11 +2006,12 @@ function renderPlayerHand() {
 function renderBotHand() {
     const handEl = document.getElementById('botHand');
     if (!handEl) return;
-    handEl.innerHTML = '';
     const revealed = !!gameState.bothHandsRevealed;
+    const nuoveCarte = [];
     gameState.botHand.forEach((card) => {
-        handEl.appendChild(revealed ? createCardElement(card) : CardRenderer.renderCardBack());
+        nuoveCarte.push(revealed ? createCardElement(card) : CardRenderer.renderCardBack());
     });
+    reconcileHandCards(handEl, nuoveCarte);
     fitHandCardsInOneRow(handEl);
 }
 
