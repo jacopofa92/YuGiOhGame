@@ -2245,7 +2245,6 @@
             // stessa regola che destroyMonster applica già al Cimitero.
             // Prima finiva nella mano di chi l'aveva rubato.
             const proprietario = slot.originalOwner || owner;
-            field[index] = null;
             // Tornando in mano perde i Segnalini (vedi lo stesso azzeramento
             // in specialSummon): Evocato di nuovo, deve ripartire da zero.
             if (card.counters) card.counters = 0;
@@ -2259,6 +2258,7 @@
             // (non onReturnedToHandSelf/onAnyMonsterReturnedToHand: la
             // carta non è mai arrivata davvero in mano).
             if (card.mustBanishOnLeavingField) {
+                field[index] = null;
                 banishedOf(proprietario).push(card);
                 addToLog(`⭕ ${card.name} viene bandita invece di tornare in mano (Cerchio degli Inferi)!`);
                 const banishDef = getDefinition(card.id);
@@ -2267,6 +2267,13 @@
                 }
                 return card;
             }
+            // Fotografa la casella PRIMA di svuotarla: il renderer puo'
+            // aggiornarsi subito, mentre il fantasma visivo completa il
+            // salto verso la mano senza rallentare la risoluzione.
+            if (window.FX && typeof FX.playCardToHand === 'function') {
+                FX.playCardToHand(card, owner, index, proprietario, 'monster');
+            }
+            field[index] = null;
             handOf(proprietario).push(card);
             // def.onReturnedToHandSelf(ctx): la carta STESSA appena
             // rimandata in mano reagisce, a differenza di

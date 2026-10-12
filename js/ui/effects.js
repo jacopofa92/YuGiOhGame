@@ -801,7 +801,12 @@
         return 1550;
     }
 
-    /** Cilindro Magico: due portali inclinati deviano il colpo verso i LP. */
+    /**
+     * Cilindro Magico: il colpo entra nel primo cilindro, attraversa il
+     * condotto runico e riesce dal secondo verso i LP dell'attaccante.
+     * I due corpi sono volutamente leggibili come cilindri, non come due
+     * portali generici: bocca ellittica, pareti scanalate e profondita' 3D.
+     */
     function playMagicCylinder(attackerOwner, attackerIndex, damagedOwner, damage) {
         const boardId = attackerOwner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
         const attacker = document.querySelector(`#${boardId} .field-slot[data-owner="${attackerOwner}"][data-type="monster"][data-index="${attackerIndex}"] .card`);
@@ -813,7 +818,7 @@
         const scene = document.createElement('div');
         scene.className = 'fx-magic-cylinder';
         scene.setAttribute('aria-hidden', 'true');
-        scene.innerHTML = '<i class="fx-cylinder fx-cylinder--in"></i><i class="fx-cylinder fx-cylinder--out"></i><b class="fx-cylinder-beam fx-cylinder-beam--in"></b><b class="fx-cylinder-beam fx-cylinder-beam--out"></b><strong></strong>';
+        scene.innerHTML = '<div class="fx-cylinder-stage fx-cylinder-stage--in"><i class="fx-cylinder"><em></em><span></span></i><b class="fx-cylinder-rune"></b></div><div class="fx-cylinder-stage fx-cylinder-stage--out"><i class="fx-cylinder"><em></em><span></span></i><b class="fx-cylinder-rune"></b></div><i class="fx-cylinder-link"></i><b class="fx-cylinder-beam fx-cylinder-beam--in"></b><b class="fx-cylinder-beam fx-cylinder-beam--out"></b><i class="fx-cylinder-impact"></i><strong></strong>';
         const entrance = { x: from.x + (to.x - from.x) * 0.34, y: from.y + (to.y - from.y) * 0.22 };
         const exit = { x: from.x + (to.x - from.x) * 0.68, y: from.y + (to.y - from.y) * 0.66 };
         const placeBeam = (el, a, b) => {
@@ -821,11 +826,13 @@
             const dy = b.y - a.y;
             Object.assign(el.style, { left: `${a.x}px`, top: `${a.y}px`, width: `${Math.hypot(dx, dy)}px`, transform: `rotate(${Math.atan2(dy, dx) * 180 / Math.PI}deg)` });
         };
-        const cylinders = scene.querySelectorAll('.fx-cylinder');
-        Object.assign(cylinders[0].style, { left: `${entrance.x}px`, top: `${entrance.y}px` });
-        Object.assign(cylinders[1].style, { left: `${exit.x}px`, top: `${exit.y}px` });
+        const stages = scene.querySelectorAll('.fx-cylinder-stage');
+        Object.assign(stages[0].style, { left: `${entrance.x}px`, top: `${entrance.y}px` });
+        Object.assign(stages[1].style, { left: `${exit.x}px`, top: `${exit.y}px` });
         placeBeam(scene.querySelector('.fx-cylinder-beam--in'), { x: from.x, y: from.y }, entrance);
         placeBeam(scene.querySelector('.fx-cylinder-beam--out'), exit, { x: to.x, y: to.y });
+        placeBeam(scene.querySelector('.fx-cylinder-link'), entrance, exit);
+        Object.assign(scene.querySelector('.fx-cylinder-impact').style, { left: `${to.x}px`, top: `${to.y}px` });
         const label = scene.querySelector('strong');
         label.textContent = damage ? `-${damage} LP` : '';
         Object.assign(label.style, { left: `${to.x}px`, top: `${to.y}px` });
@@ -981,7 +988,11 @@
         return 1800;
     }
 
-    /** Tifone dello Spazio Mistico comprime lo spazio sul singolo slot. */
+    /**
+     * Tifone dello Spazio Mistico: un vero imbuto di vento mistico si
+     * avvita sulla carta, la solleva e la strappa dal Terreno. Non usa la
+     * vecchia implosione circolare (troppo simile a Buco Nero).
+     */
     function playMysticalSpaceTyphoon(owner, index, onImpact) {
         const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
         const slot = document.querySelector(`#${boardId} .field-slot[data-owner="${owner}"][data-type="st"][data-index="${index}"]`);
@@ -991,11 +1002,29 @@
             return 0;
         }
         beginSummonCinematic();
-        const vortex = document.createElement('div');
-        vortex.className = 'fx-mst-vortex';
-        Object.assign(vortex.style, { left: `${rect.left + rect.width / 2}px`, top: `${rect.top + rect.height / 2}px`, width: `${rect.width * 2.4}px`, height: `${rect.width * 2.4}px` });
-        vortex.innerHTML = '<i></i><i></i><i></i><b></b><span></span>';
-        document.body.appendChild(vortex);
+        const scene = document.createElement('div');
+        scene.className = 'fx-mst-scene';
+        scene.setAttribute('aria-hidden', 'true');
+        Object.assign(scene.style, {
+            left: `${rect.left + rect.width / 2}px`,
+            top: `${rect.top + rect.height / 2}px`,
+            '--mst-size': `${Math.max(rect.width * 2.7, 150)}px`
+        });
+        scene.innerHTML = '<div class="fx-mst-funnel"><i></i><i></i><i></i><i></i><b></b></div><div class="fx-mst-ground"></div><div class="fx-mst-shards"><i></i><i></i><i></i><i></i><i></i><i></i></div>';
+        const cardEl = slot.querySelector('.card');
+        if (cardEl && typeof window.createCardElement === 'function') {
+            const cardSlot = (owner === 'player' ? gameState.playerSTField : gameState.botSTField)[index];
+            if (cardSlot && cardSlot.card) {
+                const ghost = window.createCardElement(cardSlot.card);
+                ghost.classList.add('fx-mst-card');
+                Object.assign(ghost.style, {
+                    width: `${rect.width}px`, height: `${rect.height}px`,
+                    left: `${-rect.width / 2}px`, top: `${-rect.height / 2}px`
+                });
+                scene.appendChild(ghost);
+            }
+        }
+        document.body.appendChild(scene);
         if (window.SFX && typeof SFX.wind === 'function') SFX.wind();
         let resolved = false;
         const impact = () => {
@@ -1006,10 +1035,10 @@
         setTimeout(impact, 820);
         setTimeout(() => {
             impact();
-            vortex.remove();
+            scene.remove();
             endSummonCinematic();
-        }, 1370);
-        return 1370;
+        }, 1540);
+        return 1540;
     }
 
     /** Occhio/mescolanza di cuori sul bersaglio prima del normale viaggio di controllo. */
@@ -2144,6 +2173,39 @@
     }
 
     /**
+     * Una carta "rimbalza" dal Terreno alla mano: prima un piccolo salto
+     * verticale la stacca dalla casella, poi l'arco la porta verso il
+     * ventaglio di carte corretto. Il movimento usa un fantasma DOM, come
+     * Terreno→Cimitero, per non dipendere dal render dello stato.
+     */
+    function playCardToHand(card, fieldOwner, fieldIndex, handOwner, type) {
+        const from = fieldSlotRect(fieldOwner, fieldIndex, type);
+        const handEl = document.getElementById(handOwner === 'player' ? 'playerHand' : 'botHand');
+        const handRect = handEl && handEl.getBoundingClientRect();
+        if (!from || !handRect || !handRect.width) return;
+        const to = {
+            left: handRect.left + handRect.width / 2 - Math.max(24, from.width * .24),
+            top: handOwner === 'player'
+                ? handRect.top + Math.min(handRect.height * .35, 28)
+                : handRect.bottom - Math.min(handRect.height * .65, from.height * .45),
+            width: Math.max(48, from.width * .48),
+            height: Math.max(68, from.height * .48)
+        };
+        const ghost = playCardTravel(card, from, to, {
+            duration: 720,
+            scaleTo: .5,
+            spin: handOwner === 'player' ? -10 : 10,
+            arc: Math.max(90, Math.min(170, Math.abs(to.top - from.top) * .42)),
+            glow: 'rgba(120, 224, 255, .95)',
+            easing: 'cubic-bezier(.18,.82,.24,1)'
+        });
+        if (ghost) ghost.classList.add('fx-card-return-hand');
+        spawnParticles(from.left + from.width / 2, from.top + from.height / 2, {
+            count: 16, colors: ['#ffffff', '#8ee9ff', '#507fda'], speed: 3.6, life: 620, gravity: -0.07
+        });
+    }
+
+    /**
      * Il contrario: una carta risale dal Cimitero al Terreno (Rinascita
      * del Mostro e tutte le altre rianimazioni). Arriva in primo piano e
      * NON svanisce — la carta vera comparirà lì sotto al render
@@ -2435,6 +2497,7 @@
         playCardTravel: viaBackend('playCardTravel', playCardTravel),
         playCardToGraveyard: viaBackend('playCardToGraveyard', playCardToGraveyard),
         playCardFromGraveyard: viaBackend('playCardFromGraveyard', playCardFromGraveyard),
+        playCardToHand: viaBackend('playCardToHand', playCardToHand),
         fieldSlotRect: fieldSlotRect,
         zoneRect: zoneRect,
         playDrawEffect: viaBackend('playDrawEffect', playDrawEffect),

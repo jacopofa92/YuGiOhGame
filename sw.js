@@ -450,7 +450,8 @@
 // v229: Collana del Comando e Carro Armato Ingranaggio Antico: il bersaglio lo sceglie il giocatore.
 // v230: Torre dei Duellanti disegnata come una vera torre da scalare.
 // v231: UI Torre rinnovata e ambienti field più organici, con vento continuo sul Dirigibile.
-const CACHE_NAME = 'ygo-duel-arena-v231';
+// v232: Tifone/Cilindro rinnovati e salto animato delle carte dal Terreno alla mano.
+const CACHE_NAME = 'ygo-duel-arena-v232';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

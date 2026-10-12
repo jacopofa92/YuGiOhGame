@@ -948,8 +948,9 @@ Rifinitura successiva:
 - Forza dello Specchio (`382`) innalza uno specchio in prospettiva e riflette
   raggi esclusivamente verso gli slot dei mostri in Attacco che la regola
   distrugge; la distruzione resta sincrona per fermare subito la battaglia;
-- Cilindro Magico (`10`) apre due cilindri viola, assorbe il colpo e lo devia
-  verso i Life Point dell'attaccante mostrando il danno restituito;
+- Cilindro Magico (`10`) apre due cilindri scanalati in finto 3D, con bocche
+  ellittiche, bordi dorati e rune: il colpo entra nel primo, attraversa il
+  condotto mistico e riesce dal secondo verso i Life Point dell'attaccante;
 - Rinascita del Mostro (`35`) è sincronizzata alla regola: il mostro rimane
   davvero nel Cimitero mentre emerge dal portale sotto un Ankh verde e viene
   Special Summonato soltanto alla callback d'impatto;
@@ -966,8 +967,9 @@ Secondo gruppo:
 - Anello della Distruzione (`419`) serra un collare a sei cariche sul
   bersaglio e mostra il danno realmente inflitto a entrambi i lati;
 - Tempesta Pesante (`646`) oscura l'arena e investe entrambe le file M/T con
-  due fronti di vento; Tifone dello Spazio Mistico (`607`) usa invece una
-  singolarità blu-viola localizzata, distinta dal Tornado di Polvere;
+  due fronti di vento; Tifone dello Spazio Mistico (`607`) genera invece un
+  imbuto verticale blu-viola che solleva, inclina e strappa la carta dal suo
+  slot, distinto sia dal Tornado di Polvere sia dalla singolarità di Buco Nero;
 - entrambe risolvono la distruzione alla callback d'impatto, lasciando le
   carte visibili fino al passaggio del fenomeno;
 - Cambio di Cuore (`147`) e Controllo Mentale (`130`) condividono
@@ -979,6 +981,15 @@ Secondo gruppo:
   fra il mostro e lo slot della Trappola finché il suo `targetUid` è valido;
 - cache PWA `v199`; guardrail:
   `tests/specs/cinematiche-carte-iconiche-secondo-gruppo.spec.js`.
+
+Movimento Terreno → mano (2026-10-12): `FX.playCardToHand` riusa il fantasma
+DOM di `playCardTravel`, ma prima stacca la carta dalla casella con un salto e
+poi la porta ad arco verso la mano del vero proprietario. Il percorso copre
+tutti i mostri tramite `ACTIONS.returnMonsterToHand` e tutte le M/T tramite
+`returnSpellTrapToHand`; anche Turbine Gigante (`262`) ora passa dallo stesso
+helper invece di duplicare la mutazione. Le carte con
+`mustBanishOnLeavingField` non mostrano falsamente il rimbalzo. Guardrail:
+`tests/specs/return-to-hand-mechanism.spec.js`; cache PWA `v232`.
 
 Terzo gruppo:
 

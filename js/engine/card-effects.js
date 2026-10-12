@@ -1699,6 +1699,9 @@
         const slot = ctx.stField(owner)[index];
         if (!slot) return null;
         const card = slot.card;
+        if (window.FX && typeof FX.playCardToHand === 'function') {
+            FX.playCardToHand(card, owner, index, owner, 'st');
+        }
         ctx.hand(owner).push(card);
         ctx.stField(owner)[index] = null;
         const selfDef = DuelEngine.getDefinition(card.id);

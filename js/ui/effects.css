@@ -1635,16 +1635,29 @@
 }
 
 /* Cilindro Magico */
-.fx-cylinder {
+.fx-cylinder-stage {
     position: absolute;
-    width: clamp(72px, 8vw, 130px);
+    width: clamp(86px, 9vw, 145px);
     aspect-ratio: .62;
-    transform: translate(-50%,-50%) rotateX(62deg) rotateZ(-18deg) scale(.15);
-    border: 4px solid #e9b6ff;
-    border-radius: 50% / 18%;
-    background: repeating-linear-gradient(90deg, #33105d 0 9%, #9d51d1 10% 18%, #2b0c50 19% 28%);
-    box-shadow: inset 0 0 25px #08000f, 0 0 18px #fff, 0 0 48px #ad55ef;
+    transform-style: preserve-3d;
+    transform: translate(-50%,-50%) perspective(700px) rotateX(13deg) rotateY(-24deg) rotateZ(-18deg) scale(.12);
     animation: fxCylinderEnter 1.48s cubic-bezier(.16,.8,.22,1) forwards;
+}
+.fx-cylinder-stage--out {
+    animation-name: fxCylinderEnterOut;
+    animation-delay: 100ms;
+    transform: translate(-50%,-50%) perspective(700px) rotateX(-10deg) rotateY(25deg) rotateZ(162deg) scale(.12);
+}
+.fx-cylinder {
+    position:absolute;
+    inset:0;
+    border:3px solid #f6d376;
+    border-radius:48% 48% 42% 42% / 14% 14% 10% 10%;
+    background:
+        linear-gradient(90deg,rgba(255,226,127,.92),rgba(84,28,112,.2) 9% 91%,rgba(255,226,127,.92)),
+        repeating-linear-gradient(90deg,#35105a 0 9%,#8c41bb 10% 17%,#25083f 18% 27%);
+    box-shadow:inset 0 0 24px #100018,inset 10px 0 15px rgba(255,219,111,.23),0 0 13px #fff0bd,0 0 40px #9e43df;
+    transform-style:preserve-3d;
 }
 .fx-cylinder::before,
 .fx-cylinder::after {
@@ -1652,24 +1665,33 @@
     position: absolute;
     left: -7%; width: 114%; height: 20%;
     border-radius: 50%;
-    border: 4px solid #f4ceff;
-    background: radial-gradient(ellipse, #08000e 0 42%, #c875ff 48% 58%, #31104c 68%);
-    box-shadow: 0 0 20px #c368ff;
+    border:4px solid #ffe796;
+    background:radial-gradient(ellipse,#07000d 0 37%,#d894ff 41% 48%,#622286 53% 61%,#edc95e 65% 70%,#2a0a46 75%);
+    box-shadow:inset 0 0 16px #000,0 0 9px #fff5c7,0 0 23px #bb5cf0;
 }
 .fx-cylinder::before { top: -9%; }
 .fx-cylinder::after { bottom: -9%; }
-.fx-cylinder--out { animation-delay: 110ms; transform: translate(-50%,-50%) rotateX(62deg) rotateZ(162deg) scale(.15); }
+.fx-cylinder em{position:absolute;left:10%;right:10%;top:7%;height:13%;border-radius:50%;border:2px dashed rgba(255,231,146,.88);animation:fxCylinderRuneSpin .7s linear infinite;z-index:2}
+.fx-cylinder span{position:absolute;left:22%;right:22%;top:23%;bottom:23%;border-left:2px solid rgba(255,224,121,.78);border-right:2px solid rgba(255,224,121,.78);box-shadow:0 0 12px #d374ff}
+.fx-cylinder-rune{position:absolute;inset:-26%;border-radius:50%;border:2px solid rgba(239,199,90,.68);box-shadow:0 0 14px rgba(196,91,255,.85);animation:fxCylinderOrbit 1.15s linear infinite;transform:translateZ(-30px)}
+.fx-cylinder-rune::before{content:'';position:absolute;inset:8%;border:2px dashed rgba(235,188,255,.68);border-radius:50%}
+.fx-cylinder-link {
+    position:absolute;height:5px;transform-origin:0 50%;border-radius:50%;
+    background:repeating-linear-gradient(90deg,transparent 0 8px,#d47cff 10px 14px,#fff3b5 16px 18px,transparent 20px 26px);
+    filter:drop-shadow(0 0 8px #c266ff);opacity:0;animation:fxCylinderLink .72s ease .45s forwards;
+}
 .fx-cylinder-beam {
     position: absolute;
     height: 12px;
     transform-origin: 0 50%;
     border-radius: 50%;
-    background: linear-gradient(180deg, transparent, #fff 42%, #d786ff 54%, transparent);
-    box-shadow: 0 0 12px #fff, 0 0 28px #bd5cff;
+    background:linear-gradient(180deg,transparent,#fff9d5 36%,#e5a4ff 51%,#fff 62%,transparent);
+    box-shadow:0 0 12px #fff,0 0 30px #bb4fff;
     opacity: 0;
     animation: fxCylinderBeam .75s ease-in 400ms forwards;
 }
 .fx-cylinder-beam--out { animation-delay: 720ms; }
+.fx-cylinder-impact{position:absolute;width:25px;height:25px;border-radius:50%;transform:translate(-50%,-50%) scale(.1);background:#fff8cb;box-shadow:0 0 20px 8px #fff,0 0 55px 28px #b94ee8;opacity:0;animation:fxCylinderImpact .62s ease-out .82s forwards}
 .fx-magic-cylinder strong {
     position: absolute;
     transform: translate(-50%,-50%) scale(.4);
@@ -1680,15 +1702,14 @@
     animation: fxCylinderDamage .65s ease-out .9s forwards;
 }
 @keyframes fxCylinderEnter {
-    0% { opacity: 0; filter: blur(7px); }
-    24%, 76% { opacity: 1; transform: translate(-50%,-50%) rotateX(62deg) rotateZ(-18deg) scale(1); filter: blur(0); }
-    100% { opacity: 0; transform: translate(-50%,-50%) rotateX(72deg) rotateZ(-18deg) scale(.7); }
+    0% { opacity:0;filter:blur(7px);transform:translate(-50%,-50%) perspective(700px) rotateX(45deg) rotateY(-72deg) rotateZ(-30deg) scale(.12) }
+    24%,76% { opacity:1;filter:blur(0);transform:translate(-50%,-50%) perspective(700px) rotateX(13deg) rotateY(-24deg) rotateZ(-18deg) scale(1) }
+    100% { opacity:0;transform:translate(-50%,-50%) perspective(700px) rotateX(25deg) rotateY(12deg) rotateZ(-10deg) scale(.7) }
 }
-.fx-cylinder--out { animation-name: fxCylinderEnterOut; }
 @keyframes fxCylinderEnterOut {
-    0% { opacity: 0; filter: blur(7px); }
-    24%, 76% { opacity: 1; transform: translate(-50%,-50%) rotateX(62deg) rotateZ(162deg) scale(1); filter: blur(0); }
-    100% { opacity: 0; transform: translate(-50%,-50%) rotateX(72deg) rotateZ(162deg) scale(.7); }
+    0% { opacity:0;filter:blur(7px);transform:translate(-50%,-50%) perspective(700px) rotateX(-42deg) rotateY(72deg) rotateZ(175deg) scale(.12) }
+    24%,76% { opacity:1;filter:blur(0);transform:translate(-50%,-50%) perspective(700px) rotateX(-10deg) rotateY(25deg) rotateZ(162deg) scale(1) }
+    100% { opacity:0;transform:translate(-50%,-50%) perspective(700px) rotateX(-24deg) rotateY(-12deg) rotateZ(154deg) scale(.7) }
 }
 @keyframes fxCylinderBeam {
     0% { opacity: 0; scale: 0 1; }
@@ -1696,6 +1717,10 @@
     100% { opacity: 0; scale: 1 .2; }
 }
 @keyframes fxCylinderDamage { 0% { opacity: 0; transform: translate(-50%,-50%) scale(.4); } 35% { opacity: 1; transform: translate(-50%,-50%) scale(1.18); } 100% { opacity: 0; transform: translate(-50%,-70%) scale(1); } }
+@keyframes fxCylinderRuneSpin{to{transform:rotate(360deg)}}
+@keyframes fxCylinderOrbit{to{transform:translateZ(-30px) rotateZ(360deg) rotateY(18deg)}}
+@keyframes fxCylinderLink{0%{opacity:0;scale:0 1}28%,72%{opacity:1;scale:1 1}100%{opacity:0;scale:1 .2}}
+@keyframes fxCylinderImpact{0%{opacity:0;transform:translate(-50%,-50%) scale(.1)}35%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(3.2)}}
 
 /* Rinascita del Mostro */
 .fx-reborn-darkness { animation-duration: 1.9s; background: radial-gradient(circle, rgba(119,255,193,.2), rgba(0,12,9,.82)); }
@@ -1832,14 +1857,24 @@
 @keyframes fxHeavyGust{0%{opacity:0;translate:-80% 30%;scale:.5}35%{opacity:1}100%{opacity:0;translate:75% -24%;scale:1.25}}
 @keyframes fxHeavyDebris{0%{opacity:0;transform:translate(-20vw,12vh) rotate(0)}20%{opacity:1}100%{opacity:0;transform:translate(45vw,-28vh) rotate(570deg)}}
 
-/* Tifone dello Spazio Mistico: implosione, non la folata marrone di Tornado. */
-.fx-mst-vortex { position:fixed; z-index:10062; pointer-events:none; transform:translate(-50%,-50%) scale(.08); border-radius:50%; background:conic-gradient(from 10deg,#0f0a32,#58c5ff,#fff,#7752eb,#08102f,#58c5ff,#0f0a32); box-shadow:0 0 25px #bff3ff,0 0 70px #5739dd; animation:fxMstCollapse 1.34s cubic-bezier(.16,.78,.2,1) forwards; }
-.fx-mst-vortex::before{content:'';position:absolute;inset:18%;border-radius:50%;background:#02030d;box-shadow:inset 0 0 25px #000,0 0 18px #a9edff}
-.fx-mst-vortex i{position:absolute;inset:7%;border-radius:50%;border:3px solid rgba(198,244,255,.8);border-left-color:transparent;animation:fxMirrorSpin .48s linear infinite}
-.fx-mst-vortex i:nth-child(2){inset:25%;animation-direction:reverse}.fx-mst-vortex i:nth-child(3){inset:-13%;border-style:dashed;animation-duration:.8s}
-.fx-mst-vortex b{position:absolute;inset:42%;border-radius:50%;background:#fff;box-shadow:0 0 22px 12px #72d9ff;animation:fxMstCore .65s ease-in .48s forwards}.fx-mst-vortex span{position:absolute;inset:-40%;background:repeating-conic-gradient(transparent 0 16deg,rgba(123,213,255,.72) 18deg 20deg,transparent 22deg 38deg);animation:fxMirrorSpin 1.1s linear infinite}
-@keyframes fxMstCollapse{0%{opacity:0;transform:translate(-50%,-50%) scale(.08) rotateX(64deg)}25%,58%{opacity:1;transform:translate(-50%,-50%) scale(1) rotateX(58deg)}82%{opacity:1;transform:translate(-50%,-50%) scale(.12) rotateX(72deg);filter:brightness(3)}100%{opacity:0;transform:translate(-50%,-50%) scale(0)}}
-@keyframes fxMstCore{to{scale:3;opacity:0}}
+/* Tifone dello Spazio Mistico: imbuto verticale, carta sollevata e strappata. */
+.fx-mst-scene{position:fixed;z-index:10062;pointer-events:none;width:var(--mst-size);height:calc(var(--mst-size)*1.28);transform:translate(-50%,-58%);perspective:700px;filter:drop-shadow(0 0 15px rgba(110,216,255,.8))}
+.fx-mst-funnel{position:absolute;left:50%;top:3%;width:82%;height:88%;transform:translateX(-50%);transform-style:preserve-3d;animation:fxMstFunnel 1.5s cubic-bezier(.16,.8,.2,1) forwards}
+.fx-mst-funnel i{position:absolute;left:50%;border-radius:50%;border:clamp(3px,.35vw,6px) solid rgba(191,241,255,.9);border-right-color:rgba(102,69,222,.9);border-bottom-color:transparent;box-shadow:0 0 9px #fff,0 0 22px #5388ff;transform:translateX(-50%) rotateX(67deg);animation:fxMstRibbon .34s linear infinite}
+.fx-mst-funnel i:nth-child(1){top:0;width:100%;height:28%;animation-delay:-.18s}.fx-mst-funnel i:nth-child(2){top:22%;width:78%;height:24%;animation-direction:reverse}.fx-mst-funnel i:nth-child(3){top:43%;width:55%;height:20%;animation-delay:-.1s}.fx-mst-funnel i:nth-child(4){top:60%;width:31%;height:16%;animation-direction:reverse}
+.fx-mst-funnel b{position:absolute;left:50%;top:10%;width:12%;height:72%;transform:translateX(-50%) skewX(-8deg);background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(133,211,255,.68),#fff);clip-path:polygon(0 0,100% 0,62% 100%,42% 100%);filter:blur(3px);animation:fxMstColumn .55s ease-in-out infinite alternate}
+.fx-mst-ground{position:absolute;left:50%;bottom:3%;width:62%;height:18%;transform:translateX(-50%) rotateX(68deg);border-radius:50%;background:radial-gradient(ellipse,#fff 0 4%,#73dcff 7% 16%,rgba(72,69,190,.48) 30%,transparent 67%);box-shadow:0 0 28px #68d6ff;animation:fxMstGround 1.5s ease-out forwards}
+.fx-mst-card{position:absolute!important;margin:0!important;z-index:2;pointer-events:none!important;transform-origin:50% 70%;animation:fxMstCard 1.42s cubic-bezier(.18,.78,.2,1) forwards;filter:drop-shadow(0 0 14px #8de8ff)}
+.fx-mst-card .card-actions{display:none!important}
+.fx-mst-shards i{position:absolute;left:50%;bottom:15%;width:18%;height:3px;border-radius:50%;background:linear-gradient(90deg,transparent,#fff,#7bdcff,transparent);box-shadow:0 0 8px #8fe8ff;animation:fxMstShard .8s ease-out forwards}.fx-mst-shards i:nth-child(2){--sr:55deg;animation-delay:.08s}.fx-mst-shards i:nth-child(3){--sr:112deg;animation-delay:.15s}.fx-mst-shards i:nth-child(4){--sr:175deg;animation-delay:.04s}.fx-mst-shards i:nth-child(5){--sr:235deg;animation-delay:.18s}.fx-mst-shards i:nth-child(6){--sr:300deg;animation-delay:.11s}
+@keyframes fxMstFunnel{0%{opacity:0;transform:translateX(-50%) scale(.15) rotateY(35deg)}20%,72%{opacity:1;transform:translateX(-50%) scale(1) rotateY(0)}100%{opacity:0;transform:translateX(-50%) scale(.25) translateY(-24%) rotateY(-40deg);filter:brightness(2.5)}}
+@keyframes fxMstRibbon{to{transform:translateX(-50%) rotateX(67deg) rotateZ(360deg)}}
+@keyframes fxMstColumn{to{opacity:.3;filter:blur(6px);transform:translateX(-50%) skewX(8deg) scaleX(1.6)}}
+@keyframes fxMstGround{0%{opacity:0;scale:.1}28%,70%{opacity:1;scale:1}100%{opacity:0;scale:.15}}
+@keyframes fxMstCard{0%,22%{opacity:1;transform:translate(0,0) perspective(650px) rotateX(0) rotateZ(0) scale(1)}58%{opacity:1;transform:translate(4%,-38%) perspective(650px) rotateX(34deg) rotateZ(-18deg) scale(.9)}82%{opacity:.85;transform:translate(-5%,-88%) perspective(650px) rotateX(66deg) rotateZ(245deg) scale(.38)}100%{opacity:0;transform:translate(0,-118%) perspective(650px) rotateX(82deg) rotateZ(520deg) scale(.05)}}
+@keyframes fxMstShard{0%{opacity:0;transform:rotate(var(--sr,0deg)) translateX(0) scaleX(.2)}25%{opacity:1}100%{opacity:0;transform:rotate(var(--sr,0deg)) translateX(calc(var(--mst-size)*.55)) scaleX(1.4)}}
+
+.fx-card-return-hand{transform-style:preserve-3d;will-change:transform,opacity;box-shadow:0 0 0 2px rgba(167,238,255,.7),0 0 28px rgba(75,177,255,.88)!important}
 
 /* Cambio di Cuore / Controllo Mentale */
 .fx-control-mark { position:fixed; z-index:10062; pointer-events:none; transform:translate(-50%,-55%) scale(.1); filter:drop-shadow(0 0 12px #fff) drop-shadow(0 0 30px #da61ff); animation:fxControlMark 1.22s cubic-bezier(.16,.8,.22,1) forwards; }
@@ -1914,7 +1949,7 @@
     .waboku-field-shield { opacity: .82; transform: translate(-50%, -51%) rotateX(7deg); }
     .fx-mirror-force *, .fx-magic-cylinder *, .fx-monster-reborn *,
     .fx-trap-hole, .fx-trap-hole *, .fx-torrential *,
-    .fx-destruction-ring *, .fx-heavy-storm *, .fx-mst-vortex *,
+    .fx-destruction-ring *, .fx-heavy-storm *, .fx-mst-scene *,
     .fx-control-mark *, .fx-call-haunted *, .call-haunted-link,
     .fx-bottomless-hole *, .fx-bottomless-card, .fx-sakuretsu-armor *,
     .fx-solemn-judgment *, .fx-book-moon *, .fx-book-moon-card,

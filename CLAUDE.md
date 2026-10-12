@@ -4361,3 +4361,13 @@ Fatto in `equipToChosenTarget` (tutte le Equip comuni), Flamberge (727) e
 Sepoltura Prematura (633). Un Equip nuovo con una scelta propria deve fare lo
 stesso. Spec `equip-con-scelta-del-bersaglio`: ogni Equip con più bersagli,
 scegliendo l'ULTIMO della lista e toccandolo come un giocatore.
+
+VFX carte e ritorno in mano (2026-10-12): rifatti Tifone dello Spazio Mistico
+come imbuto di vento verticale che solleva la carta bersaglio e Cilindro
+Magico come coppia di cilindri scanalati finto 3D con condotto runico e uscita
+del colpo verso i LP. Aggiunto `FX.playCardToHand`: ogni carta che passa dal
+Terreno alla mano compie un salto ad arco verso `playerHand`/`botHand`. I
+mostri lo chiamano dal choke-point `ACTIONS.returnMonsterToHand`, le M/T da
+`returnSpellTrapToHand`; Turbine Gigante è stato migrato a quest'ultimo.
+Cache `v232`; spec mirati `cinematiche-carte-iconiche-secondo-gruppo` e
+`return-to-hand-mechanism`.

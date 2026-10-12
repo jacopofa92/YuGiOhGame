@@ -85,5 +85,33 @@ module.exports = {
             return gameState.botMonsterField.some((s) => s && s.card.uid === 'obelisk-671-1');
         });
         t.assert(r3, '671 non deve poter scegliere Obelisk come bersaglio (immune al targeting da effetti Carta)');
+
+        // Guardrail visivo: sia un mostro sia una Magia/Trappola devono
+        // usare il viaggio Terreno -> mano, senza cambiare la regola.
+        const visual = await t.evaluate(async () => {
+            const mostro = { ...cardDatabase.find((c) => c.id === 4), uid: 'return-fx-monster' };
+            const magia = { ...cardDatabase.find((c) => c.type === 'spell'), uid: 'return-fx-spell' };
+            gameState.playerMonsterField = [{ card: mostro, position: 'attack', isFaceDown: false }, null, null, null, null];
+            gameState.botSTField = [{ card: magia, isFaceDown: true }, null, null, null, null];
+            gameState.playerHand = [];
+            gameState.botHand = [];
+            updateUI();
+            DuelEngine.actions.returnMonsterToHand('player', 0);
+            const mostroInVolo = !!document.querySelector('.fx-card-return-hand');
+            const ctx = DuelEngine.makeContext('player', { card: { ...magia, uid: 'helper-source' } });
+            CardEffectsShared.returnSpellTrapToHand(ctx, 'bot', 0);
+            const voli = document.querySelectorAll('.fx-card-return-hand').length;
+            await new Promise((resolve) => setTimeout(resolve, 1180));
+            return {
+                mostroInVolo,
+                dueOriginiAnimate: voli >= 2,
+                mostroInMano: gameState.playerHand.some((c) => c.uid === 'return-fx-monster'),
+                magiaInMano: gameState.botHand.some((c) => c.uid === 'return-fx-spell'),
+                ripuliti: !document.querySelector('.fx-card-return-hand')
+            };
+        });
+        t.assert(visual.mostroInVolo && visual.dueOriginiAnimate, 'Mostri e Magie/Trappole devono saltare visivamente dal Terreno alla mano');
+        t.assert(visual.mostroInMano && visual.magiaInMano, 'Il VFX non deve alterare la destinazione reale delle carte');
+        t.assert(visual.ripuliti, 'I fantasmi del ritorno in mano devono essere rimossi al termine');
     }
 };

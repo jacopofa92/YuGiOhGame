@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { otherHandCards, blockBanishFromField, isHarpieLadySupport, findEquipTarget, equipToChosenTarget, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, attachUnionMonster, maxRitualTributeLevel, performRitualTribute, findPetitMothReadyForCocoonSummon, releaseRelinquishedTarget } = window.CardEffectsShared;
+    const { otherHandCards, blockBanishFromField, isHarpieLadySupport, findEquipTarget, equipToChosenTarget, attachEquip, equippedTarget, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, attachUnionMonster, maxRitualTributeLevel, performRitualTribute, findPetitMothReadyForCocoonSummon, releaseRelinquishedTarget, returnSpellTrapToHand } = window.CardEffectsShared;
 
     // ================================================================
     // 52 — Grande Falena / Great Moth
@@ -977,14 +977,8 @@
             Tavolo.ordine().forEach((owner) => {
                 ctx.stField(owner).forEach((slot, index) => {
                     if (slot) {
-                        const bouncedCard = slot.card;
-                        ctx.hand(owner).push(bouncedCard);
-                        ctx.stField(owner)[index] = null;
+                        returnSpellTrapToHand(ctx, owner, index);
                         count++;
-                        const selfDef = DuelEngine.getDefinition(bouncedCard.id);
-                        if (selfDef && typeof selfDef.onReturnedToHandSelf === 'function') {
-                            selfDef.onReturnedToHandSelf(DuelEngine.makeContext(owner, { card: bouncedCard, index: index }));
-                        }
                     }
                 });
             });
