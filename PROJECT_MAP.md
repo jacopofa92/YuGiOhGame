@@ -2,6 +2,19 @@
 
 Ultimo aggiornamento verificato: 2026-10-12.
 
+## Filmati del duello senza flicker (2026-10-12)
+
+- `js/ui/effects.js` prepara il video con `preload=auto` e mostra player e
+  fondale soltanto sul primo frame consegnato dal decoder
+  (`requestVideoFrameCallback`, con fallback a doppio RAF).
+- `js/ui/effects.css` evita blur, maschere, ombre e cambi di overflow su
+  superfici grandi quanto lo schermo; la transizione usa solo l'opacita'.
+- Durante il video `FieldAmbience` sospende timer e timeline GSAP, mentre
+  `MonsterHolograms` esclude il proprio layer dal rendering. Entrambi
+  riprendono dopo la chiusura completa dell'ultimo video attivo.
+- Verifiche mirate: priorita' video, cinematica Exodia, ambienti field e
+  ologrammi.
+
 ## Progressione delle modalità e consultazione sul Terreno (2026-10-12)
 
 Le Regole si aprono dal menu Tutorial. La Torre dei Duellanti richiede il

@@ -32,6 +32,9 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.3.4 — Filmati del duello fluidi: primo frame sincronizzato, compositing
+ *   alleggerito e ambiente/ologrammi sospesi durante la riproduzione.
+ *
  * 1.3.3 — Regole raccolte nel Tutorial; Rivincite e Torre legate ai
  *   progressi della Storia. Sul Terreno un comando informativo separa la
  *   consultazione dalle azioni, e le scelte obbligatorie non scrivono più
@@ -652,4 +655,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.3.3';
+window.GAME_VERSION = '1.3.4';

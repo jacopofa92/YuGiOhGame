@@ -80,6 +80,7 @@
 
     /** Gli ologrammi vivi adesso, per uid — è questa mappa a evitare i redraw. */
     const vivi = new Map();
+    let sospeso = false;
 
     function layer() {
         let el = document.getElementById(LAYER_ID);
@@ -207,6 +208,7 @@
      * toglie e riposiziona solo ciò che è cambiato davvero.
      */
     function sync() {
+        if (sospeso) return;
         if (!attivo()) {
             if (vivi.size) { vivi.forEach((_, uid) => rimuovi(uid)); }
             return;
@@ -290,5 +292,24 @@
         }, durataMs);
     }
 
-    window.MonsterHolograms = { sync: sync, isAttivo: attivo, nascondiPer: nascondiPer };
+    // Un video fullscreen non deve contendersi la GPU con trasparenze e
+    // scansioni nascoste dietro di lui. Il layer viene escluso dal layout e
+    // riallineato al Terreno quando la cinematica termina.
+    function sospendi() {
+        sospeso = true;
+        const el = document.getElementById(LAYER_ID);
+        if (el) el.hidden = true;
+    }
+
+    function riprendi() {
+        sospeso = false;
+        const el = document.getElementById(LAYER_ID);
+        if (el) el.hidden = false;
+        sync();
+    }
+
+    window.MonsterHolograms = {
+        sync: sync, isAttivo: attivo, nascondiPer: nascondiPer,
+        sospendi: sospendi, riprendi: riprendi, isSospeso: () => sospeso
+    };
 })();

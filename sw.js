@@ -459,7 +459,8 @@
 // v236: box info carta escluso durante attacchi e selezioni di gioco.
 // v237: sblocchi modalità, Regole nel Tutorial e consultazione esplicita
 // delle carte sul Terreno senza interferire con le azioni di gioco.
-const CACHE_NAME = 'ygo-duel-arena-v237';
+// v238: filmati alleggeriti e grafica sottostante sospesa durante i video.
+const CACHE_NAME = 'ygo-duel-arena-v238';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

@@ -501,6 +501,17 @@
      * (un video mal codificato non deve mai bloccare la UI per sempre).
      */
     let activeVideoOverlays = 0;
+    const VIDEO_SUSPEND_REASON = 'video-fullscreen';
+
+    function suspendBackgroundGraphics() {
+        if (window.FieldAmbience && typeof FieldAmbience.sospendi === 'function') FieldAmbience.sospendi(VIDEO_SUSPEND_REASON);
+        if (window.MonsterHolograms && typeof MonsterHolograms.sospendi === 'function') MonsterHolograms.sospendi();
+    }
+
+    function resumeBackgroundGraphics() {
+        if (window.FieldAmbience && typeof FieldAmbience.riprendi === 'function') FieldAmbience.riprendi(VIDEO_SUSPEND_REASON);
+        if (window.MonsterHolograms && typeof MonsterHolograms.riprendi === 'function') MonsterHolograms.riprendi();
+    }
     function playVideoOverlay(path, onDone) {
     const backdrop = document.createElement('div');
     backdrop.className = 'fx-video-backdrop';
@@ -512,11 +523,13 @@
     video.src = path;
     video.autoplay = true;
     video.playsInline = true;
+    video.preload = 'auto';
     video.className = 'fx-video-player';
 
     backdrop.appendChild(video);
     document.body.appendChild(backdrop);
     activeVideoOverlays++;
+    if (activeVideoOverlays === 1) suspendBackgroundGraphics();
     document.documentElement.classList.add('fx-video-priority-active');
     window.DUEL_CINEMATIC_LOCK = true;
     backdrop.focus({ preventScroll: true });
@@ -524,10 +537,6 @@
     // --- FADE-IN ---
     // Il backdrop (sfondo nero) parte subito: dietro non c'è nulla di
     // brutto da nascondere, è solo un dissolvimento a nero.
-    requestAnimationFrame(() => {
-        backdrop.classList.add('show');
-    });
-
     // Il VIDEO invece aspetta l'evento 'playing' (sta DAVVERO dipingendo
     // un fotogramma vero — a differenza di 'canplay'/'loadeddata', che
     // possono scattare un istante prima che qualcosa sia davvero
@@ -543,7 +552,16 @@
     function revealVideo() {
         if (videoRevealed) return;
         videoRevealed = true;
-        video.classList.add('show');
+        const mostra = () => requestAnimationFrame(() => requestAnimationFrame(() => {
+            if (done) return;
+            backdrop.classList.add('show');
+            video.classList.add('show');
+        }));
+        // Sincronizza la comparsa col primo frame realmente dipinto. Nei
+        // WebView senza questa API il doppio RAF evita comunque un cambio
+        // di layer a meta' fotogramma.
+        if (typeof video.requestVideoFrameCallback === 'function') video.requestVideoFrameCallback(mostra);
+        else mostra();
     }
     video.addEventListener('playing', revealVideo);
     // Rete di sicurezza: se 'playing' non scattasse mai (video mal
@@ -551,7 +569,12 @@
     // invisibile per sempre — dopo un'attesa breve si rivela comunque
     // (al peggio si vede l'icona nativa con un ritardo, mai uno schermo
     // nero fisso per i 12s dell'intera rete di sicurezza qui sotto).
-    setTimeout(revealVideo, 1500);
+    const revealTimeout = setTimeout(() => {
+        if (done) return;
+        videoRevealed = true;
+        backdrop.classList.add('show');
+        video.classList.add('show');
+    }, 1500);
 
     let done = false;
 
@@ -559,6 +582,7 @@
         if (done) return;
         done = true;
         clearTimeout(safetyTimeout);
+        clearTimeout(revealTimeout);
 
         // --- FADE-OUT ---
         backdrop.classList.remove('show');
@@ -566,14 +590,18 @@
 
         // aspetta la fine della transizione
         setTimeout(() => {
+            video.pause();
+            video.removeAttribute('src');
+            video.load();
             backdrop.remove();
             activeVideoOverlays = Math.max(0, activeVideoOverlays - 1);
             if (activeVideoOverlays === 0) {
                 document.documentElement.classList.remove('fx-video-priority-active');
                 window.DUEL_CINEMATIC_LOCK = false;
+                resumeBackgroundGraphics();
             }
             if (typeof onDone === 'function') onDone();
-        }, 600); // deve combaciare con transition CSS
+        }, 220); // poco oltre la transizione CSS da 180ms
     };
 
     video.addEventListener('ended', cleanup);
@@ -595,6 +623,7 @@
         clearTimeout(safetyTimeout);
         safetyTimeout = setTimeout(cleanup, video.duration * 1000 + 5000);
     });
+    video.load();
 }
 
     /**

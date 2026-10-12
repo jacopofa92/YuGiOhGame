@@ -410,7 +410,35 @@
     let elementi = [];           // gli strati DOM, creati una volta sola
     let timeline = null;         // la passata attualmente in corso, se c'è
     let prossima = null;         // timer che fa partire la prossima passata
-    let sospeso = false;
+    // Piu' cause possono sospendere insieme l'ambiente (scheda nascosta,
+    // video a schermo intero). Un Set evita che la fine di una causa
+    // riaccenda GSAP mentre l'altra e' ancora valida.
+    const motiviSospensione = new Set();
+
+    function sospeso() { return motiviSospensione.size > 0; }
+
+    function aggiornaSospensione() {
+        if (!ambienteAttivo) return;
+        if (sospeso()) {
+            clearTimeout(prossima);
+            prossima = null;
+            if (timeline) timeline.pause();
+        } else if (timeline) {
+            timeline.play();
+        } else {
+            programmaProssima();
+        }
+    }
+
+    function sospendi(motivo) {
+        motiviSospensione.add(motivo || 'esterno');
+        aggiornaSospensione();
+    }
+
+    function riprendi(motivo) {
+        motiviSospensione.delete(motivo || 'esterno');
+        aggiornaSospensione();
+    }
 
     function menoAnimazioni() {
         return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1223,7 +1251,7 @@
     // =================================================================
 
     function raffica() {
-        if (!ambienteAttivo || !window.gsap || !elementi.length) return;
+        if (!ambienteAttivo || sospeso() || !window.gsap || !elementi.length) return;
         // Una passata alla volta. Senza questa guardia, una seconda
         // chiamata mentre la prima è a metà schermo rimette gli strati al
         // punto di partenza con opacità zero: la folata sparisce di colpo
@@ -1244,7 +1272,7 @@
     }
 
     function programmaProssima() {
-        if (!ambienteAttivo || sospeso) return;
+        if (!ambienteAttivo || sospeso()) return;
         clearTimeout(prossima);
         const [min, max] = ambienteAttivo.pausa;
         let attesa;
@@ -1306,8 +1334,10 @@
         // Breve però: se il giocatore ha acceso i Dettagli "Alti" apposta,
         // deve vedere entro pochi secondi che qualcosa è cambiato.
         clearTimeout(prossima);
-        prossima = setTimeout(raffica, ambiente.ritmoCasuale === 'vento-continuo'
-            ? 120 : fraDueNumeri(2500, 5000));
+        if (!sospeso()) {
+            prossima = setTimeout(raffica, ambiente.ritmoCasuale === 'vento-continuo'
+                ? 120 : fraDueNumeri(2500, 5000));
+        }
         return true;
     }
 
@@ -1315,15 +1345,8 @@
     // nostro setTimeout terrebbero occupata la CPU (e la batteria) per
     // un'animazione che nessuno sta guardando.
     document.addEventListener('visibilitychange', () => {
-        sospeso = document.hidden;
-        if (!ambienteAttivo) return;
-        if (sospeso) {
-            clearTimeout(prossima);
-            if (timeline) timeline.pause();
-        } else {
-            if (timeline) timeline.play();
-            else programmaProssima();
-        }
+        if (document.hidden) sospendi('documento-nascosto');
+        else riprendi('documento-nascosto');
     });
 
     // Il menu salva normalmente la scelta prima di entrare nel duello,
@@ -1340,6 +1363,9 @@
         ferma: ferma,
         /** Fa partire una passata adesso, senza aspettare la pausa: serve alle prove e alle verifiche. */
         raffica: raffica,
+        sospendi: sospendi,
+        riprendi: riprendi,
+        sospeso: sospeso,
         /** Quale ambiente è acceso ora (null se nessuno) — usata dalle verifiche automatiche. */
         attivo: () => (ambienteAttivo ? ambienteAttivo.nome : null),
         /** Esposto perché una prova possa elencare le arene coperte senza duplicarle a mano. */
