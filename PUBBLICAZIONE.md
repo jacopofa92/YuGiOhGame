@@ -15,7 +15,7 @@ online. Nessun comando di pubblicazione da lanciare a mano.
 | Cosa | Dove | Note |
 |---|---|---|
 | Codice sorgente | GitHub, repository **privato** `jacopofa92/millennium-duel-arena` | Prima si chiamava `YuGiOhGame` ed era pubblico |
-| Sito del gioco | Cloudflare **Workers** (risorse statiche): `https://millennium-duel-arena.workspace-j10-jacopo.workers.dev` | Si aggiorna da solo a ogni push su `main` |
+| Sito del gioco | Cloudflare **Workers** (risorse statiche): `https://millennium-duel-arena.core10games.workers.dev` | Si aggiorna da solo a ogni push su `main` |
 | Account e salvataggi | Supabase, progetto «DuelArena» | Registrazione obbligatoria con approvazione dell'amministratore, come prima |
 | Server Multiplayer | Render, servizio `millennium-duel-arena-relay` (`wss://millennium-duel-arena-relay.onrender.com`) | Gestito da `render.yaml`; si ridistribuisce a ogni push |
 | APK Android di produzione | `C:\AndroidDev\YuGiOhGameAndroidProd` (fuori dal repository) | Apre il sito Cloudflare; si ricompila solo per cambi nativi o di indirizzo |

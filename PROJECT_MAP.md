@@ -122,7 +122,7 @@ Le sorgenti native sono esterne a questo repository, nelle due shell storiche
 `C:\AndroidDev\YuGiOhGameAndroid` e `C:\AndroidDev\YuGiOhGameAndroidProd`.
 In entrambe il plugin è `android/app/src/main/java/com/jacopofa92/
 yugiohduelarena/NativeMusicPlugin.java`, registrato da `MainActivity.java`.
-La build di produzione verificata è `1.2.0` (`versionCode 24`), si chiama
+La build di produzione verificata è `1.3.2` (`versionCode 25`), si chiama
 «Millennium Duel Arena» e carica il sito Cloudflare indicato in
 `PUBBLICAZIONE.md`. I nomi delle cartelle native non sono stati rinominati e
 non coincidono più col nome pubblico del gioco.
@@ -468,7 +468,7 @@ del protocollo corrente.
   `refactor/chiudi-ultime-carte`.
 - PWA tramite `manifest.json`, `sw.js` e `js/pwa-register.js`.
 - App Android/Capacitor: le shell dev e produzione includono `NativeMusic`;
-  la produzione nativa è `1.2.0` (`versionCode 24`) e punta al sito
+  la produzione nativa è `1.3.2` (`versionCode 25`) e punta al sito
   Cloudflare. Il contenuto web espone `GAME_VERSION` `1.3.1`. Gli APK sono
   ignorati da Git e restano artefatti locali rigenerabili. La cache
   WebView/PWA corrente è `ygo-duel-arena-v235`.

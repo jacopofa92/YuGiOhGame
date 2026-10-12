@@ -8,7 +8,7 @@ Autore unico (Jacopo/jacopofa92), repo Git **privato**
 attivo (`main`).
 
 **Dove gira (dal 2026-10-11)**: sito su Cloudflare Workers
-(`https://millennium-duel-arena.workspace-j10-jacopo.workers.dev`), ricostruito
+(`https://millennium-duel-arena.core10games.workers.dev`), ricostruito
 da solo a ogni push su main con `npm run pubblica` (copia minificata in
 `dist/`). GitHub Pages non si usa più (il repository è privato). Server
 Multiplayer su Render: `millennium-duel-arena-relay`. APK di produzione in
