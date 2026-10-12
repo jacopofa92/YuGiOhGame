@@ -1,6 +1,34 @@
 # Yu-Gi-Oh! Millennium Duel Arena — mappa tecnica persistente
 
-Ultimo aggiornamento verificato: 2026-10-11.
+Ultimo aggiornamento verificato: 2026-10-12.
+
+## Consultazione carte durante il duello (2026-10-12)
+
+Il pannello informazioni ora distingue centralmente la consultazione da un
+comando di gioco. Tap e hover normali continuano a mostrare la carta, anche
+fuori dalla Main Phase; durante attacchi, Tributi, scarti, piazzamenti e
+decisioni obbligatorie il click raggiunge invece soltanto l'azione richiesta.
+L'inizio di una scelta chiude un eventuale dettaglio rimasto aperto e una
+breve memoria del pointerup impedisce al click sintetico successivo a un
+attacco di riaprirlo. Regressione: `card-info-solo-consultazione`.
+
+## Completamento carte TCG prima serie (2026-10-12)
+
+Il perimetro LOB/MRD/SRL/PSV/LON/LOD/PGD è stato completato sul branch
+`feature/carte-prima-serie-tcg`: alle 26 carte mancanti si sono aggiunti i
+quattro Mostri Normali richiesti come Materiali dalle nuove Fusioni, per un
+totale reale di 30 carte (id 1131-1160), tutte con artwork ufficiale locale.
+Le 16 Fusioni usano il percorso condiviso dell'Extra Deck; le dieci carte
+Effetto hanno introdotto agganci generici per pescata sostituita, ritorno nel
+Deck, numero reale di Tributi, Materiali da Fusione, Special Summon sul
+Terreno avversario e scelta difensiva del bersaglio d'attacco. Guardrail:
+`prima-serie-fusioni-mancanti` e `prima-serie-effetti-mancanti`.
+
+Il seguito è già segnato in `docs/planning/WORK_IN_PROGRESS.md`: prima un
+nuovo audit di Negozio/Cartoteca/ottenibilità e farming delle carte, poi la
+simulazione dei deck avversari Facile/Medio/Difficile e dell'IA. Starter e
+Structure restano invariati; ogni eventuale modifica ai deck avversari deve
+restare coerente con la lore e partire da misure riproducibili.
 
 ## Nuovo nome, repository privato, sito su Cloudflare (2026-10-11)
 
@@ -429,7 +457,7 @@ del protocollo corrente.
 
 ## Stato rapido
 
-- Versione dichiarata: `1.2.0` (`package.json` e `js/version.js`).
+- Versione dichiarata: `1.3.1` (`package.json` e `js/version.js`).
 - Applicazione HTML/CSS/JavaScript puro: nessun framework, bundler o build del
   frontend. Gli script globali devono essere caricati nell'ordine giusto.
 - 19 pagine HTML, 104 file JS applicativi sotto `js/` (esclusi i vendor),
@@ -441,9 +469,9 @@ del protocollo corrente.
 - PWA tramite `manifest.json`, `sw.js` e `js/pwa-register.js`.
 - App Android/Capacitor: le shell dev e produzione includono `NativeMusic`;
   la produzione nativa è `1.2.0` (`versionCode 24`) e punta al sito
-  Cloudflare. Il contenuto web espone `GAME_VERSION` `1.2.0`. Gli APK sono
+  Cloudflare. Il contenuto web espone `GAME_VERSION` `1.3.1`. Gli APK sono
   ignorati da Git e restano artefatti locali rigenerabili. La cache
-  WebView/PWA corrente è `ygo-duel-arena-v223`.
+  WebView/PWA corrente è `ygo-duel-arena-v235`.
 - Cloud tramite Supabase; multiplayer tramite relay WebSocket Node nativo.
 - Le preferenze utente (`save.settings`: dettagli video, ologrammi, aptica,
   volume e mute musica/SFX) fanno parte del salvataggio unificato e quindi di
@@ -1333,6 +1361,34 @@ Sono coordinate del mondo mappa, quindi coincidono con quelle esportate anche
 se viewport, zoom e scorrimento cambiano. Lo spec
 `editor-mappa-storia-admin` verifica il valore prima del rilascio del mouse,
 non soltanto il riepilogo finale.
+
+## Economia del lotto TCG prima serie (ID 1131-1160)
+
+La fonte di verità resta divisa fra `js/data/card-rarity.js` per le rarità,
+`js/economy/card-acquisition.js` per fonti e imprese e
+`js/economy/shop-catalog.js` per rotazioni e buste. Il censimento del lotto è
+documentato in `docs/economy/CARD_ACQUISITION.md` e verificato dallo spec
+`nuove-carte-economia`.
+
+Due carte richiedono una prima copia tematica prima di entrare nel commercio:
+Parassita Paracida dopo 15 vittorie contro Weevil a Difficile e Golem di Lava
+dopo 20 contro Marik a Difficile. Le Fusioni e i quattro Materiali aggiunti
+sono raccolti anche nella busta `fusioni` («Forgia delle Fusioni»), così non
+dipendono soltanto dai pool generici molto ampi. Ogni carta espone la propria
+fonte nella Cartoteca e conserva il limite globale di tre copie.
+
+## Cannoni X/Y/Z e scelte di Posizione
+
+Cannone Drago XY si combina bandendo X + Y; Cannone Drago XYZ richiede
+direttamente X + Y + Z, non XY + Z. Entrambi rifiutano la rianimazione dal
+Cimitero. Testa di Drago Y e Carro Armato Metallico Z usano il ciclo Union
+completo: aggancio, bonus/protezione e distacco volontario in Main Phase.
+
+`DuelEngineUI.openPositionPicker` è una scelta obbligatoria: viene aperta
+dopo che il mostro è già stato scelto da un effetto, quindi cliccare fuori
+non la chiude. L'Evocazione Normale senza Tributi resta invece annullabile
+perché non ha ancora pagato costi; dopo un Tributo anche il suo picker era
+già obbligatorio. Guardrail: `cannoni-xyz-posizione-obbligatoria`.
 
 ## Come mantenere questa memoria
 

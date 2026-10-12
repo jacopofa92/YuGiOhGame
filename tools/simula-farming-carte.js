@@ -64,6 +64,8 @@ result.exodia.SeekerDifficile = {
 };
 result.fixedWins = {
     destinyBoard: 25, flyingElephant: 25,
+    parasiteWeevil: rules.signaturesFirstSeries.parasiteWeevilHard,
+    lavaGolemMarik: rules.signaturesFirstSeries.lavaGolemMarikHard,
     signatureFirst: 50, signatureSecond: 100,
     sliferStrings: rules.slifer.stringsHard,
     raMarik: rules.ra.marikHard,

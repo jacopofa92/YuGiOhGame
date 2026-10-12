@@ -292,7 +292,13 @@
         { id: 'guerrieri', nome: 'Leggende dei Guerrieri', colore: '#9a542d', mostroSimboloId: 14, test: (c) => c.race === 'Guerriero' },
         { id: 'mare', nome: 'Furia dagli Abissi', colore: '#176d88', mostroSimboloId: 879, test: (c) => c.attribute === 'ACQUA' || /mare|oceano|acqua/i.test(c.name) },
         { id: 'arpie', nome: 'Vento delle Arpie', colore: '#9b477b', mostroSimboloId: 288, test: (c) => /arpia|amazzone/i.test(c.name) },
-        { id: 'toon', nome: 'Mondo Toon', colore: '#b24b80', mostroSimboloId: 123, test: (c) => /toon/i.test((c.name || '') + ' ' + (c.effect || '')) }
+        { id: 'toon', nome: 'Mondo Toon', colore: '#b24b80', mostroSimboloId: 123, test: (c) => /toon/i.test((c.name || '') + ' ' + (c.effect || '')) },
+        // Le Fusioni storiche appena completate non devono perdersi in un
+        // pool generico di oltre mille carte. Il range 1141-1160 include
+        // anche i quattro Materiali Normali aggiunti apposta per esse;
+        // extraDeck/testo estendono il tema alle Fusioni già esistenti.
+        { id: 'fusioni', nome: 'Forgia delle Fusioni', colore: '#8050a8', mostroSimboloId: 1155,
+            test: (c) => (c.id >= 1141 && c.id <= 1160) || !!c.extraDeck || /fusione|materiale da fusione/i.test((c.name || '') + ' ' + (c.effect || '')) }
     ];
 
     // ================================================================

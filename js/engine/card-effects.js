@@ -1506,11 +1506,11 @@
      * effetto) se non c'è un bersaglio idoneo o nessuna casella Magia/
      * Trappola libera. Il ritorno automatico sul Terreno quando il
      * bersaglio non è più valido vive in recomputeStaticEffects
-     * (duel-engine.js, def.isUnion). SEMPLIFICAZIONE: unico modo per
-     * staccarsi è che il bersaglio lasci il campo — manca lo stacco
-     * VOLONTARIO mentre il bersaglio resta valido, che richiederebbe una
-     * nuova interazione "riattiva una Carta Equipaggiamento già in
-     * campo", non ancora presente nel motore.
+     * (duel-engine.js, def.isUnion). Questo helper copre soltanto
+     * l'AGGANCIO: lo stacco volontario è dichiarato dalla singola Union
+     * con `continuous` + `repeatableWhileContinuous` (Y, Z e Drago Nero
+     * Pece), perché deve condividere con l'aggancio il limite una volta
+     * per turno e rispettare la propria condizione di bersaglio.
      */
     function attachUnionMonster(ctx, filterFn) {
         // Esclude sempre se stessa dai bersagli idonei: un mostro Union

@@ -1065,13 +1065,17 @@
     }
     CardEffects.register(511, {
         banishFusionMaterials: [510, 513],
+        cannotBeSpecialSummonedFromGraveyard: true,
         canActivate(ctx) {
             return ctx.hand(ctx.owner).length > 0 && bersagliCannoneDrago(ctx, false).length > 0;
         },
         activate(ctx) { attivaCannoneDrago(ctx, 'Cannone Drago XY', false); }
     });
     CardEffects.register(512, {
-        banishFusionMaterials: [511, 515],
+        // Il testo TCG richiede direttamente X + Y + Z scoperti sul
+        // Terreno: Cannone Drago XY non è un sostituto dei primi due.
+        banishFusionMaterials: [510, 513, 515],
+        cannotBeSpecialSummonedFromGraveyard: true,
         canActivate(ctx) {
             return ctx.hand(ctx.owner).length > 0 && bersagliCannoneDrago(ctx, true).length > 0;
         },
@@ -1087,11 +1091,34 @@
     CardEffects.register(513, {
         isUnion: true,
         isEquip: true,
+        continuous: true,
+        repeatableWhileContinuous: true,
         unionTargetFilter: (c) => c.id === 510,
         canActivate(ctx) {
+            if (ctx.card.equippedToOwner) {
+                if (ctx.owner !== gameState.currentPlayer) return false;
+                if (gameState.phase !== 'main1' && gameState.phase !== 'main2') return false;
+                if (gameState.usedIgnitionThisTurn && gameState.usedIgnitionThisTurn[ctx.card.uid]) return false;
+                return ctx.findEmptyMonsterSlot(ctx.owner) !== -1;
+            }
             return findEquipTarget(ctx, (c) => c.id === 510) !== -1;
         },
         activate(ctx) {
+            if (ctx.card.equippedToOwner) {
+                gameState.usedIgnitionThisTurn = gameState.usedIgnitionThisTurn || {};
+                gameState.usedIgnitionThisTurn[ctx.card.uid] = true;
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (slotIndex === -1) return;
+                const stSlot = ctx.stField(ctx.owner)[ctx.index];
+                if (!stSlot || stSlot.card.uid !== ctx.card.uid) return;
+                ctx.stField(ctx.owner)[ctx.index] = null;
+                delete ctx.card.equippedToOwner;
+                delete ctx.card.equippedToIndex;
+                delete ctx.card.equippedToUid;
+                ctx.specialSummon(ctx.owner, ctx.card, slotIndex, 'attack', 'field');
+                ctx.log('🐉 Testa di Drago Y si stacca e torna sul Terreno!');
+                return;
+            }
             attachUnionMonster(ctx, (c) => c.id === 510);
         },
         static(ctx) {
@@ -1110,11 +1137,34 @@
     CardEffects.register(515, {
         isUnion: true,
         isEquip: true,
+        continuous: true,
+        repeatableWhileContinuous: true,
         unionTargetFilter: (c) => c.id === 510 || c.id === 513,
         canActivate(ctx) {
+            if (ctx.card.equippedToOwner) {
+                if (ctx.owner !== gameState.currentPlayer) return false;
+                if (gameState.phase !== 'main1' && gameState.phase !== 'main2') return false;
+                if (gameState.usedIgnitionThisTurn && gameState.usedIgnitionThisTurn[ctx.card.uid]) return false;
+                return ctx.findEmptyMonsterSlot(ctx.owner) !== -1;
+            }
             return findEquipTarget(ctx, (c) => c.id === 510 || c.id === 513) !== -1;
         },
         activate(ctx) {
+            if (ctx.card.equippedToOwner) {
+                gameState.usedIgnitionThisTurn = gameState.usedIgnitionThisTurn || {};
+                gameState.usedIgnitionThisTurn[ctx.card.uid] = true;
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (slotIndex === -1) return;
+                const stSlot = ctx.stField(ctx.owner)[ctx.index];
+                if (!stSlot || stSlot.card.uid !== ctx.card.uid) return;
+                ctx.stField(ctx.owner)[ctx.index] = null;
+                delete ctx.card.equippedToOwner;
+                delete ctx.card.equippedToIndex;
+                delete ctx.card.equippedToUid;
+                ctx.specialSummon(ctx.owner, ctx.card, slotIndex, 'attack', 'field');
+                ctx.log('🛡️ Carro Armato Metallico Z si stacca e torna sul Terreno!');
+                return;
+            }
             attachUnionMonster(ctx, (c) => c.id === 510 || c.id === 513);
         },
         static(ctx) {

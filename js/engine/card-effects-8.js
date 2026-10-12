@@ -3367,6 +3367,294 @@
         }
     });
 
+    // 1131 — Esiliatore della Luce. Il redirect vive nel push decorato dei
+    // Cimiteri (recomputeStaticEffects): copre anche regole preesistenti.
+    CardEffects.register(1131, {
+        static() { gameState.banishInsteadOfGraveyard = true; }
+    });
+
+    // 1132 — Insetto Perforatore: dopo il danno da battaglia mette una
+    // copia di Parassita Paracida in cima al proprio Deck.
+    CardEffects.register(1132, {
+        onDealsBattleDamage(ctx) {
+            const deck = Tavolo.mazzo(ctx.owner);
+            if (!Array.isArray(deck)) return;
+            const index = deck.findIndex((c) => c.id === 1139);
+            if (index === -1) return;
+            const fine = attendiScelta(ctx);
+            chooseOption(ctx, {
+                title: '🐛 Insetto Perforatore', text: 'Vuoi mettere Parassita Paracida in cima al Deck?',
+                options: [{ value: true, label: 'Sì' }, { value: false, label: 'No' }],
+                pickForBot: () => true
+            }, (yes) => {
+                try {
+                    if (!yes) return;
+                    const now = deck.findIndex((c) => c.id === 1139);
+                    if (now === -1) return;
+                    const [parasite] = deck.splice(now, 1);
+                    for (let i = deck.length - 1; i > 0; i--) {
+                        const j = Math.floor(ctx.random() * (i + 1));
+                        [deck[i], deck[j]] = [deck[j], deck[i]];
+                    }
+                    deck.push(parasite);
+                    ctx.log('🐛 Insetto Perforatore mette Parassita Paracida in cima al Deck!');
+                } finally { fine(); }
+            });
+        }
+    });
+
+    // 1133 — Golem di Lava: tributa 2 mostri avversari, entra sul loro
+    // Terreno e brucia il proprio controllore a ogni Standby Phase.
+    CardEffects.register(1133, {
+        cannotNormalSummon: true,
+        cannotBeSet: true,
+        specialSummonToOpponentField: true,
+        specialSummonTributeFromOpponent: true,
+        specialSummonFixedPosition: 'attack',
+        getSpecialSummonTributeFilters() { return [() => true, () => true]; },
+        canSpecialSummonFromHand(ctx) {
+            return !gameState.hasNormalSummoned && ctx.field(ctx.opponent).filter(Boolean).length >= 2;
+        },
+        paySpecialSummonCost(ctx) {
+            const field = ctx.field(ctx.opponent);
+            const pending = gameState.pendingSpecialSummonTributeUids;
+            gameState.pendingSpecialSummonTributeUids = null;
+            let indices = Array.isArray(pending)
+                ? pending.map((uid) => field.findIndex((s) => s && s.card.uid === uid)).filter((i) => i !== -1)
+                : [];
+            if (indices.length !== 2) indices = field.map((s, i) => s ? i : -1).filter((i) => i !== -1).slice(0, 2);
+            if (indices.length !== 2) return false;
+            indices.forEach((i) => {
+                const slot = field[i];
+                const owner = slot.originalOwner || ctx.opponent;
+                ctx.graveyard(owner).push(slot.card);
+                field[i] = null;
+                DuelEngine.notifySacrificedForTribute(ctx.opponent, slot.card, ctx.card);
+            });
+            gameState.hasNormalSummoned = true;
+            return true;
+        },
+        onStandbyPhase(ctx) {
+            ctx.dealDamage(ctx.owner, 1000);
+            ctx.log('🌋 Golem di Lava infligge 1000 danni al suo controllore!');
+        }
+    });
+
+    CardEffects.register(1134, {
+        onSummon(ctx) {
+            if ((ctx.card._tributeCountForSummon || 0) !== 3) return;
+            for (let i = ctx.stField(ctx.opponent).length - 1; i >= 0; i--) {
+                if (ctx.stField(ctx.opponent)[i]) ctx.destroySpellTrap(ctx.opponent, i);
+            }
+            ctx.log('💧 Creatura dell’Umidità distrugge tutte le Magie/Trappole avversarie!');
+        }
+    });
+
+    // Patrician viene consultato dal punto unico di dichiarazione attacco.
+    CardEffects.register(1135, { controllerChoosesOpponentAttackTargets: true });
+
+    CardEffects.register(1136, {
+        onReturnedToDeckSelf(ctx) {
+            if (!ctx.wasFaceUp || ctx.findEmptyMonsterSlot(ctx.owner) === -1) return;
+            searchDeckWithChoice(ctx, (c) => c.type === 'monster' && (c.level || 0) <= 3, {
+                title: '🐍 Principessa Serpentina', text: 'Scegli un mostro di Livello 3 o inferiore da Special Summonare.'
+            }, (card) => {
+                const slot = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (slot !== -1) ctx.specialSummon(ctx.owner, card, slot, 'attack', 'deck');
+                else Tavolo.mazzo(ctx.owner).push(card);
+            });
+        }
+    });
+
+    // Giara Trasformante #2: la risoluzione è simultanea per i due lati;
+    // prima rimescola i mostri, poi scava e piazza coperti i Livello <=4.
+    CardEffects.register(1137, {
+        onFlip(ctx) {
+            Tavolo.ordine().forEach((owner) => {
+                const field = ctx.field(owner);
+                const returned = [];
+                field.forEach((slot, index) => {
+                    if (!slot) return;
+                    field[index] = null;
+                    if (slot.card.isToken) return;
+                    if (slot.card.extraDeck) Tavolo.extraDeck(slot.originalOwner || owner).push(slot.card);
+                    else returned.push(slot.card);
+                });
+                ctx.shuffleIntoDeck(owner, returned);
+                const deck = Tavolo.mazzo(owner);
+                if (!Array.isArray(deck)) return;
+                const wanted = returned.length;
+                const excavated = [];
+                const monsters = [];
+                while (deck.length && monsters.length < wanted) {
+                    const card = deck.pop();
+                    excavated.push(card);
+                    if (card.type === 'monster') monsters.push(card);
+                }
+                monsters.forEach((card) => {
+                    const ex = excavated.indexOf(card);
+                    if (ex !== -1) excavated.splice(ex, 1);
+                    if ((card.level || 0) <= 4 && ctx.findEmptyMonsterSlot(owner) !== -1) {
+                        ctx.specialSummon(owner, card, ctx.findEmptyMonsterSlot(owner), 'defense', 'deck');
+                        const slot = ctx.field(owner).find((s) => s && s.card.uid === card.uid);
+                        if (slot) slot.isFaceDown = true;
+                    } else ctx.graveyard(owner).push(card);
+                });
+                excavated.forEach((card) => ctx.graveyard(owner).push(card));
+            });
+            ctx.log('🏺 Giara Trasformante #2 rimescola i mostri e rinnova entrambi i Terreni!');
+        }
+    });
+
+    CardEffects.register(1138, {
+        onFlip(ctx) {
+            const candidates = collectFieldTargets(ctx, { zone: 'monster', owner: 'both', includiCoperte: false });
+            if (!candidates.length) return;
+            chooseFieldMonsterTarget(ctx, candidates, { title: '🛡️ Guardia Misteriosa', text: 'Scegli il mostro da mettere in cima al Deck.', dichiara: true }, (chosen) => {
+                ctx.returnMonsterToDeck(chosen.owner, chosen.index, { shuffle: false });
+                const hasWarrior = ctx.field(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.race === 'Guerriero');
+                if (!hasWarrior) return;
+                const extra = collectFieldTargets(ctx, { zone: 'monster', owner: 'both', includiCoperte: false });
+                if (!extra.length) return;
+                chooseOption(ctx, {
+                    title: '🛡️ Guardia Misteriosa', text: 'Vuoi far tornare in mano anche un secondo mostro?',
+                    options: [{ value: true, label: 'Sì' }, { value: false, label: 'No' }],
+                    pickForBot: () => true
+                }, (yes) => {
+                    if (!yes) return;
+                    chooseFieldMonsterTarget(ctx, extra, { title: '🛡️ Guardia Misteriosa', text: 'Scegli il secondo mostro da far tornare in mano.', dichiara: true }, (second) => {
+                        ctx.returnMonsterToHand(second.owner, second.index);
+                    });
+                });
+            });
+        }
+    });
+
+    CardEffects.register(1139, {
+        onFlip(ctx) {
+            const field = ctx.field(ctx.owner);
+            const index = field.findIndex((s) => s && s.card.uid === ctx.card.uid);
+            const deck = Tavolo.mazzo(ctx.opponent);
+            if (index === -1 || !Array.isArray(deck)) return;
+            field[index] = null;
+            deck.push(ctx.card);
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(ctx.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+            ctx.card._parasiteOriginalOwner = ctx.owner;
+            ctx.log('🐛 Parassita Paracida si nasconde scoperto nel Deck avversario!');
+        },
+        onDrawn(ctx) {
+            if (!ctx.card._parasiteOriginalOwner) return false;
+            const slot = ctx.findEmptyMonsterSlot(ctx.owner);
+            if (slot === -1) { ctx.graveyard(ctx.owner).push(ctx.card); return true; }
+            ctx.specialSummon(ctx.owner, ctx.card, slot, 'defense', 'deck');
+            const summoned = ctx.field(ctx.owner)[slot];
+            if (summoned && summoned.card.uid === ctx.card.uid) summoned.isFaceDown = false;
+            ctx.dealDamage(ctx.owner, 1000);
+            ctx.log('🐛 Parassita Paracida viene pescato: Special Summon e 1000 danni!');
+            return true;
+        },
+        static(ctx) {
+            if (!ctx.card._parasiteOriginalOwner) return;
+            // Dal punto di vista del controllore attuale di Paracida, il
+            // suo "avversario" è il proprietario che l'aveva inserita.
+            // Usiamo l'override già ripristinato a ogni End Phase invece
+            // di mutare permanentemente il Tipo stampato sulla carta.
+            ctx.field(ctx.opponent).forEach((slot) => {
+                if (slot && !slot.isFaceDown) ctx.overrideRaceUntilEndOfTurn(slot.card, 'Insetto');
+            });
+            gameState.raceOverrideFloodgateFor = gameState.raceOverrideFloodgateFor || {};
+            gameState.raceOverrideFloodgateFor[ctx.opponent] = 'Insetto';
+        }
+    });
+
+    CardEffects.register(1140, {
+        onFlip(ctx) {
+            const grave = ctx.graveyard(ctx.owner);
+            const candidates = grave.filter((card) => card._usedAsFusionMaterial || card._fusionMaterialGroup);
+            if (candidates.length < 2) return;
+            const fine = attendiScelta(ctx);
+            chooseUpToNFromList(ctx, candidates, 2, {
+                min: 2, title: '📦 Rifornimento', text: 'Scegli i 2 Materiali da Fusione da riprendere in mano.'
+            }, (chosen) => {
+                try {
+                    chosen.forEach((card) => {
+                        const index = grave.indexOf(card);
+                        if (index !== -1) ctx.hand(ctx.owner).push(grave.splice(index, 1)[0]);
+                    });
+                    if (chosen.length === 2) ctx.log('📦 Rifornimento recupera 2 Materiali da Fusione dal Cimitero!');
+                } finally { fine(); }
+            });
+        }
+    });
+
+    // ================================================================
+    // 1141-1160 — Fusioni storiche LOB/MRD/PSV/LOD/PGD e quattro
+    // materiali normali mancanti. Le 14 Fusioni senza effetto dichiarano
+    // soltanto i materiali: tutta la procedura resta quella condivisa di
+    // DuelEngine.getFusableExtraDeckMonsters/ACTIONS.fusionSummon.
+    // ================================================================
+    [
+        [1141, 922, 913], [1142, 1062, 495], [1143, 909, 1157],
+        [1144, 940, 951], [1145, 1012, 944], [1146, 526, 905],
+        [1147, 444, 1158], [1148, 402, 923], [1149, 949, 946],
+        [1150, 918, 919], [1151, 929, 1159], [1152, 939, 948],
+        [1154, 1010, 945], [1156, 1098, 1160]
+    ].forEach(([id, primo, secondo]) => {
+        CardEffects.register(id, { fusionMaterials: [primo, secondo] });
+    });
+
+    // Mietitore dell'Incubo: stessa struttura di Mietitore Spirituale,
+    // ma come Fusione di Mietitore Spirituale + Cavallo dell'Incubo.
+    CardEffects.register(1153, {
+        fusionMaterials: [661, 1053],
+        cannotBeDestroyedByBattle: true,
+        static(ctx) { gameState.directAttackAllowedUids[ctx.card.uid] = true; },
+        canActivate(ctx) { return ctx.zone === 'monster'; },
+        onCardEffectTargetDeclare(ctx) {
+            const index = ctx.field(ctx.owner).findIndex((s) => s && s.card.uid === ctx.card.uid);
+            if (index === -1) return;
+            ctx.destroyMonster(ctx.owner, index);
+            ctx.log(`💀 ${ctx.card.name} viene distrutto dopo essere stato scelto come bersaglio!`);
+        },
+        onDealsBattleDamage(ctx) {
+            if (ctx.targetIndex !== -1) return;
+            const discarded = ctx.discardRandomFromHand(ctx.opponent);
+            if (discarded) ctx.log(`💀 ${ctx.card.name} forza l'avversario a scartare ${discarded.name}!`);
+        }
+    });
+
+    // Ryu Senshi: nega una Trappola Normale pagando 1000 LP e respinge
+    // qualsiasi Magia che lo bersaglia. Entrambi i percorsi riusano i
+    // checkpoint generici già impiegati da Balter e Freed.
+    CardEffects.register(1155, {
+        fusionMaterials: [504, 630],
+        canRespondAsQuickEffect: true,
+        canActivate(ctx) {
+            if (Tavolo.lp(ctx.owner) <= 1000) return false;
+            const chain = ctx.gameState.chain;
+            if (!chain || !chain.links || chain.links.length === 0) return false;
+            const top = chain.links[chain.links.length - 1];
+            return !!(top.card && top.card.type === 'trap' && top.card.subtype === 'normal' && !top.negated);
+        },
+        activate(ctx) {
+            ctx.dealDamage(ctx.owner, 1000);
+            if (ctx.negateActivation()) ctx.log('🐉 Ryu Senshi paga 1000 LP e nega la Trappola Normale!');
+        },
+        canReactToTargetDeclare(ctx) {
+            if (ctx.zone !== 'monster' || ctx.sourceType !== 'spell') return false;
+            const slot = ctx.field(ctx.owner)[ctx.index];
+            return !!(slot && !slot.isFaceDown && slot.card.uid === ctx.card.uid);
+        },
+        onCardEffectTargetDeclare(ctx) {
+            ctx.cancel();
+            const distrutta = destroyTargetingSpellIfItStays(ctx);
+            ctx.log(`🐉 Ryu Senshi annulla la Magia che lo bersaglia${distrutta ? ' e la distrugge' : ''}!`);
+        }
+    });
+
     // ================================================================
     // CARTE SENZA CODICE BESPOKE — libreria per il futuro Card Maker
     // (vedi js/engine/effect-templates.js, js/data/custom-cards.js): una carta in

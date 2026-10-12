@@ -40,6 +40,9 @@ EventiDuello.ascolta('decisioni-a-schermo', (tipo) => {
 });
 EventiDuello.ascolta('decisione', (r, rispondi) => {
     const ui = window.DuelEngineUI;
+    // La nuova decisione sostituisce qualunque consultazione passiva rimasta
+    // aperta: il giocatore deve vedere senza ostacoli candidati e comandi.
+    if (typeof updateCardInfoPanel === 'function') updateCardInfoPanel(null);
     const annulla = r.annullabile ? () => rispondi(null) : undefined;
     switch (r.tipo) {
         case 'carte': {
@@ -148,7 +151,17 @@ function handleCardClickInner(card, sourceType, sourceIndex, sourceOwner, isFace
     // anche fuori dalla Main Phase e mentre gioca l'avversario. Questo e'
     // particolarmente importante su touch, dove non esiste l'hover che su
     // desktop mostrava comunque il pannello informativo.
-    updateCardInfoPanel(card, { sourceType, sourceOwner, isFaceDown });
+    // Se il tap sta rispondendo a una selezione attiva, deve fare SOLO
+    // quell'azione. Il pannello resta invece disponibile nei tap normali,
+    // anche fuori Main Phase e durante il turno avversario.
+    const selected = gameState.selectedCard;
+    const startsSelectedTribute = sourceType === 'monster' && sourceOwner === 'player'
+        && selected && selected.type === 'hand' && selected.card && selected.card.type === 'monster'
+        && getTributesRequired(selected.card) > 0;
+    const gameplayOnly = (typeof isGameplaySelectionActive === 'function' && isGameplaySelectionActive())
+        || startsSelectedTribute;
+    if (gameplayOnly) updateCardInfoPanel(null);
+    else updateCardInfoPanel(card, { sourceType, sourceOwner, isFaceDown });
     if (gameState.currentPlayer !== 'player' || isDraggingAttack) return;
     const isMainPhase = gameState.phase === 'main1' || gameState.phase === 'main2';
     // Le Magie Veloci (subtype 'quick-play') sono per testo reale attivabili
@@ -901,7 +914,9 @@ function startTributeSelection(card, handIndex, tributesNeeded, fromRect) {
     gameState.pendingTributeSummon = { card, handIndex, tributesNeeded, selected: [], fromRect };
     addToLog(`🔺 ${card.name} richiede ${tributesNeeded} Tribut${tributesNeeded > 1 ? 'i' : 'o'}. Seleziona i mostri da Sacrificare sul tuo Terreno.`);
     showTributePrompt(card.name, tributesNeeded, 0);
-    updateCardInfoPanel(card, { sourceType: 'hand', sourceOwner: 'player', isFaceDown: false });
+    // Da qui in avanti i tocchi sul Terreno sono scelte di Sacrificio: il
+    // dettaglio della carta lascerebbe meno spazio proprio ai candidati.
+    updateCardInfoPanel(null);
     updateUI();
 }
 
@@ -1560,7 +1575,9 @@ function offerSpecialSummonBanishChoice(card, handIndex, filters) {
  */
 function offerSpecialSummonTributeChoice(card, handIndex, filters) {
     const ctx = DuelEngine.makeContext('player', { card: card, handIndex: handIndex });
-    const field = ctx.field(ctx.owner);
+    const def = DuelEngine.getDefinition(card.id);
+    const tributeOwner = def && def.specialSummonTributeFromOpponent ? ctx.opponent : ctx.owner;
+    const field = ctx.field(tributeOwner);
     const totalMatching = filters.reduce((sum, f) => sum + field.filter((s) => s && f(s.card)).length, 0);
     if (totalMatching <= filters.length) return false;
     const chosenUids = [];
@@ -2110,7 +2127,12 @@ window.DuelEngineUI = {
                 <button type="button" class="quick-popover-btn attack icon-round" id="qpPositionAttack" title="Scoperta in Attacco"><span data-icon="attackPos"></span></button>
                 <button type="button" class="quick-popover-btn defense icon-round" id="qpPositionDefense" title="Coperta in Difesa"><span data-icon="defensePos"></span></button>
             </div>
-        `, { bare: true });
+        // Questa finestra arriva DOPO che una carta/effetto ha già scelto
+        // quale mostro Evocare. Non è quindi una domanda annullabile: un
+        // click sul campo non deve far sparire il prompt lasciando la carta
+        // in una zona intermedia e il flusso senza callback. È lo stesso
+        // vincolo già applicato all'Evocazione Tributo in openSummonModal.
+        `, { bare: true, dismissible: false });
         // Stesso refresh leggero (mai il vero updateUI(), vedi il commento
         // su questo in openCardListPicker qui sopra) dopo ogni scelta
         // asincrona — bug reale della stessa famiglia: un mostro appena

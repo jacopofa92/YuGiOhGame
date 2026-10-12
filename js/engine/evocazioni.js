@@ -98,6 +98,9 @@ function eseguiTributo(posto, c, extra) {
             perCarta._tributedCardIds = indices
                 .map((idx) => campo[idx] && campo[idx].card.id)
                 .filter((id) => id !== undefined && id !== null);
+            // Il numero reale di Tributi non si può ricostruire dal Livello:
+            // alcune carte distinguono proprio "3 Tributi".
+            perCarta._tributeCountForSummon = indices.length;
         }
         if (suMagieTrappole && perCarta) {
             addToLog(perChi(posto,

@@ -91,9 +91,17 @@ function drawCardsToHand(owner, amount, queueEffectAnimation) {
         if (realDeck) {
             if (realDeck.length === 0) break;
             const card = realDeck.pop();
-            gameState[handKey].push(card);
-            if (card && card.uid) drawnUids.push(card.uid);
             gameState[countKey] = realDeck.length;
+            // Una carta può sostituire la propria pescata con un'azione
+            // obbligatoria (Parassita Paracida): l'hook gira prima che la
+            // carta entri in mano, evitando anche un flash grafico errato.
+            const def = card && window.DuelEngine ? DuelEngine.getDefinition(card.id) : null;
+            const handled = !!(def && typeof def.onDrawn === 'function'
+                && def.onDrawn(DuelEngine.makeContext(owner, { card: card, drawnFromDeck: true })) === true);
+            if (!handled) {
+                gameState[handKey].push(card);
+                if (card && card.uid) drawnUids.push(card.uid);
+            }
         } else {
             if (gameState[countKey] <= 0) break;
             gameState[countKey] -= 1;

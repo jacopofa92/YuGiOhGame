@@ -1817,6 +1817,38 @@
             return true;
         },
 
+        /** Rimette un mostro dal Terreno nel Deck del vero proprietario. */
+        returnMonsterToDeck(owner, index, options) {
+            const field = fieldOf(owner);
+            const slot = field[index];
+            if (!slot || unaffectedBySourceCard(this, slot)) return null;
+            const card = slot.card;
+            const proprietario = slot.originalOwner || owner;
+            const deck = Tavolo.mazzo(proprietario);
+            if (!Array.isArray(deck)) return null;
+            field[index] = null;
+            if (card.mustBanishOnLeavingField) {
+                ACTIONS.banish(proprietario, card);
+                return card;
+            }
+            // La cima è la fine dell'array: drawCardsToHand usa pop().
+            deck.push(card);
+            if (!options || options.shuffle !== false) {
+                for (let i = deck.length - 1; i > 0; i--) {
+                    const j = Math.floor(Casuale.random() * (i + 1));
+                    [deck[i], deck[j]] = [deck[j], deck[i]];
+                }
+            }
+            gameState[Tavolo.chiave(proprietario, 'DeckCount')] = deck.length;
+            const def = getDefinition(card.id);
+            if (def && typeof def.onReturnedToDeckSelf === 'function') {
+                safeCallCardHandler(card, 'onReturnedToDeckSelf', () => def.onReturnedToDeckSelf(makeContext(proprietario, {
+                    card: card, slotIndex: index, wasFaceUp: !slot.isFaceDown
+                })));
+            }
+            return card;
+        },
+
         /**
          * Cerca fino a `maxCount` carte nel Deck di `owner` che soddisfano
          * `matchFn(card)` e le aggiunge alla mano (es. Berfomet, Thunder
@@ -1897,6 +1929,15 @@
                 if (loc.zone === 'monster' && field[loc.index]) return field[loc.index].card;
                 return null;
             }).filter(Boolean);
+            // Rifornimento deve riconoscere i materiali della stessa
+            // Evocazione Fusione, senza confonderli con vecchie copie già
+            // presenti nel Cimitero.
+            const fusionMaterialGroup = uidCondiviso('fusion-materials', {});
+            materialCards.forEach((card) => {
+                card._fusionMaterialGroup = fusionMaterialGroup;
+                card._usedAsFusionMaterial = true;
+            });
+            fusionCard._fusionMaterialGroup = fusionMaterialGroup;
             // Indici più alti prima: rimuovere prima un indice mano basso
             // sposterebbe (di uno) un indice mano più alto ancora da
             // rimuovere. Gli indici Terreno non si spostano mai (sono
@@ -2858,7 +2899,10 @@
         if (!card) return false;
         const def = getDefinition(card.id);
         if (!def || typeof def.canSpecialSummonFromHand !== 'function') return false;
-        return !!def.canSpecialSummonFromHand(makeContext(owner, { card: card, handIndex: handIndex }));
+        const destinationOwner = def.specialSummonToOpponentField ? Tavolo.avversario(owner) : owner;
+        if (!def.specialSummonTributeFromOpponent
+            && fieldOf(destinationOwner).findIndex((slot) => slot === null) === -1) return false;
+        return !!def.canSpecialSummonFromHand(makeContext(owner, { card: card, handIndex: handIndex, summonDestinationOwner: destinationOwner }));
     }
 
     /**
@@ -2873,8 +2917,9 @@
         const hand = handOf(owner);
         const card = hand[handIndex];
         const def = getDefinition(card.id);
-        const slotIndex = fieldOf(owner).findIndex((slot) => slot === null);
-        if (slotIndex === -1) {
+        const destinationOwner = def.specialSummonToOpponentField ? Tavolo.avversario(owner) : owner;
+        let slotIndex = fieldOf(destinationOwner).findIndex((slot) => slot === null);
+        if (slotIndex === -1 && !def.specialSummonTributeFromOpponent) {
             addToLog('❌ Il Terreno è pieno: impossibile Special Summonare.');
             return false;
         }
@@ -2882,6 +2927,11 @@
             const costPaid = def.paySpecialSummonCost(makeContext(owner, { card: card, handIndex: handIndex }));
             if (!costPaid) return false;
         }
+        // Un costo può aver liberato la destinazione stessa (Golem di Lava
+        // tributa due mostri sul Terreno avversario): calcolarla di nuovo
+        // soltanto dopo il pagamento è quindi necessario.
+        slotIndex = fieldOf(destinationOwner).findIndex((slot) => slot === null);
+        if (slotIndex === -1) return false;
         hand.splice(handIndex, 1);
         // Per regolamento reale, se una carta Special Summona un mostro
         // senza specificarne la Posizione, sceglie chi CONTROLLA quella
@@ -2900,7 +2950,11 @@
         // Attacco, comportamento invariato.
         const position = gameState.pendingSpecialSummonPosition || 'attack';
         gameState.pendingSpecialSummonPosition = null;
-        ACTIONS.specialSummon(owner, card, slotIndex, position, 'hand');
+        ACTIONS.specialSummon(destinationOwner, card, slotIndex, position, 'hand');
+        if (def.specialSummonToOpponentField) {
+            const summonedSlot = fieldOf(destinationOwner)[slotIndex];
+            if (summonedSlot) summonedSlot.originalOwner = owner;
+        }
         addToLog(`✨ ${owner === 'player' ? 'Hai' : 'Il bot ha'} Special Summonato ${card.name} in Posizione di ${position === 'attack' ? 'Attacco' : 'Difesa'}!`);
         return true;
     }
@@ -4839,6 +4893,33 @@
         // (game-flow.js) per mostrare le vere carte del bot invece dei
         // dorsi.
         gameState.bothHandsRevealed = false;
+        // Sostituzione globale "mandata al Cimitero -> bandita". Le oltre
+        // duecento regole esistenti scrivono correttamente nell'array del
+        // Cimitero; decorarne push in un solo punto permette a carte come
+        // Esiliatore della Luce di coprirle tutte senza una lista fragile
+        // di eccezioni. La funzione consulta il flag a ogni chiamata, quindi
+        // torna normale appena il floodgate lascia il Terreno.
+        gameState.banishInsteadOfGraveyard = false;
+        Tavolo.ordine().forEach((graveOwner) => {
+            const grave = Tavolo.cimitero(graveOwner);
+            if (!grave || grave._banishRedirectInstalled) return;
+            Object.defineProperty(grave, '_banishRedirectInstalled', { value: true, configurable: true });
+            Object.defineProperty(grave, 'push', {
+                configurable: true,
+                value: function (...cards) {
+                    if (!gameState.banishInsteadOfGraveyard) return Array.prototype.push.apply(this, cards);
+                    cards.forEach((card) => {
+                        if (!card) return;
+                        banishedOf(graveOwner).push(card);
+                        const def = getDefinition(card.id);
+                        if (def && typeof def.onBanished === 'function') {
+                            safeCallCardHandler(card, 'onBanished', () => def.onBanished(makeContext(graveOwner, { card: card })));
+                        }
+                    });
+                    return this.length;
+                }
+            });
+        });
         Tavolo.ordine().forEach((owner) => {
             if (fieldOf(owner).some((s) => s && !s.isFaceDown && s.card.id === 282)) {
                 gameState.otherMonsterSummonsBlockedFor[owner] = true;
