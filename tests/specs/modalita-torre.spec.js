@@ -12,6 +12,7 @@ const path = require('path');
 
 const RADICE = path.join(__dirname, '..', '..');
 const PAGINA = 'file:///' + path.join(RADICE, 'torre.html').replace(/\\/g, '/');
+const INDEX = 'file:///' + path.join(RADICE, 'index.html').replace(/\\/g, '/');
 
 async function nuovaPagina(t) {
     const page = await t.browser.newPage({ viewport: { width: 1280, height: 860 } });
@@ -19,6 +20,16 @@ async function nuovaPagina(t) {
     page.on('pageerror', (e) => errori.push(e.message));
     page.on('dialog', (d) => d.accept());
     await page.addInitScript(() => { window.AUTH_GATE_SKIP = true; window.DUEL_FAST_OPENING = true; window.DUEL_RPS_SKIP = true; });
+    // La Torre si sblocca dopo il Regno dei Duellanti. Prepariamo il requisito
+    // da una pagina neutra, prima che il guard di torre.html possa intervenire.
+    await page.goto(INDEX);
+    await page.evaluate(() => {
+        if (!SaveManager.hasSave()) SaveManager.createNew('Scalatore');
+        const stato = SaveManager.getCardAcquisitionState();
+        stato.completedChapters = stato.completedChapters || {};
+        stato.completedChapters.regno = true;
+        SaveManager.setCardAcquisitionState(stato);
+    });
     return { page, errori };
 }
 

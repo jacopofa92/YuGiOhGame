@@ -418,6 +418,16 @@
         border-radius: 999px;
         white-space: nowrap;
     }
+    .menu-item--locked {
+        opacity: 0.58;
+        border-color: rgba(154,165,189,0.2);
+        background: linear-gradient(135deg, rgba(18,20,28,0.72), rgba(24,25,30,0.58));
+    }
+    .menu-item--locked:hover {
+        transform: none;
+        border-color: rgba(247,215,116,0.32);
+        box-shadow: 0 0 16px rgba(243,156,18,0.12);
+    }
 
     .menu-item--active {
         border-color: rgba(247,215,116,0.65);
@@ -4889,6 +4899,7 @@
     <script src="js/native/haptics.js"></script>
     <script src="js/native/native-save-backup.js"></script>
     <script src="js/save-manager.js"></script>
+    <script src="js/modes/mode-unlocks.js"></script>
     <script src="js/data/characters-db.js"></script>
     <script src="js/data/character-unlocks.js"></script>
     <!-- cards-db.js serve solo per CARD_ORIGIN_LABELS (selettore "Carte
@@ -5098,13 +5109,12 @@
                     // Le modalità con un file loro (js/modes/): situazioni
                     // preparate o regole di contorno, mai il motore.
                     { icon: 'puzzle', label: 'Puzzle', action: 'link', href: 'puzzle.html' },
-                    { icon: 'rematch', label: 'Rivincite', action: 'link', href: 'rivincite.html' },
-                    { icon: 'tower', label: 'Torre dei Duellanti', action: 'link', href: 'torre.html' },
+                    { icon: 'rematch', label: 'Rivincite', action: 'link', href: 'rivincite.html', richiedeModalita: 'rivincite' },
+                    { icon: 'tower', label: 'Torre dei Duellanti', action: 'link', href: 'torre.html', richiedeModalita: 'torre' },
                     // Il menu Tutorial: la lezione col nonno (al primo
                     // avvio obbligatoria, vedi obbligaLezioneSeDaFare più
                     // sotto) e le lezioni brevi, tutte rifacibili.
                     { icon: 'rules', label: 'Tutorial', action: 'link', href: 'tutorial.html' },
-                    { icon: 'rules', label: 'Regole', action: 'view', view: 'regole' },
                     // Demo Duello Sandbox: campo di prova per testare
                     // singole carte/condizioni di Evocazione a mano, senza
                     // passare da un vero mazzo/pescata — vedi
@@ -5141,15 +5151,30 @@
         let openSubmenu = null;
 
         function buildMenuButton(item) {
+            const accesso = item.richiedeModalita && window.ModeUnlocks
+                ? ModeUnlocks.stato(item.richiedeModalita)
+                : { sbloccato: true, motivo: '' };
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = 'menu-item' + (item.extraClass ? ' ' + item.extraClass : '');
+            btn.className = 'menu-item' + (item.extraClass ? ' ' + item.extraClass : '')
+                + (!accesso.sbloccato ? ' menu-item--locked' : '');
+            if (!accesso.sbloccato) {
+                btn.setAttribute('aria-disabled', 'true');
+                btn.dataset.lockReason = accesso.motivo;
+            }
             btn.innerHTML = `
                 <span class="menu-item-icon" data-icon="${item.icon}"></span>
                 <span class="menu-item-label">${item.label}</span>
-                ${item.tag ? `<span class="menu-item-tag">${item.tag}</span>` : '<span class="menu-item-arrow">›</span>'}
+                ${!accesso.sbloccato ? '<span class="menu-item-tag">🔒 Bloccato</span>' : (item.tag ? `<span class="menu-item-tag">${item.tag}</span>` : '<span class="menu-item-arrow">›</span>')}
             `;
-            btn.addEventListener('click', () => handleMenuAction(item));
+            btn.addEventListener('click', () => {
+                if (!accesso.sbloccato) {
+                    showMenuToast(`🔒 ${accesso.motivo}`);
+                    if (window.NativeHaptics) NativeHaptics.light();
+                    return;
+                }
+                handleMenuAction(item);
+            });
             return btn;
         }
 
@@ -5203,6 +5228,13 @@
                 if (admin) list.appendChild(buildMenuButton(ADMIN_ITEM));
             }
             if (window.Icons) Icons.hydrate(list);
+            try {
+                const motivo = sessionStorage.getItem('ygoModalitaBloccata');
+                if (motivo) {
+                    sessionStorage.removeItem('ygoModalitaBloccata');
+                    setTimeout(() => showMenuToast(`🔒 ${motivo}`), 80);
+                }
+            } catch (e) { /* noop */ }
         }
 
         // ============================================================

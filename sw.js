@@ -457,7 +457,9 @@
 // per il nuovo lotto; invalida la cache perché cambiano Negozio e Cartoteca.
 // v235: correzioni X/Y/Z e selettore obbligatorio Attacco/Difesa.
 // v236: box info carta escluso durante attacchi e selezioni di gioco.
-const CACHE_NAME = 'ygo-duel-arena-v236';
+// v237: sblocchi modalità, Regole nel Tutorial e consultazione esplicita
+// delle carte sul Terreno senza interferire con le azioni di gioco.
+const CACHE_NAME = 'ygo-duel-arena-v237';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -507,6 +509,7 @@ const APP_SHELL = [
     'js/tutorial/tutorial-duel.css',
     'js/modes/modes.css',
     'js/modes/mode-pages.css',
+    'js/modes/mode-unlocks.js',
     'js/ui/topbar.css',
     'js/ui/challenge-banner.css',
     'js/ui/page-loader.css',

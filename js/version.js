@@ -32,6 +32,11 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.3.3 — Regole raccolte nel Tutorial; Rivincite e Torre legate ai
+ *   progressi della Storia. Sul Terreno un comando informativo separa la
+ *   consultazione dalle azioni, e le scelte obbligatorie non scrivono più
+ *   istruzioni sopra il campo.
+ *
  * 1.3.2 — Il box informazioni carta resta disponibile nei tap di
  *   consultazione, ma non si apre più sopra attacchi, Tributi, scarti e
  *   altre selezioni obbligatorie del duello.
@@ -647,4 +652,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.3.2';
+window.GAME_VERSION = '1.3.3';

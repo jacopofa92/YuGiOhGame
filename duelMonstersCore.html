@@ -1049,6 +1049,44 @@
                 rgba(0, 0, 0, 0) 100%);
             transform: none;
         }
+        /* Consultazione esplicita della carta sul Terreno. Il tap sulla carta
+           resta libero per attacco/Tributo/bersaglio; questo piccolo comando
+           è l'unico gesto che forza il dettaglio durante una scelta. */
+        .card-inspect-button {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            z-index: 12;
+            width: clamp(18px, 1.7vw, 24px);
+            height: clamp(18px, 1.7vw, 24px);
+            display: grid;
+            place-items: center;
+            padding: 0;
+            border: 1px solid rgba(247,215,116,0.72);
+            border-radius: 50%;
+            background: rgba(8,10,15,0.82);
+            color: #f7d774;
+            font: 700 12px/1 Georgia, serif;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.62);
+            cursor: help;
+            opacity: 0.42;
+            transition: opacity 0.15s ease, transform 0.15s ease, background 0.15s ease;
+        }
+        .field-slot:hover .card-inspect-button,
+        .card-inspect-button:focus-visible {
+            opacity: 1;
+            transform: scale(1.08);
+            background: rgba(26,20,10,0.96);
+            outline: none;
+        }
+        @media (hover: none), (pointer: coarse) {
+            .card-inspect-button {
+                width: 22px;
+                height: 22px;
+                opacity: 0.78;
+                font-size: 12px;
+            }
+        }
         .field-slot.special-slot {
             border: none;
             background: transparent;
@@ -4192,15 +4230,6 @@
         <span class="tribute-prompt-icon">🗑️</span>
         <span class="tribute-prompt-text" id="handDiscardPromptText"></span>
         <span class="tribute-prompt-count" id="handDiscardPromptCount"></span>
-        <span class="tribute-prompt-note">Obbligatorio</span>
-    </div>
-
-    <!-- Promemoria "Scegli la casella" dopo un Sacrificio già pagato: stessa
-         banda e stesso velo degli altri due, senza Annulla (i mostri sono
-         già stati sacrificati, non si torna indietro). -->
-    <div class="tribute-prompt selection-banner" id="placementPrompt">
-        <span class="tribute-prompt-icon">🎯</span>
-        <span class="tribute-prompt-text">Scegli la casella Mostro libera per la carta Evocata</span>
         <span class="tribute-prompt-note">Obbligatorio</span>
     </div>
 

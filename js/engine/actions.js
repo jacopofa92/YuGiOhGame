@@ -1050,10 +1050,11 @@ function hideHandDiscardPrompt() {
     document.body.classList.remove('discard-mode');
 }
 
-/** Banda + velo della scelta "in quale casella piazzare" dopo un Sacrificio (stesso schema di Tributo/scarto). */
+/**
+ * Dopo il Sacrificio mantiene soltanto il velo e le caselle evidenziate:
+ * nessuna banda testuale sopra il campo. La scelta resta obbligatoria.
+ */
 function setPlacementPrompt(visibile) {
-    const el = document.getElementById('placementPrompt');
-    if (el) el.classList.toggle('show', visibile);
     document.body.classList.toggle('placement-mode', visibile);
 }
 
@@ -1203,10 +1204,6 @@ function openSummonModal(card, slotIndex, handIndex, fromRect) {
     gameState.pendingSummon = { card, slotIndex, handIndex, fromRect };
     const slotEl = document.querySelector(`.field-slot[data-owner="player"][data-type="monster"][data-index="${slotIndex}"]`);
     const tributesNeeded = getTributesRequired(card);
-    const title = tributesNeeded > 0
-        ? `Tributo completato (${tributesNeeded}). Attacco o Difesa?`
-        : `${escapeHtml(card.name)}: Attacco o Difesa?`;
-
     // Se sono già stati pagati dei Tributi, i mostri sacrificati sono GIÀ
     // nel Cimitero (performTributeSacrifice() li rimuove dal Terreno prima
     // ancora di aprire questo popover) — a quel punto non esiste un
@@ -1645,7 +1642,6 @@ function finishSpecialSummonFromHand(card, handIndex) {
     if (!window.DuelEngineUI) { finish('attack'); return; }
     const anchorEl = document.querySelectorAll('#playerHand .card')[handIndex] || null;
     window.DuelEngineUI.openPositionPicker(anchorEl, {
-        title: `${card.name}: Attacco o Difesa?`,
         onSelect: finish
     });
 }

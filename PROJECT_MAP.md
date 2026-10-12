@@ -2,6 +2,20 @@
 
 Ultimo aggiornamento verificato: 2026-10-12.
 
+## Progressione delle modalità e consultazione sul Terreno (2026-10-12)
+
+Le Regole si aprono dal menu Tutorial. La Torre dei Duellanti richiede il
+completamento del capitolo Regno dei Duellanti nella Storia anime; le
+Rivincite richiedono l'intera campagna anime conclusa in almeno una delle tre
+difficoltà. `js/modes/mode-unlocks.js` è la fonte unica usata sia dal menu sia
+dalle pagine dirette, così l'URL non aggira il blocco.
+
+Durante il duello il tap sulla carta resta dedicato all'azione corrente. Ogni
+carta sul Terreno ha però un piccolo comando `i` che forza volontariamente il
+dettaglio anche durante Tributi, bersagli o Battle Phase, senza consumare la
+scelta. Le scelte obbligatorie di casella e Posizione restano non annullabili,
+ma non mostrano più frasi sovrapposte al campo.
+
 ## Consultazione carte durante il duello (2026-10-12)
 
 Il pannello informazioni ora distingue centralmente la consultazione da un

@@ -35,13 +35,20 @@ module.exports = {
             // non avvia animazioni asincrone che contaminerebbero il caso
             // di scarto verificato subito dopo.
             startTributeSelection(evocato, 0, 2, null);
+            // Il comando "i" è una consultazione esplicita: deve aprire il
+            // dettaglio senza scegliere il mostro come Tributo.
+            const infoButton = document.querySelector('#playerFieldBoard .field-slot[data-type="monster"][data-index="0"] .card-inspect-button');
+            if (infoButton) infoButton.click();
+            const consultato = document.getElementById('cardInfoPanel').classList.contains('visible')
+                && gameState.pendingTributeSummon.selected.length === 0;
             handleCardClick(sacrificio, 'monster', 0, 'player', false);
             return {
+                consultato,
                 info: document.getElementById('cardInfoPanel').classList.contains('visible'),
                 scelto: !!(gameState.pendingTributeSummon && gameState.pendingTributeSummon.selected.includes(0))
             };
         });
-        assert(!tributo.info && tributo.scelto,
+        assert(tributo.consultato && !tributo.info && tributo.scelto,
             `Il tap sul Tributo deve scegliere senza aprire info: ${JSON.stringify(tributo)}`);
 
         const scarto = await page.evaluate(() => {

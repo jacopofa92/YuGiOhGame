@@ -212,6 +212,32 @@ function isGameplaySelectionActive() {
     return !!(window.Decisioni && typeof Decisioni.inSospeso === 'function' && Decisioni.inSospeso());
 }
 
+/**
+ * Pulsante esplicito del Terreno: separa senza ambiguità "usa/seleziona
+ * questa carta" da "fammi leggere questa carta". È soprattutto importante
+ * su touch e in Battle Phase, dove il pointerdown sulla carta può già essere
+ * l'inizio della freccia d'attacco.
+ */
+function createFieldInspectButton(card, options) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'card-inspect-button';
+    button.textContent = 'i';
+    button.title = `Informazioni: ${card.name}`;
+    button.setAttribute('aria-label', `Mostra informazioni di ${card.name}`);
+    button.onpointerdown = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+    };
+    button.onclick = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        updateCardInfoPanel(card, options);
+        if (window.NativeHaptics) NativeHaptics.light();
+    };
+    return button;
+}
+
 // Click fuori dal pannello descrizione carta -> lo chiude. Esclude i click
 // su una QUALUNQUE carta (.card): quelli sono l'azione che apre/aggiorna il
 // pannello (vedi handleCardClick/onmouseenter sulle carte), non un "click
@@ -968,6 +994,9 @@ function renderFields() {
                 updateCardInfoPanel(fieldSpellSlotState.card, { sourceType: 'field-spell', sourceOwner: owner, isFaceDown: visuallyFaceDown });
             };
             firstSpecial.appendChild(fieldSpellCardEl);
+            firstSpecial.appendChild(createFieldInspectButton(fieldSpellSlotState.card, {
+                sourceType: 'field-spell', sourceOwner: owner, isFaceDown: visuallyFaceDown
+            }));
         }
         const secondSpecial = createSlotElement(owner, specialConfig.secondZone.type, -1, {
             special: true,
@@ -1028,6 +1057,9 @@ function renderFields() {
                     cardEl.onpointerdown = (event) => startAttackDrag(event, index);
                 }
                 slotEl.appendChild(cardEl);
+                slotEl.appendChild(createFieldInspectButton(slot.card, {
+                    sourceType: slotType, sourceOwner: owner, isFaceDown: visuallyFaceDown
+                }));
                 // Richiamo degli Infestati (id 136): il legame è uno stato
                 // vero della Trappola Continua (targetUid), non una durata
                 // grafica. Ricrearlo da quello stato a ogni render lo fa

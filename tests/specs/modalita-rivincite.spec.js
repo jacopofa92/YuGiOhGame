@@ -12,6 +12,18 @@ const path = require('path');
 const RADICE = path.join(__dirname, '..', '..');
 const DUELLO = 'file:///' + path.join(RADICE, 'duelMonstersCore.html').replace(/\\/g, '/');
 const PAGINA = 'file:///' + path.join(RADICE, 'rivincite.html').replace(/\\/g, '/');
+const INDEX = 'file:///' + path.join(RADICE, 'index.html').replace(/\\/g, '/');
+
+// Rivincite e' volutamente chiusa prima del finale della storia anime.
+// Ogni pagina del test prepara quel progresso passando da una pagina neutra:
+// aprire direttamente rivincite.html farebbe scattare correttamente il guard.
+async function sbloccaRivincite(page) {
+    await page.goto(INDEX);
+    await page.evaluate(() => {
+        if (!SaveManager.hasSave()) SaveManager.createNew('Rivale');
+        SaveManager.setStoryState('anime', { finita: true });
+    });
+}
 
 module.exports = {
     standalone: true,
@@ -22,6 +34,7 @@ module.exports = {
         page.on('pageerror', (e) => errori.push(e.message));
         await page.addInitScript(() => { window.AUTH_GATE_SKIP = true; window.DUEL_FAST_OPENING = true; window.DUEL_RPS_SKIP = true; });
         try {
+            await sbloccaRivincite(page);
             await page.goto(DUELLO + '?mode=rivincita&rivincita=joey-rex&character=rex&difficulty=Difficile');
             try { await page.click('.di-skip', { timeout: 4000 }); } catch (e) { /* nessuna intro */ }
             await page.waitForFunction(() => typeof gameState !== 'undefined' && (gameState.playerHand || []).length >= 5, null, { timeout: 30000 });
@@ -71,6 +84,7 @@ module.exports = {
             const p = await t.browser.newPage();
             await p.addInitScript(() => { window.AUTH_GATE_SKIP = true; window.DUEL_FAST_OPENING = true; window.DUEL_RPS_SKIP = true; });
             try {
+                await sbloccaRivincite(p);
                 await p.goto(DUELLO + '?mode=rivincita&rivincita=non-esiste&character=rex&difficulty=Medio');
                 try { await p.click('.di-skip', { timeout: 4000 }); } catch (e) { /* nessuna intro */ }
                 await p.waitForURL(/rivincite\.html/, { timeout: 20000 });
@@ -83,9 +97,9 @@ module.exports = {
         const p = await t.browser.newPage({ viewport: { width: 393, height: 852 } });
         await p.addInitScript(() => { window.AUTH_GATE_SKIP = true; });
         try {
+            await sbloccaRivincite(p);
             await p.goto(PAGINA);
             await p.evaluate(() => {
-                if (!SaveManager.hasSave()) SaveManager.createNew('Rivale');
                 SaveManager.setModeState('rivincite', { 'joey-rex': { vinte: { Difficile: true } } });
             });
             await p.reload();
