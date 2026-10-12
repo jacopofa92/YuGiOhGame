@@ -455,7 +455,8 @@
 // branch VFX parallelo, così i due lavori non pubblicano la stessa cache.
 // v234: rarità, fonti di acquisizione, imprese firma e Forgia delle Fusioni
 // per il nuovo lotto; invalida la cache perché cambiano Negozio e Cartoteca.
-const CACHE_NAME = 'ygo-duel-arena-v234';
+// v235: correzioni X/Y/Z e selettore obbligatorio Attacco/Difesa.
+const CACHE_NAME = 'ygo-duel-arena-v235';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

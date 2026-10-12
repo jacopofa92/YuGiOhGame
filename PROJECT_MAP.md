@@ -447,7 +447,7 @@ del protocollo corrente.
 
 ## Stato rapido
 
-- Versione dichiarata: `1.3.0` (`package.json` e `js/version.js`).
+- Versione dichiarata: `1.3.1` (`package.json` e `js/version.js`).
 - Applicazione HTML/CSS/JavaScript puro: nessun framework, bundler o build del
   frontend. Gli script globali devono essere caricati nell'ordine giusto.
 - 19 pagine HTML, 104 file JS applicativi sotto `js/` (esclusi i vendor),
@@ -459,9 +459,9 @@ del protocollo corrente.
 - PWA tramite `manifest.json`, `sw.js` e `js/pwa-register.js`.
 - App Android/Capacitor: le shell dev e produzione includono `NativeMusic`;
   la produzione nativa è `1.2.0` (`versionCode 24`) e punta al sito
-  Cloudflare. Il contenuto web espone `GAME_VERSION` `1.3.0`. Gli APK sono
+  Cloudflare. Il contenuto web espone `GAME_VERSION` `1.3.1`. Gli APK sono
   ignorati da Git e restano artefatti locali rigenerabili. La cache
-  WebView/PWA corrente è `ygo-duel-arena-v234`.
+  WebView/PWA corrente è `ygo-duel-arena-v235`.
 - Cloud tramite Supabase; multiplayer tramite relay WebSocket Node nativo.
 - Le preferenze utente (`save.settings`: dettagli video, ologrammi, aptica,
   volume e mute musica/SFX) fanno parte del salvataggio unificato e quindi di
@@ -1366,6 +1366,19 @@ dopo 20 contro Marik a Difficile. Le Fusioni e i quattro Materiali aggiunti
 sono raccolti anche nella busta `fusioni` («Forgia delle Fusioni»), così non
 dipendono soltanto dai pool generici molto ampi. Ogni carta espone la propria
 fonte nella Cartoteca e conserva il limite globale di tre copie.
+
+## Cannoni X/Y/Z e scelte di Posizione
+
+Cannone Drago XY si combina bandendo X + Y; Cannone Drago XYZ richiede
+direttamente X + Y + Z, non XY + Z. Entrambi rifiutano la rianimazione dal
+Cimitero. Testa di Drago Y e Carro Armato Metallico Z usano il ciclo Union
+completo: aggancio, bonus/protezione e distacco volontario in Main Phase.
+
+`DuelEngineUI.openPositionPicker` è una scelta obbligatoria: viene aperta
+dopo che il mostro è già stato scelto da un effetto, quindi cliccare fuori
+non la chiude. L'Evocazione Normale senza Tributi resta invece annullabile
+perché non ha ancora pagato costi; dopo un Tributo anche il suo picker era
+già obbligatorio. Guardrail: `cannoni-xyz-posizione-obbligatoria`.
 
 ## Come mantenere questa memoria
 

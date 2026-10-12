@@ -32,6 +32,9 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.3.1 — Cannoni X/Y/Z fedeli ai materiali TCG, distacco volontario dei
+ *   Mostri Union e scelta Attacco/Difesa non più perdibile cliccando fuori.
+ *
  * 1.3.0 — completamento del catalogo TCG della prima serie con 30 carte,
  *   censimento delle rarità, fonti in Cartoteca, imprese firma per Golem di
  *   Lava e Parassita Paracida e busta tematica Forgia delle Fusioni.
@@ -640,4 +643,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.3.0';
+window.GAME_VERSION = '1.3.1';
