@@ -1641,7 +1641,8 @@
             chiudi();
         };
 
-        if (card && window.VisualEffects && typeof VisualEffects.getVideoFor === 'function') {
+        const filmatiEvocazioneAttivi = !window.SaveManager || SaveManager.getSetting('summonVideos') !== false;
+        if (filmatiEvocazioneAttivi && card && window.VisualEffects && typeof VisualEffects.getVideoFor === 'function') {
             VisualEffects.getVideoFor(card.id, 'evocazioni').then((videoPath) => {
                 // playVideoOverlay ha gia' il proprio tetto di sicurezza
                 // interno (durata reale del filmato + 5s), quindi `chiudi`

@@ -32,6 +32,10 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.3.11 — Le carte ottenute dalle bustine tornano cliccabili anche con un
+ *   click reale; nuova impostazione salvata per disattivare esclusivamente i
+ *   filmati dedicati di Evocazione, conservando gli effetti normali.
+ *
  * 1.3.10 — Rifinitura minima della fila stelle: anche il margine visivo dei
  *   mostri Livello 12 resta interamente dentro la cornice.
  *
@@ -676,4 +680,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.3.10';
+window.GAME_VERSION = '1.3.11';

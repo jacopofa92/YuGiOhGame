@@ -67,7 +67,9 @@ module.exports = {
             assert(desktop.width >= 87 && !desktop.overlap && desktop.centered && desktop.stripWidth > 1000,
                 `Su desktop le carte devono essere grandi, separate e centrate: ${JSON.stringify(desktop)}`);
 
-            await page.locator('.po-slot').first().dispatchEvent('click');
+            // Click reale, non dispatch sintetico: verifica anche hit testing,
+            // z-index e pointer capture della striscia.
+            await page.locator('.po-slot').first().click();
             await page.waitForSelector('.cd-backdrop.open');
             const layers = await page.evaluate(() => ({
                 detailZ: Number(getComputedStyle(document.querySelector('.cd-backdrop')).zIndex),

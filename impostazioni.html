@@ -385,6 +385,18 @@
                 </label>
             </div>
 
+            <div class="settings-row">
+                <div>
+                    <div class="settings-row-label">Filmati di evocazione</div>
+                    <div class="settings-row-sub">Riproduce le scene dedicate quando vengono evocati alcuni mostri iconici. Disattivandolo, l'evocazione continua normalmente senza interrompere il duello con il filmato.</div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="summonVideosToggleInput">
+                    <span class="switch-track"></span>
+                    <span class="switch-thumb"></span>
+                </label>
+            </div>
+
 
             <div class="settings-row">
                 <div>
@@ -536,6 +548,16 @@
         hologramToggle.checked = HologramSetting.isAttivo();
         hologramToggle.addEventListener('change', () => {
             HologramSetting.set(hologramToggle.checked);
+            if (window.NativeHaptics) NativeHaptics.light();
+        });
+    }
+
+    // --- Filmati dedicati di Evocazione ----------------------------
+    const summonVideosToggle = document.getElementById('summonVideosToggleInput');
+    if (summonVideosToggle && window.SaveManager) {
+        summonVideosToggle.checked = SaveManager.getSetting('summonVideos') !== false;
+        summonVideosToggle.addEventListener('change', () => {
+            SaveManager.setSetting('summonVideos', summonVideosToggle.checked);
             if (window.NativeHaptics) NativeHaptics.light();
         });
     }

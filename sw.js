@@ -466,7 +466,8 @@
 // v242: login rinnovata e Cartoteca a 300 carte per pagina.
 // v243: riallineata a 300 anche la Cartoteca integrata nel menu.
 // v244: margine stelle Livello 12 rifinito.
-const CACHE_NAME = 'ygo-duel-arena-v244';
+// v245: dettagli bustina cliccabili e interruttore filmati di Evocazione.
+const CACHE_NAME = 'ygo-duel-arena-v245';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

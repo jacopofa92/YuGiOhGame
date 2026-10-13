@@ -33,14 +33,14 @@
     // perché serve il segno. menuParallax: la profondità del menu principale
     // (index.html), accesa di default.
     const DEFAULT_SETTINGS = {
-        videoDetail: 'alti', videoDetailScelto: false, hologram: true, haptics: true,
+        videoDetail: 'alti', videoDetailScelto: false, summonVideos: true, hologram: true, haptics: true,
         menuParallax: true,
         musicVolume: 0.55, musicMuted: false,
         sfxVolume: 0.6, sfxMuted: false
     };
     const SETTINGS_CACHE_KEYS = {
         videoDetail: 'ygoVideoDetail', videoDetailScelto: 'ygoVideoDetailScelto',
-        hologram: 'ygoHologram', haptics: 'ygoHapticsEnabled', menuParallax: 'ygoParallasseMenu',
+        summonVideos: 'ygoSummonVideos', hologram: 'ygoHologram', haptics: 'ygoHapticsEnabled', menuParallax: 'ygoParallasseMenu',
         musicVolume: 'duelArenaMusicVolume', musicMuted: 'duelArenaMusicMuted',
         sfxVolume: 'duelArenaSfxVolume', sfxMuted: 'duelArenaSfxMuted'
     };
@@ -63,6 +63,8 @@
             if (settings.videoDetailScelto && (video === 'normali' || video === 'alti')) settings.videoDetail = video;
             const hologram = localStorage.getItem(SETTINGS_CACHE_KEYS.hologram);
             if (hologram === 'on' || hologram === 'off') settings.hologram = hologram === 'on';
+            const summonVideos = localStorage.getItem(SETTINGS_CACHE_KEYS.summonVideos);
+            if (summonVideos === 'on' || summonVideos === 'off') settings.summonVideos = summonVideos === 'on';
             const parallasse = localStorage.getItem(SETTINGS_CACHE_KEYS.menuParallax);
             if (parallasse === 'on' || parallasse === 'off') settings.menuParallax = parallasse === 'on';
             const haptics = localStorage.getItem(SETTINGS_CACHE_KEYS.haptics);
@@ -99,6 +101,7 @@
             else localStorage.removeItem(SETTINGS_CACHE_KEYS.videoDetailScelto);
             localStorage.setItem(SETTINGS_CACHE_KEYS.menuParallax, settings.menuParallax ? 'on' : 'off');
             localStorage.setItem(SETTINGS_CACHE_KEYS.hologram, settings.hologram ? 'on' : 'off');
+            localStorage.setItem(SETTINGS_CACHE_KEYS.summonVideos, settings.summonVideos ? 'on' : 'off');
             localStorage.setItem(SETTINGS_CACHE_KEYS.haptics, settings.haptics ? '1' : '0');
             localStorage.setItem(SETTINGS_CACHE_KEYS.musicVolume, String(settings.musicVolume));
             localStorage.setItem(SETTINGS_CACHE_KEYS.musicMuted, String(settings.musicMuted));

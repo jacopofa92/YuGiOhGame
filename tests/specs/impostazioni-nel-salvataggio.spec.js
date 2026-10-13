@@ -23,6 +23,7 @@ module.exports = {
                 DuelMusic.setVolume(0.42);
                 DuelSFX.setMuted(true);
                 DuelSFX.setVolume(0.27);
+                SaveManager.setSetting('summonVideos', false);
                 const salvato = SaveManager.load().settings;
                 const esterno = JSON.parse(JSON.stringify(SaveManager.load()));
                 esterno.settings = { videoDetail: 'alti', hologram: false, haptics: false,
@@ -30,6 +31,7 @@ module.exports = {
                 SaveManager.applyExternalSave(esterno);
                 return { migrato, salvato, importato: SaveManager.load().settings,
                     cacheVideo: localStorage.getItem('ygoVideoDetail'),
+                    cacheSummonVideos: localStorage.getItem('ygoSummonVideos'),
                     cacheMute: localStorage.getItem('duelArenaMusicMuted'),
                     vecchiaSessioneMute: sessionStorage.getItem('duelArenaMusicMuted') };
             });
@@ -37,12 +39,12 @@ module.exports = {
                 'Le vecchie preferenze locali devono migrare nel salvataggio nuovo');
             t.assert(risultato.salvato.videoDetail === 'normali' && risultato.salvato.musicMuted === true
                 && risultato.salvato.musicVolume === 0.42 && risultato.salvato.sfxMuted === true
-                && risultato.salvato.sfxVolume === 0.27,
+                && risultato.salvato.sfxVolume === 0.27 && risultato.salvato.summonVideos === false,
             'Ogni controllo deve scrivere nella sezione settings del profilo');
             t.assert(risultato.importato.videoDetail === 'alti' && risultato.importato.hologram === false
                 && risultato.importato.haptics === false && risultato.importato.musicVolume === 0.8,
             'Un salvataggio importato deve mantenere tutte le impostazioni');
-            t.assert(risultato.cacheVideo === 'alti' && risultato.cacheMute === 'false'
+            t.assert(risultato.cacheVideo === 'alti' && risultato.cacheSummonVideos === 'on' && risultato.cacheMute === 'false'
                 && risultato.vecchiaSessioneMute === null,
             'Import/cloud deve riallineare la cache e rimuovere il vecchio mute di sessione');
         } finally {

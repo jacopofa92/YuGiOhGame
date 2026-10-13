@@ -141,12 +141,17 @@
             scrollIniziale = striscia.scrollLeft;
             trascina = true;
             haTrascinato = false;
-            striscia.setPointerCapture(event.pointerId);
         });
         striscia.addEventListener('pointermove', (event) => {
             if (!trascina) return;
             const delta = event.clientX - partenzaX;
             if (Math.abs(delta) > 5) {
+                if (!haTrascinato) {
+                    // Un semplice click deve restare indirizzato allo slot.
+                    // Catturiamo il puntatore solo quando il gesto e' ormai
+                    // inequivocabilmente un trascinamento del carosello.
+                    striscia.setPointerCapture(event.pointerId);
+                }
                 haTrascinato = true;
                 striscia.classList.add('is-dragging');
             }
@@ -423,6 +428,11 @@
             const slot = el('div', 'po-slot po-slot-' + rarita(id));
             slot.appendChild(nodoCarta(id, 'var(--carta-casella)'));
             if (nuoveSet.has(id)) slot.appendChild(el('span', 'po-slot-nuova', '★'));
+            slot.onclick = () => {
+                striscia.querySelectorAll('.po-slot.is-selected').forEach((n) => n.classList.remove('is-selected'));
+                slot.classList.add('is-selected');
+                if (window.CardDetail) CardDetail.open(cartaPerId(id));
+            };
             striscia.appendChild(slot);
         });
         scena.appendChild(striscia);

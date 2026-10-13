@@ -1,6 +1,16 @@
 # Yu-Gi-Oh! Millennium Duel Arena — mappa tecnica persistente
 
-Ultimo aggiornamento verificato: 2026-10-12.
+Ultimo aggiornamento verificato: 2026-10-13.
+
+## Dettagli bustine e filmati di Evocazione (2026-10-13)
+
+- Il carosello dello sbustamento cattura il puntatore soltanto dopo un vero
+  trascinamento: un click breve resta sulla carta e apre `CardDetail`. Anche la
+  variante con movimento ridotto collega ora ogni carta alla scheda dettagli.
+- La nuova impostazione `summonVideos` e' accesa di default, vive nel salvataggio
+  e nella cache locale ed e' disponibile sia nella pagina Impostazioni sia nella
+  vista integrata del menu. Se spenta, il motore non cerca il filmato dedicato e
+  passa subito all'effetto di Evocazione normale; fusioni ed effetti restano.
 
 ## Login e paginazione Cartoteca (2026-10-12)
 
