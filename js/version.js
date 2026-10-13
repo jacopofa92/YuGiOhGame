@@ -32,6 +32,9 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.3.10 — Rifinitura minima della fila stelle: anche il margine visivo dei
+ *   mostri Livello 12 resta interamente dentro la cornice.
+ *
  * 1.3.9 — Anche la Cartoteca integrata nel menu usa davvero 300 carte per
  *   pagina; laminatura e glitter delle griglie conservano l'aspetto ma non
  *   ridipingono piu' gradienti e maschere a ogni movimento del puntatore;
@@ -673,4 +676,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.3.9';
+window.GAME_VERSION = '1.3.10';

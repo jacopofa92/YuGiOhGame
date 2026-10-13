@@ -17,6 +17,8 @@ Ultimo aggiornamento verificato: 2026-10-12.
   dalla GPU. La scheda grande conserva invece la luce dinamica completa.
 - Le stelle Livello sono leggermente piu' piccole e non vanno a capo: i mostri
   Livello 12, incluso Drago Bianco Occhi Blu Finale, restano dentro la cornice.
+  Il 2026-10-13 dimensione e spaziatura sono state ridotte ancora di un margine
+  minimo per evitare lo sforamento visivo residuo del Drago Bianco Definitivo.
 
 ## Revamp Forza dello Specchio (2026-10-12)
 
