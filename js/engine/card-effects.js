@@ -1699,6 +1699,12 @@
         const slot = ctx.stField(owner)[index];
         if (!slot) return null;
         const card = slot.card;
+        EventiDuello.emetti('transizione-carta', {
+            carta: card,
+            da: { kind: 'field', owner: owner, index: index, type: 'st' },
+            a: { kind: 'hand', owner: owner },
+            variante: 'hand'
+        });
         ctx.hand(owner).push(card);
         ctx.stField(owner)[index] = null;
         const selfDef = DuelEngine.getDefinition(card.id);

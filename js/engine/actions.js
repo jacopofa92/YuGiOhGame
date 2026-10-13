@@ -16,6 +16,9 @@ EventiDuello.ascolta('scarto-fine-turno', startHandDiscardSelection);
 EventiDuello.ascolta('volo-carta', (volo, fatto) => {
     flyCardToSlot(volo.carta, volo.partenza, volo.casella, fatto, volo.daNascondere, volo.coperta, volo.posizione);
 });
+EventiDuello.ascolta('transizione-carta', (movimento) => {
+    if (window.FX && typeof FX.playZoneTransition === 'function') FX.playZoneTransition(movimento);
+});
 // Una scelta per la persona davanti allo schermo (js/engine/decisioni.js):
 // qui si sceglie COME mostrarla, secondo il tipo. `rispondi` va chiamata
 // col candidato scelto, o con null quando la si chiude senza scegliere.

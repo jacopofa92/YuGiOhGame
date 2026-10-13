@@ -978,6 +978,12 @@
                 ctx.stField(owner).forEach((slot, index) => {
                     if (slot) {
                         const bouncedCard = slot.card;
+                        EventiDuello.emetti('transizione-carta', {
+                            carta: bouncedCard,
+                            da: { kind: 'field', owner: owner, index: index, type: 'st' },
+                            a: { kind: 'hand', owner: owner },
+                            variante: 'hand'
+                        });
                         ctx.hand(owner).push(bouncedCard);
                         ctx.stField(owner)[index] = null;
                         count++;

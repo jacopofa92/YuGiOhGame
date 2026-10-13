@@ -474,6 +474,13 @@
         setTimeout(fn, delay);
     }
 
+    /** Avvisa il disegno prima che la carta venga tolta dalla zona sorgente. */
+    function animaTransizioneCarta(card, da, a, variante) {
+        if (typeof EventiDuello !== 'undefined') {
+            EventiDuello.emetti('transizione-carta', { carta: card, da: da || { kind: 'auto' }, a: a, variante: variante });
+        }
+    }
+
     /**
      * Un timer delle REGOLE (il prossimo passo della Catena, il seguito di
      * una distruzione): un setTimeout, che a passo comune aspetta anche che
@@ -1808,7 +1815,10 @@
                 }
                 return false;
             }
-            cards.forEach((c) => deck.push(c));
+            cards.forEach((c) => {
+                animaTransizioneCarta(c, { kind: 'auto' }, { kind: 'deck', owner: owner }, 'deck');
+                deck.push(c);
+            });
             // Fisher-Yates
             for (let i = deck.length - 1; i > 0; i--) {
                 const j = Math.floor(Casuale.random() * (i + 1));
@@ -1831,6 +1841,7 @@
                 ACTIONS.banish(proprietario, card);
                 return card;
             }
+            animaTransizioneCarta(card, { kind: 'field', owner: owner, index: index, type: 'monster' }, { kind: 'deck', owner: proprietario }, 'deck');
             // La cima è la fine dell'array: drawCardsToHand usa pop().
             deck.push(card);
             if (!options || options.shuffle !== false) {
@@ -1870,7 +1881,10 @@
             for (let i = deck.length - 1; i >= 0 && found.length < maxCount; i--) {
                 if (matchFn(deck[i])) found.push(deck.splice(i, 1)[0]);
             }
-            found.forEach((card) => handOf(owner).push(card));
+            found.forEach((card) => {
+                animaTransizioneCarta(card, { kind: 'deck', owner: owner }, { kind: 'hand', owner: owner }, 'search');
+                handOf(owner).push(card);
+            });
             if (found.length > 0) {
                 addToLog(`🔍 ${owner === 'player' ? 'Hai' : 'Il bot ha'} cercato ${found.length} cart${found.length > 1 ? 'e' : 'a'} dal Deck!`);
             }
@@ -1984,7 +1998,8 @@
          * qui sopra — questa funzione fa solo il passo finale "dove
          * finisce la carta".
          */
-        banish(owner, card) {
+        banish(owner, card, visualAlreadyStarted) {
+            if (!visualAlreadyStarted) animaTransizioneCarta(card, { kind: 'auto' }, { kind: 'banished', owner: owner }, 'banish');
             banishedOf(owner).push(card);
             // def.onBanished(ctx): unico punto condiviso da OGNI effetto di
             // bando del dataset (~28 chiamate diverse in card-effects.js,
@@ -2067,8 +2082,9 @@
                 addToLog(`👻 Non puoi bandire carte dal Cimitero in questo momento: ${card.name} resta dov'è.`);
                 return false;
             }
+            animaTransizioneCarta(card, { kind: 'graveyard', owner: owner }, { kind: 'banished', owner: owner }, 'banish');
             grave.splice(idx, 1);
-            this.banish(owner, card);
+            this.banish(owner, card, true);
             return true;
         },
 
@@ -2086,6 +2102,7 @@
          */
         banishTemporarily(owner, card, returnTrigger, lockZoneIndex) {
             gameState.temporaryBanishments = gameState.temporaryBanishments || [];
+            animaTransizioneCarta(card, { kind: 'auto' }, { kind: 'banished', owner: owner }, 'banish');
             gameState.temporaryBanishments.push({ card: card, owner: owner, returnTrigger: returnTrigger, lockZoneIndex: lockZoneIndex });
             banishedOf(owner).push(card);
             // Buco Dimensionale (id 201): "finché il mostro resta
@@ -2115,6 +2132,7 @@
          */
         banishFromHandWithCountdown(owner, card, standbys) {
             gameState.delayedHandReturns = gameState.delayedHandReturns || [];
+            animaTransizioneCarta(card, { kind: 'auto' }, { kind: 'banished', owner: owner }, 'banish');
             gameState.delayedHandReturns.push({ card: card, owner: owner, standbysRemaining: standbys });
             banishedOf(owner).push(card);
         },
@@ -2190,6 +2208,7 @@
             const hand = handOf(owner);
             if (hand.length === 0) return null;
             const index = Math.floor(Casuale.random() * hand.length);
+            animaTransizioneCarta(hand[index], { kind: 'auto' }, { kind: 'graveyard', owner: owner }, 'discard');
             const [card] = hand.splice(index, 1);
             const discardedByOwner = (this && this.owner) || null;
             graveyardOf(owner).push(card);
@@ -2214,6 +2233,7 @@
         discardChosenFromHand(owner, handIndex) {
             const hand = handOf(owner);
             if (handIndex < 0 || handIndex >= hand.length) return null;
+            animaTransizioneCarta(hand[handIndex], { kind: 'auto' }, { kind: 'graveyard', owner: owner }, 'discard');
             const [card] = hand.splice(handIndex, 1);
             const discardedByOwner = (this && this.owner) || null;
             graveyardOf(owner).push(card);
@@ -2241,6 +2261,7 @@
         millCardFromDeck(owner, deckIndex) {
             const deck = Tavolo.mazzo(owner);
             if (!Array.isArray(deck) || deckIndex < 0 || deckIndex >= deck.length) return null;
+            animaTransizioneCarta(deck[deckIndex], { kind: 'deck', owner: owner }, { kind: 'graveyard', owner: owner }, 'discard');
             const [card] = deck.splice(deckIndex, 1);
             gameState[Tavolo.chiave(owner, 'DeckCount')] = deck.length;
             const milledByOwner = (this && this.owner) || null;
@@ -2286,6 +2307,10 @@
             // stessa regola che destroyMonster applica già al Cimitero.
             // Prima finiva nella mano di chi l'aveva rubato.
             const proprietario = slot.originalOwner || owner;
+            animaTransizioneCarta(card,
+                { kind: 'field', owner: owner, index: index, type: 'monster' },
+                { kind: card.mustBanishOnLeavingField ? 'banished' : 'hand', owner: proprietario },
+                card.mustBanishOnLeavingField ? 'banish' : 'hand');
             field[index] = null;
             // Tornando in mano perde i Segnalini (vedi lo stesso azzeramento
             // in specialSummon): Evocato di nuovo, deve ripartire da zero.
@@ -2554,10 +2579,12 @@
             }
             const slotIndex = fieldOf(entry.owner).findIndex((slot) => slot === null);
             if (slotIndex === -1) {
+                animaTransizioneCarta(entry.card, { kind: 'banished', owner: entry.owner }, { kind: 'graveyard', owner: entry.owner }, 'discard');
                 graveyardOf(entry.owner).push(entry.card);
                 addToLog(`⚠️ Il Terreno è pieno: ${entry.card.name} torna al Cimitero invece che in campo dal bando temporaneo.`);
                 return;
             }
+            animaTransizioneCarta(entry.card, { kind: 'banished', owner: entry.owner }, { kind: 'field', owner: entry.owner, index: slotIndex, type: 'monster' }, 'hand');
             fieldOf(entry.owner)[slotIndex] = { card: entry.card, position: 'attack', isFaceDown: false, hasAttacked: false, canChangePosition: false };
             addToLog(`🌀 ${entry.card.name} torna in campo dal bando temporaneo!`);
         });
@@ -2583,6 +2610,7 @@
             entry.standbysRemaining -= 1;
             if (entry.standbysRemaining > 0) { stillWaiting.push(entry); return; }
             removeFromBanished(entry.owner, entry.card);
+            animaTransizioneCarta(entry.card, { kind: 'banished', owner: entry.owner }, { kind: 'hand', owner: entry.owner }, 'hand');
             handOf(entry.owner).push(entry.card);
             addToLog(`🗡️ ${entry.card.name} torna in mano dal bando di Spada della Forza di Luce!`);
         });

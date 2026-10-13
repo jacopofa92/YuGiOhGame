@@ -2116,6 +2116,83 @@
         return r.width ? r : null;
     }
 
+    /** Trova una carta ancora disegnata, anche se il motore l'ha già tolta dallo stato. */
+    function cardRect(card) {
+        if (!card || !card.uid) return null;
+        const safeUid = window.CSS && typeof CSS.escape === 'function' ? CSS.escape(String(card.uid)) : String(card.uid).replace(/["\\]/g, '\\$&');
+        const el = document.querySelector(`.card[data-uid="${safeUid}"]`);
+        if (!el) return null;
+        const r = el.getBoundingClientRect();
+        return r.width ? r : null;
+    }
+
+    /** Rettangolo visivo di mano e zona bandite, che non sono caselle del tabellone. */
+    function looseZoneRect(owner, zone) {
+        const id = zone === 'hand'
+            ? (owner === 'player' ? 'playerHand' : 'botHand')
+            : (owner === 'player' ? 'playerBanishedBadge' : 'botBanishedBadge');
+        const el = document.getElementById(id);
+        if (!el) return null;
+        const r = el.getBoundingClientRect();
+        if (r.width) return r;
+        // Al primo bando la pillola è ancora display:none: il motore emette
+        // l'evento PRIMA di aggiornare lo stato. Si mira quindi al riquadro
+        // del giocatore che la contiene; dal render seguente la pillola
+        // comparirà esattamente in quella zona.
+        if (zone === 'banished') {
+            const info = document.getElementById(owner === 'player' ? 'playerInfo' : 'botInfo');
+            const fallback = info && info.getBoundingClientRect();
+            if (fallback && fallback.width) return fallback;
+        }
+        return null;
+    }
+
+    function transitionRect(descriptor, card, source) {
+        if (!descriptor) return source ? cardRect(card) : null;
+        if (descriptor.kind === 'auto') return cardRect(card);
+        if (descriptor.kind === 'field') return fieldSlotRect(descriptor.owner, descriptor.index, descriptor.type);
+        if (descriptor.kind === 'hand' || descriptor.kind === 'banished') return looseZoneRect(descriptor.owner, descriptor.kind);
+        if (descriptor.kind === 'deck' || descriptor.kind === 'graveyard' || descriptor.kind === 'fusion') return zoneRect(descriptor.owner, descriptor.kind);
+        return null;
+    }
+
+    /**
+     * Feedback condiviso per gli spostamenti che prima avvenivano di colpo:
+     * scarto, ricerca, bando e ritorno in mano/Deck. Non blocca le regole:
+     * il fantasma resta sopra il ridisegno e rende leggibile il movimento.
+     */
+    function playZoneTransition(movement) {
+        if (!movement || !movement.carta) return false;
+        const from = transitionRect(movement.da || { kind: 'auto' }, movement.carta, true);
+        const rawTo = transitionRect(movement.a, movement.carta, false);
+        if (!from || !rawTo) return false;
+        const variant = movement.variante || 'move';
+        const presets = {
+            hand: { duration: 760, scaleTo: 0.72, spin: 7, glow: 'rgba(105, 210, 255, 0.9)' },
+            discard: { duration: 720, scaleTo: 0.42, spin: -12, glow: 'rgba(165, 175, 205, 0.9)' },
+            banish: { duration: 850, scaleTo: 0.32, spin: 22, glow: 'rgba(190, 105, 255, 0.95)' },
+            deck: { duration: 780, scaleTo: 0.42, spin: 10, glow: 'rgba(245, 205, 95, 0.85)' },
+            search: { duration: 820, scaleTo: 0.72, spin: -5, glow: 'rgba(105, 225, 255, 0.95)' }
+        };
+        const p = presets[variant] || presets.hand;
+        // Le mani sono contenitori larghi: si mira al centro mantenendo la
+        // dimensione finale della carta, non al loro angolo in alto a sinistra.
+        const to = {
+            left: rawTo.left + rawTo.width / 2 - from.width * p.scaleTo / 2,
+            top: rawTo.top + rawTo.height / 2 - from.height * p.scaleTo / 2,
+            width: from.width * p.scaleTo,
+            height: from.height * p.scaleTo
+        };
+        playCardTravel(movement.carta, from, to, p);
+        const color = variant === 'banish' ? ['#b66cff', '#f0d2ff', '#ffffff']
+            : variant === 'discard' ? ['#78839a', '#ccd5e5', '#ffffff']
+                : ['#66d9ff', '#f6d46b', '#ffffff'];
+        spawnParticles(from.left + from.width / 2, from.top + from.height / 2, {
+            count: variant === 'banish' ? 18 : 10, colors: color, speed: 3.2, life: 620, gravity: -0.01
+        });
+        return true;
+    }
+
     /**
      * IL VIAGGIO DI UNA CARTA DA UN PUNTO A UN ALTRO — il pezzo condiviso
      * da ogni spostamento visibile (Terreno→Cimitero, Cimitero→Terreno,
@@ -2144,6 +2221,7 @@
         const o = opts || {};
         const durata = o.duration || 620;
         const ghost = window.createCardElement(card);
+        ghost.classList.add('fx-card-travel');
         Object.assign(ghost.style, {
             position: 'fixed',
             left: `${from.left}px`,
@@ -2501,6 +2579,7 @@
         // Deck, mano) si anima passando due rettangoli, senza aggiungere
         // una funzione per ogni coppia di zone.
         playCardTravel: viaBackend('playCardTravel', playCardTravel),
+        playZoneTransition,
         playCardToGraveyard: viaBackend('playCardToGraveyard', playCardToGraveyard),
         playCardFromGraveyard: viaBackend('playCardFromGraveyard', playCardFromGraveyard),
         fieldSlotRect: fieldSlotRect,
