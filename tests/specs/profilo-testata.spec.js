@@ -34,6 +34,10 @@ module.exports = {
 
             const testata = await page.evaluate(() => ({
                 titolo: document.querySelector('.phr-titolo').textContent,
+                livello: document.querySelector('.phr-livello').textContent.replace(/\s+/g, ' ').trim(),
+                livelliElencati: document.querySelectorAll('.phr-livelli li').length,
+                livelloAttuale: document.querySelector('.phr-livelli [aria-current="step"]')?.textContent.replace(/\s+/g, ' ').trim(),
+                progresso: document.querySelector('.phr-regola').childNodes[0].textContent.trim(),
                 vinti: document.querySelector('.phr-numero--vinti strong').textContent,
                 pct: document.querySelector('.phr-anello-valore').textContent,
                 emoji: /[\u{1F300}-\u{1FAFF}]/u.test(document.getElementById('statsMount').textContent),
@@ -41,6 +45,9 @@ module.exports = {
             }));
             // 6 vittorie + 15 per il torneo = 21 punti: oltre i 20 di "Duellante esperto".
             t.assert(testata.titolo === 'Duellante esperto', `Titolo dai punti (21): ${testata.titolo}`);
+            t.assert(testata.livello === 'Livello 3 di 6', `Livello e totale leggibili: ${testata.livello}`);
+            t.assert(testata.livelliElencati === 6 && /Duellante esperto/.test(testata.livelloAttuale), `Percorso completo: ${JSON.stringify(testata)}`);
+            t.assert(/mancano 29 punti \(21\/50\)/.test(testata.progresso), `Progresso verso il prossimo titolo: ${testata.progresso}`);
             t.assert(testata.vinti === '6' && testata.pct === '75%', `Riepilogo: ${JSON.stringify(testata)}`);
             t.assert(!testata.emoji, 'Le statistiche non devono più usare emoji di sistema');
             t.assert(!testata.vintiNelleStatistiche, 'I duelli giocati stanno nella testata, non ripetuti nelle statistiche');

@@ -63,6 +63,7 @@
 .profile-hero .phr-ritratto-ripiego { font-size: 2.6rem; opacity: 0.6; }
 .profile-hero .phr-ritratto.has-image .phr-ritratto-ripiego { display: none; }
 .profile-hero .phr-identita { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.profile-hero .phr-titolo-riga { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .profile-hero .phr-titolo {
     font-family: var(--phr-serif);
     font-size: 0.72rem;
@@ -71,6 +72,18 @@
     text-transform: uppercase;
     color: var(--phr-oro);
 }
+.profile-hero .phr-livello {
+    padding: 3px 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(241, 201, 90, 0.34);
+    background: rgba(241, 201, 90, 0.09);
+    color: var(--phr-oro-chiaro);
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+.profile-hero .phr-livello span { color: var(--phr-tenue); font-weight: 600; }
 .profile-hero .phr-nome-riga { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .profile-hero .phr-nome-riga[hidden] { display: none; }
 .profile-hero .phr-nome {
@@ -143,6 +156,43 @@
 }
 .profile-hero .phr-regola { font-size: 0.78rem; color: var(--phr-testo); display: flex; flex-direction: column; gap: 2px; }
 .profile-hero .phr-regola-come { font-size: 0.7rem; color: var(--phr-tenue); }
+.profile-hero .phr-percorso { max-width: 560px; margin-top: 2px; }
+.profile-hero .phr-percorso summary {
+    width: fit-content;
+    color: var(--phr-oro-chiaro);
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+}
+.profile-hero .phr-percorso[open] summary { margin-bottom: 8px; }
+.profile-hero .phr-livelli {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.profile-hero .phr-livelli li {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(0, 0, 0, 0.2);
+    color: var(--phr-tenue);
+    font-size: 0.65rem;
+}
+.profile-hero .phr-livelli li.is-attuale { border-color: rgba(241, 201, 90, 0.58); background: rgba(241, 201, 90, 0.12); color: #fff2c8; }
+.profile-hero .phr-livelli li.is-superato { color: #c9b980; }
+.profile-hero .phr-livello-numero { display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: rgba(255,255,255,.08); font-weight: 900; }
+.profile-hero .is-attuale .phr-livello-numero { background: var(--phr-oro); color: #271806; }
+.profile-hero .phr-livello-nome { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.profile-hero .phr-livello-soglia { font-variant-numeric: tabular-nums; opacity: 0.72; white-space: nowrap; }
 .profile-hero .phr-salvato { font-size: 0.7rem; color: var(--phr-tenue); }
 
 /* ---- Riepilogo: anello + tre numeri ---------------------------------- */
@@ -277,6 +327,7 @@
     .profile-hero .phr-anello { width: 62px; height: 62px; }
     .profile-hero .phr-numero strong { font-size: 1.25rem; }
     .profile-hero .phr-pillole { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .profile-hero .phr-livelli { grid-template-columns: 1fr; }
     .profile-hero .phr-mazzo { flex-basis: 128px; }
 }
 @media (prefers-reduced-motion: reduce) {

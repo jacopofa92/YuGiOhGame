@@ -32,6 +32,9 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.3.17 — Il Profilo rende espliciti livello e numero totale dei titoli,
+ *   punti mancanti e percorso completo con tutte le soglie.
+ *
  * 1.3.16 — Il fronte delle carte adotta il sottile bordo nero delle carte
  *   fisiche, coerente fra miniature, duello e viste grandi.
  *
@@ -698,4 +701,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.3.16';
+window.GAME_VERSION = '1.3.17';

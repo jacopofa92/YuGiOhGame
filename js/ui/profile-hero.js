@@ -63,7 +63,10 @@
         return {
             vinti, persi, giocati, punti,
             percentuale: giocati ? Math.round((vinti / giocati) * 100) : null,
-            titolo: TITOLI[i].nome, prossimo, avanzamento
+            titolo: TITOLI[i].nome, prossimo, avanzamento,
+            livello: i + 1,
+            livelliTotali: TITOLI.length,
+            puntiMancanti: prossimo ? Math.max(0, prossimo.da - punti) : 0
         };
     }
 
@@ -89,7 +92,10 @@
                     <img src="images/characters/mirror.jpg" alt="">
                 </div>
                 <div class="phr-identita">
-                    <div class="phr-titolo">${esc(s.titolo)}</div>
+                    <div class="phr-titolo-riga">
+                        <div class="phr-titolo">${esc(s.titolo)}</div>
+                        <div class="phr-livello" aria-label="Livello titolo ${s.livello} di ${s.livelliTotali}">Livello ${s.livello} <span>di ${s.livelliTotali}</span></div>
+                    </div>
                     <div class="phr-nome-riga" data-phr="vista">
                         <h2 class="phr-nome"></h2>
                         <button type="button" class="phr-matita" data-phr="modifica" title="Cambia nome" aria-label="Cambia nome">${icona('pencil')}</button>
@@ -103,10 +109,20 @@
                         <span style="width:${s.avanzamento}%"></span>
                     </div>
                     <div class="phr-regola">${s.prossimo
-                        ? `${esc(s.prossimo.nome)} a ${s.prossimo.da} punti · ne hai ${s.punti}`
+                        ? `Prossimo: ${esc(s.prossimo.nome)} · mancano ${s.puntiMancanti} punti (${s.punti}/${s.prossimo.da})`
                         : `Titolo massimo raggiunto · ${s.punti} punti`}
                         <span class="phr-regola-come">1 punto per vittoria, 15 per torneo vinto, 20 per storia completata</span>
                     </div>
+                    <details class="phr-percorso">
+                        <summary>Vedi tutti i ${s.livelliTotali} titoli</summary>
+                        <ol class="phr-livelli">
+                            ${TITOLI.map((titolo, indice) => `<li class="${indice < s.livello - 1 ? 'is-superato' : indice === s.livello - 1 ? 'is-attuale' : 'is-bloccato'}"${indice === s.livello - 1 ? ' aria-current="step"' : ''}>
+                                <span class="phr-livello-numero">${indice + 1}</span>
+                                <span class="phr-livello-nome">${esc(titolo.nome)}</span>
+                                <span class="phr-livello-soglia">${titolo.da} pt</span>
+                            </li>`).join('')}
+                        </ol>
+                    </details>
                     <div class="phr-salvato">Ultimo salvataggio: ${esc(data(save.player && save.player.lastSaved))}</div>
                 </div>
             </div>
