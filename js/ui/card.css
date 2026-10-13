@@ -352,12 +352,12 @@
        il contrario. */
     justify-content: flex-end;
     text-align: right;
-    gap: 0.3cqw;
-    font-size: 7cqw;
+    gap: 0.18cqw;
+    font-size: 6.35cqw;
     line-height: 1;
     color: #ff7a1a;
     text-shadow: 0 1px 2px rgba(0,0,0,0.6);
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
 }
 
 /* --- Finestra dell'immagine (arte reale se disponibile, altrimenti
@@ -758,6 +758,13 @@ body[data-card-badges] .card { overflow: visible; }
 .cv-inclina[data-viva="grande"] {
     transform: perspective(900px) var(--cv-base, translateZ(0)) rotateX(var(--inc-x)) rotateY(var(--inc-y)) !important;
 }
+.cv-inclina[data-viva="griglia"]:hover,
+.cv-inclina[data-viva="fila"]:hover {
+    /* Il solo elemento interagito ottiene un layer composito. Applicarlo a
+       tutta la Cartoteca prenoterebbe memoria per centinaia di carte. */
+    will-change: transform;
+    isolation: isolate;
+}
 .cv-inclina[data-viva="griglia"]:hover { --cv-base: translateY(-8px) scale(1.06); }
 .cv-inclina[data-viva="grande"] { will-change: transform; }
 /* Il ritorno al centro è morbido; mentre il mouse o il telefono si
@@ -800,6 +807,8 @@ body[data-card-badges] .card { overflow: visible; }
     border-radius: var(--card-raggio);
     pointer-events: none;
     transition: opacity 0.4s ease;
+    backface-visibility: hidden;
+    transform: translateZ(0);
 }
 
 /* Nelle griglie e nelle file possono esserci decine di carte. I livelli

@@ -617,9 +617,19 @@
         function imposta(x, y) {
             stile.setProperty('--inc-x', (-y * gradi).toFixed(2) + 'deg');
             stile.setProperty('--inc-y', (x * gradi).toFixed(2) + 'deg');
-            stile.setProperty('--luce-x', (50 + x * 50).toFixed(1) + '%');
-            stile.setProperty('--luce-y', (50 + y * 50).toFixed(1) + '%');
-            stile.setProperty('--forza', Math.min(1, Math.hypot(x, y)).toFixed(3));
+            if (modo === 'grande') {
+                // Sulla singola carta protagonista la luce segue davvero il
+                // puntatore. Nelle griglie da centinaia di carte, invece,
+                // cambiare posizione a gradienti, maschere e blend mode a
+                // ogni frame obbligava il browser a ridipingere la texture
+                // laminata mentre la carta si muoveva. Lì teniamo il foil
+                // pienamente visibile ma stabile: il finto 3D continua a
+                // seguire il mouse tramite il solo transform, compositabile
+                // dalla GPU senza perdere frame.
+                stile.setProperty('--luce-x', (50 + x * 50).toFixed(1) + '%');
+                stile.setProperty('--luce-y', (50 + y * 50).toFixed(1) + '%');
+                stile.setProperty('--forza', Math.min(1, Math.hypot(x, y)).toFixed(3));
+            }
         }
         function riposa() {
             bersaglio.classList.remove('cv-attiva');
@@ -636,6 +646,11 @@
             if (e.pointerType === 'touch') return;
             riquadro = area.getBoundingClientRect();
             puntatoreDentro = true;
+            if (modo !== 'grande') {
+                stile.setProperty('--luce-x', '38%');
+                stile.setProperty('--luce-y', '30%');
+                stile.setProperty('--forza', '0.72');
+            }
         });
         area.addEventListener('pointermove', (e) => {
             if (e.pointerType === 'touch') return;

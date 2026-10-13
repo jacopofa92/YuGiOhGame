@@ -10,6 +10,13 @@ Ultimo aggiornamento verificato: 2026-10-12.
 - `cartoteca.html` mostra al massimo 300 carte per pagina; filtri e ordinamento
   continuano a riportare alla prima pagina, mentre i pager mantengono la pagina
   scelta dall'utente.
+- Correzione del 2026-10-13: lo stesso limite e' applicato anche alla vista
+  Cartoteca integrata in `index.html`, che era rimasta separatamente a 400.
+- Nelle griglie, foil e glitter si attivano ancora sulla carta puntata, ma la
+  sorgente luminosa resta stabile mentre soltanto l'inclinazione viene composta
+  dalla GPU. La scheda grande conserva invece la luce dinamica completa.
+- Le stelle Livello sono leggermente piu' piccole e non vanno a capo: i mostri
+  Livello 12, incluso Drago Bianco Occhi Blu Finale, restano dentro la cornice.
 
 ## Revamp Forza dello Specchio (2026-10-12)
 

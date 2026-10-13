@@ -32,6 +32,11 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.3.9 — Anche la Cartoteca integrata nel menu usa davvero 300 carte per
+ *   pagina; laminatura e glitter delle griglie conservano l'aspetto ma non
+ *   ridipingono piu' gradienti e maschere a ogni movimento del puntatore;
+ *   le stelle sono leggermente piu' compatte e anche i Livelli 12 rientrano.
+ *
  * 1.3.8 — Login più leggibile e coerente con l'arena, con campi etichettati
  *   e layout responsive; Cartoteca alleggerita a 300 carte per pagina.
  *
@@ -668,4 +673,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.3.8';
+window.GAME_VERSION = '1.3.9';

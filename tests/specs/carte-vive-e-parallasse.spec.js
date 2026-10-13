@@ -10,6 +10,7 @@
 //   - il menu sposta i suoi livelli seguendo il mouse, e con "riduci
 //     movimento" resta fermo.
 const path = require('path');
+const fs = require('fs');
 
 const RADICE = path.join(__dirname, '..', '..');
 const url = (f) => 'file:///' + path.join(RADICE, f).replace(/\\/g, '/');
@@ -47,6 +48,12 @@ module.exports = {
     name: 'Carte vive: riflessi per rarità, inclinazione col mouse e col telefono; parallasse del menu',
     standalone: true,
     async run({ browser, assert }) {
+        // La Cartoteca esiste sia standalone sia come vista integrata nel
+        // menu: il limite deve restare identico in entrambe.
+        for (const file of ['cartoteca.html', 'index.html']) {
+            const sorgente = fs.readFileSync(path.join(RADICE, file), 'utf8');
+            assert(/const CARDS_PER_PAGE = 300;/.test(sorgente), `${file} usa 300 carte per pagina`);
+        }
         // --- Riflessi per rarità ----------------------------------------
         const { ctx, page } = await apriCartoteca(browser);
         try {
@@ -85,6 +92,21 @@ module.exports = {
                 classi: el.className
             }));
             assert(riflessoHover.display !== 'none', 'il riflesso della griglia si accende sotto il puntatore: ' + JSON.stringify(riflessoHover));
+            const costoGriglia = await tile.evaluate((el) => ({
+                luceX: el.style.getPropertyValue('--luce-x'),
+                forza: el.style.getPropertyValue('--forza')
+            }));
+            assert(costoGriglia.luceX === '38%' && costoGriglia.forza === '0.72',
+                'in griglia il foil resta acceso ma la luce non viene ridipinta a ogni frame: ' + JSON.stringify(costoGriglia));
+
+            // Livello 12: la fila non deve sforare la cornice della carta.
+            const stelle = await page.evaluate(() => {
+                CardDetail.open(cardDatabase.find((c) => Number(c.id) === 29));
+                const el = document.querySelector('.cd-preview .card-frame-stars');
+                return el ? { clientWidth: el.clientWidth, scrollWidth: el.scrollWidth, wrap: getComputedStyle(el).flexWrap } : null;
+            });
+            assert(stelle && stelle.scrollWidth <= stelle.clientWidth + 1 && stelle.wrap === 'nowrap',
+                'le 12 stelle del Drago Bianco Definitivo restano nella loro riga: ' + JSON.stringify(stelle));
 
             // --- Mouse: la scheda si inclina e torna a ondeggiare --------
             await apriSchedaPerRarita(page, 'ultra');
