@@ -32,6 +32,9 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.3.16 — Il fronte delle carte adotta il sottile bordo nero delle carte
+ *   fisiche, coerente fra miniature, duello e viste grandi.
+ *
  * 1.3.15 — Il Mondo dei Ricordi segue l'intero finale dell'anime: viaggio
  *   in Egitto, Gioco delle Ombre, Mahad, Aknadin, Kisara, Kul Elna, Zorc,
  *   Horakhty, viaggio a Luxor, Duello Cerimoniale ed epilogo in Giappone.
@@ -695,4 +698,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.3.15';
+window.GAME_VERSION = '1.3.16';

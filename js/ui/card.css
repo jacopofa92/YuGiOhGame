@@ -199,6 +199,14 @@
     background: var(--card-sfondo, none);
     pointer-events: none;
 }
+/* Prova estetica ispirata alle carte fisiche: il fronte ha un unico filo
+   nero esterno, sottile e neutro, che chiude la cornice colorata senza
+   aggiungere un secondo pannello o cambiare le dimensioni della carta.
+   Il retro è escluso perché possiede già la propria cornice dedicata. */
+.card:not(.face-down)::before {
+    box-sizing: border-box;
+    border: 1px solid rgba(8, 6, 4, 0.92);
+}
 .card:hover { transform: translateY(-8px) scale(1.06); box-shadow: 0 12px 28px rgba(0,0,0,0.34); }
 
 /* Colori per tipo di carta, come le vere carte Yu-Gi-Oh: Mostro = oro,
@@ -719,10 +727,10 @@ body[data-card-badges] .card { overflow: visible; }
 @container (max-width: 66px) {
     .card:not(.face-down)::before {
         --card-raggio: 1px;
-        /* Un filo del colore del tipo, molto tenue: separa la carta dal
-           Terreno senza pesare. Sotto 1px Chromium arrotonda comunque a
-           1px, quindi per alleggerirlo si agisce sulla trasparenza. */
-        border: 1px solid color-mix(in srgb, var(--card-tinta, transparent) 15%, transparent);
+        /* Anche sulle miniature resta il bordo nero del fronte: cambiare
+           tinta proprio quando la carta diventa piccola la farebbe apparire
+           diversa fra mano, Terreno e dettaglio. */
+        border: 1px solid rgba(8, 6, 4, 0.92);
     }
     .card:not(.face-down) > * { --card-raggio: 1px; }
     .card:not(.face-down) > .card-frame {
