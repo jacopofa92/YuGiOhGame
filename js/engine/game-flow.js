@@ -1260,6 +1260,12 @@ function renderFields() {
         });
     }
 
+    // Firma dello stato di render, prima che caricamenti immagini,
+    // compressione dei nomi o FX modifichino classi e stili del DOM vivo.
+    [...righeGiocatore, ...righeBot].forEach((riga) => {
+        Array.from(riga.children).forEach((casella) => { casella.__renderSignature = firmaRenderStabile(casella); });
+    });
+
     riconciliaBoard(playerBoard, righeGiocatore);
     riconciliaBoard(botBoard, righeBot);
     syncPhaseStepperToFieldWidth();
@@ -1361,7 +1367,9 @@ function riconciliaBoard(contenitore, nuoveRighe) {
         if (vecchia.className !== nuova.className) vecchia.className = nuova.className;
         caselleNuove.forEach((casellaNuova, k) => {
             const casellaVecchia = caselleVecchie[k];
-            if (casellaVecchia.outerHTML === casellaNuova.outerHTML) {
+            const firmaVecchia = casellaVecchia.__renderSignature || casellaVecchia.outerHTML;
+            const firmaNuova = casellaNuova.__renderSignature || casellaNuova.outerHTML;
+            if (firmaVecchia === firmaNuova) {
                 trasferisciGestori(casellaVecchia, casellaNuova);
             } else {
                 vecchia.replaceChild(casellaNuova, casellaVecchia);
@@ -1919,6 +1927,22 @@ function fitHandCardsInOneRow(handEl) {
  * ogni updateUI obbligava il WebView a ricollegare e ridipingere tutte le
  * immagini, producendo il breve flicker visibile anche senza un video.
  */
+function firmaRenderStabile(elemento) {
+    const copia = elemento.cloneNode(true);
+    [copia, ...copia.querySelectorAll('.has-image, .art-loaded, .has-pile-image')].forEach((el) => {
+        el.classList.remove('has-image', 'art-loaded', 'has-pile-image');
+    });
+    copia.querySelectorAll('.card-name-text').forEach((el) => el.style.removeProperty('transform'));
+    // Un'immagine fallita viene rimossa da onerror; una appena costruita
+    // esiste ancora fino a quel callback. In entrambi i casi la cornice
+    // fallback descrive già interamente la carta e resta la firma stabile.
+    copia.querySelectorAll('.card-image, .card-art-image, .deck-pile-image').forEach((el) => el.remove());
+    // Nel fallback artOnly l'icona viene rimossa quando l'immagine finisce
+    // di caricarsi. È soltanto uno stato di caricamento, non della carta.
+    copia.querySelectorAll('.card-frame-art-icon').forEach((el) => el.remove());
+    return copia.outerHTML;
+}
+
 function reconcileHandCards(handEl, nuoveCarte) {
     const vecchie = Array.from(handEl.children);
     vecchie.forEach((el) => { el.style.marginLeft = ''; });
@@ -1927,7 +1951,9 @@ function reconcileHandCards(handEl, nuoveCarte) {
     nuoveCarte.forEach((nuova, index) => {
         const uid = nuova.dataset.uid;
         let vecchia = uid ? vecchie.find((el) => !usate.has(el) && el.dataset.uid === uid) : vecchie[index];
-        if (vecchia && !usate.has(vecchia) && vecchia.outerHTML === nuova.outerHTML) {
+        const firmaVecchia = vecchia && (vecchia.__renderSignature || vecchia.outerHTML);
+        const firmaNuova = nuova.__renderSignature || nuova.outerHTML;
+        if (vecchia && !usate.has(vecchia) && firmaVecchia === firmaNuova) {
             usate.add(vecchia);
             trasferisciGestori(vecchia, nuova);
             fragment.appendChild(vecchia);
@@ -1982,6 +2008,10 @@ function renderPlayerHand() {
         if (gameState.selectedCard.type === 'hand' && gameState.selectedCard.index === index) {
             cardEl.classList.add('selected');
         }
+        // Fotografia PRIMA che onload/rAF aggiungano has-image, art-loaded
+        // o la compressione del nome. Quelli sono dettagli di pittura, non
+        // cambi di stato: non devono far ricreare la carta al render dopo.
+        cardEl.__renderSignature = firmaRenderStabile(cardEl);
         nuoveCarte.push(cardEl);
     });
     reconcileHandCards(handEl, nuoveCarte);
@@ -2009,7 +2039,9 @@ function renderBotHand() {
     const revealed = !!gameState.bothHandsRevealed;
     const nuoveCarte = [];
     gameState.botHand.forEach((card) => {
-        nuoveCarte.push(revealed ? createCardElement(card) : CardRenderer.renderCardBack());
+        const cardEl = revealed ? createCardElement(card) : CardRenderer.renderCardBack();
+        cardEl.__renderSignature = firmaRenderStabile(cardEl);
+        nuoveCarte.push(cardEl);
     });
     reconcileHandCards(handEl, nuoveCarte);
     fitHandCardsInOneRow(handEl);

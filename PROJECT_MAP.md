@@ -2,6 +2,16 @@
 
 Ultimo aggiornamento verificato: 2026-10-13.
 
+## Flicker progressivo del duello (2026-10-13)
+
+La riconciliazione di campo e mani usa una firma immutabile dello stato al
+momento del render. Non confronta piu' l'`outerHTML` vivo: caricamento delle
+immagini, compressione dei titoli e classi temporanee degli FX lo modificano
+dopo il render e facevano quindi distruggere e ricreare carte ancora identiche.
+Il costo visivo cresceva insieme alle carte presenti e diventava evidente anche
+all'avvio dei video. Lo spec `flicker-duello-prolungato` riempie campo e mano e
+verifica che tutti i nodi sopravvivano a 80 ridisegni consecutivi.
+
 ## Dettagli bustine e filmati di Evocazione (2026-10-13)
 
 - Il carosello dello sbustamento cattura il puntatore soltanto dopo un vero

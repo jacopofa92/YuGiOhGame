@@ -24,8 +24,11 @@ module.exports = {
     name: 'Terreno: aggiornamento incrementale identico alla ricostruzione totale',
     async run(t) {
         const esito = await t.evaluate(() => {
-            const board = () => document.getElementById('playerFieldBoard').innerHTML
-                + '||' + document.getElementById('botFieldBoard').innerHTML;
+            // Confronta lo stato di render, non le classi asincrone di
+            // pittura (immagine caricata/nome compresso) che possono
+            // legittimamente differire fra due frame consecutivi.
+            const board = () => firmaRenderStabile(document.getElementById('playerFieldBoard'))
+                + '||' + firmaRenderStabile(document.getElementById('botFieldBoard'));
 
             const mostri = cardDatabase.filter((c) => c.type === 'monster' && !c.extraDeck).slice(0, 40);
             const magie = cardDatabase.filter((c) => c.type !== 'monster').slice(0, 40);
@@ -57,6 +60,7 @@ module.exports = {
             };
 
             let diversi = 0;
+            let primaDifferenza = null;
             const STATI = 40;
             for (let n = 0; n < STATI; n++) {
                 statoACaso(n);
@@ -68,7 +72,15 @@ module.exports = {
                 document.getElementById('playerFieldBoard').innerHTML = '';
                 document.getElementById('botFieldBoard').innerHTML = '';
                 renderFields();
-                if (incrementale !== board()) diversi++;
+                const totale = board();
+                if (incrementale !== totale) {
+                    diversi++;
+                    if (!primaDifferenza) {
+                        let at = 0;
+                        while (at < incrementale.length && incrementale[at] === totale[at]) at++;
+                        primaDifferenza = { stato: n, at, incrementale: incrementale.slice(at, at + 180), totale: totale.slice(at, at + 180) };
+                    }
+                }
             }
 
             // Un campo che non cambia non deve ricreare i propri nodi.
@@ -113,11 +125,11 @@ module.exports = {
                 sostituita = document.querySelector(sel).__marchio !== 'DA_CAMBIARE';
             }
 
-            return { STATI, diversi, caselle: dopo.length, sopravvissuti, carteVere: carteVere.length, senzaClick, consegnata, attesa, sostituita };
+            return { STATI, diversi, primaDifferenza, caselle: dopo.length, sopravvissuti, carteVere: carteVere.length, senzaClick, consegnata, attesa, sostituita };
         });
 
         t.assert(esito.diversi === 0,
-            `Su ${esito.STATI} stati di campo, ${esito.diversi} hanno prodotto un DOM diverso da quello della ricostruzione totale: il riuso dei nodi sta mostrando uno stato sbagliato`);
+            `Su ${esito.STATI} stati di campo, ${esito.diversi} hanno prodotto un DOM diverso da quello della ricostruzione totale: ${JSON.stringify(esito.primaDifferenza)}`);
 
         // Una sola casella può legittimamente cambiare per via
         // dell'animazione delle pile, il resto deve restare in piedi.
@@ -132,5 +144,38 @@ module.exports = {
 
         t.assert(esito.sostituita === true,
             'Una casella il cui contenuto cambia deve essere sostituita, non riusata');
+
+        // Le modifiche che arrivano DOPO il render (immagine decodificata,
+        // compressione del titolo, classi di un FX) non sono stato di gioco.
+        // Prima venivano confrontate tramite outerHTML vivo e facevano
+        // ricreare sempre più carte man mano che il campo si riempiva.
+        const stabilitaPittura = await t.evaluate(async () => {
+            const copia = (id, uid) => Object.assign({}, cardDatabase.find((c) => c.id === id), { uid });
+            gameState.playerMonsterField = [{ card: copia(1, 'stabile-campo'), position: 'attack', isFaceDown: false, hasAttacked: false, canChangePosition: true }, null, null, null, null];
+            gameState.playerSTField = [null, null, null, null, null];
+            gameState.botMonsterField = [null, null, null, null, null];
+            gameState.botSTField = [null, null, null, null, null];
+            gameState.playerHand = [copia(2, 'stabile-mano')];
+            renderFields();
+            renderPlayerHand();
+            await new Promise((resolve) => setTimeout(resolve, 100));
+            // Un secondo giro assesta l'eventuale stato sincrono della cache immagini.
+            renderFields();
+            renderPlayerHand();
+            const campo = document.querySelector('[data-uid="stabile-campo"]');
+            const mano = document.querySelector('[data-uid="stabile-mano"]');
+            campo.classList.add('fx-summon-glow');
+            mano.classList.add('has-image');
+            const nomeCampo = campo.querySelector('.card-name-text');
+            if (nomeCampo) nomeCampo.style.transform = 'scaleX(0.73)';
+            renderFields();
+            renderPlayerHand();
+            return {
+                campoPreservato: document.querySelector('[data-uid="stabile-campo"]') === campo,
+                manoPreservata: document.querySelector('[data-uid="stabile-mano"]') === mano
+            };
+        });
+        t.assert(stabilitaPittura.campoPreservato, 'Una classe FX o la compressione del nome non deve ricreare la carta sul Terreno');
+        t.assert(stabilitaPittura.manoPreservata, 'Il caricamento dell\'immagine non deve ricreare la carta in mano');
     }
 };
