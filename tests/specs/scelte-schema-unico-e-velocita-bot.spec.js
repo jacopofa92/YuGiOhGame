@@ -29,13 +29,15 @@ module.exports = {
             setPlacementPrompt(true);
             const durante = {
                 modo: document.body.classList.contains('placement-mode'),
-                banda: document.getElementById('placementPrompt').classList.contains('show')
+                // La scelta resta obbligatoria ma, per decisione UX, non ha
+                // più una banda testuale che copre il Terreno.
+                bandaAssente: !document.getElementById('placementPrompt')
             };
             clearSelection(); // deve ripulire anche questa modalità
-            return { durante, dopo: document.body.classList.contains('placement-mode'), bandaDopo: document.getElementById('placementPrompt').classList.contains('show') };
+            return { durante, dopo: document.body.classList.contains('placement-mode') };
         });
-        assert(casella.durante.modo && casella.durante.banda, `Casella: banda e velo attivi: ${JSON.stringify(casella.durante)}`);
-        assert(!casella.dopo && !casella.bandaDopo, 'clearSelection spegne anche la scelta della casella');
+        assert(casella.durante.modo && casella.durante.bandaAssente, `Casella: velo attivo senza testo sovrapposto: ${JSON.stringify(casella.durante)}`);
+        assert(!casella.dopo, 'clearSelection spegne anche la scelta della casella');
 
         const velocita = await page.evaluate(() => {
             const out = {};

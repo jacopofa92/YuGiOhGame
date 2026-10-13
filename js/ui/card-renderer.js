@@ -515,10 +515,24 @@
         // entrambe le facce. Ridisegnando il Terreno la casella torna quella
         // di sempre: riconciliaBoard (game-flow.js) vede che il suo HTML è
         // cambiato e la sostituisce.
-        inner.addEventListener('animationend', () => {
+        let concluso = false;
+        const concludeFlip = () => {
+            if (concluso) return;
+            concluso = true;
             if (!outer.isConnected) return;
+            // La firma appartiene alla casella, non al suo contenuto. Dopo
+            // replaceWith() sarebbe ancora uguale a quella del nuovo render
+            // e riconciliaBoard conserverebbe per errore il markup del giro.
+            delete slotEl.__renderSignature;
             if (typeof renderFields === 'function') renderFields();
-        }, { once: true });
+        };
+        inner.addEventListener('animationend', (event) => {
+            if (event.target === inner && event.animationName === 'cardFlipReveal') concludeFlip();
+        });
+        // animationend non è garantito (scheda sospesa, animazioni disattivate
+        // o nodo momentaneamente non renderizzato): il fallback impedisce che
+        // la carta resti per sempre nella struttura 3D intermedia.
+        setTimeout(concludeFlip, 850);
         // L'ologramma del mostro (js/ui/monster-hologram.js) era già nato col
         // ridisegno appena prima del giro, sopra una carta ancora di dorso:
         // riallinearlo adesso gli fa vedere il giro in corso, lo toglie e lo

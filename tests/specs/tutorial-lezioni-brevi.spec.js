@@ -121,7 +121,9 @@ module.exports = {
         await page.addInitScript(() => { window.AUTH_GATE_SKIP = true; });
         try {
             await page.goto(MENU);
-            const link = await page.$$eval('.tut-lezione', (els) => els.map((a) => a.getAttribute('href')));
+            // "Regole del Duello" condivide lo stile delle tessere, ma è una
+            // voce di consultazione: non è una quinta lezione giocabile.
+            const link = await page.$$eval('.tut-lezione[data-lezione]', (els) => els.map((a) => a.getAttribute('href')));
             t.assert(['nonno', 'catena', 'fusione', 'flip'].every((id) => link.some((h) => h.endsWith('&lezione=' + id))),
                 `Il menu Tutorial deve elencare le quattro lezioni: ${JSON.stringify(link)}`);
             t.assert(link.every((h) => /[?&]field=citta\.jpg(&|$)/.test(h)),

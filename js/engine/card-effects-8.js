@@ -3572,6 +3572,10 @@
 
     CardEffects.register(1140, {
         onFlip(ctx) {
+            // Rifornimento sposta davvero carte fuori dal Cimitero: sotto
+            // Necrovalley l'effetto deve fermarsi prima ancora di mostrare
+            // una scelta che non potrebbe poi essere risolta.
+            if (ctx.graveyardMoveNegated(ctx.owner)) return;
             const grave = ctx.graveyard(ctx.owner);
             const candidates = grave.filter((card) => card._usedAsFusionMaterial || card._fusionMaterialGroup);
             if (candidates.length < 2) return;
@@ -3580,6 +3584,10 @@
                 min: 2, title: '📦 Rifornimento', text: 'Scegli i 2 Materiali da Fusione da riprendere in mano.'
             }, (chosen) => {
                 try {
+                    // La scelta e la sua callback non sono necessariamente
+                    // sincrone: ricontrolliamo il blocco anche in risoluzione,
+                    // nel caso Necrovalley sia entrata in Campo nel frattempo.
+                    if (ctx.graveyardMoveNegated(ctx.owner)) return;
                     chosen.forEach((card) => {
                         const index = grave.indexOf(card);
                         if (index !== -1) ctx.hand(ctx.owner).push(grave.splice(index, 1)[0]);
