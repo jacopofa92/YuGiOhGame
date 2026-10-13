@@ -104,8 +104,13 @@
                     // sotto, non qui: `campoDuello` può essere un elenco
                     // scelto in modo stabile dall'id della tappa, e quella
                     // logica non va duplicata qui.
-                    field: tappa.field || cap.field || null,
-                    music: tappa.music || cap.music || null,
+                    field: tappa.field || cap.field || campoDellaCampagna(campagna, tappa.id) || null,
+                    music: tappa.music || cap.music || campagna.musicaDuello || null,
+                    // Nelle campagne a livelli non esiste una difficoltà
+                    // propria del nodo: tutta la partita usa la scelta
+                    // iniziale. Esporre qui il valore risolto evita che UI,
+                    // editor o audit mostrino vecchi valori ormai inerti.
+                    difficulty: difficoltaEsposta(campaignId, tappa.difficulty),
                     // Ritratto e nome vero arrivano dal roster, non dal
                     // catalogo: una campagna dichiara CHI si affronta, non
                     // che faccia abbia.
@@ -232,6 +237,16 @@
     function datiLivello(campaignId) {
         const id = getLivelloAttivo(campaignId);
         return id ? LIVELLI.find((l) => l.id === id) : null;
+    }
+
+    // Variante senza lettura del progresso, usata mentre getTappe sta
+    // costruendo il catalogo risolto. Chiamare datiLivello da getTappe
+    // creerebbe un giro getTappe -> progresso -> getTappe.
+    function difficoltaEsposta(campaignId, fallback) {
+        if (!haLivelli(campaignId)) return fallback || 'Medio';
+        const id = statoLivelli(campaignId).livello || 'facile';
+        const livello = LIVELLI.find((l) => l.id === id) || LIVELLI[0];
+        return livello.duello;
     }
 
     /**
@@ -903,8 +918,11 @@
                 // su ciascuno. Il fallback finale alla campagna intera
                 // resta in urlDuello, non qui — stesso motivo del commento
                 // gemello in getTappe qui sopra.
-                field: prova.field || (tappaContenitore && tappaContenitore.field) || null,
-                music: prova.music || (tappaContenitore && tappaContenitore.music) || null,
+                field: prova.field || (tappaContenitore && tappaContenitore.field)
+                    || campoDellaCampagna(getCampaign(campaignId), prova.id) || null,
+                music: prova.music || (tappaContenitore && tappaContenitore.music)
+                    || (getCampaign(campaignId) && getCampaign(campaignId).musicaDuello) || null,
+                difficulty: difficoltaEsposta(campaignId, prova.difficulty),
                 immagine: pg ? pg.image : null,
                 nomeAvversario: pg ? pg.name : null,
                 stato: stato

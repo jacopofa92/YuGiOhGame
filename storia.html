@@ -569,11 +569,26 @@
     // brani e sentire mezzo secondo di quello sbagliato. Il cambio in
     // corsa resta comunque possibile (musicaDellaCampagna, più sotto),
     // perché è quello che serve tornando all'elenco delle campagne.
+    function tracciaStoriaAttiva(campaignId, torneoId) {
+        if (!campaignId || !window.StoryProgress) return null;
+        const campagna = StoryProgress.getCampaign(campaignId);
+        if (!campagna) return null;
+        const tappe = StoryProgress.getTappeConStato(campaignId);
+        const contenitore = torneoId
+            ? tappe.find((t) => t.id === torneoId)
+            : (tappe.find((t) => t.stato === 'corrente') || tappe[tappe.length - 1]);
+        const capitolo = contenitore && (campagna.capitoli || [])
+            .find((c) => c.id === contenitore.capitoloId);
+        // La musica della MAPPA dell'arco viene dal capitolo. Non usiamo
+        // musicaDuello: quella appartiene alla battaglia (in WW1, per
+        // esempio, e' volutamente diversa dalla musica della mappa).
+        return (capitolo && capitolo.music) || campagna.musica || null;
+    }
     (function () {
-        const aperta = new URLSearchParams(location.search).get('campaign');
-        const campagna = aperta && window.StoryProgress ? StoryProgress.getCampaign(aperta) : null;
-        initAudioManager(campagna && campagna.musica
-            ? { trackSrc: 'audio/soundtracks/' + campagna.musica }
+        const query = new URLSearchParams(location.search);
+        const traccia = tracciaStoriaAttiva(query.get('campaign'), query.get('torneo'));
+        initAudioManager(traccia
+            ? { trackSrc: 'audio/soundtracks/' + traccia }
             : undefined);
     })();
     Icons.hydrate();
@@ -1661,9 +1676,9 @@
      */
     function musicaDellaCampagna() {
         if (!window.DuelMusic) return;
-        const campagna = campagnaAperta ? StoryProgress.getCampaign(campagnaAperta) : null;
-        DuelMusic.setTrack(campagna && campagna.musica
-            ? 'audio/soundtracks/' + campagna.musica
+        const traccia = tracciaStoriaAttiva(campagnaAperta, torneoAperto);
+        DuelMusic.setTrack(traccia
+            ? 'audio/soundtracks/' + traccia
             : 'audio/soundtracks/56. Battle for the Millennium.mp3');
     }
 

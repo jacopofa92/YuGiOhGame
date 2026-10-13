@@ -295,6 +295,7 @@ const storyCampaignsDatabase = [
             {
                 id: 'prologo',
                 nome: 'Prologo: Domino City',
+                field: 'images/fields/mobile/citta.jpg',
                 testo: 'Il negozio del nonno, i banchi di scuola e una torre di vetro sul mare: tutto comincia a casa.',
                 music: '02. Input Name.mp3',
                 tappe: [
@@ -536,6 +537,8 @@ const storyCampaignsDatabase = [
             {
                 id: 'regno',
                 nome: 'Il Regno dei Duellanti',
+                field: 'images/fields/mobile/arenaRegnoDeiDuellanti.jpg',
+                music: '03. Tournament Announcement.mp3',
                 testo: 'Un invito, un nonno chiuso dentro una videocassetta, e un\'isola intera fra te e il castello di Pegasus.',
                 tappe: [
                     {
@@ -897,6 +900,8 @@ const storyCampaignsDatabase = [
             {
                 id: 'battlecity1',
                 nome: 'Battle City - Parte 1',
+                field: 'images/fields/mobile/citta.jpg',
+                music: '04. Modern Times.mp3',
                 testo: 'Kaiba apre la città, e fra gli iscritti c\'è chi non è venuto per il torneo.',
                 tappe: [
                     {
@@ -1189,6 +1194,8 @@ const storyCampaignsDatabase = [
             {
                 id: 'virtuale',
                 nome: 'Il Mondo Virtuale',
+                field: 'images/fields/mobile/mondoVirtualeArenaGozaburo.jpg',
+                music: '06. Inside the Puzzle.mp3',
                 testo: 'Il dirigibile non è ancora atterrato che il pavimento sparisce: dentro la rete le regole le scrive un ragazzo che non è mai cresciuto.',
                 tappe: [
                     {
@@ -1370,6 +1377,8 @@ const storyCampaignsDatabase = [
             {
                 id: 'battlecity2',
                 nome: 'Battle City - Parte 2',
+                field: 'images/fields/mobile/dirigibileKaibaCorp.jpg',
+                music: '08. Finals Face-Off.mp3',
                 testo: 'Il dirigibile è ancora lì dove l\'avevano lasciato: il torneo riprende da dove Noah l\'aveva interrotto.',
                 tappe: [
                     {
@@ -1503,6 +1512,8 @@ const storyCampaignsDatabase = [
             {
                 id: 'cerimoniale',
                 nome: 'Il Mondo dei Ricordi',
+                field: 'images/fields/mobile/arenaAnticoEgittoGiorno.jpg',
+                music: '56. Battle for the Millennium.mp3',
                 testo: 'Battle City è finita. Resta il viaggio nel passato, per la battaglia che conta davvero.',
                 tappe: [
                     {

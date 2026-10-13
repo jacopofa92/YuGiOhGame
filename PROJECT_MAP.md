@@ -1442,6 +1442,14 @@ Quinto gruppo:
 - ogni nuova tappa annidata richiede una voce `dalla: 'inserite'` in
   `separazioni`, perché il progresso interno alle aree è salvato per indice.
 
+- I sei archi anime dichiarano sul capitolo il proprio `field` e la propria
+  `music`: entrando nella relativa mappa la colonna sonora dell'arco sostituisce
+  quella della mappa principale; nei duelli vale la precedenza
+  tappa -> capitolo -> campagna.
+- `StoryProgress` espone sempre campo, musica e difficoltà già risolti. Nelle
+  campagne a livelli la difficoltà è soltanto quella scelta all'inizio e
+  l'Editor non presenta più un selettore fuorviante sul singolo duello.
+
 ## Ritorno da fine duello
 
 - `DuelSession.finish()` usa direttamente `location.replace(returnUrl)`:

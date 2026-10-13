@@ -838,10 +838,12 @@
     function campiPerKind(kind, tappa) {
         const t = tappa || {};
         if (kind === 'duel') {
+            const ctx = contestoCorrente();
+            const difficoltaNodo = ctx && ctx.campagna && ctx.campagna.senzaLivelli;
             return {
                 html: `
                     ${sceltaPersonaggioHtml('smePg', t.characterId || '', 'Avversario')}
-                    <div class="sme-campo">
+                    <div class="sme-campo" ${difficoltaNodo ? '' : 'hidden'}>
                         <label>Difficoltà (solo per le campagne senza livelli)</label>
                         <select id="smeDifficulty">
                             <option value="">— Non impostata —</option>
@@ -858,7 +860,8 @@
                     const leggiBattute = agganciaEditorBattute(t.dialogo, false);
                     return (dest) => {
                         imposta(dest, 'characterId', document.getElementById('smePgId').value);
-                        imposta(dest, 'difficulty', document.getElementById('smeDifficulty').value);
+                        const difficolta = document.getElementById('smeDifficulty');
+                        if (difficoltaNodo && difficolta) imposta(dest, 'difficulty', difficolta.value);
                         imposta(dest, 'field', document.getElementById('smeField').value);
                         const musica = leggiMusica();
                         if (musica !== null) imposta(dest, 'music', musica);

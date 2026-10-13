@@ -42,8 +42,39 @@ module.exports = {
             t.assert(areaPrologo.capitoloId === 'prologo', 'L\'area deve appartenere al capitolo "prologo"');
             t.assert(areaPrologo.music === '02. Input Name.mp3',
                 `L'area (che non dichiara una music propria) deve ereditare quella del capitolo "prologo": ${JSON.stringify(areaPrologo)}`);
-            t.assert(areaPrologo.field === null,
-                `Il capitolo "prologo" non dichiara un field: l'area deve restare senza (null), non un valore inventato: ${JSON.stringify(areaPrologo)}`);
+            t.assert(areaPrologo.field === 'images/fields/mobile/citta.jpg',
+                `Il Prologo deve dichiarare anche il proprio campo di duello: ${JSON.stringify(areaPrologo)}`);
+
+            // Ogni arco anime e ogni duello al suo interno deve uscire dal
+            // resolver con metadati completi. La difficolta' non appartiene
+            // al nodo: e' sempre quella scelta all'inizio della campagna.
+            const auditAnime = await page.evaluate(() => {
+                const campagna = StoryProgress.getCampaign('anime');
+                const capitoli = new Map(campagna.capitoli.map((c) => [c.id, c]));
+                const aree = StoryProgress.getTappe('anime');
+                const mancanti = [];
+                aree.forEach((area) => {
+                    const cap = capitoli.get(area.capitoloId);
+                    if (!cap || !cap.music || !cap.field) mancanti.push(`${area.capitoloId}: capitolo`);
+                    StoryProgress.getProveConStato('anime', area.id)
+                        .filter((p) => p.kind === 'duel')
+                        .forEach((p) => {
+                            if (!p.music || !p.field) mancanti.push(`${p.id}: ambiente`);
+                            if (p.difficulty !== 'Facile') mancanti.push(`${p.id}: ${p.difficulty}`);
+                        });
+                });
+                return {
+                    mancanti,
+                    musiche: aree.map((a) => a.music),
+                    tracceMappa: aree.map((a) => tracciaStoriaAttiva('anime', a.id))
+                };
+            });
+            t.assert(auditAnime.mancanti.length === 0,
+                `Ogni arco/duello anime deve avere campo, musica e difficolta' ereditata: ${auditAnime.mancanti.join(', ')}`);
+            t.assert(new Set(auditAnime.musiche).size === 6,
+                `I sei archi anime devono avere sei identita' musicali distinte: ${JSON.stringify(auditAnime.musiche)}`);
+            t.assert(JSON.stringify(auditAnime.tracceMappa) === JSON.stringify(auditAnime.musiche),
+                `La mappa di ogni arco deve sostituire la musica della mappa principale: ${JSON.stringify(auditAnime.tracceMappa)}`);
 
             const proveArea = await page.evaluate(() => StoryProgress.getProveConStato('anime', 'anime-area-prologo')
                 .map((p) => ({ id: p.id, kind: p.kind, field: p.field, music: p.music })));
@@ -107,8 +138,8 @@ module.exports = {
             t.assert(risultatoCatena.t1.music === 'capMusic.mp3', `t1 (senza music propria) deve ereditare quella del capitolo: ${JSON.stringify(risultatoCatena.t1)}`);
             t.assert(risultatoCatena.t2.field === 'tField.jpg', `t2 dichiara il proprio field: deve vincere sul capitolo: ${JSON.stringify(risultatoCatena.t2)}`);
             t.assert(risultatoCatena.t2.music === 'tMusic.mp3', `t2 dichiara la propria music: deve vincere sul capitolo: ${JSON.stringify(risultatoCatena.t2)}`);
-            t.assert(risultatoCatena.t3.field === null, `t3 e il suo capitolo (cap2) non dichiarano field: deve restare null qui: ${JSON.stringify(risultatoCatena.t3)}`);
-            t.assert(risultatoCatena.t3.music === null, `t3 e il suo capitolo (cap2) non dichiarano music: deve restare null qui: ${JSON.stringify(risultatoCatena.t3)}`);
+            t.assert(risultatoCatena.t3.field === 'campoCampagna.jpg', `t3 deve esporre il field finale ereditato dalla campagna: ${JSON.stringify(risultatoCatena.t3)}`);
+            t.assert(risultatoCatena.t3.music === 'musicaCampagna.mp3', `t3 deve esporre la music finale ereditata dalla campagna: ${JSON.stringify(risultatoCatena.t3)}`);
             t.assert(risultatoCatena.urlT1.field === 'capField.jpg', `Il duello di t1 deve usare l'arena ereditata dal capitolo, non quella della campagna: ${JSON.stringify(risultatoCatena.urlT1)}`);
             t.assert(risultatoCatena.urlT1.music === 'capMusic.mp3', `Il duello di t1 deve usare la musica ereditata dal capitolo, non quella della campagna: ${JSON.stringify(risultatoCatena.urlT1)}`);
             t.assert(risultatoCatena.urlT3.field === 'campoCampagna.jpg', `Solo quando NÉ la tappa NÉ il capitolo dichiarano un'arena, il duello deve ricadere su quella della campagna: ${JSON.stringify(risultatoCatena.urlT3)}`);
