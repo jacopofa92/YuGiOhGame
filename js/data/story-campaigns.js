@@ -541,7 +541,7 @@ const storyCampaignsDatabase = [
                 id: 'regno',
                 nome: 'Il Regno dei Duellanti',
                 field: 'images/fields/mobile/arenaRegnoDeiDuellanti.jpg',
-                music: '03. Tournament Announcement.mp3',
+                music: '19. Forest Shrine.mp3',
                 testo: 'Un invito, un nonno chiuso dentro una videocassetta, e un\'isola intera fra te e il castello di Pegasus.',
                 tappe: [
                     {
@@ -607,6 +607,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-2-weevil', kind: 'duel', icona: '🐛',
                                 label: 'Weevil Underwood', x: 1420, y: 548,
                                 characterId: 'weevil',
+                                music: "34. Mages Duel.mp3",
                                 dialogo: [
                                     { chi: 'weevil', testo: 'Senza Exodia e dentro una foresta che potenzia i miei insetti, la tua fama finirà al primo duello.' },
                                     { io: true, testo: 'Hai gettato le mie carte in mare per paura di affrontarle. Vincerò con quelle che mi sono rimaste.' }
@@ -617,6 +618,7 @@ const storyCampaignsDatabase = [
                                 label: 'Joey contro Mai', x: 1260, y: 610,
                                 parallelo: true, sbloccaDopo: 'anime-2-weevil',
                                 characterId: 'mai',
+                                music: "34. Mages Duel.mp3",
                                 protagonista: { name: 'Joey Wheeler', title: 'Il duellante alle prime armi', image: 'images/characters/joeyWheeler.jpg', icon: '🎲' },
                                 dialogo: [
                                     { chi: 'mai', testo: 'Non ho bisogno di vedere le mie carte: profumo diverso, scelta perfetta. Un principiante non può capirlo.' },
@@ -628,6 +630,7 @@ const storyCampaignsDatabase = [
                                 label: 'Rex Raptor', x: 1108, y: 645,
                                 parallelo: true, sbloccaDopo: 'anime-2-mai-primo',
                                 characterId: 'rex',
+                                music: "34. Mages Duel.mp3",
                                 protagonista: { name: 'Joey Wheeler', title: 'Il duellante dal cuore indomabile', image: 'images/characters/joeyWheeler.jpg', icon: '🎲' },
                                 dialogo: [
                                     // È il duello in cui Joey vince il suo Drago
@@ -641,6 +644,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-2-mako', kind: 'duel', icona: '🌊',
                                 label: 'Mako Tsunami', x: 798, y: 785,
                                 characterId: 'mako',
+                                music: "34. Mages Duel.mp3",
                                 dialogo: [
                                     { chi: 'mako', testo: 'Questo mare mi ha cresciuto. Se vuoi passare, dovrai battermi dove la marea combatte al mio fianco.' },
                                     { io: true, testo: 'Non sono venuto a portarti via il mare. Sono venuto a riprendermi mio nonno.' }
@@ -651,6 +655,7 @@ const storyCampaignsDatabase = [
                                 label: 'Joey contro Bonz', x: 925, y: 705,
                                 parallelo: true, sbloccaDopo: 'anime-2-rex',
                                 characterId: 'bonz',
+                                music: "34. Mages Duel.mp3",
                                 protagonista: { name: 'Joey Wheeler', title: 'Il duellante dal cuore indomabile', image: 'images/characters/joeyWheeler.jpg', icon: '🎲' },
                                 dialogo: [
                                     { chi: 'bonz', testo: 'Nel cimitero i miei mostri tornano come zombie più forti. Quando avremo le tue Stelle, Keith ci farà entrare nel castello.' },
@@ -674,6 +679,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-2-panik', kind: 'duel', icona: '🕯️',
                                 label: 'Panik', x: 308, y: 655,
                                 characterId: 'panik',
+                                music: "34. Mages Duel.mp3",
                                 dialogo: [
                                     { chi: 'panik', testo: 'Ho già tolto a Mai tutte le sue Stelle. Nella mia arena buia perderai anche il coraggio di guardare il campo.' },
                                     { io: true, testo: 'La paura è l’unica strategia che possiedi. Riconquisterò le Stelle di Mai e distruggerò il tuo Castello delle Illusioni Oscure.' }
@@ -689,6 +695,7 @@ const storyCampaignsDatabase = [
                                 label: 'Panik contro Mai', x: 235, y: 570,
                                 parallelo: true, sbloccaDopo: 'anime-2-mako',
                                 characterId: 'mai',
+                                music: "34. Mages Duel.mp3",
                                 protagonista: { name: 'Panik', title: 'Eliminatore di Pegasus', image: 'images/characters/panik.jpg', icon: '🕯️' },
                                 dialogo: [
                                     { chi: 'mai', testo: 'Non ho bisogno di vedere il tuo volto per capire che vivi d’intimidazione. Le mie Arpie non si piegheranno.' },
@@ -700,6 +707,7 @@ const storyCampaignsDatabase = [
                                 label: 'Kaiba contro Joey', x: 430, y: 545,
                                 parallelo: true, sbloccaDopo: 'anime-2-panik',
                                 characterId: 'joey',
+                                music: "34. Mages Duel.mp3",
                                 protagonista: { name: 'Seto Kaiba', title: 'In cerca di Mokuba', image: 'images/characters/setoKaiba_duelist_Kingdom.png', icon: '🐉' },
                                 dialogo: [
                                     { chi: 'joey', testo: 'Non passerai sopra di noi come se non esistessimo. Il mio Drago Nero affronterà il tuo Drago Bianco.' },
@@ -710,6 +718,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-2-bakura-isola', kind: 'duel', icona: '💍',
                                 label: 'Il Gioco delle Ombre di Bakura', x: 485, y: 430,
                                 characterId: 'bakura',
+                                music: "34. Mages Duel.mp3",
                                 dialogo: [
                                     { chi: 'bakura', testo: 'Ho rinchiuso le vostre anime nelle carte preferite. Se perdo Life Point, sarete voi a pagarne il prezzo.' },
                                     { io: true, testo: 'Lo spirito dell’Anello ha preso il corpo di Bakura. Useremo le carte in cui siamo imprigionati per salvarlo senza sacrificarci.' }
@@ -720,6 +729,7 @@ const storyCampaignsDatabase = [
                                 avatar: { kaiba: 'images/characters/setoKaiba_duelist_Kingdom.png' },
                                 label: 'Il fantasma di Kaiba', x: 610, y: 390,
                                 characterId: 'kaiba',
+                                music: "34. Mages Duel.mp3",
                                 dialogo: [
                                     // Mokuba era con Yugi quella notte: è da lì
                                     // che si allea con lui (episodi 8-10).
@@ -758,6 +768,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-2-paradox', kind: 'duel', icona: '🚪',
                                 label: 'I Fratelli Paradosso', x: 830, y: 275,
                                 characterId: 'paradoxBrothers',
+                                music: "34. Mages Duel.mp3",
                                 dialogo: [
                                     { chi: 'paradoxBrothers', testo: 'Una porta conduce al castello, l’altra di nuovo nel labirinto. Prima, però, superate il Guardiano del Cancello.' },
                                     { io: true, testo: 'Joey ed io metteremo in comune mostri e strategie. Il vostro labirinto non dividerà ciò che ci ha portati fin qui.' }
@@ -783,6 +794,8 @@ const storyCampaignsDatabase = [
                                 avatar: { kaiba: 'images/characters/setoKaiba_duelist_Kingdom.png' },
                                 label: 'Seto Kaiba', x: 1030, y: 330,
                                 characterId: 'kaiba',
+                                music: "32. Seto Kaiba (Tournament Final) HD.mp3",
+                                field: 'images/fields/mobile/torreCastelloPegasus.jpg',
                                 dialogo: [
                                     { chi: 'kaiba', testo: 'Pegasus tiene prigioniero Mokuba. Mi servono le tue Stelle per entrare nel castello e riprendermelo.' },
                                     { io: true, testo: 'Anch’io devo entrare per salvare mio nonno, Kaiba. Nessuno dei due può rinunciare a questo duello.' }
@@ -813,6 +826,7 @@ const storyCampaignsDatabase = [
                                 label: 'Téa contro Mai', x: 1110, y: 285,
                                 parallelo: true, sbloccaDopo: 'anime-2-kaiba-torre',
                                 characterId: 'mai',
+                                music: "34. Mages Duel.mp3",
                                 protagonista: { name: 'Téa Gardner', title: 'Amica di Yugi', image: 'images/characters/teaGardner.jpg', icon: '💫' },
                                 dialogo: [
                                     { chi: 'mai', testo: 'Yugi ha perso le Stelle contro Kaiba. Se vuoi conquistargliele, dovrai affrontare le mie Lady Arpia.' },
@@ -850,6 +864,8 @@ const storyCampaignsDatabase = [
                                 label: 'Pegasus contro Kaiba', x: 1190, y: 175,
                                 parallelo: true, sbloccaDopo: 'anime-2c-scena',
                                 characterId: 'kaiba',
+                                field: 'images/fields/mobile/arenaCastelloPegasus.jpg',
+                                music: "36. Heishin.mp3",
                                 protagonista: { name: 'Maximillion Pegasus', title: 'Il padrone del castello', image: 'images/characters/maximillionPegasus.jpg', icon: '👁️' },
                                 dialogo: [
                                     { chi: 'kaiba', testo: 'Non mi interessa come leggi la mente, Pegasus. Libererai Mokuba quando i miei Draghi Bianchi avranno distrutto i tuoi Toon.' },
@@ -862,6 +878,8 @@ const storyCampaignsDatabase = [
                                 id: 'anime-2c-mai', kind: 'duel', icona: '🦋',
                                 label: 'Semifinale: Mai', x: 830, y: 450,
                                 characterId: 'mai',
+                                field: 'images/fields/mobile/arenaCastelloPegasus.jpg',
+                                music: "34. Mages Duel.mp3",
                                 dialogo: [
                                     { chi: 'mai', testo: 'Mi hai restituito le Stelle senza chiedere nulla. Proprio per questo, in semifinale non accetterò che tu ti trattenga.' },
                                     { io: true, testo: 'Ti affronterò come la duellante che ha conquistato questo posto. Il nostro duello deciderà chi continuerà.' }
@@ -872,6 +890,8 @@ const storyCampaignsDatabase = [
                                 label: 'Semifinale: Bandit Keith', x: 975, y: 450,
                                 parallelo: true, sbloccaDopo: 'anime-2c-scena',
                                 characterId: 'bandit_keith',
+                                field: 'images/fields/mobile/arenaCastelloPegasus.jpg',
+                                music: "34. Mages Duel.mp3",
                                 protagonista: { name: 'Joey Wheeler', title: 'Finalista del Regno dei Duellanti', image: 'images/characters/joeyWheeler.jpg', icon: '🎲' },
                                 dialogo: [
                                     { chi: 'bandit_keith', testo: 'Ho rubato la tua carta d’ingresso. Senza Gloria della Mano del Re non puoi nemmeno sederti al tavolo.' },
@@ -882,6 +902,8 @@ const storyCampaignsDatabase = [
                                 id: 'anime-2c-joey', kind: 'duel', icona: '🎲',
                                 label: 'Finale: Joey Wheeler', x: 902, y: 385,
                                 characterId: 'joey',
+                                field: 'images/fields/mobile/arenaCastelloPegasus.jpg',
+                                music: "34. Mages Duel.mp3",
                                 dialogo: [
                                     { chi: 'joey', testo: 'Siamo arrivati in finale insieme, Yugi. Adesso niente favori: voglio vedere quanto sono cresciuto davvero.' },
                                     { io: true, testo: 'È proprio perché siamo amici che duellerò con tutto ciò che ho. Il vincitore affronterà Pegasus.' }
@@ -891,6 +913,8 @@ const storyCampaignsDatabase = [
                                 id: 'anime-2-pegasus', kind: 'duel', icona: '👁️',
                                 label: 'Maximillion Pegasus', x: 905, y: 165,
                                 characterId: 'pegasus',
+                                field: 'images/fields/mobile/arenaCastelloPegasus.jpg',
+                                music: "57. King of Games - Yugi's Final Duel.mp3",
                                 dialogo: [
                                     { chi: 'pegasus', testo: 'Il mio Occhio del Millennio vede ogni carta nella tua mente, Yugi-boy. Toon World farà il resto.' },
                                     { io: true, testo: 'Non duello da solo. Alterneremo le nostre menti e combatteremo insieme per liberare nonno, Mokuba e Kaiba.' }
@@ -943,6 +967,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-3-seeker', kind: 'duel', icona: '🕶️',
                                 label: 'Seeker', x: 350, y: 700,
                                 characterId: 'seeker',
+                                music: '30. Preliminaries.mp3',
                                 dialogo: [
                                     { chi: 'seeker', testo: 'Joey ha già perso il suo Drago Nero Occhi Rossi. Adesso scommetti il Mago Nero: Exodia vuole una preda più rara.' },
                                     { io: true, testo: 'Le carte contraffatte non fanno di te un duellante. Libererò il Drago Nero e fermerò la tua caccia.' }
@@ -956,6 +981,7 @@ const storyCampaignsDatabase = [
                                 label: 'Seeker contro Joey', x: 405, y: 765,
                                 parallelo: true, sbloccaDopo: 'anime-3-tavola-scena',
                                 characterId: 'joey',
+                                music: '30. Preliminaries.mp3',
                                 protagonista: { name: 'Seeker', title: 'Cacciatore Raro', image: 'images/characters/seeker.jpg', icon: '🕶️' },
                                 dialogo: [
                                     { chi: 'joey', testo: 'Il Drago Nero Occhi Rossi non è merce per i Cacciatori Rari. Ti batterò prima che tu possa mettere insieme tutti i pezzi.' },
@@ -967,6 +993,7 @@ const storyCampaignsDatabase = [
                                 label: 'Espa Roba', x: 510, y: 610,
                                 parallelo: true, sbloccaDopo: 'anime-3-seeker',
                                 characterId: 'espaRoba',
+                                music: '30. Preliminaries.mp3',
                                 protagonista: { name: 'Joey Wheeler', title: 'Duellante di Battle City', image: 'images/characters/joeyWheeler.jpg', icon: '🎲' },
                                 dialogo: [
                                     { chi: 'espaRoba', testo: 'I miei poteri extrasensoriali mi mostrano ogni carta che hai in mano. Jinzo metterà a tacere le tue Trappole.' },
@@ -979,6 +1006,7 @@ const storyCampaignsDatabase = [
                                 label: 'Joey contro Mako', x: 565, y: 500,
                                 parallelo: true, sbloccaDopo: 'anime-3-strings',
                                 characterId: 'mako',
+                                music: '30. Preliminaries.mp3',
                                 protagonista: { name: 'Joey Wheeler', title: 'Duellante di Battle City', image: 'images/characters/joeyWheeler.jpg', icon: '🎲' },
                                 dialogo: [
                                     { chi: 'mako', testo: 'Combatto per ritrovare mio padre e il mare mi presta ancora una volta la sua forza. Metti in palio Jinzo, Joey.' },
@@ -992,6 +1020,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-3-arkana', kind: 'duel', icona: '🎭',
                                 label: 'Arkana', x: 420, y: 460,
                                 characterId: 'arkana',
+                                music: '30. Preliminaries.mp3',
                                 dialogo: [
                                     { chi: 'arkana', testo: 'Marik mi restituirà Catherine quando il mio Mago Nero avrà sconfitto il tuo. Le seghe sotto i nostri piedi renderanno definitiva la sconfitta.' },
                                     { io: true, testo: 'Marik ti ha ingannato e tu hai maltrattato le tue carte. Ti mostrerò quale Mago Nero possiede davvero la fiducia del suo duellante.' }
@@ -1004,6 +1033,7 @@ const storyCampaignsDatabase = [
                                 label: 'Joey contro Weevil', x: 525, y: 380,
                                 parallelo: true, sbloccaDopo: 'anime-3-arkana',
                                 characterId: 'weevil',
+                                music: '30. Preliminaries.mp3',
                                 protagonista: { name: 'Joey Wheeler', title: 'Duellante di Battle City', image: 'images/characters/joeyWheeler.jpg', icon: '🎲' },
                                 dialogo: [
                                     { chi: 'weevil', testo: 'Ti ricordi di me, Joey? Sono quello che ha buttato in mare l’Exodia di Yugi. Stavolta a perdere una carta sarai tu, e i miei insetti hanno fame.' },
@@ -1014,6 +1044,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-3-strings', kind: 'duel', icona: '🧵',
                                 label: 'Strings', x: 270, y: 300,
                                 characterId: 'strings',
+                                music: '30. Preliminaries.mp3',
                                 dialogo: [
                                     { chi: 'strings', testo: '...' },
                                     { nome: 'Marik', icona: '☥', testo: 'Questo burattino non ha bisogno di parlare. Nella sua mano cresce il potere di Slifer il Drago del Cielo.' },
@@ -1024,6 +1055,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-3-lumis', kind: 'duel', icona: '☀️',
                                 label: 'Lumis', x: 530, y: 230,
                                 characterId: 'lumis',
+                                music: '30. Preliminaries.mp3',
                                 dialogo: [
                                     { chi: 'lumis', testo: 'Sul tetto non c’è spazio per fuggire. La Maschera della Luce sigillerà i tuoi tributi.' },
                                     { io: true, testo: 'Una maschera può nascondere un volto, non le intenzioni di chi la indossa.' }
@@ -1033,6 +1065,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-3-umbra', kind: 'duel', icona: '🌘',
                                 label: 'Umbra', x: 720, y: 300,
                                 characterId: 'umbra',
+                                music: '30. Preliminaries.mp3',
                                 dialogo: [
                                     { chi: 'umbra', testo: 'Lumis ha chiuso la via alla luce. Ora la mia Bestia Mascherata completerà il doppio duello.' },
                                     { io: true, testo: 'Avete separato il campo, ma avete sottovalutato il legame tra me e Kaiba.' }
@@ -1042,6 +1075,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-3-joey-controllato', kind: 'duel', icona: '⚓',
                                 label: 'Il duello dell’amicizia', x: 675, y: 400,
                                 characterId: 'joey',
+                                music: '36. Heishin.mp3',
                                 dialogo: [
                                     { nome: 'Marik', icona: '☥', testo: 'Joey è sotto il mio controllo. Vincerai soltanto condannando il tuo migliore amico a essere trascinato in fondo alla baia.' },
                                     { io: true, testo: 'Non combatterò contro Joey come se fosse un nemico. Userò il duello per raggiungerlo e spezzare il tuo controllo.' }
@@ -1087,6 +1121,8 @@ const storyCampaignsDatabase = [
                                 id: 'anime-3-bakura', kind: 'duel', icona: '💍',
                                 label: 'Ryo Bakura', x: 1185, y: 115,
                                 characterId: 'bakura',
+                                music: '31. Finals.mp3',
+                                field: 'images/fields/mobile/dirigibileKaibaCorp.jpg',
                                 dialogo: [
                                     { chi: 'bakura', testo: 'Il mio Tavolo del Destino scandirà le cinque lettere della tua sconfitta. Nei quarti voglio il tuo Puzzle e il potere di Marik.' },
                                     { io: true, testo: 'Lo spirito dell’Anello sta usando ancora il corpo di Bakura. Vincerò prima che il Gioco delle Ombre consumi il mio amico.' }
@@ -1097,6 +1133,8 @@ const storyCampaignsDatabase = [
                                 label: 'Bakura contro Bonz', x: 900, y: 575,
                                 parallelo: true, sbloccaDopo: 'anime-3-marik-molo',
                                 characterId: 'bonz',
+                                music: '31. Finals.mp3',
+                                field: 'images/fields/mobile/dirigibileKaibaCorp.jpg',
                                 protagonista: { name: 'Yami Bakura', title: 'Lo spirito dell’Anello', image: 'images/characters/bakura.jpg', icon: '💍' },
                                 dialogo: [
                                     { chi: 'bonz', testo: 'Abbiamo tre Carte Localizzatrici e non le cederemo a uno sconosciuto incontrato nel cimitero.' },
@@ -1112,6 +1150,8 @@ const storyCampaignsDatabase = [
                                 label: 'Marik contro Bakura', x: 1560, y: 185,
                                 parallelo: true, sbloccaDopo: 'anime-3-mai-marik',
                                 characterId: 'bakura',
+                                music: '31. Finals.mp3',
+                                field: 'images/fields/mobile/dirigibileKaibaCorp.jpg',
                                 protagonista: { name: 'Yami Marik', title: 'Il Padrone delle Ombre', image: 'images/characters/yamiMarik.jpg', icon: '🌑' },
                                 dialogo: [
                                     { chi: 'bakura', testo: 'Il ragazzo mi ha rivelato il segreto di Ra. Quando avrò sconfitto la tua parte oscura, prenderò anche la Barra del Millennio.' },
@@ -1123,6 +1163,8 @@ const storyCampaignsDatabase = [
                                 label: 'Ishizu Ishtar', x: 1250, y: 215,
                                 parallelo: true, sbloccaDopo: 'anime-3-bakura',
                                 characterId: 'ishizu',
+                                music: '31. Finals.mp3',
+                                field: 'images/fields/mobile/dirigibileKaibaCorp.jpg',
                                 protagonista: { name: 'Seto Kaiba', title: 'Organizzatore di Battle City', image: 'images/characters/setoKaiba.jpg', icon: '🐉' },
                                 dialogo: [
                                     { chi: 'ishizu', testo: 'La Collana del Millennio mi ha già mostrato la conclusione: Obelisk provocherà la tua sconfitta e io fermerò Marik.' },
@@ -1134,6 +1176,8 @@ const storyCampaignsDatabase = [
                                 label: 'Odion', x: 1350, y: 245,
                                 parallelo: true, sbloccaDopo: 'anime-3-bakura',
                                 characterId: 'odion',
+                                music: '31. Finals.mp3',
+                                field: 'images/fields/mobile/dirigibileKaibaCorp.jpg',
                                 protagonista: { name: 'Joey Wheeler', title: 'Finalista di Battle City', image: 'images/characters/joeyWheeler.jpg', icon: '🎲' },
                                 dialogo: [
                                     { chi: 'odion', testo: 'Per ordine del vero Marik, porterò il suo nome e il suo volto durante questo quarto di finale.' },
@@ -1148,6 +1192,8 @@ const storyCampaignsDatabase = [
                                 label: 'Marik contro Mai', x: 1460, y: 225,
                                 parallelo: true, sbloccaDopo: 'anime-3-bakura',
                                 characterId: 'mai',
+                                music: '31. Finals.mp3',
+                                field: 'images/fields/mobile/dirigibileKaibaCorp.jpg',
                                 protagonista: { name: 'Yami Marik', title: 'Il Padrone delle Ombre', image: 'images/characters/yamiMarik.jpg', icon: '🌑' },
                                 dialogo: [
                                     { chi: 'mai', testo: 'Non sono arrivata alle finali per essere una comparsa. Prenderò Ra e dimostrerò che non ho bisogno di nessuno che mi salvi.' },
@@ -1226,6 +1272,8 @@ const storyCampaignsDatabase = [
                                 id: 'anime-6-gansley', kind: 'duel', icona: '🎩',
                                 label: 'Gansley', x: 250, y: 250,
                                 characterId: 'gansley',
+                                field: 'images/fields/mobile/campoAcquatico.jpg',
+                                music: '35. High Mages.mp3',
                                 dialogo: [
                                     { chi: 'gansley', testo: 'Nel mondo virtuale il Deck Master combatte al tuo fianco. Il mio Guerriero degli Abissi trasformerà ogni tua scelta in un costo.' },
                                     { io: true, testo: 'Le vostre regole tengono prigioniere le anime dei miei amici. Le imparerò e userò il mio Deck Master per liberarli.' }
@@ -1236,6 +1284,8 @@ const storyCampaignsDatabase = [
                                 label: 'Johnson', x: 330, y: 590,
                                 parallelo: true, sbloccaDopo: 'anime-6-scena',
                                 characterId: 'johnson',
+                                field: 'images/fields/mobile/rovineAntiche.jpg',
+                                music: '35. High Mages.mp3',
                                 protagonista: { name: 'Joey Wheeler', title: 'Prigioniero del mondo virtuale', image: 'images/characters/joeyWheeler.jpg', icon: '🎲' },
                                 dialogo: [
                                     { chi: 'johnson', testo: 'Ero il miglior avvocato della KaibaCorp. Qui sono giudice, giuria e duellante, e la sentenza è già scritta.' },
@@ -1247,6 +1297,8 @@ const storyCampaignsDatabase = [
                                 label: 'Nesbitt', x: 760, y: 830,
                                 parallelo: true, sbloccaDopo: 'anime-6-scena',
                                 characterId: 'nesbitt',
+                                field: 'images/fields/mobile/industriaKaibaCorp.jpg',
+                                music: '35. High Mages.mp3',
                                 // Nell'anime è un tre contro uno: Tristan cade per
                                 // primo, e a battere Nesbitt sono Duke e Serenity.
                                 // Si gioca con Serenity, che chiude il duello.
@@ -1262,6 +1314,8 @@ const storyCampaignsDatabase = [
                                 label: 'Crump', x: 1270, y: 440,
                                 parallelo: true, sbloccaDopo: 'anime-6-scena',
                                 characterId: 'crump',
+                                field: 'images/fields/mobile/campoGhiaccio.jpg',
+                                music: '35. High Mages.mp3',
                                 protagonista: { name: 'Téa Gardner', title: 'Prigioniera del mondo virtuale', image: 'images/characters/teaGardner.jpg', icon: '💫' },
                                 dialogo: [
                                     { chi: 'crump', testo: 'Nel mio regno di ghiaccio i pinguini comandano e il tuo corpo sarà il biglietto con cui tornerò nel mondo reale.' },
@@ -1273,6 +1327,8 @@ const storyCampaignsDatabase = [
                                 label: 'Lector', x: 1230, y: 690,
                                 parallelo: true, sbloccaDopo: 'anime-6-scena',
                                 characterId: 'lector',
+                                field: 'images/fields/mobile/citta.jpg',
+                                music: '35. High Mages.mp3',
                                 protagonista: { name: 'Seto Kaiba', title: 'Presidente della KaibaCorp', image: 'images/characters/setoKaiba.jpg', icon: '🐉' },
                                 dialogo: [
                                     { chi: 'lector', testo: 'Hai estromesso noi Cinque dalla KaibaCorp. Con Jinzo come Deck Master prenderò il tuo corpo e anche l’azienda.' },
@@ -1286,6 +1342,8 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'anime-6-cinque-uniti', kind: 'duel', icona: '🐲',
                                 label: 'I Cinque uniti', x: 905, y: 575,
+                                field: 'images/fields/mobile/campoPrato.jpg',
+                                music: '35. High Mages.mp3',
                                 characterId: 'gansley',
                                 dialogo: [
                                     { nome: 'I Cinque', icona: '🐲', testo: 'Separati ci avete battuti. Uniti siamo il Drago a Cinque Teste, e nessun mostro con un solo cuore può fermarlo.' },
@@ -1310,6 +1368,8 @@ const storyCampaignsDatabase = [
                                 id: 'anime-6-noah', kind: 'duel', icona: '🧊',
                                 label: 'Noah Kaiba', x: 775, y: 230,
                                 characterId: 'noah',
+                                field: 'images/fields/mobile/campoForesta.jpg',
+                                music: '35. High Mages.mp3',
                                 dialogo: [
                                     { chi: 'noah', testo: 'Ho già sconfitto Seto e trasformato Mokuba in pietra. Con il potere di Shinato assorbirò anche le anime che hai liberato.' },
                                     { io: true, testo: 'Riprenderò i Life Point rimasti a Kaiba e continuerò il suo duello. Tutte le anime che hai imprigionato combatteranno con me.' }
@@ -1324,6 +1384,8 @@ const storyCampaignsDatabase = [
                                 label: 'Noah contro Kaiba', x: 920, y: 210,
                                 parallelo: true, sbloccaDopo: 'anime-6-anime-prigioni',
                                 characterId: 'kaiba',
+                                field: 'images/fields/mobile/campoForesta.jpg',
+                                music: '35. High Mages.mp3',
                                 protagonista: { name: 'Noah Kaiba', title: 'Il ragazzo del mondo virtuale', image: 'images/characters/noah.jpg', icon: '🧊' },
                                 dialogo: [
                                     { chi: 'kaiba', testo: 'Non sei mio fratello e non sei il mio successore. Libera Mokuba: regoleremo questa faccenda nel duello che volevi.' },
@@ -1351,6 +1413,8 @@ const storyCampaignsDatabase = [
                                 id: 'anime-6-kaiba-gozaburo', kind: 'duel', icona: '🏢',
                                 label: 'Kaiba contro Gozaburo', x: 1250, y: 175,
                                 characterId: 'gozaburo',
+                                field: 'images/fields/mobile/mondoVirtualeArenaGozaburo.jpg',
+                                music: '43. Darknite-Nitemare (3D).mp3',
                                 protagonista: { name: 'Seto Kaiba', title: 'Presidente della KaibaCorp', image: 'images/characters/setoKaiba.jpg', icon: '🐉' },
                                 dialogo: [
                                     { chi: 'gozaburo', testo: 'Ti ho insegnato tutto, Seto: a schiacciare chi è debole, a non perdonare. Exodia Necross non si può distruggere, come il mio impero.' },
@@ -1410,6 +1474,8 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'anime-4b-battaglia-reale', kind: 'duel', icona: '⚔️',
                                 label: 'La battaglia a quattro', x: 1300, y: 615,
+                                field: 'images/fields/mobile/torreDeiDuelli.jpg',
+                                music: '37. Seto.mp3',
                                 characterId: 'marik',
                                 dialogo: [
                                     { chi: 'kaiba', testo: 'Quattro duellanti, un campo solo. Ognuno attacca chi vuole, e nessuno fa favori a nessuno.' },
@@ -1425,6 +1491,8 @@ const storyCampaignsDatabase = [
                                 label: 'Semifinale: Marik contro Joey', x: 1180, y: 705,
                                 parallelo: true, sbloccaDopo: 'anime-4b-battaglia-reale',
                                 characterId: 'joey',
+                                field: 'images/fields/mobile/torreDeiDuelli.jpg',
+                                music: '37. Seto.mp3',
                                 protagonista: { name: 'Yami Marik', title: 'Il Padrone delle Ombre', image: 'images/characters/yamiMarik.jpg', icon: '🌑' },
                                 dialogo: [
                                     { chi: 'joey', testo: 'Puoi trasformare il duello in un incubo, ma non mi farai abbandonare. Ho promesso a Yugi che sarei arrivato fino in fondo.' },
@@ -1450,6 +1518,8 @@ const storyCampaignsDatabase = [
                                 id: 'anime-4-kaiba', kind: 'duel', icona: '🐉',
                                 label: 'Seto Kaiba', x: 995, y: 520,
                                 characterId: 'kaiba',
+                                field: 'images/fields/mobile/torreDeiDuelliColosseo.jpg',
+                                music: '32. Seto Kaiba (Tournament Final) HD.mp3',
                                 dialogo: [
                                     { chi: 'kaiba', testo: 'Obelisk contro Slifer. Il vincitore prenderà la carta divina dello sconfitto e affronterà Marik nella finale che ho costruito.' },
                                     { io: true, testo: 'La tavola egizia raffigura questo scontro da tremila anni. Oggi non sarà il passato a deciderne il risultato.' }
@@ -1463,6 +1533,8 @@ const storyCampaignsDatabase = [
                                 label: 'Terzo posto: Kaiba contro Joey', x: 1010, y: 425,
                                 parallelo: true, sbloccaDopo: 'anime-4-kaiba',
                                 characterId: 'joey',
+                                field: 'images/fields/mobile/torreDeiDuelli.jpg',
+                                music: '32. Seto Kaiba (Tournament Final) HD.mp3',
                                 protagonista: { name: 'Seto Kaiba', title: 'Organizzatore di Battle City', image: 'images/characters/setoKaiba.jpg', icon: '🐉' },
                                 dialogo: [
                                     { chi: 'joey', testo: 'Mi sono appena svegliato e mi fa male tutto, ma questo duello non me lo perdo, Kaiba. Da quando mi hai chiamato dilettante aspetto questo momento.' },
@@ -1485,6 +1557,8 @@ const storyCampaignsDatabase = [
                                 id: 'anime-4-marik', kind: 'duel', icona: '🌑',
                                 label: 'Marik Ishtar', x: 790, y: 220,
                                 characterId: 'marik',
+                                field: 'images/fields/mobile/torreDeiDuelliShadow.jpg',
+                                music: "57. King of Games - Yugi's Final Duel.mp3",
                                 dialogo: [
                                     { chi: 'marik', testo: 'Ra diventerà una Fenice immortale e consumerà ogni ricordo del Faraone. La mia parte debole sparirà insieme a lui.' },
                                     { io: true, testo: 'Combatterò per Joey, Mai e per il vero Marik che hai imprigionato. I tre Dei porranno fine al tuo Gioco delle Ombre.' }

@@ -30,6 +30,9 @@
         'DIVINO': '神'
     };
 
+    // Retro Duel Monsters in stile anime di Gaia206. La copia locale evita
+    // dipendenze da DeviantArt e conserva il gioco utilizzabile offline.
+    // Fonte: https://www.deviantart.com/gaia206/art/Yu-Gi-Oh-Duel-Monsters-Back-Card-335785397
     const CARD_BACK_IMAGE = 'images/cards/backCard.jpg';
     const CARD_PILE_IMAGE = 'images/cards/backPilaCards.jpg';
 

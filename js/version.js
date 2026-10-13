@@ -32,6 +32,10 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.3.13 — I duelli della Storia anime usano arene e musiche specifiche
+ *   per ogni arco narrativo e per i suoi scontri principali; nuovo retro
+ *   Duel Monsters e stepper delle fasi più leggero, epico e responsive.
+ *
  * 1.3.12 — La Cartoteca usa un ordine di catalogo stabile: Yu-Gi-Oh per ID
  *   crescente, senza rinumerazioni, e l'intero set Grande Guerra in fondo.
  *
@@ -683,4 +687,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.3.12';
+window.GAME_VERSION = '1.3.13';
