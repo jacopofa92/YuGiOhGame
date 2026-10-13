@@ -472,7 +472,8 @@
 // v250: ripresa sicura del duello dopo sospensione della WebView mobile.
 // v255: versione 1.3.16, bordo nero sul fronte delle carte.
 // v256: versione 1.3.17, percorso e livelli dei titoli nel Profilo.
-const CACHE_NAME = 'ygo-duel-arena-v256';
+// v257: versione 1.3.18, distruzione dei mostri coperti sempre in Difesa.
+const CACHE_NAME = 'ygo-duel-arena-v257';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

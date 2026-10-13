@@ -3493,11 +3493,25 @@
         .card.destroying {
             animation: destroyCard 0.6s ease forwards;
         }
+        /* La distruzione generica parte da rotate(0deg): su un mostro in
+           Difesa questo annullava per 600 ms la sua rotate(90deg), dando
+           l'impressione che l'attacco lo avesse spostato in Attacco prima
+           di distruggerlo. Il keyframe gemello conserva invece sempre
+           l'orientamento orizzontale, anche quando la carta era coperta. */
+        .card.defense-pos.destroying {
+            animation-name: destroyCardDefense;
+        }
         @keyframes destroyCard {
             0% { transform: scale(1) rotate(0deg); opacity: 1; }
             30% { transform: scale(1.08) rotate(-4deg); filter: brightness(1.4); }
             60% { transform: scale(0.9) rotate(8deg); opacity: 0.7; }
             100% { transform: scale(0.2) rotate(20deg); opacity: 0; }
+        }
+        @keyframes destroyCardDefense {
+            0% { transform: rotate(90deg) scale(1); opacity: 1; }
+            30% { transform: rotate(86deg) scale(1.08); filter: brightness(1.4); }
+            60% { transform: rotate(98deg) scale(0.9); opacity: 0.7; }
+            100% { transform: rotate(110deg) scale(0.2); opacity: 0; }
         }
         .field-slot.impact {
             animation: fieldImpact 0.45s ease;
