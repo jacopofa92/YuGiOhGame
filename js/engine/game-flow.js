@@ -982,6 +982,8 @@ function renderChainStack(resolvingLink) {
 }
 
 function renderFields() {
+    if (window.CardRenderer) CardRenderer.iniziaImmaginiDifferite();
+    try {
     const createRow = (owner, slots, slotType, specialConfig, isMonsterRow, isMirrored = false) => {
         const row = document.createElement('div');
         row.className = 'field-row';
@@ -1269,6 +1271,13 @@ function renderFields() {
     riconciliaBoard(playerBoard, righeGiocatore);
     riconciliaBoard(botBoard, righeBot);
     syncPhaseStepperToFieldWidth();
+    } finally {
+        if (window.CardRenderer) CardRenderer.terminaImmaginiDifferite();
+    }
+    if (window.CardRenderer) {
+        CardRenderer.caricaImmaginiDifferite(document.getElementById('playerFieldBoard'));
+        CardRenderer.caricaImmaginiDifferite(document.getElementById('botFieldBoard'));
+    }
 }
 
 /**
@@ -2010,6 +2019,8 @@ window.addEventListener('resize', () => {
 function renderPlayerHand() {
     const handEl = document.getElementById('playerHand');
     if (!handEl) return;
+    if (window.CardRenderer) CardRenderer.iniziaImmaginiDifferite();
+    try {
     const nuoveCarte = [];
     gameState.playerHand.forEach((card, index) => {
         const cardEl = createCardElement(card);
@@ -2050,6 +2061,10 @@ function renderPlayerHand() {
     });
     reconcileHandCards(handEl, nuoveCarte);
     fitHandCardsInOneRow(handEl);
+    } finally {
+        if (window.CardRenderer) CardRenderer.terminaImmaginiDifferite();
+    }
+    if (window.CardRenderer) CardRenderer.caricaImmaginiDifferite(handEl);
 }
 
 /**
@@ -2070,6 +2085,8 @@ function renderPlayerHand() {
 function renderBotHand() {
     const handEl = document.getElementById('botHand');
     if (!handEl) return;
+    if (window.CardRenderer) CardRenderer.iniziaImmaginiDifferite();
+    try {
     const revealed = !!gameState.bothHandsRevealed;
     const nuoveCarte = [];
     gameState.botHand.forEach((card) => {
@@ -2079,6 +2096,10 @@ function renderBotHand() {
     });
     reconcileHandCards(handEl, nuoveCarte);
     fitHandCardsInOneRow(handEl);
+    } finally {
+        if (window.CardRenderer) CardRenderer.terminaImmaginiDifferite();
+    }
+    if (window.CardRenderer) CardRenderer.caricaImmaginiDifferite(handEl);
 }
 
 // createCardElement(card, isFaceDown, position) e getCardImagePath(card)

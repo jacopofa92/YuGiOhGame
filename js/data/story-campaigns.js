@@ -1767,6 +1767,19 @@ const storyCampaignsDatabase = [
                                     { chi: 'yugiMuto', testo: 'Addio, Faraone. Grazie di tutto.' },
                                     { testo: 'Il tempio crolla, e gli Oggetti del Millennio sprofondano con lui. È finita: il Re dei Giochi ha trovato la pace.' }
                                 ]
+                            },
+                            {
+                                id: 'anime-5-aeroporto', kind: 'scene', icona: '✈️',
+                                label: 'Il viaggio continua', x: 1320, y: 900,
+                                chi: 'Yugi Muto', chiId: 'yugiMuto',
+                                testo: [
+                                    { testo: 'All’aeroporto del Cairo, il gruppo si prepara a tornare a Domino. Atem non è più con loro, ma il silenzio non pesa come una sconfitta.' },
+                                    { chi: 'teaGardner', testo: 'Mi mancherà. Però credo che sia questo che voleva: vederci andare avanti.' },
+                                    { chi: 'joey', testo: 'E allora andiamo avanti insieme. Ma appena torniamo a Domino voglio la rivincita, Yugi!' },
+                                    { chi: 'tristan', testo: 'Prima proviamo a non perdere l’aereo. Sarebbe un finale molto meno epico.' },
+                                    { chi: 'yugiMuto', testo: 'Atem ha trovato la sua strada. Ora tocca a noi continuare la nostra.' },
+                                    { testo: 'L’aereo lascia l’Egitto mentre il sole scende sul deserto. Il viaggio del Faraone è concluso; quello di Yugi e dei suoi amici continua.' }
+                                ]
                             }
                         ]
                     }
@@ -1822,7 +1835,8 @@ const storyCampaignsDatabase = [
             { id: 'anime-fedelta-battaglia-reale', dalla: 'principali-inserite', area: 'anime-area-battlecity2', ids: ['anime-4b-battaglia-reale'] },
             { id: 'anime-fedelta-epilogo-bc', dalla: 'principali-fine', area: 'anime-area-battlecity2', ids: ['anime-4b-epilogo'] },
             { id: 'anime-fedelta-kisara', dalla: 'principali-inserite', area: 'anime-area-cerimoniale', ids: ['anime-9-kisara'] },
-            { id: 'anime-fedelta-addio', dalla: 'principali-fine', area: 'anime-area-cerimoniale', ids: ['anime-5-addio'] }
+            { id: 'anime-fedelta-addio', dalla: 'principali-fine', area: 'anime-area-cerimoniale', ids: ['anime-5-addio'] },
+            { id: 'anime-fedelta-aeroporto', dalla: 'principali-fine', area: 'anime-area-cerimoniale', ids: ['anime-5-aeroporto'] }
         ],
         // Premio per aver finito la campagna. Accreditato una volta sola
         // (vedi story-progress.js): rigiocarla è permesso, ripagarla no.

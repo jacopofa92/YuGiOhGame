@@ -32,6 +32,10 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.3.14 — Il retro Duel Monsters arrotonda anche la cornice marrone;
+ *   il duello non decodifica più immagini di carte provvisorie a ogni
+ *   ridisegno e il finale anime prosegue fino all'aeroporto del Cairo.
+ *
  * 1.3.13 — I duelli della Storia anime usano arene e musiche specifiche
  *   per ogni arco narrativo e per i suoi scontri principali; nuovo retro
  *   Duel Monsters e stepper delle fasi più leggero, epico e responsive.
@@ -687,4 +691,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.3.13';
+window.GAME_VERSION = '1.3.14';

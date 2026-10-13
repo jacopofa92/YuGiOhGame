@@ -34,6 +34,43 @@
     // dipendenze da DeviantArt e conserva il gioco utilizzabile offline.
     // Fonte: https://www.deviantart.com/gaia206/art/Yu-Gi-Oh-Duel-Monsters-Back-Card-335785397
     const CARD_BACK_IMAGE = 'images/cards/backCard.jpg';
+    let caricamentoImmaginiDifferito = 0;
+
+    /**
+     * Durante la riconciliazione del duello costruiamo anche nodi provvisori
+     * che, nella grande maggioranza dei casi, vengono subito scartati perché
+     * la carta a schermo non è cambiata. Assegnare comunque `src` a quelle
+     * immagini costringeva Chromium a programmarne decodifica e compositing:
+     * dopo molti updateUI il lavoro si accodava e produceva il lampo sporadico
+     * segnalato dall'utente. Il nodo riceve quindi soltanto il percorso come
+     * dato; il `src` viene assegnato DOPO la riconciliazione, solo ai nodi
+     * realmente entrati nel documento.
+     */
+    function assegnaSorgenteImmagine(img, percorso) {
+        if (caricamentoImmaginiDifferito > 0) img.dataset.cardDeferredSrc = percorso;
+        else img.src = percorso;
+    }
+
+    function iniziaImmaginiDifferite() {
+        caricamentoImmaginiDifferito++;
+    }
+
+    function terminaImmaginiDifferite() {
+        caricamentoImmaginiDifferito = Math.max(0, caricamentoImmaginiDifferito - 1);
+    }
+
+    function caricaImmaginiDifferite(radice) {
+        if (!radice) return;
+        radice.querySelectorAll('img[data-card-deferred-src]').forEach((img) => {
+            const percorso = img.dataset.cardDeferredSrc;
+            delete img.dataset.cardDeferredSrc;
+            img.src = percorso;
+            // Con una risorsa già decodificata Chromium può avere complete=true
+            // nello stesso turno e non ridipingere il fallback: rendiamola
+            // visibile subito, come fanno già i tre renderer qui sotto.
+            if (img.complete && img.naturalWidth > 0 && typeof img.onload === 'function') img.onload();
+        });
+    }
     const CARD_PILE_IMAGE = 'images/cards/backPilaCards.jpg';
 
     // Le carte che Yu-Gi-Oh NON sono (set storici 'ww1'/'ww2', carte
@@ -255,7 +292,7 @@
         img.loading = 'lazy';
         img.onload = () => el.classList.add('has-image');
         img.onerror = () => img.remove();
-        img.src = CARD_BACK_IMAGE;
+        assegnaSorgenteImmagine(img, CARD_BACK_IMAGE);
         // renderFields() ricrea l'intero Terreno da zero ad ogni cambio
         // fase (anche per carte il cui aspetto non è affatto cambiato):
         // senza questo controllo, la STESSA immagine già mostrata un
@@ -346,7 +383,7 @@
                 if (artIcon) setTimeout(() => artIcon.remove(), 260);
             };
             artImg.onerror = () => artImg.remove();
-            artImg.src = getCardImagePath(card);
+            assegnaSorgenteImmagine(artImg, getCardImagePath(card));
             // Vedi il commento gemello in applyCardBackVisual() più sopra:
             // stesso sfarfallio, stessa causa (ricreazione totale ad ogni
             // renderFields()), stesso rimedio — se il browser ha già
@@ -371,7 +408,7 @@
         img.loading = 'lazy';
         img.onload = () => el.classList.add('has-image');
         img.onerror = () => img.remove();
-        img.src = getCardImagePath(card);
+        assegnaSorgenteImmagine(img, getCardImagePath(card));
         // Vedi il commento gemello in applyCardBackVisual() più sopra.
         if (img.complete && img.naturalWidth > 0) el.classList.add('has-image');
         el.insertBefore(img, el.firstChild);
@@ -461,7 +498,7 @@
         pileImg.loading = 'lazy';
         pileImg.onload = () => slotEl.classList.add('has-pile-image');
         pileImg.onerror = () => pileImg.remove();
-        pileImg.src = CARD_PILE_IMAGE;
+        assegnaSorgenteImmagine(pileImg, CARD_PILE_IMAGE);
         slotEl.appendChild(pileImg);
     }
 
@@ -746,7 +783,10 @@
         renderCardBack,
         appendDeckPile,
         playFlipReveal,
-        rendiCartaViva
+        rendiCartaViva,
+        iniziaImmaginiDifferite,
+        terminaImmaginiDifferite,
+        caricaImmaginiDifferite
     };
     // Alias globali: così le pagine/i file esistenti che già chiamano
     // createCardElement(...)/getCardImagePath(...) senza prefisso

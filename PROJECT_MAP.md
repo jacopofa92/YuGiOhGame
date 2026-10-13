@@ -2,6 +2,19 @@
 
 Ultimo aggiornamento verificato: 2026-10-13.
 
+## Retro carta, flicker residuo ed epilogo anime (2026-10-13)
+
+Il retro Duel Monsters usa lo stesso raggio sia sul bordo esterno sia sulla
+cornice marrone interna. Il flicker residuo non dipendeva più dalla sostituzione
+dei nodi visibili: a ogni `updateUI` venivano comunque creati nodi provvisori con
+un `src`, poi scartati dalla riconciliazione. Chromium ne accodava ugualmente la
+decodifica e il compositing. `CardRenderer` ora differisce le sorgenti durante i
+render di campo e mani e le assegna soltanto ai nodi effettivamente entrati nel
+documento; `flicker-duello-prolungato` verifica anche zero assegnazioni inutili
+in 80 ridisegni invariati. La campagna anime termina infine con una scena
+discorsiva all'aeroporto del Cairo, nella parte bassa della mappa finale, con
+migrazione dedicata dei salvataggi.
+
 ## Flicker progressivo del duello (2026-10-13)
 
 La riconciliazione di campo e mani usa una firma immutabile dello stato al
