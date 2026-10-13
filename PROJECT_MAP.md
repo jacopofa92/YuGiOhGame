@@ -1457,6 +1457,15 @@ Quinto gruppo:
   all'area; vittoria e sconfitta sono coperte dal test
   `storia-continua-fine-duello.spec.js`, che verifica anche `torneo=<area>`.
 
+## Ripresa del duello su mobile
+
+Se Android sospende la WebView a schermo spento, `pageshow` e il ritorno a
+`visibilityState=visible` ripristinano l'interazione senza cambiare lo stato
+del duello: un trascinamento d'attacco rimasto senza puntatore viene annullato,
+una decisione ancora pendente viene riproposta con la callback originale e un
+video di Evocazione in pausa viene riavviato oppure chiuso liberando il lock.
+Lo spec `ripresa-duello-schermo` copre il blocco osservato in Battle Phase.
+
 ## Editor delle mappe Storia
 
 `js/dev/story-map-editor.js` è disponibile ai soli amministratori e lavora

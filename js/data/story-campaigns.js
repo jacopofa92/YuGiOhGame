@@ -15,8 +15,9 @@
  *
  * UNA TAPPA è di tre specie:
  *   - `kind: 'duel'`   — un duello. `characterId` (js/data/characters-db.js),
- *     `difficulty` ('Medio' | 'Difficile'), e facoltativamente `field` e
- *     `music` per l'ambientazione.
+ *     e facoltativamente `field` e `music` per l'ambientazione.
+ *     `difficulty` si usa soltanto nelle campagne `senzaLivelli`: nelle
+ *     altre vale la difficoltà scelta una volta all'inizio della Storia.
  *   - `kind: 'scene'`  — una schermata di racconto, nessun duello: `testo`
  *     (una o più righe) e facoltativamente `chi` (chi parla). Serve a dare
  *     respiro fra un duello e l'altro e a spiegare perché si sta
@@ -334,7 +335,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-1-allenamento-solomon', kind: 'duel', icona: '🎴',
                                 label: 'Allenamento con il nonno', x: 198, y: 535,
                                 parallelo: true, sbloccaDopo: 'anime-1-scena',
-                                characterId: 'solomonMuto', difficulty: 'Facile',
+                                characterId: 'solomonMuto',
                                 protagonista: { name: 'Yugi Muto', title: 'Il ragazzo del Puzzle', image: 'images/characters/yugiMuto.jpg', icon: '🧩' },
                                 field: 'images/fields/mobile/citta.jpg',
                                 music: '07. Preliminary Face-Off.mp3',
@@ -374,7 +375,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-1-amichevole-joey', kind: 'duel', icona: '🎲',
                                 label: 'Amichevole con Joey', x: 325, y: 245,
                                 parallelo: true, sbloccaDopo: 'anime-1-joey',
-                                characterId: 'joey', difficulty: 'Facile',
+                                characterId: 'joey',
                                 protagonista: { name: 'Yugi Muto', title: 'Il ragazzo del Puzzle', image: 'images/characters/yugiMuto.jpg', icon: '🧩' },
                                 field: 'images/fields/mobile/citta.jpg',
                                 music: '07. Preliminary Face-Off.mp3',
@@ -387,7 +388,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-1-amichevole-tristan', kind: 'duel', icona: '🔧',
                                 label: 'Amichevole con Tristan', x: 405, y: 270,
                                 parallelo: true, sbloccaDopo: 'anime-1-amichevole-joey',
-                                characterId: 'tristan', difficulty: 'Facile',
+                                characterId: 'tristan',
                                 protagonista: { name: 'Yugi Muto', title: 'Il ragazzo del Puzzle', image: 'images/characters/yugiMuto.jpg', icon: '🧩' },
                                 field: 'images/fields/mobile/citta.jpg',
                                 music: '07. Preliminary Face-Off.mp3',
@@ -400,7 +401,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-1-amichevole-tea', kind: 'duel', icona: '💫',
                                 label: 'Amichevole con Téa', x: 475, y: 310,
                                 parallelo: true, sbloccaDopo: 'anime-1-amichevole-tristan',
-                                characterId: 'tea', difficulty: 'Facile',
+                                characterId: 'tea',
                                 protagonista: { name: 'Yugi Muto', title: 'Il ragazzo del Puzzle', image: 'images/characters/yugiMuto.jpg', icon: '🧩' },
                                 field: 'images/fields/mobile/citta.jpg',
                                 music: '07. Preliminary Face-Off.mp3',
@@ -441,7 +442,7 @@ const storyCampaignsDatabase = [
                                 // da lì, non prima.
                                 label: 'Finale regionale: Weevil contro Rex', x: 735, y: 275,
                                 parallelo: true, sbloccaDopo: 'anime-1-kaiba',
-                                characterId: 'rex', difficulty: 'Medio',
+                                characterId: 'rex',
                                 protagonista: { name: 'Weevil Underwood', title: 'Campione regionale', image: 'images/characters/weevilUnderwood.jpg', icon: '🐛' },
                                 dialogo: [
                                     { chi: 'rex', testo: 'I tuoi insetti verranno schiacciati dai miei dinosauri. Il titolo regionale è già mio.' },
@@ -488,7 +489,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-1-kaiba', kind: 'duel', icona: '🐉',
                                 avatar: { kaiba: 'images/characters/setoKaiba_duelist_Kingdom.png' },
                                 label: 'Seto Kaiba', x: 1425, y: 470,
-                                characterId: 'kaiba', difficulty: 'Medio',
+                                characterId: 'kaiba',
                                 field: 'images/fields/mobile/torreDeiDuelli.jpg',
                                 music: '32. Seto Kaiba (Tournament Final) HD.mp3',
                                 dialogo: [
@@ -506,7 +507,9 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'anime-1-pegasus-video', kind: 'duel', icona: '📼',
                                 label: 'Il duello nel videonastro', x: 92, y: 690,
-                                characterId: 'pegasus', difficulty: 'Medio',
+                                characterId: 'pegasus',
+                                field: 'images/fields/mobile/torreCastelloPegasus.jpg',
+                                music: "28. Heishin's Invasion.mp3",
                                 dialogo: [
                                     { chi: 'pegasus', testo: 'Ti concedo quindici minuti, Yugi-boy. Il mio Occhio vede la tua mente e, allo scadere, reclamerò una ricompensa.' },
                                     { io: true, testo: 'Non so come tu abbia dato vita alle carte attraverso un videonastro, ma vincerò e scoprirò che cosa vuoi da me.' }
@@ -603,7 +606,7 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'anime-2-weevil', kind: 'duel', icona: '🐛',
                                 label: 'Weevil Underwood', x: 1420, y: 548,
-                                characterId: 'weevil', difficulty: 'Medio',
+                                characterId: 'weevil',
                                 dialogo: [
                                     { chi: 'weevil', testo: 'Senza Exodia e dentro una foresta che potenzia i miei insetti, la tua fama finirà al primo duello.' },
                                     { io: true, testo: 'Hai gettato le mie carte in mare per paura di affrontarle. Vincerò con quelle che mi sono rimaste.' }
@@ -613,7 +616,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-2-mai-primo', kind: 'duel', icona: '🦋',
                                 label: 'Joey contro Mai', x: 1260, y: 610,
                                 parallelo: true, sbloccaDopo: 'anime-2-weevil',
-                                characterId: 'mai', difficulty: 'Medio',
+                                characterId: 'mai',
                                 protagonista: { name: 'Joey Wheeler', title: 'Il duellante alle prime armi', image: 'images/characters/joeyWheeler.jpg', icon: '🎲' },
                                 dialogo: [
                                     { chi: 'mai', testo: 'Non ho bisogno di vedere le mie carte: profumo diverso, scelta perfetta. Un principiante non può capirlo.' },
@@ -624,7 +627,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-2-rex', kind: 'duel', icona: '🦖',
                                 label: 'Rex Raptor', x: 1108, y: 645,
                                 parallelo: true, sbloccaDopo: 'anime-2-mai-primo',
-                                characterId: 'rex', difficulty: 'Medio',
+                                characterId: 'rex',
                                 protagonista: { name: 'Joey Wheeler', title: 'Il duellante dal cuore indomabile', image: 'images/characters/joeyWheeler.jpg', icon: '🎲' },
                                 dialogo: [
                                     // È il duello in cui Joey vince il suo Drago
@@ -637,7 +640,7 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'anime-2-mako', kind: 'duel', icona: '🌊',
                                 label: 'Mako Tsunami', x: 798, y: 785,
-                                characterId: 'mako', difficulty: 'Medio',
+                                characterId: 'mako',
                                 dialogo: [
                                     { chi: 'mako', testo: 'Questo mare mi ha cresciuto. Se vuoi passare, dovrai battermi dove la marea combatte al mio fianco.' },
                                     { io: true, testo: 'Non sono venuto a portarti via il mare. Sono venuto a riprendermi mio nonno.' }
@@ -647,7 +650,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-2-bonz', kind: 'duel', icona: '🪦',
                                 label: 'Joey contro Bonz', x: 925, y: 705,
                                 parallelo: true, sbloccaDopo: 'anime-2-rex',
-                                characterId: 'bonz', difficulty: 'Medio',
+                                characterId: 'bonz',
                                 protagonista: { name: 'Joey Wheeler', title: 'Il duellante dal cuore indomabile', image: 'images/characters/joeyWheeler.jpg', icon: '🎲' },
                                 dialogo: [
                                     { chi: 'bonz', testo: 'Nel cimitero i miei mostri tornano come zombie più forti. Quando avremo le tue Stelle, Keith ci farà entrare nel castello.' },
@@ -670,7 +673,7 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'anime-2-panik', kind: 'duel', icona: '🕯️',
                                 label: 'Panik', x: 308, y: 655,
-                                characterId: 'panik', difficulty: 'Difficile',
+                                characterId: 'panik',
                                 dialogo: [
                                     { chi: 'panik', testo: 'Ho già tolto a Mai tutte le sue Stelle. Nella mia arena buia perderai anche il coraggio di guardare il campo.' },
                                     { io: true, testo: 'La paura è l’unica strategia che possiedi. Riconquisterò le Stelle di Mai e distruggerò il tuo Castello delle Illusioni Oscure.' }
@@ -685,7 +688,7 @@ const storyCampaignsDatabase = [
                                 // all'avversario del personaggio più noto.
                                 label: 'Panik contro Mai', x: 235, y: 570,
                                 parallelo: true, sbloccaDopo: 'anime-2-mako',
-                                characterId: 'mai', difficulty: 'Difficile',
+                                characterId: 'mai',
                                 protagonista: { name: 'Panik', title: 'Eliminatore di Pegasus', image: 'images/characters/panik.jpg', icon: '🕯️' },
                                 dialogo: [
                                     { chi: 'mai', testo: 'Non ho bisogno di vedere il tuo volto per capire che vivi d’intimidazione. Le mie Arpie non si piegheranno.' },
@@ -696,7 +699,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-2-kaiba-joey', kind: 'duel', icona: '🐉',
                                 label: 'Kaiba contro Joey', x: 430, y: 545,
                                 parallelo: true, sbloccaDopo: 'anime-2-panik',
-                                characterId: 'joey', difficulty: 'Difficile',
+                                characterId: 'joey',
                                 protagonista: { name: 'Seto Kaiba', title: 'In cerca di Mokuba', image: 'images/characters/setoKaiba_duelist_Kingdom.png', icon: '🐉' },
                                 dialogo: [
                                     { chi: 'joey', testo: 'Non passerai sopra di noi come se non esistessimo. Il mio Drago Nero affronterà il tuo Drago Bianco.' },
@@ -706,7 +709,7 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'anime-2-bakura-isola', kind: 'duel', icona: '💍',
                                 label: 'Il Gioco delle Ombre di Bakura', x: 485, y: 430,
-                                characterId: 'bakura', difficulty: 'Difficile',
+                                characterId: 'bakura',
                                 dialogo: [
                                     { chi: 'bakura', testo: 'Ho rinchiuso le vostre anime nelle carte preferite. Se perdo Life Point, sarete voi a pagarne il prezzo.' },
                                     { io: true, testo: 'Lo spirito dell’Anello ha preso il corpo di Bakura. Useremo le carte in cui siamo imprigionati per salvarlo senza sacrificarci.' }
@@ -716,7 +719,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-2-falso-kaiba', kind: 'duel', icona: '👻',
                                 avatar: { kaiba: 'images/characters/setoKaiba_duelist_Kingdom.png' },
                                 label: 'Il fantasma di Kaiba', x: 610, y: 390,
-                                characterId: 'kaiba', difficulty: 'Difficile',
+                                characterId: 'kaiba',
                                 dialogo: [
                                     // Mokuba era con Yugi quella notte: è da lì
                                     // che si allea con lui (episodi 8-10).
@@ -754,7 +757,7 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'anime-2-paradox', kind: 'duel', icona: '🚪',
                                 label: 'I Fratelli Paradosso', x: 830, y: 275,
-                                characterId: 'paradoxBrothers', difficulty: 'Difficile',
+                                characterId: 'paradoxBrothers',
                                 dialogo: [
                                     { chi: 'paradoxBrothers', testo: 'Una porta conduce al castello, l’altra di nuovo nel labirinto. Prima, però, superate il Guardiano del Cancello.' },
                                     { io: true, testo: 'Joey ed io metteremo in comune mostri e strategie. Il vostro labirinto non dividerà ciò che ci ha portati fin qui.' }
@@ -779,7 +782,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-2-kaiba', kind: 'duel', icona: '🐉',
                                 avatar: { kaiba: 'images/characters/setoKaiba_duelist_Kingdom.png' },
                                 label: 'Seto Kaiba', x: 1030, y: 330,
-                                characterId: 'kaiba', difficulty: 'Difficile',
+                                characterId: 'kaiba',
                                 dialogo: [
                                     { chi: 'kaiba', testo: 'Pegasus tiene prigioniero Mokuba. Mi servono le tue Stelle per entrare nel castello e riprendermelo.' },
                                     { io: true, testo: 'Anch’io devo entrare per salvare mio nonno, Kaiba. Nessuno dei due può rinunciare a questo duello.' }
@@ -809,7 +812,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-2-tea-mai', kind: 'duel', icona: '💫',
                                 label: 'Téa contro Mai', x: 1110, y: 285,
                                 parallelo: true, sbloccaDopo: 'anime-2-kaiba-torre',
-                                characterId: 'mai', difficulty: 'Medio',
+                                characterId: 'mai',
                                 protagonista: { name: 'Téa Gardner', title: 'Amica di Yugi', image: 'images/characters/teaGardner.jpg', icon: '💫' },
                                 dialogo: [
                                     { chi: 'mai', testo: 'Yugi ha perso le Stelle contro Kaiba. Se vuoi conquistargliele, dovrai affrontare le mie Lady Arpia.' },
@@ -846,7 +849,7 @@ const storyCampaignsDatabase = [
                                 avatar: { kaiba: 'images/characters/setoKaiba_duelist_Kingdom.png' },
                                 label: 'Pegasus contro Kaiba', x: 1190, y: 175,
                                 parallelo: true, sbloccaDopo: 'anime-2c-scena',
-                                characterId: 'kaiba', difficulty: 'Difficile',
+                                characterId: 'kaiba',
                                 protagonista: { name: 'Maximillion Pegasus', title: 'Il padrone del castello', image: 'images/characters/maximillionPegasus.jpg', icon: '👁️' },
                                 dialogo: [
                                     { chi: 'kaiba', testo: 'Non mi interessa come leggi la mente, Pegasus. Libererai Mokuba quando i miei Draghi Bianchi avranno distrutto i tuoi Toon.' },
@@ -858,7 +861,7 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'anime-2c-mai', kind: 'duel', icona: '🦋',
                                 label: 'Semifinale: Mai', x: 830, y: 450,
-                                characterId: 'mai', difficulty: 'Difficile',
+                                characterId: 'mai',
                                 dialogo: [
                                     { chi: 'mai', testo: 'Mi hai restituito le Stelle senza chiedere nulla. Proprio per questo, in semifinale non accetterò che tu ti trattenga.' },
                                     { io: true, testo: 'Ti affronterò come la duellante che ha conquistato questo posto. Il nostro duello deciderà chi continuerà.' }
@@ -868,7 +871,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-2c-keith', kind: 'duel', icona: '🇺🇸',
                                 label: 'Semifinale: Bandit Keith', x: 975, y: 450,
                                 parallelo: true, sbloccaDopo: 'anime-2c-scena',
-                                characterId: 'bandit_keith', difficulty: 'Difficile',
+                                characterId: 'bandit_keith',
                                 protagonista: { name: 'Joey Wheeler', title: 'Finalista del Regno dei Duellanti', image: 'images/characters/joeyWheeler.jpg', icon: '🎲' },
                                 dialogo: [
                                     { chi: 'bandit_keith', testo: 'Ho rubato la tua carta d’ingresso. Senza Gloria della Mano del Re non puoi nemmeno sederti al tavolo.' },
@@ -878,7 +881,7 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'anime-2c-joey', kind: 'duel', icona: '🎲',
                                 label: 'Finale: Joey Wheeler', x: 902, y: 385,
-                                characterId: 'joey', difficulty: 'Difficile',
+                                characterId: 'joey',
                                 dialogo: [
                                     { chi: 'joey', testo: 'Siamo arrivati in finale insieme, Yugi. Adesso niente favori: voglio vedere quanto sono cresciuto davvero.' },
                                     { io: true, testo: 'È proprio perché siamo amici che duellerò con tutto ciò che ho. Il vincitore affronterà Pegasus.' }
@@ -887,7 +890,7 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'anime-2-pegasus', kind: 'duel', icona: '👁️',
                                 label: 'Maximillion Pegasus', x: 905, y: 165,
-                                characterId: 'pegasus', difficulty: 'Difficile',
+                                characterId: 'pegasus',
                                 dialogo: [
                                     { chi: 'pegasus', testo: 'Il mio Occhio del Millennio vede ogni carta nella tua mente, Yugi-boy. Toon World farà il resto.' },
                                     { io: true, testo: 'Non duello da solo. Alterneremo le nostre menti e combatteremo insieme per liberare nonno, Mokuba e Kaiba.' }
@@ -939,7 +942,7 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'anime-3-seeker', kind: 'duel', icona: '🕶️',
                                 label: 'Seeker', x: 350, y: 700,
-                                characterId: 'seeker', difficulty: 'Medio',
+                                characterId: 'seeker',
                                 dialogo: [
                                     { chi: 'seeker', testo: 'Joey ha già perso il suo Drago Nero Occhi Rossi. Adesso scommetti il Mago Nero: Exodia vuole una preda più rara.' },
                                     { io: true, testo: 'Le carte contraffatte non fanno di te un duellante. Libererò il Drago Nero e fermerò la tua caccia.' }
@@ -952,7 +955,7 @@ const storyCampaignsDatabase = [
                                 // Yugi lo sfida): si gioca dalla parte di Seeker.
                                 label: 'Seeker contro Joey', x: 405, y: 765,
                                 parallelo: true, sbloccaDopo: 'anime-3-tavola-scena',
-                                characterId: 'joey', difficulty: 'Medio',
+                                characterId: 'joey',
                                 protagonista: { name: 'Seeker', title: 'Cacciatore Raro', image: 'images/characters/seeker.jpg', icon: '🕶️' },
                                 dialogo: [
                                     { chi: 'joey', testo: 'Il Drago Nero Occhi Rossi non è merce per i Cacciatori Rari. Ti batterò prima che tu possa mettere insieme tutti i pezzi.' },
@@ -963,7 +966,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-3-espa', kind: 'duel', icona: '🔮',
                                 label: 'Espa Roba', x: 510, y: 610,
                                 parallelo: true, sbloccaDopo: 'anime-3-seeker',
-                                characterId: 'espaRoba', difficulty: 'Medio',
+                                characterId: 'espaRoba',
                                 protagonista: { name: 'Joey Wheeler', title: 'Duellante di Battle City', image: 'images/characters/joeyWheeler.jpg', icon: '🎲' },
                                 dialogo: [
                                     { chi: 'espaRoba', testo: 'I miei poteri extrasensoriali mi mostrano ogni carta che hai in mano. Jinzo metterà a tacere le tue Trappole.' },
@@ -975,7 +978,7 @@ const storyCampaignsDatabase = [
                                 // Dopo Strings, come nell'anime (episodi 19-20).
                                 label: 'Joey contro Mako', x: 565, y: 500,
                                 parallelo: true, sbloccaDopo: 'anime-3-strings',
-                                characterId: 'mako', difficulty: 'Medio',
+                                characterId: 'mako',
                                 protagonista: { name: 'Joey Wheeler', title: 'Duellante di Battle City', image: 'images/characters/joeyWheeler.jpg', icon: '🎲' },
                                 dialogo: [
                                     { chi: 'mako', testo: 'Combatto per ritrovare mio padre e il mare mi presta ancora una volta la sua forza. Metti in palio Jinzo, Joey.' },
@@ -988,7 +991,7 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'anime-3-arkana', kind: 'duel', icona: '🎭',
                                 label: 'Arkana', x: 420, y: 460,
-                                characterId: 'arkana', difficulty: 'Difficile',
+                                characterId: 'arkana',
                                 dialogo: [
                                     { chi: 'arkana', testo: 'Marik mi restituirà Catherine quando il mio Mago Nero avrà sconfitto il tuo. Le seghe sotto i nostri piedi renderanno definitiva la sconfitta.' },
                                     { io: true, testo: 'Marik ti ha ingannato e tu hai maltrattato le tue carte. Ti mostrerò quale Mago Nero possiede davvero la fiducia del suo duellante.' }
@@ -1000,7 +1003,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-3-joey-weevil', kind: 'duel', icona: '🐛',
                                 label: 'Joey contro Weevil', x: 525, y: 380,
                                 parallelo: true, sbloccaDopo: 'anime-3-arkana',
-                                characterId: 'weevil', difficulty: 'Medio',
+                                characterId: 'weevil',
                                 protagonista: { name: 'Joey Wheeler', title: 'Duellante di Battle City', image: 'images/characters/joeyWheeler.jpg', icon: '🎲' },
                                 dialogo: [
                                     { chi: 'weevil', testo: 'Ti ricordi di me, Joey? Sono quello che ha buttato in mare l’Exodia di Yugi. Stavolta a perdere una carta sarai tu, e i miei insetti hanno fame.' },
@@ -1010,7 +1013,7 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'anime-3-strings', kind: 'duel', icona: '🧵',
                                 label: 'Strings', x: 270, y: 300,
-                                characterId: 'strings', difficulty: 'Difficile',
+                                characterId: 'strings',
                                 dialogo: [
                                     { chi: 'strings', testo: '...' },
                                     { nome: 'Marik', icona: '☥', testo: 'Questo burattino non ha bisogno di parlare. Nella sua mano cresce il potere di Slifer il Drago del Cielo.' },
@@ -1020,7 +1023,7 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'anime-3-lumis', kind: 'duel', icona: '☀️',
                                 label: 'Lumis', x: 530, y: 230,
-                                characterId: 'lumis', difficulty: 'Medio',
+                                characterId: 'lumis',
                                 dialogo: [
                                     { chi: 'lumis', testo: 'Sul tetto non c’è spazio per fuggire. La Maschera della Luce sigillerà i tuoi tributi.' },
                                     { io: true, testo: 'Una maschera può nascondere un volto, non le intenzioni di chi la indossa.' }
@@ -1029,7 +1032,7 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'anime-3-umbra', kind: 'duel', icona: '🌘',
                                 label: 'Umbra', x: 720, y: 300,
-                                characterId: 'umbra', difficulty: 'Difficile',
+                                characterId: 'umbra',
                                 dialogo: [
                                     { chi: 'umbra', testo: 'Lumis ha chiuso la via alla luce. Ora la mia Bestia Mascherata completerà il doppio duello.' },
                                     { io: true, testo: 'Avete separato il campo, ma avete sottovalutato il legame tra me e Kaiba.' }
@@ -1038,7 +1041,7 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'anime-3-joey-controllato', kind: 'duel', icona: '⚓',
                                 label: 'Il duello dell’amicizia', x: 675, y: 400,
-                                characterId: 'joey', difficulty: 'Difficile',
+                                characterId: 'joey',
                                 dialogo: [
                                     { nome: 'Marik', icona: '☥', testo: 'Joey è sotto il mio controllo. Vincerai soltanto condannando il tuo migliore amico a essere trascinato in fondo alla baia.' },
                                     { io: true, testo: 'Non combatterò contro Joey come se fosse un nemico. Userò il duello per raggiungerlo e spezzare il tuo controllo.' }
@@ -1083,7 +1086,7 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'anime-3-bakura', kind: 'duel', icona: '💍',
                                 label: 'Ryo Bakura', x: 1185, y: 115,
-                                characterId: 'bakura', difficulty: 'Difficile',
+                                characterId: 'bakura',
                                 dialogo: [
                                     { chi: 'bakura', testo: 'Il mio Tavolo del Destino scandirà le cinque lettere della tua sconfitta. Nei quarti voglio il tuo Puzzle e il potere di Marik.' },
                                     { io: true, testo: 'Lo spirito dell’Anello sta usando ancora il corpo di Bakura. Vincerò prima che il Gioco delle Ombre consumi il mio amico.' }
@@ -1093,7 +1096,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-3-bakura-bonz', kind: 'duel', icona: '🪦',
                                 label: 'Bakura contro Bonz', x: 900, y: 575,
                                 parallelo: true, sbloccaDopo: 'anime-3-marik-molo',
-                                characterId: 'bonz', difficulty: 'Difficile',
+                                characterId: 'bonz',
                                 protagonista: { name: 'Yami Bakura', title: 'Lo spirito dell’Anello', image: 'images/characters/bakura.jpg', icon: '💍' },
                                 dialogo: [
                                     { chi: 'bonz', testo: 'Abbiamo tre Carte Localizzatrici e non le cederemo a uno sconosciuto incontrato nel cimitero.' },
@@ -1108,7 +1111,7 @@ const storyCampaignsDatabase = [
                                 // parte.
                                 label: 'Marik contro Bakura', x: 1560, y: 185,
                                 parallelo: true, sbloccaDopo: 'anime-3-mai-marik',
-                                characterId: 'bakura', difficulty: 'Difficile',
+                                characterId: 'bakura',
                                 protagonista: { name: 'Yami Marik', title: 'Il Padrone delle Ombre', image: 'images/characters/yamiMarik.jpg', icon: '🌑' },
                                 dialogo: [
                                     { chi: 'bakura', testo: 'Il ragazzo mi ha rivelato il segreto di Ra. Quando avrò sconfitto la tua parte oscura, prenderò anche la Barra del Millennio.' },
@@ -1119,7 +1122,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-3-ishizu', kind: 'duel', icona: '📿',
                                 label: 'Ishizu Ishtar', x: 1250, y: 215,
                                 parallelo: true, sbloccaDopo: 'anime-3-bakura',
-                                characterId: 'ishizu', difficulty: 'Difficile',
+                                characterId: 'ishizu',
                                 protagonista: { name: 'Seto Kaiba', title: 'Organizzatore di Battle City', image: 'images/characters/setoKaiba.jpg', icon: '🐉' },
                                 dialogo: [
                                     { chi: 'ishizu', testo: 'La Collana del Millennio mi ha già mostrato la conclusione: Obelisk provocherà la tua sconfitta e io fermerò Marik.' },
@@ -1130,7 +1133,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-3-odion', kind: 'duel', icona: '🔥',
                                 label: 'Odion', x: 1350, y: 245,
                                 parallelo: true, sbloccaDopo: 'anime-3-bakura',
-                                characterId: 'odion', difficulty: 'Difficile',
+                                characterId: 'odion',
                                 protagonista: { name: 'Joey Wheeler', title: 'Finalista di Battle City', image: 'images/characters/joeyWheeler.jpg', icon: '🎲' },
                                 dialogo: [
                                     { chi: 'odion', testo: 'Per ordine del vero Marik, porterò il suo nome e il suo volto durante questo quarto di finale.' },
@@ -1144,7 +1147,7 @@ const storyCampaignsDatabase = [
                                 // dalla sua parte.
                                 label: 'Marik contro Mai', x: 1460, y: 225,
                                 parallelo: true, sbloccaDopo: 'anime-3-bakura',
-                                characterId: 'mai', difficulty: 'Difficile',
+                                characterId: 'mai',
                                 protagonista: { name: 'Yami Marik', title: 'Il Padrone delle Ombre', image: 'images/characters/yamiMarik.jpg', icon: '🌑' },
                                 dialogo: [
                                     { chi: 'mai', testo: 'Non sono arrivata alle finali per essere una comparsa. Prenderò Ra e dimostrerò che non ho bisogno di nessuno che mi salvi.' },
@@ -1222,7 +1225,7 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'anime-6-gansley', kind: 'duel', icona: '🎩',
                                 label: 'Gansley', x: 250, y: 250,
-                                characterId: 'gansley', difficulty: 'Difficile',
+                                characterId: 'gansley',
                                 dialogo: [
                                     { chi: 'gansley', testo: 'Nel mondo virtuale il Deck Master combatte al tuo fianco. Il mio Guerriero degli Abissi trasformerà ogni tua scelta in un costo.' },
                                     { io: true, testo: 'Le vostre regole tengono prigioniere le anime dei miei amici. Le imparerò e userò il mio Deck Master per liberarli.' }
@@ -1232,7 +1235,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-6-johnson', kind: 'duel', icona: '🦁',
                                 label: 'Johnson', x: 330, y: 590,
                                 parallelo: true, sbloccaDopo: 'anime-6-scena',
-                                characterId: 'johnson', difficulty: 'Difficile',
+                                characterId: 'johnson',
                                 protagonista: { name: 'Joey Wheeler', title: 'Prigioniero del mondo virtuale', image: 'images/characters/joeyWheeler.jpg', icon: '🎲' },
                                 dialogo: [
                                     { chi: 'johnson', testo: 'Ero il miglior avvocato della KaibaCorp. Qui sono giudice, giuria e duellante, e la sentenza è già scritta.' },
@@ -1243,7 +1246,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-6-nesbitt', kind: 'duel', icona: '🏗️',
                                 label: 'Nesbitt', x: 760, y: 830,
                                 parallelo: true, sbloccaDopo: 'anime-6-scena',
-                                characterId: 'nesbitt', difficulty: 'Difficile',
+                                characterId: 'nesbitt',
                                 // Nell'anime è un tre contro uno: Tristan cade per
                                 // primo, e a battere Nesbitt sono Duke e Serenity.
                                 // Si gioca con Serenity, che chiude il duello.
@@ -1258,7 +1261,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-6-crump', kind: 'duel', icona: '⚙️',
                                 label: 'Crump', x: 1270, y: 440,
                                 parallelo: true, sbloccaDopo: 'anime-6-scena',
-                                characterId: 'crump', difficulty: 'Difficile',
+                                characterId: 'crump',
                                 protagonista: { name: 'Téa Gardner', title: 'Prigioniera del mondo virtuale', image: 'images/characters/teaGardner.jpg', icon: '💫' },
                                 dialogo: [
                                     { chi: 'crump', testo: 'Nel mio regno di ghiaccio i pinguini comandano e il tuo corpo sarà il biglietto con cui tornerò nel mondo reale.' },
@@ -1269,7 +1272,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-6-lector', kind: 'duel', icona: '🎭',
                                 label: 'Lector', x: 1230, y: 690,
                                 parallelo: true, sbloccaDopo: 'anime-6-scena',
-                                characterId: 'lector', difficulty: 'Difficile',
+                                characterId: 'lector',
                                 protagonista: { name: 'Seto Kaiba', title: 'Presidente della KaibaCorp', image: 'images/characters/setoKaiba.jpg', icon: '🐉' },
                                 dialogo: [
                                     { chi: 'lector', testo: 'Hai estromesso noi Cinque dalla KaibaCorp. Con Jinzo come Deck Master prenderò il tuo corpo e anche l’azienda.' },
@@ -1283,7 +1286,7 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'anime-6-cinque-uniti', kind: 'duel', icona: '🐲',
                                 label: 'I Cinque uniti', x: 905, y: 575,
-                                characterId: 'gansley', difficulty: 'Difficile',
+                                characterId: 'gansley',
                                 dialogo: [
                                     { nome: 'I Cinque', icona: '🐲', testo: 'Separati ci avete battuti. Uniti siamo il Drago a Cinque Teste, e nessun mostro con un solo cuore può fermarlo.' },
                                     { chi: 'joey', testo: 'Cinque contro due? Tipico di voi dirigenti. Yugi, io ci sono.' },
@@ -1306,7 +1309,7 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'anime-6-noah', kind: 'duel', icona: '🧊',
                                 label: 'Noah Kaiba', x: 775, y: 230,
-                                characterId: 'noah', difficulty: 'Difficile',
+                                characterId: 'noah',
                                 dialogo: [
                                     { chi: 'noah', testo: 'Ho già sconfitto Seto e trasformato Mokuba in pietra. Con il potere di Shinato assorbirò anche le anime che hai liberato.' },
                                     { io: true, testo: 'Riprenderò i Life Point rimasti a Kaiba e continuerò il suo duello. Tutte le anime che hai imprigionato combatteranno con me.' }
@@ -1320,7 +1323,7 @@ const storyCampaignsDatabase = [
                                 // Noah.
                                 label: 'Noah contro Kaiba', x: 920, y: 210,
                                 parallelo: true, sbloccaDopo: 'anime-6-anime-prigioni',
-                                characterId: 'kaiba', difficulty: 'Difficile',
+                                characterId: 'kaiba',
                                 protagonista: { name: 'Noah Kaiba', title: 'Il ragazzo del mondo virtuale', image: 'images/characters/noah.jpg', icon: '🧊' },
                                 dialogo: [
                                     { chi: 'kaiba', testo: 'Non sei mio fratello e non sei il mio successore. Libera Mokuba: regoleremo questa faccenda nel duello che volevi.' },
@@ -1347,7 +1350,7 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'anime-6-kaiba-gozaburo', kind: 'duel', icona: '🏢',
                                 label: 'Kaiba contro Gozaburo', x: 1250, y: 175,
-                                characterId: 'gozaburo', difficulty: 'Difficile',
+                                characterId: 'gozaburo',
                                 protagonista: { name: 'Seto Kaiba', title: 'Presidente della KaibaCorp', image: 'images/characters/setoKaiba.jpg', icon: '🐉' },
                                 dialogo: [
                                     { chi: 'gozaburo', testo: 'Ti ho insegnato tutto, Seto: a schiacciare chi è debole, a non perdonare. Exodia Necross non si può distruggere, come il mio impero.' },
@@ -1407,7 +1410,7 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'anime-4b-battaglia-reale', kind: 'duel', icona: '⚔️',
                                 label: 'La battaglia a quattro', x: 1300, y: 615,
-                                characterId: 'marik', difficulty: 'Difficile',
+                                characterId: 'marik',
                                 dialogo: [
                                     { chi: 'kaiba', testo: 'Quattro duellanti, un campo solo. Ognuno attacca chi vuole, e nessuno fa favori a nessuno.' },
                                     { chi: 'marik', testo: 'Che vi alleiate o no, il Faraone cadrà. Ra ha già visto come finisce questa notte.' },
@@ -1421,7 +1424,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-4-joey', kind: 'duel', icona: '🌑',
                                 label: 'Semifinale: Marik contro Joey', x: 1180, y: 705,
                                 parallelo: true, sbloccaDopo: 'anime-4b-battaglia-reale',
-                                characterId: 'joey', difficulty: 'Difficile',
+                                characterId: 'joey',
                                 protagonista: { name: 'Yami Marik', title: 'Il Padrone delle Ombre', image: 'images/characters/yamiMarik.jpg', icon: '🌑' },
                                 dialogo: [
                                     { chi: 'joey', testo: 'Puoi trasformare il duello in un incubo, ma non mi farai abbandonare. Ho promesso a Yugi che sarei arrivato fino in fondo.' },
@@ -1446,7 +1449,7 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'anime-4-kaiba', kind: 'duel', icona: '🐉',
                                 label: 'Seto Kaiba', x: 995, y: 520,
-                                characterId: 'kaiba', difficulty: 'Difficile',
+                                characterId: 'kaiba',
                                 dialogo: [
                                     { chi: 'kaiba', testo: 'Obelisk contro Slifer. Il vincitore prenderà la carta divina dello sconfitto e affronterà Marik nella finale che ho costruito.' },
                                     { io: true, testo: 'La tavola egizia raffigura questo scontro da tremila anni. Oggi non sarà il passato a deciderne il risultato.' }
@@ -1459,7 +1462,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-4b-terzo-posto', kind: 'duel', icona: '🥉',
                                 label: 'Terzo posto: Kaiba contro Joey', x: 1010, y: 425,
                                 parallelo: true, sbloccaDopo: 'anime-4-kaiba',
-                                characterId: 'joey', difficulty: 'Difficile',
+                                characterId: 'joey',
                                 protagonista: { name: 'Seto Kaiba', title: 'Organizzatore di Battle City', image: 'images/characters/setoKaiba.jpg', icon: '🐉' },
                                 dialogo: [
                                     { chi: 'joey', testo: 'Mi sono appena svegliato e mi fa male tutto, ma questo duello non me lo perdo, Kaiba. Da quando mi hai chiamato dilettante aspetto questo momento.' },
@@ -1481,7 +1484,7 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'anime-4-marik', kind: 'duel', icona: '🌑',
                                 label: 'Marik Ishtar', x: 790, y: 220,
-                                characterId: 'marik', difficulty: 'Difficile',
+                                characterId: 'marik',
                                 dialogo: [
                                     { chi: 'marik', testo: 'Ra diventerà una Fenice immortale e consumerà ogni ricordo del Faraone. La mia parte debole sparirà insieme a lui.' },
                                     { io: true, testo: 'Combatterò per Joey, Mai e per il vero Marik che hai imprigionato. I tre Dei porranno fine al tuo Gioco delle Ombre.' }
@@ -1563,7 +1566,7 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'anime-9-bakura', kind: 'duel', icona: '🗝️',
                                 label: 'Il Re dei Ladri', x: 1230, y: 320,
-                                characterId: 'bakura', difficulty: 'Difficile',
+                                characterId: 'bakura',
                                 dialogo: [
                                     { chi: 'bakura', testo: 'I tuoi Dei li ho già visti cadere una volta. Non ti proteggeranno per sempre.' },
                                     { io: true, testo: 'Non ho bisogno che mi proteggano. Ho bisogno che tu lasci questo palazzo.' }
@@ -1610,7 +1613,7 @@ const storyCampaignsDatabase = [
                                 id: 'anime-9-seto-bakura', kind: 'duel', icona: '🐉',
                                 label: 'Seto contro il Re dei Ladri', x: 1475, y: 290,
                                 parallelo: true, sbloccaDopo: 'anime-9-kisara',
-                                characterId: 'bakura', difficulty: 'Difficile',
+                                characterId: 'bakura',
                                 protagonista: { name: 'Sacerdote Seto', title: 'Il Sommo Sacerdote', image: 'images/characters/priestSeto.jpg', icon: '🐉' },
                                 dialogo: [
                                     { chi: 'bakura', testo: 'Il cagnolino del Faraone in persona. Diabound ha già divorato i Ka di mezzo palazzo: il tuo sarà il prossimo.' },
@@ -1625,7 +1628,7 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'anime-9-zorc', kind: 'duel', icona: '🌑',
                                 label: 'Il nome contro Bakura', x: 640, y: 520,
-                                characterId: 'bakura', difficulty: 'Difficile',
+                                characterId: 'bakura',
                                 protagonista: { name: 'Yugi Muto', title: 'Il ragazzo del Puzzle', image: 'images/characters/yugiMuto.jpg', icon: '🧩' },
                                 dialogo: [
                                     { chi: 'bakura', testo: 'Mentre Zorc distrugge il passato, tu morirai qui senza riuscire a consegnare al Faraone il suo nome.' },
@@ -1667,7 +1670,7 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'anime-5-yamiyugi', kind: 'duel', icona: '👑',
                                 label: 'Il Duello Cerimoniale', x: 1150, y: 700,
-                                characterId: 'yamiYugi', difficulty: 'Difficile',
+                                characterId: 'yamiYugi',
                                 protagonista: { name: 'Yugi Muto', title: 'Il ragazzo del Puzzle', image: 'images/characters/yugiMuto.jpg', icon: '🧩' },
                                 dialogo: [
                                     { chi: 'yamiYugi', testo: 'Per aprirmi la porta dell’aldilà devi sconfiggermi mentre combatto con tutta la mia forza, compresi i tre Dei Egizi.' },
@@ -1799,7 +1802,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'fm-1-simon', kind: 'duel', icona: '📜',
                         label: 'Simon Muran', x: 1470, y: 520,
-                        characterId: 'simonMuran', difficulty: 'Medio',
+                        characterId: 'simonMuran',
                         field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg'
 ,
                         dialogo: [
@@ -1814,7 +1817,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'fm-1-teana', kind: 'duel', icona: '🌾',
                         label: 'Teana', x: 1450, y: 900,
-                        characterId: 'teana', difficulty: 'Medio',
+                        characterId: 'teana',
                         field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg'
 ,
                         dialogo: [
@@ -1826,7 +1829,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'fm-1-jono', kind: 'duel', icona: '🗡️',
                         label: 'Jono', x: 1640, y: 960,
-                        characterId: 'jono', difficulty: 'Medio',
+                        characterId: 'jono',
                         field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg'
 ,
                         dialogo: [
@@ -1843,7 +1846,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'fm-1-seto-festa', kind: 'duel', icona: '🔺',
                         label: 'Seto alla festa', x: 1850, y: 880,
-                        characterId: 'priestSeto', difficulty: 'Medio',
+                        characterId: 'priestSeto',
                         field: 'images/fields/mobile/anticoEgittoNotte_1.jpg'
 ,
                         dialogo: [
@@ -1903,7 +1906,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'fm-2-heishin', kind: 'duel', icona: '🏛️',
                         label: 'Heishin', x: 1665, y: 700,
-                        characterId: 'heishin', difficulty: 'Difficile',
+                        characterId: 'heishin',
                         field: 'images/fields/mobile/anticoEgittoNotte_1.jpg'
 ,
                         dialogo: [
@@ -2006,7 +2009,7 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'fm-3t-rex', kind: 'duel', icona: '🦖',
                                 label: 'Primo preliminare', x: 420, y: 560,
-                                characterId: 'rex', difficulty: 'Medio',
+                                characterId: 'rex',
                                 field: 'images/fields/mobile/stadioKaiba.jpg',
                                 dialogo: [
                                     { chi: 'rex', testo: 'Primo turno, e mi tocca il nanerottolo col ciondolo. Che fortuna.' },
@@ -2017,7 +2020,7 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'fm-3t-weevil', kind: 'duel', icona: '🐛',
                                 label: 'Secondo preliminare', x: 1000, y: 560,
-                                characterId: 'weevil', difficulty: 'Medio',
+                                characterId: 'weevil',
                                 field: 'images/fields/mobile/stadioKaiba.jpg',
                                 dialogo: [
                                     { chi: 'weevil', testo: 'Hai battuto il ragazzo dei dinosauri. Roba grossa e lenta: facile.' },
@@ -2028,7 +2031,7 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'fm-3t-mai', kind: 'duel', icona: '🦋',
                                 label: 'Terzo preliminare', x: 1580, y: 560,
-                                characterId: 'mai', difficulty: 'Medio',
+                                characterId: 'mai',
                                 field: 'images/fields/mobile/stadioKaiba.jpg',
                                 dialogo: [
                                     { chi: 'mai', testo: 'Terzo preliminare, tesoro. Da qui in poi non si gioca più per divertirsi.' },
@@ -2039,7 +2042,7 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'fm-3t-keith', kind: 'duel', icona: '🎰',
                                 label: 'Ultimo preliminare', x: 2160, y: 560,
-                                characterId: 'bandit_keith', difficulty: 'Difficile',
+                                characterId: 'bandit_keith',
                                 field: 'images/fields/mobile/stadioKaiba.jpg',
                                 dialogo: [
                                     { chi: 'bandit_keith', testo: 'Ultimo preliminare. Io in questo stadio ci sono già stato, e non me ne sono andato con le mani vuote.' },
@@ -2068,7 +2071,7 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'fm-3t-shadi', kind: 'duel', icona: '🗝️',
                                 label: 'Finali · la Chiave', x: 2740, y: 560,
-                                characterId: 'shadi', difficulty: 'Difficile',
+                                characterId: 'shadi',
                                 field: 'images/fields/mobile/stadioKaiba.jpg',
                                 dialogo: [
                                     { chi: 'shadi', testo: 'Sei arrivato alle finali. Ora la parte che conta: nessuno dei quattro che ti restano davanti è qui per il torneo.' },
@@ -2080,7 +2083,7 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'fm-3t-bakura', kind: 'duel', icona: '💍',
                                 label: 'Finali · l\'Anello', x: 2740, y: 1240,
-                                characterId: 'bakura', difficulty: 'Difficile',
+                                characterId: 'bakura',
                                 field: 'images/fields/mobile/stadioKaiba.jpg',
                                 dialogo: [
                                     { chi: 'bakura', testo: 'L\'Anello del Millennio mi ha portato qui. Dice che sei tu, e l\'Anello indica sempre la direzione giusta.' },
@@ -2092,7 +2095,7 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'fm-3t-pegasus', kind: 'duel', icona: '👁️',
                                 label: 'Finali · l\'Occhio', x: 2160, y: 1240,
-                                characterId: 'pegasus', difficulty: 'Difficile',
+                                characterId: 'pegasus',
                                 field: 'images/fields/mobile/stadioKaiba.jpg',
                                 dialogo: [
                                     { chi: 'pegasus', testo: 'Questo gioco l\'ho inventato io, ragazzo. Ogni carta che hai in mano l\'ho disegnata io, una per una.' },
@@ -2104,7 +2107,7 @@ const storyCampaignsDatabase = [
                             {
                                 id: 'fm-3t-isis', kind: 'duel', icona: '📿',
                                 label: 'Finali · la Collana', x: 1580, y: 1240,
-                                characterId: 'ishizu', difficulty: 'Difficile',
+                                characterId: 'ishizu',
                                 field: 'images/fields/mobile/stadioKaiba.jpg',
                                 dialogo: [
                                     { chi: 'ishizu', testo: 'La Collana del Millennio mostra quello che deve accadere. Ho visto questo duello molto prima di sederti davanti.' },
@@ -2118,7 +2121,7 @@ const storyCampaignsDatabase = [
                                 // Il Kaiba del torneo di Forbidden Memories.
                                 avatar: { kaiba: 'images/characters/setoKaiba_forbiddenMemories.png' },
                                 label: 'Finale · lo Scettro', x: 1000, y: 1240,
-                                characterId: 'kaiba', difficulty: 'Difficile',
+                                characterId: 'kaiba',
                                 field: 'images/fields/mobile/stadioKaiba.jpg',
                                 dialogo: [
                                     { chi: 'kaiba', testo: 'Finale. Questo stadio è mio, il torneo è mio, e fra un minuto lo sarà anche il tuo Puzzle.' },
@@ -2196,7 +2199,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'fm-4-mage-soldier', kind: 'duel', icona: '🪖',
                         label: 'Mage Soldier', x: 2050, y: 800,
-                        characterId: 'mageSoldier', difficulty: 'Medio',
+                        characterId: 'mageSoldier',
                         field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg',
                         dialogo: [
                             { chi: 'mageSoldier', testo: 'Fermo lì, straniero. Per ordine del Sommo Heishin nessuno entra in città senza dire il proprio nome.' },
@@ -2207,7 +2210,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'fm-4-jono2', kind: 'duel', icona: '🗡️',
                         label: 'Jono, di nuovo', x: 2080, y: 960,
-                        characterId: 'jono', difficulty: 'Medio',
+                        characterId: 'jono',
                         field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg',
                         dialogo: [
                             { chi: 'jono', testo: 'No… non può essere. Sei tu! Ti credevamo morto da anni! La vecchia arena l\'hanno chiusa i soldati: ci siamo spostati qui.' },
@@ -2218,7 +2221,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'fm-4-teana2', kind: 'duel', icona: '🌾',
                         label: 'Teana, di nuovo', x: 1930, y: 1060,
-                        characterId: 'teana', difficulty: 'Medio',
+                        characterId: 'teana',
                         field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg',
                         dialogo: [
                             { chi: 'teana', testo: 'Jono dice che sei tornato. Io non ci credo finché non lo vedo con i miei occhi… e con le mie carte.' },
@@ -2256,7 +2259,7 @@ const storyCampaignsDatabase = [
                         // Le rovine sulla costa; il Sommo Mago aspetta nel
                         // tempio sommerso, più al largo.
                         label: 'Ocean Mage', x: 2230, y: 1285,
-                        characterId: 'oceanMage', difficulty: 'Medio',
+                        characterId: 'oceanMage',
                         field: 'images/fields/mobile/anticoEgittoGiorno_2.jpg'
 ,
                         dialogo: [
@@ -2267,7 +2270,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'fm-4-secmeton', kind: 'duel', icona: '🔱',
                         label: 'High Mage Secmeton', x: 2780, y: 1520,
-                        characterId: 'highMageSecmeton', difficulty: 'Difficile',
+                        characterId: 'highMageSecmeton',
                         field: 'images/fields/mobile/anticoEgittoNotte_2.jpg'
 ,
                         dialogo: [
@@ -2291,7 +2294,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'fm-4-mountain', kind: 'duel', icona: '🪨',
                         label: 'Mountain Mage', x: 870, y: 1620,
-                        characterId: 'mountainMage', difficulty: 'Medio',
+                        characterId: 'mountainMage',
                         field: 'images/fields/mobile/rovine_2.jpg'
 ,
                         dialogo: [
@@ -2302,7 +2305,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'fm-4-atenza', kind: 'duel', icona: '🐲',
                         label: 'High Mage Atenza', x: 500, y: 1400,
-                        characterId: 'highMageAtenza', difficulty: 'Difficile',
+                        characterId: 'highMageAtenza',
                         field: 'images/fields/mobile/rovine_2.jpg'
 ,
                         dialogo: [
@@ -2325,7 +2328,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'fm-4-forest', kind: 'duel', icona: '🍃',
                         label: 'Forest Mage', x: 700, y: 390,
-                        characterId: 'forestMage', difficulty: 'Medio',
+                        characterId: 'forestMage',
                         field: 'images/fields/mobile/anticoEgittoGiorno_2.jpg'
 ,
                         dialogo: [
@@ -2337,7 +2340,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'fm-4-anubisius', kind: 'duel', icona: '🐺',
                         label: 'High Mage Anubisius', x: 320, y: 270,
-                        characterId: 'highMageAnubisius', difficulty: 'Difficile',
+                        characterId: 'highMageAnubisius',
                         field: 'images/fields/mobile/anticoEgittoNotte_2.jpg'
 ,
                         dialogo: [
@@ -2361,7 +2364,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'fm-4-desert', kind: 'duel', icona: '🦂',
                         label: 'Desert Mage', x: 2380, y: 180,
-                        characterId: 'desertMage', difficulty: 'Medio',
+                        characterId: 'desertMage',
                         field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg'
 ,
                         dialogo: [
@@ -2373,7 +2376,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'fm-4-martis', kind: 'duel', icona: '🦅',
                         label: 'High Mage Martis', x: 2600, y: 560,
-                        characterId: 'highMageMartis', difficulty: 'Difficile',
+                        characterId: 'highMageMartis',
                         field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg'
 ,
                         dialogo: [
@@ -2397,7 +2400,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'fm-4-meadow', kind: 'duel', icona: '🌾',
                         label: 'Meadow Mage', x: 890, y: 900,
-                        characterId: 'meadowMage', difficulty: 'Medio',
+                        characterId: 'meadowMage',
                         field: 'images/fields/mobile/anticoEgittoGiorno_2.jpg'
 ,
                         dialogo: [
@@ -2408,7 +2411,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'fm-4-kepura', kind: 'duel', icona: '🦌',
                         label: 'High Mage Kepura', x: 620, y: 820,
-                        characterId: 'highMageKepura', difficulty: 'Difficile',
+                        characterId: 'highMageKepura',
                         field: 'images/fields/mobile/anticoEgittoNotte_3.jpg'
 ,
                         dialogo: [
@@ -2456,7 +2459,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'fm-5-labirinto', kind: 'duel', icona: '🧱',
                         label: 'Labyrinth Mage', x: 1650, y: 1290,
-                        characterId: 'labyrinthMage', difficulty: 'Difficile',
+                        characterId: 'labyrinthMage',
                         field: 'images/fields/mobile/anticoEgittoNotte_2.jpg'
 ,
                         dialogo: [
@@ -2472,7 +2475,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'fm-5-seto2', kind: 'duel', icona: '🔺',
                         label: 'Seto nel labirinto', x: 1770, y: 1240,
-                        characterId: 'priestSeto', difficulty: 'Difficile',
+                        characterId: 'priestSeto',
                         field: 'images/fields/mobile/anticoEgittoNotte_2.jpg',
                         dialogo: [
                             { chi: 'priestSeto', testo: 'Il labirinto è finito, principe. Prima di portarti da Heishin voglio vedere con i miei occhi quanto vali.' },
@@ -2483,7 +2486,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'fm-5-sebek', kind: 'duel', icona: '🐊',
                         label: 'Sebek', x: 1890, y: 1190,
-                        characterId: 'sebek', difficulty: 'Difficile',
+                        characterId: 'sebek',
                         field: 'images/fields/mobile/anticoEgittoNotte_3.jpg'
 ,
                         dialogo: [
@@ -2495,7 +2498,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'fm-5-neku', kind: 'duel', icona: '🛡️',
                         label: 'Neku', x: 2060, y: 1330,
-                        characterId: 'neku', difficulty: 'Difficile',
+                        characterId: 'neku',
                         field: 'images/fields/mobile/anticoEgittoNotte_3.jpg'
 ,
                         dialogo: [
@@ -2530,7 +2533,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'fm-6-heishin', kind: 'duel', icona: '🏛️',
                         label: 'Heishin', x: 2620, y: 730,
-                        characterId: 'heishin', difficulty: 'Difficile',
+                        characterId: 'heishin',
                         field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg'
 ,
                         dialogo: [
@@ -2542,7 +2545,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'fm-6-seto', kind: 'duel', icona: '🔺',
                         label: 'Sacerdote Seto', x: 2840, y: 570,
-                        characterId: 'priestSeto', difficulty: 'Difficile',
+                        characterId: 'priestSeto',
                         field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg'
 ,
                         // Il tradimento vero di Seto, come nel gioco: discende dagli
@@ -2590,7 +2593,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'fm-7-darknite', kind: 'duel', icona: '😈',
                         label: 'DarkNite', x: 3060, y: 210,
-                        characterId: 'darkNite', difficulty: 'Difficile',
+                        characterId: 'darkNite',
                         field: 'images/fields/mobile/anticoEgittoNotte_1.jpg'
 ,
                         dialogo: [
@@ -2613,7 +2616,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'fm-7-finale-duello', kind: 'duel', icona: '👑',
                         label: 'Nitemare', x: 2560, y: 200,
-                        characterId: 'darkNite', difficulty: 'Difficile',
+                        characterId: 'darkNite',
                         field: 'images/fields/mobile/anticoEgittoNotte_3.jpg'
 ,
                         dialogo: [
@@ -2702,19 +2705,19 @@ const storyCampaignsDatabase = [
                     {
                         id: 'freedom-1-ishizu', kind: 'duel', icona: '📿',
                         label: 'Ishizu Ishtar', x: 488, y: 640,
-                        characterId: 'ishizu', difficulty: 'Medio',
+                        characterId: 'ishizu',
                         field: 'images/fields/mobile/anticoEgittoGiorno_1.jpg'
                     },
                     {
                         id: 'freedom-1-odion', kind: 'duel', icona: '🔥',
                         label: 'Odion', x: 742, y: 772,
-                        characterId: 'odion', difficulty: 'Medio',
+                        characterId: 'odion',
                         field: 'images/fields/mobile/anticoEgittoGiorno_2.jpg'
                     },
                     {
                         id: 'freedom-1-shadi', kind: 'duel', icona: '🗝️',
                         label: 'Shadi', x: 1185, y: 655,
-                        characterId: 'shadi', difficulty: 'Difficile',
+                        characterId: 'shadi',
                         field: 'images/fields/mobile/anticoEgittoNotte_1.jpg'
                     }
                 ]
@@ -2749,19 +2752,19 @@ const storyCampaignsDatabase = [
                     {
                         id: 'freedom-2-labirinto', kind: 'duel', icona: '🧱',
                         label: 'Labyrinth Mage', x: 1455, y: 445,
-                        characterId: 'labyrinthMage', difficulty: 'Difficile',
+                        characterId: 'labyrinthMage',
                         field: 'images/fields/mobile/anticoEgittoNotte_2.jpg'
                     },
                     {
                         id: 'freedom-2-anubisius', kind: 'duel', icona: '🐺',
                         label: 'High Mage Anubisius', x: 1238, y: 470,
-                        characterId: 'highMageAnubisius', difficulty: 'Difficile',
+                        characterId: 'highMageAnubisius',
                         field: 'images/fields/mobile/anticoEgittoNotte_2.jpg'
                     },
                     {
                         id: 'freedom-2-sebek', kind: 'duel', icona: '🐊',
                         label: 'Sebek', x: 1045, y: 575,
-                        characterId: 'sebek', difficulty: 'Difficile',
+                        characterId: 'sebek',
                         field: 'images/fields/mobile/anticoEgittoNotte_3.jpg'
                     }
                 ]
@@ -2797,19 +2800,19 @@ const storyCampaignsDatabase = [
                     {
                         id: 'freedom-3-isis', kind: 'duel', icona: '🔮',
                         label: 'Sacerdotessa Isis', x: 600, y: 440,
-                        characterId: 'priestessIsis', difficulty: 'Difficile',
+                        characterId: 'priestessIsis',
                         field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg'
                     },
                     {
                         id: 'freedom-3-seto', kind: 'duel', icona: '🔺',
                         label: 'Sacerdote Seto', x: 392, y: 330,
-                        characterId: 'priestSeto', difficulty: 'Difficile',
+                        characterId: 'priestSeto',
                         field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg'
                     },
                     {
                         id: 'freedom-3-heishin', kind: 'duel', icona: '🏛️',
                         label: 'Heishin', x: 178, y: 212,
-                        characterId: 'heishin', difficulty: 'Difficile',
+                        characterId: 'heishin',
                         field: 'images/fields/mobile/anticoEgittoNotte_1.jpg'
                     }
                 ]
@@ -2845,7 +2848,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'freedom-4-darknite', kind: 'duel', icona: '😈',
                         label: 'DarkNite', x: 665, y: 168,
-                        characterId: 'darkNite', difficulty: 'Difficile',
+                        characterId: 'darkNite',
                         field: 'images/fields/mobile/anticoEgittoNotte_3.jpg'
                     },
                     {
@@ -2862,7 +2865,7 @@ const storyCampaignsDatabase = [
                     {
                         id: 'freedom-4-giacobbo', kind: 'duel', icona: '🎥',
                         label: 'Roberto Giacobbo I', x: 990, y: 105,
-                        characterId: 'robertoGiacobbo', difficulty: 'Difficile',
+                        characterId: 'robertoGiacobbo',
                         field: 'images/fields/mobile/anticoEgittoRovinePalazzo.jpg'
                     },
                     {

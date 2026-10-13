@@ -469,7 +469,8 @@
 // v245: dettagli bustina cliccabili e interruttore filmati di Evocazione.
 // v246: Cartoteca in ordine catalogo, con WW1 in fondo.
 // v249: ambientazioni e musica per arco della Storia anime.
-const CACHE_NAME = 'ygo-duel-arena-v249';
+// v250: ripresa sicura del duello dopo sospensione della WebView mobile.
+const CACHE_NAME = 'ygo-duel-arena-v250';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

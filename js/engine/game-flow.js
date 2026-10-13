@@ -1607,6 +1607,40 @@ function endAttackDrag(event) {
             : `🚫 ${attaccante ? attaccante.card.name : 'Questo mostro'} non può attaccare direttamente.`));
 }
 
+/** Annulla soltanto il gesto grafico, senza dichiarare alcun attacco. */
+function annullaTrascinamentoAttaccoSospeso() {
+    if (!isDraggingAttack) return;
+    isDraggingAttack = false;
+    attackDragStart.attackerIndex = -1;
+    attackDragStart.forcedDirect = false;
+    if (attackArrowSVG) attackArrowSVG.style.display = 'none';
+    hideDirectAttackHint();
+    clearAttackTargetHighlight();
+    agganciaFrecciaAllaMano(false);
+    document.removeEventListener('pointermove', dragAttackArrow);
+    document.removeEventListener('pointerup', endAttackDrag);
+    document.removeEventListener('pointercancel', endAttackDrag);
+}
+
+/**
+ * Ripara lo stato puramente interattivo dopo che Android ha congelato la
+ * WebView. Lo stato del duello non viene alterato: si annulla solo un drag
+ * senza piu' dito e si ridisegna l'eventuale scelta che il motore stava gia'
+ * aspettando. E' proprio il caso del blocco osservato in Battle Phase.
+ */
+function ripristinaDuelloDopoSospensione() {
+    if (typeof gameState === 'undefined' || gameState.gameOver) return;
+    annullaTrascinamentoAttaccoSospeso();
+    // Sincrono: requestAnimationFrame puo' restare sospeso proprio nella
+    // WebView che stiamo cercando di recuperare.
+    if (window.Decisioni && typeof Decisioni.riproponi === 'function') Decisioni.riproponi();
+}
+
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) ripristinaDuelloDopoSospensione();
+});
+window.addEventListener('pageshow', ripristinaDuelloDopoSospensione);
+
 /**
  * Trova lo slot mostro del bot più vicino al punto (x, y) di rilascio del
  * trascinamento d'attacco, per il fallback "rilascio impreciso" qui sopra.

@@ -221,6 +221,20 @@
             const scelta = typeof valore === 'number' ? richiesta.candidati[valore] : valore;
             fine(scelta === undefined ? null : scelta);
             return true;
+        },
+
+        /**
+         * Ridisegna la scelta umana ancora aperta senza crearne una nuova.
+         * Android puo' congelare la WebView a schermo spento e perdere il
+         * layer del modale pur lasciando viva la callback: al ritorno il
+         * motore risulta correttamente in attesa, ma non c'e' piu' nulla da
+         * toccare. Riemettere la stessa richiesta conserva id, candidati e
+         * callback, quindi non duplica ne' risolve la decisione.
+         */
+        riproponi() {
+            if (!aperta || !g.EventiDuello) return false;
+            g.EventiDuello.emetti('decisione', aperta.richiesta, aperta.fine);
+            return true;
         }
     };
 

@@ -578,9 +578,21 @@
 
     let done = false;
 
+    // Se lo schermo si spegne durante il filmato, alcune WebView lasciano
+    // il <video> in pausa senza emettere ended/error. Alla riapertura si
+    // prova a ripartire; se la policy mobile lo vieta, si chiude il video
+    // e si libera comunque il lock invece di immobilizzare il duello.
+    const resumeAfterVisibility = () => {
+        if (document.hidden || done || !video.paused) return;
+        const resumed = video.play();
+        if (resumed && typeof resumed.catch === 'function') resumed.catch(cleanup);
+    };
+    document.addEventListener('visibilitychange', resumeAfterVisibility);
+
     const cleanup = () => {
         if (done) return;
         done = true;
+        document.removeEventListener('visibilitychange', resumeAfterVisibility);
         clearTimeout(safetyTimeout);
         clearTimeout(revealTimeout);
 
