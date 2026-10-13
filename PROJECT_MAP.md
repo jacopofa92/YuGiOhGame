@@ -1,6 +1,25 @@
 # Yu-Gi-Oh! Millennium Duel Arena — mappa tecnica persistente
 
-Ultimo aggiornamento verificato: 2026-10-13.
+Ultimo aggiornamento verificato: 2026-10-14.
+
+## Mondo dei Ricordi e Duello Cerimoniale completi (2026-10-14)
+
+L'ultima area della Storia anime percorre ora entrambi gli archi conclusivi
+senza condensarli in tre scene: sfida di Bakura e duello con Kaiba, arrivo al
+Cairo e cartiglio di Téa, Labirinto del Puzzle, incoronazione e sacerdoti,
+primo scontro con Diabound, sacrificio di Mahad, caccia ai Ka, caduta di
+Slifer, tempo riavvolto, Kul Elna, Kisara e Aknadin, ricerca del nome, Yugi
+contro Bakura, battaglia completa contro Zorc, Horakhty e ritorno dai ricordi.
+Il raccordo verso il rito comprende la tempesta e il jet di Kaiba; l'epilogo
+termina in Giappone con Rebecca e Arthur. Il vecchio laterale inventato
+«Seto contro il Re dei Ladri» conserva il proprio id di salvataggio, ma ora
+rappresenta correttamente Atem contro Seto posseduto da Aknadin.
+
+I nodi seguono le zone illustrate dalla mappa (presente, Puzzle, palazzo,
+oscurità centrale, tempio e aeroporto), con rami laterali che non avanzano la
+linea principale. Undici migrazioni puntuali mantengono stabile il progresso
+dei salvataggi già esistenti; il guardrail narrativo controlla cronologia,
+distanze, avversari e contenuto dell'epilogo.
 
 ## Retro carta, flicker residuo ed epilogo anime (2026-10-13)
 

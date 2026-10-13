@@ -1601,15 +1601,58 @@ const storyCampaignsDatabase = [
                         mappa: { sfondo: ['images/maps/storia_anime_cerimoniale.jpg'], larghezza: 1536, altezza: 1024 },
                         tappe: [
                             {
+                                id: 'anime-9-prologo', kind: 'scene', icona: '◉',
+                                label: 'L’ultimo Gioco delle Ombre', x: 170, y: 165,
+                                chi: 'Bakura', chiId: 'bakura',
+                                testo: [
+                                    { chi: 'bakura', testo: 'Porta le tre Divinità in Egitto, Faraone. Nel luogo dove riposano i tuoi ricordi comincerà il nostro ultimo Gioco delle Ombre.' },
+                                    { io: true, testo: 'Se il mio passato è la posta in gioco, verrò. Ma questa volta non userai i miei amici contro di me.' },
+                                    { chi: 'kaiba', testo: 'Ancora favole sul Faraone? Dimostrami almeno che il tuo mostro merita la mia attenzione.' },
+                                    { chi: 'bakura', testo: 'Volentieri, Kaiba. Diabound ricorderà il potere del tuo Drago Bianco molto più a lungo di te.' }
+                                ]
+                            },
+                            {
+                                id: 'anime-9-kaiba-bakura', kind: 'duel', icona: '🐉',
+                                label: 'Kaiba contro Bakura', x: 300, y: 245,
+                                parallelo: true, sbloccaDopo: 'anime-9-prologo',
+                                characterId: 'bakura',
+                                protagonista: { name: 'Seto Kaiba', title: 'Presidente della Kaiba Corporation', image: 'images/characters/setoKaiba.jpg', icon: '🐉' },
+                                dialogo: [
+                                    { chi: 'bakura', testo: 'Il tuo Drago Bianco sarà un ottimo nutrimento per Diabound.' },
+                                    { io: true, testo: 'Prova a toccarlo e scoprirai perché nessuno umilia Seto Kaiba due volte.' }
+                                ]
+                            },
+                            {
                                 id: 'anime-9-scena', kind: 'scene', icona: '🏜️',
-                                label: 'Verso i ricordi', x: 250, y: 830,
+                                label: 'Arrivo al Cairo', x: 245, y: 820,
                                 chi: 'Ishizu Ishtar', chiId: 'ishizu',
                                 testo: [
-                                    { chi: 'ishizu', testo: 'Il Faraone deve tornare in Egitto, dentro i propri ricordi: è l’unico posto dove il suo nome è ancora scritto.' },
-                                    { chi: 'yugiMuto', testo: 'E io… devo accompagnarlo, vero?' },
-                                    { chi: 'ishizu', testo: 'Là dentro non sarà il Re dei Giochi. Sarà un ragazzo su un trono, con dei sacerdoti attorno e un nemico che non ha ancora un volto.' },
-                                    { io: true, testo: 'Quando troverò il mio nome, la porta si aprirà.' },
-                                    { chi: 'ishizu', testo: 'E una porta aperta non si può lasciare aperta per sempre. Preparatevi: non è salvarlo che dovete fare, ma lasciarlo andare.' }
+                                    { testo: 'Yugi, Joey, Téa e Tristan arrivano al Cairo, dove Ishizu, Marik e Odion li conducono alla Tavola delle Memorie Perdute.' },
+                                    { chi: 'tea', testo: 'Ho preso questo cartiglio per te, Atem. Quando ritroverai il tuo nome potrai inciderlo qui e non perderlo mai più.' },
+                                    { io: true, testo: 'Grazie, Téa. Le tre Divinità apriranno la porta dei ricordi; qualunque cosa trovi oltre quella soglia, tornerò da voi.' },
+                                    { chi: 'ishizu', testo: 'Il Faraone dovrà rivivere il proprio destino. Voi potrete aiutarlo soltanto trovando il suo vero nome.' }
+                                ]
+                            },
+                            {
+                                id: 'anime-9-porta', kind: 'scene', icona: '🧩',
+                                label: 'La vera porta', x: 620, y: 205,
+                                chi: 'Shadi',
+                                testo: [
+                                    { testo: 'Atem presenta le tre Divinità alla tavola e viene trascinato nel proprio passato. Lo spirito di Bakura lo segue, lasciando a terra il corpo di Ryo.' },
+                                    { nome: 'Shadi', testo: 'Nel Labirinto del Puzzle esiste una sola porta vera. Oltre quella porta il Faraone sta rivivendo la notte in cui perdette il nome.' },
+                                    { chi: 'yugiMuto', testo: 'Allora troveremo quella porta e il suo cartiglio. Non lasceremo che affronti Bakura da solo.' },
+                                    { chi: 'joey', testo: 'Insieme, come sempre. Andiamo a riprenderci il nostro amico.' }
+                                ]
+                            },
+                            {
+                                id: 'anime-9-incoronazione', kind: 'scene', icona: '👑',
+                                label: 'Il giovane Faraone', x: 1190, y: 145,
+                                chi: 'Il Faraone',
+                                testo: [
+                                    { testo: 'Nel Mondo dei Ricordi Atem riprende il posto del giovane sovrano durante la propria incoronazione.' },
+                                    { nome: 'Shimon Muran', testo: 'Mio Faraone, questi sono i sei sacerdoti custodi degli Oggetti del Millennio: Seto, Mahad, Isis, Shada, Karim e Aknadin.' },
+                                    { chi: 'priestSeto', testo: 'Le Tavole di Pietra imprigionano i Ka nati dal cuore degli uomini. Saranno la difesa dell’Egitto.' },
+                                    { io: true, testo: 'Conosco i loro volti senza ricordare le loro vite. Devo scoprire che cosa accadde prima che questa memoria giunga alla fine.' }
                                 ]
                             },
                             // --- Dentro i ricordi: il Re dei Ladri ---
@@ -1627,7 +1670,7 @@ const storyCampaignsDatabase = [
                             // Faraone (il protagonista della campagna).
                             {
                                 id: 'anime-9-bakura-scena', kind: 'scene', icona: '🗝️',
-                                label: 'Il Re dei Ladri', x: 1420, y: 190,
+                                label: 'Il Re dei Ladri', x: 1410, y: 220,
                                 chi: 'Bakura', chiId: 'bakura',
                                 testo: [
                                     { chi: 'bakura', testo: 'Tremila anni fa ero un ragazzo di Kul Elna, e Kul Elna non esiste più. L’hanno fusa, casa per casa, per forgiare i vostri sette Oggetti d’oro.' },
@@ -1639,11 +1682,11 @@ const storyCampaignsDatabase = [
                             },
                             {
                                 id: 'anime-9-bakura', kind: 'duel', icona: '🗝️',
-                                label: 'Il Re dei Ladri', x: 1230, y: 320,
+                                label: 'Obelisk contro Diabound', x: 1280, y: 300,
                                 characterId: 'bakura',
                                 dialogo: [
-                                    { chi: 'bakura', testo: 'I tuoi Dei li ho già visti cadere una volta. Non ti proteggeranno per sempre.' },
-                                    { io: true, testo: 'Non ho bisogno che mi proteggano. Ho bisogno che tu lasci questo palazzo.' }
+                                    { chi: 'bakura', testo: 'Diabound ha copiato il potere del Drago Bianco di Kaiba. Neppure Obelisk riuscirà a schiacciarlo.' },
+                                    { io: true, testo: 'Questo palazzo e il mio popolo non saranno le pedine della tua vendetta. Obelisk, mostrargli la forza del Faraone!' }
                                 ]
                             },
                             {
@@ -1652,15 +1695,61 @@ const storyCampaignsDatabase = [
                                 // tomba del padre del Faraone: i fatti di
                                 // palazzo stanno tutti nella città in alto a
                                 // destra, così il sentiero non si aggroviglia.
-                                label: 'Il sacrificio di Mahad', x: 1075, y: 255,
+                                label: 'Il sacrificio di Mahad', x: 1110, y: 270,
                                 chi: 'Mahad',
                                 testo: [
-                                    { nome: 'Mahad', testo: 'Il ladro è sceso nella tomba di vostro padre, mio Faraone. L’ho seguito là sotto.' },
-                                    { io: true, testo: 'Mahad, non devi farlo. L’Anello del Millennio è troppo potente.' },
-                                    { nome: 'Mahad', testo: 'Proprio per questo ne userò una magia che non ho mai usato. Unirò la mia anima al mio Ka.' },
-                                    { io: true, testo: 'Sei il mio amico più fedele, Mahad. Non voglio perderti.' },
-                                    { nome: 'Mahad', testo: 'Da stanotte non sarò più Mahad il sacerdote: sarò il Mago Nero, e continuerò a proteggervi anche oltre la morte.' },
-                                    { nome: 'Mahad', testo: 'Quando avrete bisogno di me, chiamatemi. Risponderò, mio Faraone.' }
+                                    { nome: 'Mahad', testo: 'Bakura cercherà il mio Anello del Millennio. Lo attirerò nel santuario e lo affronterò lontano dal palazzo.' },
+                                    { io: true, testo: 'Non combatterlo da solo, Mahad. Diabound diventa più forte con ogni Ka che distrugge.' },
+                                    { testo: 'Nel santuario, Diabound assorbe l’abilità dello Shadow Ghoul e porta Mahad al limite.' },
+                                    { nome: 'Mahad', testo: 'Non posso vincere conservando la mia vita. Unirò il mio Ba al mio Ka e servirò il Faraone oltre la morte.' },
+                                    { testo: 'Mahad si fonde con il Mago dell’Illusione. Nasce il Mago Nero: il suo ultimo attacco abbatte Diabound e fa crollare il santuario, ma Bakura fugge con l’Anello.' },
+                                    { io: true, testo: 'Mahad… il tuo nome e la tua lealtà non saranno dimenticati.' }
+                                ]
+                            },
+                            {
+                                id: 'anime-9-caccia-ka', kind: 'scene', icona: '⚖️',
+                                label: 'La caccia ai Ka', x: 1390, y: 350,
+                                chi: 'Sacerdote Seto', chiId: 'priestSeto',
+                                testo: [
+                                    { chi: 'priestSeto', testo: 'Per opporci a Diabound cercheremo fra il popolo un Ka abbastanza potente da difendere l’Egitto.' },
+                                    { nome: 'Aknadin', testo: 'Non limitarti a cercare, Seto. Costringi quei prigionieri a combattere: l’odio renderà più forti i loro mostri.' },
+                                    { nome: 'Kisara', testo: 'Non voglio combattere nessuno. Il drago dentro di me appare soltanto per proteggere.' },
+                                    { chi: 'priestSeto', testo: 'Questa ragazza non è un’arma. Liberatela. Se il suo Ka è davvero così grande, non nascerà dalla crudeltà.' },
+                                    { testo: 'Bakura ha però lasciato una parte della propria oscurità dentro Aknadin. Il sacerdote comincia a desiderare il trono per suo figlio Seto.' }
+                                ]
+                            },
+                            {
+                                id: 'anime-9-inseguimento', kind: 'scene', icona: '🐍',
+                                label: 'Slifer cade', x: 1210, y: 410,
+                                chi: 'Il Faraone',
+                                testo: [
+                                    { testo: 'Bakura incendia la città e Atem lo insegue evocando Slifer. Aknadin interviene nell’ombra e permette a Diabound di abbattere la Divinità.' },
+                                    { chi: 'yugiMuto', testo: 'Atem! Siamo riusciti a raggiungerti. Prendi la nostra forza!' },
+                                    { testo: 'Con l’aiuto degli amici Atem richiama Ra nella forma della Fenice e distrugge Diabound.' },
+                                    { chi: 'bakura', testo: 'Hai vinto questo momento, Faraone. Ma sono io a muovere la clessidra del gioco.' }
+                                ]
+                            },
+                            {
+                                id: 'anime-9-tempo', kind: 'scene', icona: '⌛',
+                                label: 'Il tempo riavvolto', x: 1050, y: 455,
+                                chi: 'Bakura', chiId: 'bakura',
+                                testo: [
+                                    { testo: 'Bakura rovescia la Clessidra del Tempo. Gli ultimi eventi vengono cancellati e gli amici non raggiungono più Atem.' },
+                                    { chi: 'bakura', testo: 'Senza il tuo piccolo Yugi non puoi evocare Ra. Questa volta Diabound completerà l’attacco.' },
+                                    { testo: 'Atem viene sconfitto e scompare dal Mondo dei Ricordi. Bakura prende il Puzzle e la memoria continua senza il suo Faraone.' },
+                                    { chi: 'yugiMuto', testo: 'La storia è cambiata, ma Atem è ancora qui da qualche parte. Troveremo il suo nome e lo riporteremo indietro.' }
+                                ]
+                            },
+                            {
+                                id: 'anime-9-kul-elna', kind: 'scene', icona: '💀',
+                                label: 'Kul Elna', x: 835, y: 445,
+                                chi: 'Bakura', chiId: 'bakura',
+                                testo: [
+                                    { testo: 'A Kul Elna, gli spiriti delle vittime proteggono la Tavola del Mondo dei Morti. Mana scopre il proprio Ka: la Maga Nera.' },
+                                    { chi: 'bakura', testo: 'Questo villaggio fu sacrificato per creare gli Oggetti del Millennio. Ora quelle anime apriranno la porta a Zorc.' },
+                                    { nome: 'Mahad', testo: 'Il dolore di Kul Elna non giustifica la distruzione dell’intero mondo. Mana, combatti al mio fianco.' },
+                                    { testo: 'Mago Nero e Maga Nera abbattono Diabound. Il Re dei Ladri cade, ma Aknadin raccoglie gli Oggetti e li inserisce nella tavola.' },
+                                    { testo: 'L’oscurità assume una forma immensa: Zorc Necrophades è tornato.' }
                                 ]
                             },
                             // Il sacerdote Seto, Kisara e Aknadin: l'origine del
@@ -1669,29 +1758,41 @@ const storyCampaignsDatabase = [
                             // da Bakura) restava un nome senza spiegazione.
                             {
                                 id: 'anime-9-kisara', kind: 'scene', icona: '🐉',
-                                label: 'Kisara', x: 1375, y: 365,
+                                label: 'Il Drago di Kisara', x: 1010, y: 535,
                                 chi: 'Sacerdote Seto', chiId: 'priestSeto',
                                 testo: [
-                                    { chi: 'priestSeto', testo: 'Questa ragazza dai capelli bianchi custodisce dentro di sé un Ka che nessuno ha mai visto: un drago bianco, dagli occhi azzurri.' },
-                                    { nome: 'Kisara', testo: 'Mi avete salvata dagli schiavisti, sacerdote Seto. Non so perché quel drago viva in me, ma so che risponde quando siete in pericolo.' },
-                                    { nome: 'Aknadin', testo: 'Seto, figlio mio. Un Ka così potente non deve restare in una serva: strappalo dal suo corpo, e sarai tu il Faraone.' },
-                                    { chi: 'priestSeto', testo: 'Figlio? Che cosa stai dicendo, Aknadin?' },
-                                    { nome: 'Aknadin', testo: 'Sono stato io a forgiare i sette Oggetti del Millennio, fondendo gli abitanti di Kul Elna. Il prezzo è già stato pagato: non sprecarlo.' },
-                                    { testo: 'Aknadin colpisce. Kisara si getta davanti a Seto e muore al suo posto, e il suo Ka entra nella pietra: un Drago Bianco Occhi Blu che da quel giorno combatterà soltanto per lui.' },
-                                    { chi: 'priestSeto', testo: 'Kisara… ti giuro che il tuo drago non servirà mai l’odio di nessuno.' }
+                                    { nome: 'Aknadin', testo: 'Seto, tu sei mio figlio. Con il Drago Bianco e il potere di Zorc prenderai il trono che ti spetta.' },
+                                    { chi: 'priestSeto', testo: 'Non voglio un trono costruito sul sangue. Kisara non sarà sacrificata per la tua ambizione.' },
+                                    { testo: 'Aknadin attacca Seto. Kisara si frappone e riceve il colpo destinato a lui.' },
+                                    { nome: 'Kisara', testo: 'Il mio drago vi ha sempre protetto, sacerdote Seto. Continuerà a farlo anche quando io non ci sarò più.' },
+                                    { testo: 'Lo spirito di Kisara assume la forma del Drago Bianco Occhi Blu e spezza il dominio di Aknadin su Seto.' },
+                                    { chi: 'priestSeto', testo: 'Kisara… il tuo potere non servirà mai l’odio. Combatterà per proteggere ciò che tu hai salvato.' }
                                 ]
                             },
-                            // Il sacerdote Seto affronta il Re dei Ladri col
-                            // drago di Kisara (Dawn of the Duel). Ramo laterale.
+                            // Lo scontro è una traduzione nel motore TCG della
+                            // battaglia fra Atem e Seto posseduto da Aknadin.
+                            // L'id storico resta invariato per non perdere le
+                            // vittorie laterali già salvate nelle partite.
                             {
                                 id: 'anime-9-seto-bakura', kind: 'duel', icona: '🐉',
-                                label: 'Seto contro il Re dei Ladri', x: 1475, y: 290,
+                                label: 'Aknadin possiede Seto', x: 920, y: 560,
                                 parallelo: true, sbloccaDopo: 'anime-9-kisara',
-                                characterId: 'bakura',
-                                protagonista: { name: 'Sacerdote Seto', title: 'Il Sommo Sacerdote', image: 'images/characters/priestSeto.jpg', icon: '🐉' },
+                                characterId: 'priestSeto',
+                                protagonista: { name: 'Atem', title: 'Il Faraone', image: 'images/characters/yamiYugi.jpg', icon: '👑' },
                                 dialogo: [
-                                    { chi: 'bakura', testo: 'Il cagnolino del Faraone in persona. Diabound ha già divorato i Ka di mezzo palazzo: il tuo sarà il prossimo.' },
-                                    { io: true, testo: 'Il drago che porto non è mio, ladro. È di una ragazza che è morta per proteggermi. Non perderà contro di te.' }
+                                    { chi: 'priestSeto', testo: 'La volontà di Aknadin comanda questo corpo. Il Drago Bianco abbatterà il Faraone e mi consegnerà il trono.' },
+                                    { io: true, testo: 'Seto non è la tua pedina. Kisara gli ha affidato il proprio spirito e sarà lei a liberarlo dalla tua oscurità.' }
+                                ]
+                            },
+                            {
+                                id: 'anime-9-cartiglio', kind: 'scene', icona: '📜',
+                                label: 'La stanza del nome', x: 690, y: 610,
+                                chi: 'Yugi Muto', chiId: 'yugiMuto',
+                                testo: [
+                                    { testo: 'Yugi, Joey e Téa cercano il cartiglio nel palazzo mentre lo spirito di Bakura prende possesso di Tristan e tenta di depistarli.' },
+                                    { chi: 'joey', testo: 'Quel sorriso non è di Tristan. Bakura è sempre stato con noi!' },
+                                    { chi: 'yugiMuto', testo: 'Il nome è inciso qui, ma non sappiamo leggere i geroglifici. Memorizziamo ogni simbolo e torniamo da Atem.' },
+                                    { chi: 'bakura', testo: 'Prima dovrai battermi senza il Faraone che ti protegga. Vediamo quanto vale davvero Yugi Muto.' }
                                 ]
                             },
                             // Il Gioco delle Ombre: la partita che Bakura ha
@@ -1701,33 +1802,69 @@ const storyCampaignsDatabase = [
                             // scontro — il `label` dice quale.
                             {
                                 id: 'anime-9-zorc', kind: 'duel', icona: '🌑',
-                                label: 'Il nome contro Bakura', x: 640, y: 520,
+                                label: 'Yugi contro Bakura', x: 610, y: 675,
                                 characterId: 'bakura',
                                 protagonista: { name: 'Yugi Muto', title: 'Il ragazzo del Puzzle', image: 'images/characters/yugiMuto.jpg', icon: '🧩' },
                                 dialogo: [
-                                    { chi: 'bakura', testo: 'Mentre Zorc distrugge il passato, tu morirai qui senza riuscire a consegnare al Faraone il suo nome.' },
-                                    { chi: 'bakura', testo: 'Ogni Life Point che perdi avvicina il presente alla stessa oscurità che sta inghiottendo l’Egitto.' },
-                                    { io: true, testo: 'Ho ricomposto il cartiglio e so come leggere quel nome. Non ti permetterò di fermarmi prima che Atem possa udirlo.' }
+                                    { chi: 'bakura', testo: 'Il tuo Deck finirà prima che tu possa portare quei simboli al Faraone. Senza di lui sei soltanto il contenitore del Puzzle.' },
+                                    { io: true, testo: 'Atem mi ha insegnato a credere nelle mie carte, non a nascondermi dietro di lui. Gandora aprirà la strada al suo nome.' }
+                                ]
+                            },
+                            {
+                                id: 'anime-9-battaglia-zorc', kind: 'scene', icona: '🌑',
+                                label: 'La notte di Zorc', x: 775, y: 500,
+                                chi: 'Il Faraone',
+                                testo: [
+                                    { testo: 'Zorc devasta la capitale. Shada e Isis sacrificano la vita per proteggere il Faraone; Shimon libera Exodia, ma persino il Proibito viene sconfitto.' },
+                                    { nome: 'Shimon Muran', testo: 'Exodia può trattenere l’oscurità soltanto per poco. Ritrova il tuo nome, mio Faraone.' },
+                                    { testo: 'Atem richiama Obelisk, Slifer e Ra. Zorc resiste e distrugge anche le tre Divinità.' },
+                                    { chi: 'kaiba', testo: 'Tre Draghi Bianchi non bastano? Allora guarda il Drago Bianco Occhi Blu Finale!' },
+                                    { testo: 'Kaiba porta nel Mondo dei Ricordi il proprio Deck. Il Drago Finale si fonde con la forza di Atem nel Cavaliere del Destino, ma Zorc sopravvive ancora.' },
+                                    { chi: 'yugiMuto', testo: 'Non serve un mostro più forte. Serve il nome che unisce il Faraone alla sua vera anima.' }
                                 ]
                             },
                             {
                                 id: 'anime-9-nome', kind: 'scene', icona: '👑',
                                 // Sotto la scacchiera di Zorc, verso il tempio:
                                 // il nome ritrovato apre la strada all'ultima porta.
-                                label: 'Atem', x: 760, y: 650,
+                                label: 'Atem', x: 860, y: 620,
                                 chi: 'Il Faraone',
                                 testo: [
                                     { chi: 'yugiMuto', testo: 'Il tuo nome, Faraone! L’ho trovato! Atem!' },
                                     { io: true, testo: 'Atem… Sì. Ora ricordo chi sono.' },
                                     { chi: 'bakura', testo: 'No! Zorc non può perdere! Il mio tabellone…' },
-                                    { testo: 'Con il suo nome il Faraone richiama gli Dei, e i tre diventano una sola luce. Zorc cade, e il Mondo dei Ricordi comincia a crollare.' },
+                                    { testo: 'Con il suo vero nome Atem richiama nuovamente le tre Divinità. Obelisk, Slifer e Ra si uniscono in Horakhty, la Creatrice della Luce.' },
+                                    { nome: 'Horakhty', testo: 'L’oscurità non può esistere davanti alla luce della creazione.' },
+                                    { testo: 'Horakhty cancella Zorc e con lui lo spirito oscuro di Bakura. Il Mondo dei Ricordi ha raggiunto finalmente la sua conclusione.' },
                                     { chi: 'yugiMuto', testo: 'Ce l’hai fatta, Atem. La porta dell’aldilà si sta aprendo.' },
                                     { io: true, testo: 'Per attraversarla devo ancora dimostrare di essere pronto a lasciare tutto ciò che mi lega al presente.' }
                                 ]
                             },
                             {
+                                id: 'anime-9-ritorno', kind: 'scene', icona: '☀️',
+                                label: 'Fuori dai ricordi', x: 990, y: 705,
+                                chi: 'Il Faraone',
+                                testo: [
+                                    { testo: 'Il gioco termina. Atem affida l’Egitto al sacerdote Seto e torna nel presente insieme a Yugi e agli altri.' },
+                                    { chi: 'yugiMuto', testo: 'Ora conosciamo il tuo nome, ma questo significa che possiamo compiere il rito che libererà la tua anima.' },
+                                    { io: true, testo: 'È ciò che ho cercato per tutto questo tempo. Eppure separarmi da voi sarà la prova più difficile.' },
+                                    { chi: 'joey', testo: 'Qualunque cosa chieda quel rito, la affronteremo tutti insieme.' }
+                                ]
+                            },
+                            {
+                                id: 'anime-9-luxor', kind: 'scene', icona: '✈️',
+                                label: 'Verso il tempio', x: 1090, y: 855,
+                                chi: 'Seto Kaiba', chiId: 'kaiba',
+                                testo: [
+                                    { testo: 'Una tempesta di sabbia blocca il volo dal Cairo a Luxor. Kaiba raggiunge il gruppo con il Blue-Eyes White Dragon Jet.' },
+                                    { chi: 'kaiba', testo: 'Non ho attraversato mezzo mondo per vedervi fermati dal meteo. Salite: vi porterò io al tempio.' },
+                                    { chi: 'yugiMuto', testo: 'Il rito richiederà che uno di noi sconfigga Atem. Devo essere io.' },
+                                    { chi: 'kaiba', testo: 'Se credi davvero di poter battere il Re dei Giochi, dimostralo. Io non accetterò trucchi né addii preparati.' }
+                                ]
+                            },
+                            {
                                 id: 'anime-5-scena', kind: 'scene', icona: '🏛️',
-                                label: 'L\'ultima porta', x: 985, y: 765,
+                                label: 'L\'ultima porta', x: 1165, y: 790,
                                 chi: 'Il Faraone',
                                 testo: [
                                     { chi: 'yugiMuto', testo: 'Atem… manca un solo duello. E non è contro un nemico.' },
@@ -1743,7 +1880,7 @@ const storyCampaignsDatabase = [
                             // js/duel-session.js).
                             {
                                 id: 'anime-5-yamiyugi', kind: 'duel', icona: '👑',
-                                label: 'Il Duello Cerimoniale', x: 1150, y: 700,
+                                label: 'Il Duello Cerimoniale', x: 1280, y: 745,
                                 characterId: 'yamiYugi',
                                 protagonista: { name: 'Yugi Muto', title: 'Il ragazzo del Puzzle', image: 'images/characters/yugiMuto.jpg', icon: '🧩' },
                                 dialogo: [
@@ -1756,7 +1893,7 @@ const storyCampaignsDatabase = [
                             // sul duello, senza il saluto.
                             {
                                 id: 'anime-5-addio', kind: 'scene', icona: '🌟',
-                                label: 'La porta si apre', x: 1215, y: 555,
+                                label: 'La porta si apre', x: 1375, y: 650,
                                 chi: 'Il Faraone',
                                 testo: [
                                     { chi: 'yugiMuto', testo: 'Ho vinto… ho vinto davvero. Allora è finita, vero?' },
@@ -1770,15 +1907,15 @@ const storyCampaignsDatabase = [
                             },
                             {
                                 id: 'anime-5-aeroporto', kind: 'scene', icona: '✈️',
-                                label: 'Il viaggio continua', x: 1320, y: 900,
+                                label: 'Ritorno a Domino', x: 1410, y: 910,
                                 chi: 'Yugi Muto', chiId: 'yugiMuto',
                                 testo: [
-                                    { testo: 'All’aeroporto del Cairo, il gruppo si prepara a tornare a Domino. Atem non è più con loro, ma il silenzio non pesa come una sconfitta.' },
-                                    { chi: 'teaGardner', testo: 'Mi mancherà. Però credo che sia questo che voleva: vederci andare avanti.' },
+                                    { testo: 'Durante il volo verso il Giappone, il Blue-Eyes White Dragon Jet di Kaiba supera l’aereo del gruppo. Atem non è più con loro, ma il silenzio non pesa come una sconfitta.' },
+                                    { chi: 'tea', testo: 'Mi mancherà. Però credo che sia questo che voleva: vederci andare avanti.' },
                                     { chi: 'joey', testo: 'E allora andiamo avanti insieme. Ma appena torniamo a Domino voglio la rivincita, Yugi!' },
-                                    { chi: 'tristan', testo: 'Prima proviamo a non perdere l’aereo. Sarebbe un finale molto meno epico.' },
+                                    { chi: 'tristan', testo: 'Siamo quasi a casa. E stavolta nessun Gioco delle Ombre ci aspetta all’atterraggio… spero.' },
                                     { chi: 'yugiMuto', testo: 'Atem ha trovato la sua strada. Ora tocca a noi continuare la nostra.' },
-                                    { testo: 'L’aereo lascia l’Egitto mentre il sole scende sul deserto. Il viaggio del Faraone è concluso; quello di Yugi e dei suoi amici continua.' }
+                                    { testo: 'In aeroporto Rebecca corre ad abbracciare Yugi mentre Arthur Hawkins saluta il gruppo. Il viaggio del Faraone è concluso; quello di Yugi e dei suoi amici continua.' }
                                 ]
                             }
                         ]
@@ -1836,7 +1973,22 @@ const storyCampaignsDatabase = [
             { id: 'anime-fedelta-epilogo-bc', dalla: 'principali-fine', area: 'anime-area-battlecity2', ids: ['anime-4b-epilogo'] },
             { id: 'anime-fedelta-kisara', dalla: 'principali-inserite', area: 'anime-area-cerimoniale', ids: ['anime-9-kisara'] },
             { id: 'anime-fedelta-addio', dalla: 'principali-fine', area: 'anime-area-cerimoniale', ids: ['anime-5-addio'] },
-            { id: 'anime-fedelta-aeroporto', dalla: 'principali-fine', area: 'anime-area-cerimoniale', ids: ['anime-5-aeroporto'] }
+            { id: 'anime-fedelta-aeroporto', dalla: 'principali-fine', area: 'anime-area-cerimoniale', ids: ['anime-5-aeroporto'] },
+            // Rework completo del Mondo dei Ricordi. Le tappe sono timbrate
+            // separatamente perché sono distribuite fra nodi storici già
+            // esistenti: una sola quantità non conserverebbe correttamente
+            // il punto preciso di un salvataggio a metà dell'area.
+            { id: 'anime-fedelta-memoria-prologo', dalla: 'principali-inserite', area: 'anime-area-cerimoniale', ids: ['anime-9-prologo'] },
+            { id: 'anime-fedelta-memoria-porta', dalla: 'principali-inserite', area: 'anime-area-cerimoniale', ids: ['anime-9-porta'] },
+            { id: 'anime-fedelta-memoria-incoronazione', dalla: 'principali-inserite', area: 'anime-area-cerimoniale', ids: ['anime-9-incoronazione'] },
+            { id: 'anime-fedelta-memoria-caccia-ka', dalla: 'principali-inserite', area: 'anime-area-cerimoniale', ids: ['anime-9-caccia-ka'] },
+            { id: 'anime-fedelta-memoria-inseguimento', dalla: 'principali-inserite', area: 'anime-area-cerimoniale', ids: ['anime-9-inseguimento'] },
+            { id: 'anime-fedelta-memoria-tempo', dalla: 'principali-inserite', area: 'anime-area-cerimoniale', ids: ['anime-9-tempo'] },
+            { id: 'anime-fedelta-memoria-kul-elna', dalla: 'principali-inserite', area: 'anime-area-cerimoniale', ids: ['anime-9-kul-elna'] },
+            { id: 'anime-fedelta-memoria-cartiglio', dalla: 'principali-inserite', area: 'anime-area-cerimoniale', ids: ['anime-9-cartiglio'] },
+            { id: 'anime-fedelta-memoria-zorc', dalla: 'principali-inserite', area: 'anime-area-cerimoniale', ids: ['anime-9-battaglia-zorc'] },
+            { id: 'anime-fedelta-memoria-ritorno', dalla: 'principali-inserite', area: 'anime-area-cerimoniale', ids: ['anime-9-ritorno'] },
+            { id: 'anime-fedelta-memoria-luxor', dalla: 'principali-inserite', area: 'anime-area-cerimoniale', ids: ['anime-9-luxor'] }
         ],
         // Premio per aver finito la campagna. Accreditato una volta sola
         // (vedi story-progress.js): rigiocarla è permesso, ripagarla no.

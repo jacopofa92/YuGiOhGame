@@ -32,6 +32,10 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.3.15 — Il Mondo dei Ricordi segue l'intero finale dell'anime: viaggio
+ *   in Egitto, Gioco delle Ombre, Mahad, Aknadin, Kisara, Kul Elna, Zorc,
+ *   Horakhty, viaggio a Luxor, Duello Cerimoniale ed epilogo in Giappone.
+ *
  * 1.3.14 — Il retro Duel Monsters arrotonda anche la cornice marrone;
  *   il duello non decodifica più immagini di carte provvisorie a ogni
  *   ridisegno e il finale anime prosegue fino all'aeroporto del Cairo.
@@ -691,4 +695,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.3.14';
+window.GAME_VERSION = '1.3.15';

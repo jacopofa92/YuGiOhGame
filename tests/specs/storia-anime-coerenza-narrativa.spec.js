@@ -11,7 +11,11 @@ module.exports = {
                 'anime-area-battlecity1': ['anime-3-marik-molo', 'anime-3-sei-carte'],
                 'anime-area-virtuale': ['anime-6-anime-prigioni'],
                 'anime-area-battlecity2': ['anime-4b-amicizia', 'anime-4b-tre-dei'],
-                'anime-area-cerimoniale': ['anime-9-nome']
+                'anime-area-cerimoniale': ['anime-9-prologo', 'anime-9-scena', 'anime-9-porta', 'anime-9-incoronazione',
+                    'anime-9-bakura', 'anime-9-mahad', 'anime-9-caccia-ka', 'anime-9-inseguimento', 'anime-9-tempo',
+                    'anime-9-kul-elna', 'anime-9-kisara', 'anime-9-cartiglio', 'anime-9-zorc',
+                    'anime-9-battaglia-zorc', 'anime-9-nome', 'anime-9-ritorno', 'anime-9-luxor', 'anime-5-yamiyugi',
+                    'anime-5-addio', 'anime-5-aeroporto']
             };
             const problems = [];
             let scenes = 0;
@@ -115,7 +119,7 @@ module.exports = {
                     else if (n.parallelo === true) problems.push(`${id}: deve stare sulla strada principale`);
                 });
             // I laterali nuovi: rami morti, non portano avanti la storia.
-            ['anime-3-joey-weevil', 'anime-4b-terzo-posto', 'anime-9-seto-bakura'].forEach((id) => {
+            ['anime-3-joey-weevil', 'anime-4b-terzo-posto', 'anime-9-kaiba-bakura', 'anime-9-seto-bakura'].forEach((id) => {
                 const n = nodo(id);
                 if (!n || n.parallelo !== true) problems.push(`${id}: deve esistere come duello laterale`);
             });
@@ -130,7 +134,9 @@ module.exports = {
                 'anime-6-kaiba-noah': ['kaiba', 'Noah Kaiba'],
                 'anime-6-nesbitt': ['nesbitt', 'Serenity Wheeler'],
                 'anime-4-joey': ['joey', 'Yami Marik'],
-                'anime-4b-terzo-posto': ['joey', 'Seto Kaiba']
+                'anime-4b-terzo-posto': ['joey', 'Seto Kaiba'],
+                'anime-9-kaiba-bakura': ['bakura', 'Seto Kaiba'],
+                'anime-9-seto-bakura': ['priestSeto', 'Atem']
             };
             Object.keys(vincitori).forEach((id) => {
                 const n = nodo(id);
@@ -143,6 +149,34 @@ module.exports = {
             // negozio del nonno, non sull'isola della KaibaCorp.
             const video = nodo('anime-1-pegasus-video');
             if (!video || video.x > 400) problems.push('anime-1-pegasus-video: deve stare a casa di Yugi');
+
+            // Il finale deve percorrere i due archi ufficiali nell'ordine:
+            // Memorie del Faraone, sconfitta di Zorc, viaggio al tempio,
+            // Duello Cerimoniale ed epilogo in Giappone.
+            const memoria = areas.find((area) => area.id === 'anime-area-cerimoniale').tappe;
+            const memoriaPrincipale = memoria.filter((entry) => entry.parallelo !== true);
+            const memoriaIds = memoriaPrincipale.map((entry) => entry.id);
+            const ordineMemoria = ['anime-9-prologo', 'anime-9-scena', 'anime-9-porta', 'anime-9-incoronazione',
+                'anime-9-bakura-scena', 'anime-9-bakura', 'anime-9-mahad', 'anime-9-caccia-ka',
+                'anime-9-inseguimento', 'anime-9-tempo', 'anime-9-kul-elna', 'anime-9-kisara',
+                'anime-9-cartiglio', 'anime-9-zorc', 'anime-9-battaglia-zorc', 'anime-9-nome',
+                'anime-9-ritorno', 'anime-9-luxor', 'anime-5-scena', 'anime-5-yamiyugi',
+                'anime-5-addio', 'anime-5-aeroporto'];
+            let memoriaCursor = -1;
+            ordineMemoria.forEach((id) => {
+                const index = memoriaIds.indexOf(id);
+                if (index <= memoriaCursor) problems.push(`Mondo dei Ricordi fuori ordine: ${id}`);
+                memoriaCursor = index;
+            });
+            const distanzaMemoria = memoria.slice(1).reduce((min, entry, index) => {
+                const previous = memoria[index];
+                return Math.min(min, Math.hypot(entry.x - previous.x, entry.y - previous.y));
+            }, Infinity);
+            if (distanzaMemoria < 75) problems.push(`Nodi del Mondo dei Ricordi troppo sovrapposti: ${Math.round(distanzaMemoria)}px`);
+            const epilogo = nodo('anime-5-aeroporto');
+            if (!epilogo || !parole(epilogo).includes('Rebecca') || !parole(epilogo).includes('Giappone')) {
+                problems.push('L’epilogo deve raccontare il volo e l’arrivo in Giappone con Rebecca');
+            }
 
             return { problems, scenes, base: anime.azzeraSeSenzaTimbro, migrations: anime.separazioni.map((entry) => entry.id) };
         });

@@ -470,8 +470,8 @@
 // v246: Cartoteca in ordine catalogo, con WW1 in fondo.
 // v249: ambientazioni e musica per arco della Storia anime.
 // v250: ripresa sicura del duello dopo sospensione della WebView mobile.
-// v253: versione 1.3.14, retro rifinito, flicker immagini e finale anime.
-const CACHE_NAME = 'ygo-duel-arena-v253';
+// v254: versione 1.3.15, rework completo del Mondo dei Ricordi.
+const CACHE_NAME = 'ygo-duel-arena-v254';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
