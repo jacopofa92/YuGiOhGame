@@ -12,6 +12,13 @@ Ultimo aggiornamento verificato: 2026-10-13.
   vista integrata del menu. Se spenta, il motore non cerca il filmato dedicato e
   passa subito all'effetto di Evocazione normale; fusioni ed effetti restano.
 
+## Ordinamento stabile della Cartoteca (2026-10-13)
+
+Gli ID delle carte non vengono modificati. L'ordine predefinito delle due viste
+Cartoteca e' ora esplicito: tutte le carte Yu-Gi-Oh in ordine di ID crescente,
+poi tutte le carte della Grande Guerra. Filtri e ordinamenti alternativi non
+cambiano; la voce predefinita del selettore si chiama `Catalogo originale`.
+
 ## Login e paginazione Cartoteca (2026-10-12)
 
 - Il gate iniziale conserva lo stesso flusso cloud, ma presenta una card piu'

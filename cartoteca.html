@@ -485,7 +485,7 @@
                 <input type="text" id="searchInput" placeholder="Cerca una carta per nome..." autocomplete="off">
             </div>
             <select class="filter-sort" id="sortSelect">
-                <option value="default">Ordina per…</option>
+                <option value="default">Catalogo originale</option>
                 <option value="name-asc">Nome (A→Z)</option>
                 <option value="name-desc">Nome (Z→A)</option>
                 <option value="atk-desc">ATK (alto→basso)</option>
@@ -858,10 +858,15 @@
     const nameCollator = new Intl.Collator('it');
     /** Ordina una lista di carte già filtrata secondo state.sort, senza toccare l'originale. */
     function sortCards(cards, sortKey) {
-        if (!sortKey || sortKey === 'default') return cards;
         const sorted = [...cards];
         const byName = (a, b) => nameCollator.compare(a.name, b.name);
         const numKey = (card, field) => (typeof card[field] === 'number' ? card[field] : -1);
+        const byCatalog = (a, b) => {
+            const gruppoA = a.origin === 'ww1' ? 1 : 0;
+            const gruppoB = b.origin === 'ww1' ? 1 : 0;
+            return gruppoA - gruppoB || numKey(a, 'id') - numKey(b, 'id') || byName(a, b);
+        };
+        if (!sortKey || sortKey === 'default') return sorted.sort(byCatalog);
         const cmp = {
             'name-asc': byName,
             'name-desc': (a, b) => byName(b, a),

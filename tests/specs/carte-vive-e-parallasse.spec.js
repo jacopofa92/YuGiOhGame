@@ -82,6 +82,14 @@ module.exports = {
             assert(griglia && griglia.modo === 'griglia', 'le carte della Cartoteca sono vive in modo "griglia": ' + JSON.stringify(griglia));
             assert(griglia.riflessoARiposo === 'none', 'i livelli costosi della griglia riposano finché la carta non è osservata');
 
+            const ordineCatalogo = await page.evaluate(() => sortCards([
+                { id: 1240, name: 'WW1 prima', origin: 'ww1' },
+                { id: 40, name: 'YGO seconda', origin: 'yu-gi-oh' },
+                { id: 2, name: 'YGO prima', origin: 'yu-gi-oh' }
+            ], 'default').map((c) => c.id));
+            assert(JSON.stringify(ordineCatalogo) === JSON.stringify([2, 40, 1240]),
+                'il catalogo conserva gli ID, ordina Yu-Gi-Oh per ID e lascia WW1 in fondo: ' + JSON.stringify(ordineCatalogo));
+
             const tile = page.locator('#cartotecaGrid .card').first();
             await tile.scrollIntoViewIfNeeded();
             await tile.hover();

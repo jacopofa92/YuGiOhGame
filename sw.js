@@ -467,7 +467,8 @@
 // v243: riallineata a 300 anche la Cartoteca integrata nel menu.
 // v244: margine stelle Livello 12 rifinito.
 // v245: dettagli bustina cliccabili e interruttore filmati di Evocazione.
-const CACHE_NAME = 'ygo-duel-arena-v245';
+// v246: Cartoteca in ordine catalogo, con WW1 in fondo.
+const CACHE_NAME = 'ygo-duel-arena-v246';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

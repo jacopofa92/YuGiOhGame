@@ -32,6 +32,9 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.3.12 — La Cartoteca usa un ordine di catalogo stabile: Yu-Gi-Oh per ID
+ *   crescente, senza rinumerazioni, e l'intero set Grande Guerra in fondo.
+ *
  * 1.3.11 — Le carte ottenute dalle bustine tornano cliccabili anche con un
  *   click reale; nuova impostazione salvata per disattivare esclusivamente i
  *   filmati dedicati di Evocazione, conservando gli effetti normali.
@@ -680,4 +683,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.3.11';
+window.GAME_VERSION = '1.3.12';
