@@ -32,6 +32,9 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.3.19 — La cornice del fronte delle carte diventa più spessa e
+ *   antracite, più vicina all'aspetto delle carte fisiche originali.
+ *
  * 1.3.18 — Un mostro coperto attaccato viene distrutto conservando
  *   visivamente la Posizione di Difesa, senza scattare in Attacco.
  *
@@ -704,4 +707,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.3.18';
+window.GAME_VERSION = '1.3.19';

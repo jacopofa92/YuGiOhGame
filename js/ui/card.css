@@ -199,13 +199,14 @@
     background: var(--card-sfondo, none);
     pointer-events: none;
 }
-/* Prova estetica ispirata alle carte fisiche: il fronte ha un unico filo
-   nero esterno, sottile e neutro, che chiude la cornice colorata senza
-   aggiungere un secondo pannello o cambiare le dimensioni della carta.
-   Il retro è escluso perché possiede già la propria cornice dedicata. */
+/* Cornice esterna del fronte, ispirata alle carte fisiche: non è nero
+   assoluto ma un antracite appena caldo, e ha abbastanza spessore da
+   leggere come una vera fascia stampata invece che come un semplice filo.
+   È interna alla misura della carta, quindi non altera griglie o slot. Il
+   retro è escluso perché possiede già la propria cornice dedicata. */
 .card:not(.face-down)::before {
     box-sizing: border-box;
-    border: 1px solid rgba(8, 6, 4, 0.92);
+    border: 3px solid #1b1b1d;
 }
 .card:hover { transform: translateY(-8px) scale(1.06); box-shadow: 0 12px 28px rgba(0,0,0,0.34); }
 
@@ -727,10 +728,9 @@ body[data-card-badges] .card { overflow: visible; }
 @container (max-width: 66px) {
     .card:not(.face-down)::before {
         --card-raggio: 1px;
-        /* Anche sulle miniature resta il bordo nero del fronte: cambiare
-           tinta proprio quando la carta diventa piccola la farebbe apparire
-           diversa fra mano, Terreno e dettaglio. */
-        border: 1px solid rgba(8, 6, 4, 0.92);
+        /* Stessa fascia antracite, ridotta solo quanto basta perché sulle
+           carte minuscole non copra illustrazione e statistiche. */
+        border-width: 2px;
     }
     .card:not(.face-down) > * { --card-raggio: 1px; }
     .card:not(.face-down) > .card-frame {

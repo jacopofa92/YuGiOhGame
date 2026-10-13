@@ -28,6 +28,8 @@ module.exports = {
                     nome: vis('.card-frame-top'), stelle: vis('.card-frame-stars'), riga: vis('.card-frame-typeline'),
                     statistiche: vis('.card-stats'), raggio: corpo.borderTopLeftRadius,
                     sfondo: corpo.backgroundImage !== 'none',
+                    bordo: corpo.borderTopWidth,
+                    coloreBordo: corpo.borderTopColor
                 };
             };
             const r = { piccola: misura(58), soglia: misura(72), sopra: misura(74), grande: misura(160), dorsoPiccolo: misura(58, true) };
@@ -45,6 +47,10 @@ module.exports = {
             'una carta grande ha la cornice completa: ' + JSON.stringify(esito.grande));
         t.assert(esito.grande.raggio !== '1px', 'la carta classica non ha l\'angolo della compatta');
         t.assert(esito.piccola.sfondo && esito.grande.sfondo, 'il corpo colorato della carta (::before) si vede a ogni misura');
+        t.assert(esito.piccola.bordo === '2px' && esito.grande.bordo === '3px',
+            'la cornice resta proporzionata fra miniatura e carta grande: ' + JSON.stringify(esito));
+        t.assert(esito.grande.coloreBordo === 'rgb(27, 27, 29)',
+            'la cornice del fronte deve essere antracite, non nero assoluto: ' + esito.grande.coloreBordo);
         t.assert(esito.dorsoPiccolo.raggio !== '1px', 'il dorso resta uguale a ogni misura, anche piccolo');
         t.assert(Math.abs(esito.grande.altezza - Math.round(160 / 0.685)) <= 1, 'proporzioni della carta da --card-ratio: altezza ' + esito.grande.altezza);
     }
