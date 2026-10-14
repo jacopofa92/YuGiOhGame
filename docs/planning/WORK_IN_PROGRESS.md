@@ -2,6 +2,14 @@
 
 Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
 
+## Supporti moderni agli archetipi classici
+
+- [ ] Piano da valutare in `docs/planning/CLASSIC_ARCHETYPES_ROADMAP.md`:
+      prima copia tramite impresa/Sfida tematica, copie successive molto rare
+      e limite 1/2/3 stabilito con audit. I deck avversari restano inizialmente
+      invariati; eventuali inserimenti partono dal Difficile e soltanto dopo
+      confronto riproducibile con la baseline.
+
 ## Economia e acquisizione carte
 
 - [x] Rarità a sette fasce, rotazioni e buste tematiche.
