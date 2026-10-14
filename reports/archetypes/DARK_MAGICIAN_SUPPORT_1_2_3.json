@@ -1,0 +1,250 @@
+{
+  "generatoIl": "2026-10-14T15:28:52.718Z",
+  "metodo": "Yami Yugi Hard IA contro cinque deck Hard; stessi semi; supporti sostituiscono carte non centrali",
+  "gamesPerOpponent": 50,
+  "seed": 143000,
+  "opponents": [
+    "joey",
+    "kaiba",
+    "pegasus",
+    "mako",
+    "bakura"
+  ],
+  "supportIds": [
+    1254,
+    1255,
+    1256
+  ],
+  "results": [
+    {
+      "variante": "baseline",
+      "copie": 0,
+      "carteAggiunte": [],
+      "partite": 250,
+      "vittoriePct": 48.4,
+      "turniMedi": 17.06,
+      "nonFinite": 0,
+      "vistePct": {
+        "1254": 0,
+        "1255": 0,
+        "1256": 0
+      }
+    },
+    {
+      "variante": "1254x1",
+      "copie": 1,
+      "carteAggiunte": [
+        1254
+      ],
+      "partite": 250,
+      "vittoriePct": 42.4,
+      "turniMedi": 16.3,
+      "nonFinite": 0,
+      "vistePct": {
+        "1254": 33.2,
+        "1255": 0,
+        "1256": 0
+      }
+    },
+    {
+      "variante": "1254x2",
+      "copie": 2,
+      "carteAggiunte": [
+        1254,
+        1254
+      ],
+      "partite": 250,
+      "vittoriePct": 44,
+      "turniMedi": 15.72,
+      "nonFinite": 0,
+      "vistePct": {
+        "1254": 60,
+        "1255": 0,
+        "1256": 0
+      }
+    },
+    {
+      "variante": "1254x3",
+      "copie": 3,
+      "carteAggiunte": [
+        1254,
+        1254,
+        1254
+      ],
+      "partite": 250,
+      "vittoriePct": 44.8,
+      "turniMedi": 16.48,
+      "nonFinite": 0,
+      "vistePct": {
+        "1254": 73.2,
+        "1255": 0,
+        "1256": 0
+      }
+    },
+    {
+      "variante": "1255x1",
+      "copie": 1,
+      "carteAggiunte": [
+        1255
+      ],
+      "partite": 250,
+      "vittoriePct": 40,
+      "turniMedi": 16.79,
+      "nonFinite": 0,
+      "vistePct": {
+        "1254": 0,
+        "1255": 30,
+        "1256": 0
+      }
+    },
+    {
+      "variante": "1255x2",
+      "copie": 2,
+      "carteAggiunte": [
+        1255,
+        1255
+      ],
+      "partite": 250,
+      "vittoriePct": 39.6,
+      "turniMedi": 15.77,
+      "nonFinite": 0,
+      "vistePct": {
+        "1254": 0,
+        "1255": 46.4,
+        "1256": 0
+      }
+    },
+    {
+      "variante": "1255x3",
+      "copie": 3,
+      "carteAggiunte": [
+        1255,
+        1255,
+        1255
+      ],
+      "partite": 250,
+      "vittoriePct": 32.8,
+      "turniMedi": 17.42,
+      "nonFinite": 0,
+      "vistePct": {
+        "1254": 0,
+        "1255": 63.6,
+        "1256": 0
+      }
+    },
+    {
+      "variante": "1256x1",
+      "copie": 1,
+      "carteAggiunte": [
+        1256
+      ],
+      "partite": 250,
+      "vittoriePct": 40,
+      "turniMedi": 16.55,
+      "nonFinite": 0,
+      "vistePct": {
+        "1254": 0,
+        "1255": 0,
+        "1256": 33.2
+      }
+    },
+    {
+      "variante": "1256x2",
+      "copie": 2,
+      "carteAggiunte": [
+        1256,
+        1256
+      ],
+      "partite": 250,
+      "vittoriePct": 40.4,
+      "turniMedi": 15.95,
+      "nonFinite": 0,
+      "vistePct": {
+        "1254": 0,
+        "1255": 0,
+        "1256": 60
+      }
+    },
+    {
+      "variante": "1256x3",
+      "copie": 3,
+      "carteAggiunte": [
+        1256,
+        1256,
+        1256
+      ],
+      "partite": 250,
+      "vittoriePct": 37.2,
+      "turniMedi": 17.15,
+      "nonFinite": 0,
+      "vistePct": {
+        "1254": 0,
+        "1255": 0,
+        "1256": 73.6
+      }
+    },
+    {
+      "variante": "pacchettox1",
+      "copie": 1,
+      "carteAggiunte": [
+        1254,
+        1255,
+        1256
+      ],
+      "partite": 250,
+      "vittoriePct": 38,
+      "turniMedi": 17.28,
+      "nonFinite": 0,
+      "vistePct": {
+        "1254": 34.4,
+        "1255": 40.4,
+        "1256": 43.6
+      }
+    },
+    {
+      "variante": "pacchettox2",
+      "copie": 2,
+      "carteAggiunte": [
+        1254,
+        1254,
+        1255,
+        1255,
+        1256,
+        1256
+      ],
+      "partite": 250,
+      "vittoriePct": 39.6,
+      "turniMedi": 15.49,
+      "nonFinite": 0,
+      "vistePct": {
+        "1254": 57.2,
+        "1255": 48.4,
+        "1256": 68.8
+      }
+    },
+    {
+      "variante": "pacchettox3",
+      "copie": 3,
+      "carteAggiunte": [
+        1254,
+        1254,
+        1254,
+        1255,
+        1255,
+        1255,
+        1256,
+        1256,
+        1256
+      ],
+      "partite": 250,
+      "vittoriePct": 32,
+      "turniMedi": 15.12,
+      "nonFinite": 0,
+      "vistePct": {
+        "1254": 67.2,
+        "1255": 69.6,
+        "1256": 79.6
+      }
+    }
+  ]
+}
