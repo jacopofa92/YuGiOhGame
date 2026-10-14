@@ -148,6 +148,15 @@ function resolveAttack(attackerOwner, attackerIndex, targetIndex, onComplete) {
         done();
         return;
     }
+    if (gameState.onlyOneAttackingMonsterFor && gameState.onlyOneAttackingMonsterFor[attackerOwner]) {
+        const giaAttaccanti = gameState.attackedMonsterUidsThisTurn || new Set();
+        const altroMostroHaAttaccato = Array.from(giaAttaccanti).some((uid) => uid !== attackerSlot.card.uid);
+        if (altroMostroHaAttaccato) {
+            addToLog(`🚫 Dopo Attacco Forza del Tuono, solo il mostro che ha già attaccato può continuare ad attaccare in questo turno.`);
+            done();
+            return;
+        }
+    }
     // "Questa carta non può attaccare direttamente il tuo avversario"
     // (es. Zombyra l'Oscuro, id 625) — per-carta, fissa (non condizionata
     // dal campo avversario come il divieto normale di attacco diretto).

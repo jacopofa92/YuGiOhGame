@@ -4816,6 +4816,108 @@
         }
     });
 
+    const controlsOriginalNamedGod = (ctx, name) => ctx.field(ctx.owner).some((slot) => slot
+        && !slot.isFaceDown && cardHasEffectiveName(slot.card, name, 'monster'));
+    const isOwnMainPhase = (ctx) => gameState.currentPlayer === ctx.owner
+        && (gameState.phase === 'main1' || gameState.phase === 'main2');
+
+    // Attacco Forza del Tuono — supporto moderno di Slifer.
+    CardEffects.register(1271, {
+        activationAndEffectCannotBeNegated: true,
+        mentionsNames: ['Slifer il Drago del Cielo'],
+        canActivate(ctx) {
+            return controlsOriginalNamedGod(ctx, 'Slifer il Drago del Cielo')
+                && !ctx.hasUsedOncePerTurn(`thunderforce-attack:${ctx.owner}`)
+                && ctx.field(ctx.opponent).some((slot) => slot && !slot.isFaceDown);
+        },
+        activate(ctx) {
+            ctx.markUsedOncePerTurn(`thunderforce-attack:${ctx.owner}`);
+            const bersagli = ctx.field(ctx.opponent)
+                .map((slot) => slot && !slot.isFaceDown ? slot.card.uid : null)
+                .filter(Boolean);
+            for (let i = ctx.field(ctx.opponent).length - 1; i >= 0; i--) {
+                const slot = ctx.field(ctx.opponent)[i];
+                if (slot && !slot.isFaceDown) ctx.destroyMonster(ctx.opponent, i);
+            }
+            const distruttiNelCimitero = bersagli.filter((uid) => ctx.graveyard(ctx.opponent).some((card) => card.uid === uid)).length;
+            if (!isOwnMainPhase(ctx) || distruttiNelCimitero === 0) return;
+
+            const fine = attendiScelta(ctx);
+            chooseOption(ctx, {
+                title: ctx.card.name,
+                text: `Pescare ${distruttiNelCimitero} ${distruttiNelCimitero === 1 ? 'carta' : 'carte'}? In questo turno potrai attaccare con un solo mostro.`,
+                options: [{ value: 'draw', label: `Pesca ${distruttiNelCimitero}` }],
+                optional: true,
+                optionalLabel: 'Non pescare',
+                pickForBot: () => 'draw'
+            }, (choice) => {
+                try {
+                    if (choice === 'draw') {
+                        ctx.drawCards(ctx.owner, distruttiNelCimitero);
+                        gameState.onlyOneAttackingMonsterFor = gameState.onlyOneAttackingMonsterFor || {};
+                        gameState.onlyOneAttackingMonsterFor[ctx.owner] = true;
+                        ctx.log(`${ctx.card.name}: ${distruttiNelCimitero} ${distruttiNelCimitero === 1 ? 'carta pescata' : 'carte pescate'}; un solo mostro potrà attaccare in questo turno.`);
+                    }
+                } finally { fine(); }
+            });
+        }
+    });
+
+    // Pugno del Fato — supporto moderno di Obelisk.
+    CardEffects.register(1272, {
+        activationAndEffectCannotBeNegated: true,
+        mentionsNames: ['Obelisk il Tormentatore'],
+        canActivate(ctx) {
+            return controlsOriginalNamedGod(ctx, 'Obelisk il Tormentatore')
+                && !ctx.hasUsedOncePerTurn(`fist-of-fate:${ctx.owner}`)
+                && ctx.field(ctx.opponent).some((slot) => slot && !slot.isFaceDown && !slot.card.vanilla);
+        },
+        activate(ctx) {
+            ctx.markUsedOncePerTurn(`fist-of-fate:${ctx.owner}`);
+            const candidati = collectFieldTargets(ctx, {
+                owner: 'opponent',
+                zone: 'monster',
+                filter: (card, owner, slot) => !slot.isFaceDown && !card.vanilla
+            });
+            const fine = attendiScelta(ctx);
+            const offriDistruzioneRetroguardia = () => {
+                if (!isOwnMainPhase(ctx)) { fine(); return; }
+                chooseOption(ctx, {
+                    title: ctx.card.name,
+                    text: 'Distruggere tutte le Magie e Trappole controllate dall’avversario?',
+                    options: [{ value: 'destroy', label: 'Distruggi tutte' }],
+                    optional: true,
+                    optionalLabel: 'Non applicare',
+                    pickForBot: () => 'destroy'
+                }, (choice) => {
+                    try {
+                        if (choice !== 'destroy') return;
+                        for (let i = ctx.stField(ctx.opponent).length - 1; i >= 0; i--) {
+                            if (ctx.stField(ctx.opponent)[i]) ctx.destroySpellTrap(ctx.opponent, i);
+                        }
+                        if (gameState[Tavolo.chiave(ctx.opponent, 'FieldSpell')]) ctx.destroyFieldSpell(ctx.opponent);
+                    } finally { fine(); }
+                });
+            };
+            const apri = () => chooseFieldMonsterTarget(ctx, candidati, {
+                title: ctx.card.name,
+                text: 'Scegli 1 Mostro con Effetto scoperto dell’avversario.',
+                dichiara: true,
+                onCancel: apri,
+                onNegato: offriDistruzioneRetroguardia
+            }, (chosen) => {
+                const slot = ctx.field(chosen.owner)[chosen.index];
+                if (slot && slot.card.uid === chosen.card.uid) {
+                    gameState.monsterEffectNamesNegatedThisTurn = gameState.monsterEffectNamesNegatedThisTurn || new Set();
+                    gameState.monsterEffectNamesNegatedThisTurn.add(slot.card.name);
+                    ctx.destroyMonster(chosen.owner, chosen.index);
+                }
+                offriDistruzioneRetroguardia();
+            });
+            apri();
+        }
+    });
+
     (function registerLibraryEffects() {
         if (typeof cardDatabase === 'undefined' || !Array.isArray(cardDatabase)) return;
 

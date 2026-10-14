@@ -6001,8 +6001,23 @@
      * per l'elenco completo), al posto della sola areMonsterEffectsNegatedFor.
      */
     function isMonsterCardEffectsNegated(owner, uid) {
-        return areMonsterEffectsNegatedFor(owner)
-            || !!(gameState.monsterEffectsNegatedUidsFor && gameState.monsterEffectsNegatedUidsFor[owner] && gameState.monsterEffectsNegatedUidsFor[owner].has(uid));
+        if (areMonsterEffectsNegatedFor(owner)
+            || !!(gameState.monsterEffectsNegatedUidsFor && gameState.monsterEffectsNegatedUidsFor[owner] && gameState.monsterEffectsNegatedUidsFor[owner].has(uid))) return true;
+        const nomiNegati = gameState.monsterEffectNamesNegatedThisTurn;
+        if (!nomiNegati || nomiNegati.size === 0) return false;
+        const zone = [fieldOf(owner), handOf(owner), graveyardOf(owner), Tavolo.mazzo(owner), banishedOf(owner)];
+        for (const cards of zone) {
+            if (!Array.isArray(cards)) continue;
+            const trovato = cards.find((entry) => {
+                const card = entry && entry.card ? entry.card : entry;
+                return card && card.uid === uid;
+            });
+            if (trovato) {
+                const card = trovato.card || trovato;
+                return nomiNegati.has(card.name);
+            }
+        }
+        return false;
     }
 
     /** Vero se i mostri di Tipo `race` di `owner` infliggono danno perforante grazie a un effetto continuo (es. Furia del Drago, id 212). */

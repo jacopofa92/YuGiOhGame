@@ -13936,6 +13936,26 @@
     "artOnly": true
   },
   {
+    "id": 1271,
+    "origin": "yu-gi-oh",
+    "name": "Attacco Forza del Tuono",
+    "type": "spell",
+    "subtype": "quick-play",
+    "mentionsNames": ["Slifer il Drago del Cielo"],
+    "effect": "L'attivazione di questa carta e il suo effetto non possono essere annullati. Se controlli un mostro il cui nome originale è \"Slifer il Drago del Cielo\": distruggi tanti mostri scoperti controllati dal tuo avversario quanti possibile, poi, se hai attivato questa carta durante la tua Main Phase, puoi pescare carte pari al numero di mostri distrutti da questo effetto e mandati al Cimitero del tuo avversario, inoltre puoi attaccare con un solo mostro in questo turno. Puoi attivare solo 1 \"Attacco Forza del Tuono\" per turno.",
+    "artOnly": true
+  },
+  {
+    "id": 1272,
+    "origin": "yu-gi-oh",
+    "name": "Pugno del Fato",
+    "type": "spell",
+    "subtype": "quick-play",
+    "mentionsNames": ["Obelisk il Tormentatore"],
+    "effect": "L'attivazione di questa carta e il suo effetto non possono essere annullati. Se controlli un mostro il cui nome originale è \"Obelisk il Tormentatore\": annulla gli effetti di 1 Mostro con Effetto controllato dal tuo avversario e, se lo fai, distruggilo, inoltre per il resto di questo turno gli effetti di quel mostro e gli effetti attivati e gli effetti sul Terreno di mostri con lo stesso nome originale sono annullati. Se hai attivato questa carta durante la tua Main Phase, puoi applicare questo effetto: distruggi tutte le Magie e Trappole controllate dal tuo avversario. Puoi attivare solo 1 \"Pugno del Fato\" per turno.",
+    "artOnly": true
+  },
+  {
     "id": 1200,
     "origin": "ww1",
     "fazione": "italiana",
