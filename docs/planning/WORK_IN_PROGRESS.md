@@ -11,9 +11,10 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
       confronto riproducibile con la baseline. Il deck personale `Custom`
       entra nei report come benchmark aggiuntivo separato, senza guidare per
       ora le decisioni di bilanciamento.
-      Fase 1 (primitive comuni) completata e tracciata in
-      `docs/audits/CLASSIC_ARCHETYPES_PRIMITIVES.md`; prossima fase: pacchetto
-      Occhi Rossi con effetti e test isolati, senza modificare i deck esistenti.
+      Primitive, Occhi Rossi, Mago Nero e Drago Bianco completati nei relativi
+      audit. Toon: entrambi i pacchetti implementati e testati; prossimo passo
+      audit conclusivo 1/2/3 di Gira-Pagina e Glorioso Soldato, senza modificare
+      i deck esistenti prima dei risultati.
 
 ## Economia e acquisizione carte
 

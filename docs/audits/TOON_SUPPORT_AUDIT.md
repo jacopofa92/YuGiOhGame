@@ -1,6 +1,6 @@
 # Audit supporti moderni Toon
 
-Stato: primo pacchetto implementato e testato in isolamento; Starter,
+Stato: entrambi i pacchetti implementati e testati in isolamento; Starter,
 Structure, deck Pegasus ed economia non modificati.
 
 ## Vincolo del progetto
@@ -18,6 +18,20 @@ Restrizione dai Mille Occhi resta indipendente e non viene rimossa.
 | 1266 | Regno Toon | Zona Terreno, costo iniziale di 3 carte, nome assunto Mondo dei Toon, protezione dal targeting e sostituzione della distruzione con la cima del Deck | test isolato verde |
 | 1267 | Segnalibro Toon | ricerca Mondo/Regno o una carta che cita Mondo; una volta per turno; dal Cimitero protegge il Mondo dalla distruzione | test isolato verde |
 | 1268 | Signora Arpia Toon | Evocazione Speciale con un Mondo attivo; rimozione M/T se esiste un altro Toon; una volta per turno; attacco immediato nella deroga del progetto | test isolato verde |
+
+## Secondo pacchetto
+
+| id | Carta | Implementazione | Stato |
+|---:|---|---|---|
+| 1269 | Gira-Pagina Toon | richiede un Mondo e tre nomi Toon diversi nel Deck; il controllore li rivela, la scelta casuale usa il generatore sincronizzato e il prescelto viene Evocato ignorando le condizioni | test isolato verde |
+| 1270 | Glorioso Soldato Nero Toon | costo reale di Livello 8 o piu' da mano e/o Terreno, anche con Terreno pieno; bando di qualunque carta sul Terreno una volta per turno e blocco del proprio attacco | test isolato verde |
+
+Il nuovo percorso di costo misto viaggia nel comando Multiplayer come i
+costi preesistenti. Il motore ritrova inoltre per uid il mostro da Evocare
+dopo il pagamento: togliere un materiale dalla stessa mano non puo' piu'
+spostare l'indice e rimuovere la carta sbagliata. La deroga Toon resta
+limitata all'attacco immediato/diretto con un Mondo attivo; il vecchio testo
+ufficiale di entrambe le carte e' conservato in `legacyOfficialEffect`.
 
 Testi, statistiche e immagini verificati il 2026-10-14 tramite YGOPRODeck.
 Le nuove carte precedono il blocco WW1 e non rinumerano alcun id esistente.
@@ -70,5 +84,6 @@ Decisione provvisoria: nessun deck avversario modificato. Facile e Medio
 restano invariati; per il Difficile il massimo candidato futuro e' il
 pacchetto leggero, non le varianti al 62%. Limiti giocatore proposti in attesa
 dell'economia: Regno Toon 1, Segnalibro Toon 2, Signora Arpia Toon 2. Il
-secondo pacchetto Page-Flip/Soldato Toon puo' ora essere implementato e
-misurato separatamente.
+secondo pacchetto e' ora pronto per l'audit separato 1/2/3. Soltanto quel
+confronto potra' confermare i limiti e se il pacchetto leggero abbia senso
+come candidato futuro per Pegasus Difficile.

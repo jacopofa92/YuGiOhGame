@@ -1,5 +1,5 @@
 module.exports = {
-    name: 'Supporti Toon moderni: Regno, Segnalibro e Signora Arpia',
+    name: 'Supporti Toon moderni: Regno, Segnalibro, Arpia, Gira-Pagina e Glorioso Soldato',
     async run(t) {
         const result = await t.evaluate(() => {
             const copy = (id, uid) => ({ ...cardDatabase.find((c) => c.id === id), uid });
@@ -71,7 +71,52 @@ module.exports = {
             gameState.botHand = [copy(1268, 'toon-harpie-2')];
             const harpieOncePerTurn = !DuelEngine.canSpecialSummonFromHand('bot', 0);
 
-            const notesLegacy = [1266, 1267, 1268].every((id) => {
+            resetGameState();
+            gameState.botFieldSpell = { card: copy(1266, 'kingdom-page'), isFaceDown: false };
+            gameState.botDeck = [copy(481, 'page-mermaid'), copy(486, 'page-skull'), copy(1268, 'page-harpie')];
+            gameState.botDeckCount = 3;
+            const pageFlip = copy(1269, 'page-flip');
+            const pageDef = DuelEngine.getDefinition(1269);
+            const pageCtx = DuelEngine.makeContext('bot', { card: pageFlip, zone: 'hand' });
+            const pageReady = pageDef.canActivate(pageCtx);
+            pageDef.activate(pageCtx);
+            const pageSummonsExactlyOne = gameState.botMonsterField.filter(Boolean).length === 1
+                && gameState.botDeck.length === 2;
+            const pageOncePerTurn = !pageDef.canActivate(pageCtx);
+
+            resetGameState();
+            const bls = copy(1270, 'toon-bls');
+            const handMaterial = copy(481, 'bls-hand-material');
+            const fieldMaterial = copy(1268, 'bls-field-material');
+            gameState.botHand = [handMaterial, bls];
+            gameState.botMonsterField = [
+                { card: fieldMaterial, position: 'attack', isFaceDown: false },
+                { card: copy(4, 'full-1'), position: 'attack', isFaceDown: false },
+                { card: copy(5, 'full-2'), position: 'attack', isFaceDown: false },
+                { card: copy(6, 'full-3'), position: 'attack', isFaceDown: false },
+                { card: copy(7, 'full-4'), position: 'attack', isFaceDown: false }
+            ];
+            const blsCanFreeFullField = DuelEngine.canSpecialSummonFromHand('bot', 1);
+            const blsSummoned = DuelEngine.trySpecialSummonFromHand('bot', 1);
+            const blsOnField = gameState.botMonsterField.some((slot) => slot && slot.card.uid === bls.uid);
+            const blsPaysMixedCost = gameState.botGraveyard.some((card) => card.uid === handMaterial.uid)
+                && gameState.botGraveyard.some((card) => card.uid === fieldMaterial.uid)
+                && !gameState.botHand.some((card) => card.uid === bls.uid);
+
+            gameState.botFieldSpell = { card: copy(1266, 'kingdom-bls'), isFaceDown: false };
+            const banishTarget = copy(607, 'bls-target');
+            gameState.playerSTField[0] = { card: banishTarget, isFaceDown: true };
+            const blsDef = DuelEngine.getDefinition(1270);
+            const blsIndex = gameState.botMonsterField.findIndex((slot) => slot && slot.card.uid === bls.uid);
+            const blsCtx = DuelEngine.makeContext('bot', { card: bls, zone: 'monster', index: blsIndex });
+            const blsEffectReady = blsDef.canActivate(blsCtx);
+            blsDef.activate(blsCtx);
+            DuelEngine.recomputeStaticEffects();
+            const blsBanishesCard = gameState.playerBanished.some((card) => card.uid === banishTarget.uid);
+            const blsCannotAttackAfterEffect = gameState.cannotAttackUids[bls.uid] === true;
+            const blsOncePerTurn = !blsDef.canActivate(blsCtx);
+
+            const notesLegacy = [1266, 1267, 1268, 1269, 1270].every((id) => {
                 const card = cardDatabase.find((entry) => entry.id === id);
                 return card && typeof card.legacyOfficialEffect === 'string' && card.legacyOfficialEffect.length > 20;
             });
@@ -80,7 +125,11 @@ module.exports = {
                 kingdomReady, kingdomBanishesThree, kingdomGrantsDirect, kingdomBlocksTarget,
                 kingdomPaysFromDeck, oldToonRecognizesKingdom, bookmarkReady, bookmarkSearches,
                 bookmarkOncePerTurn, bookmarkProtectsWorld, harpieCanSummon, harpieSummoned,
-                harpieDestroysBackrow, harpieAttacksDirectly, harpieOncePerTurn, notesLegacy
+                harpieDestroysBackrow, harpieAttacksDirectly, harpieOncePerTurn,
+                pageReady, pageSummonsExactlyOne, pageOncePerTurn,
+                blsCanFreeFullField, blsSummoned, blsOnField, blsPaysMixedCost,
+                blsEffectReady, blsBanishesCard, blsCannotAttackAfterEffect, blsOncePerTurn,
+                notesLegacy
             };
         });
         Object.entries(result).forEach(([name, value]) => {

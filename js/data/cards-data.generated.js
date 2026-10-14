@@ -13988,6 +13988,42 @@ const cardDatabase = [
     "artOnly": true
   },
   {
+    "id": 1269,
+    "origin": "yu-gi-oh",
+    "name": "Gira-Pagina Toon",
+    "type": "spell",
+    "subtype": "quick-play",
+    "archetypes": [
+      "toon"
+    ],
+    "mentionsNames": [
+      "Mondo dei Toon"
+    ],
+    "effect": "Se controlli \"Mondo dei Toon\": rivela 3 mostri Toon con nomi diversi dal tuo Deck, poi il tuo avversario ne sceglie 1 a caso da farti Evocare Specialmente, ignorando le sue condizioni di Evocazione; rimescola gli altri nel Deck. Puoi attivare solo 1 \"Gira-Pagina Toon\" per turno.",
+    "legacyOfficialEffect": "Se controlli \"Mondo Toon\": rivela 3 mostri Toon con nomi diversi dal tuo Deck, il tuo avversario ne prende 1 a caso da farti Evocare Specialmente, ignorando le sue condizioni di Evocazione, inoltre mischia il resto nel tuo Deck. Puoi attivare solo 1 \"Gira-Pagina Toon\" per turno.",
+    "artOnly": true
+  },
+  {
+    "id": 1270,
+    "origin": "yu-gi-oh",
+    "name": "Glorioso Soldato Nero Toon",
+    "type": "monster",
+    "level": 8,
+    "race": "Guerriero",
+    "attribute": "TERRA",
+    "attack": 3000,
+    "defense": 2500,
+    "archetypes": [
+      "toon"
+    ],
+    "mentionsNames": [
+      "Mondo dei Toon"
+    ],
+    "effect": "Non può essere Evocato Normalmente/Posizionato. Deve prima essere Evocato Specialmente dalla tua mano offrendo come Tributo dalla tua mano o Terreno mostri Toon con Livello totale pari o superiore a 8. Finché controlli \"Mondo dei Toon\", questa carta può attaccare direttamente e nel turno in cui viene Evocata. Una volta per turno, se controlli \"Mondo dei Toon\": puoi scegliere come bersaglio 1 carta sul Terreno; bandiscila, inoltre questa carta non può attaccare nel turno in cui questo effetto viene attivato.",
+    "legacyOfficialEffect": "Non può essere Evocato Normalmente/Posizionato. Deve prima essere Evocato Specialmente (dalla tua mano) offrendo come Tributo dalla tua mano o Terreno mostri Toon con Livello totale pari o superiore a 8. Mentre tu controlli \"Mondo Toon\" e il tuo avversario non controlla nessun mostro Toon, questa carta può attaccare direttamente. Una volta per turno, se controlli \"Mondo Toon\": puoi scegliere come bersaglio 1 carta sul Terreno; bandiscila, inoltre questa carta non può attaccare nel turno in cui questo effetto viene attivato.",
+    "artOnly": true
+  },
+  {
     "id": 1200,
     "origin": "ww1",
     "fazione": "italiana",

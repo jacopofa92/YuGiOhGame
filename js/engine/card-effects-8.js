@@ -4652,6 +4652,170 @@
         }
     });
 
+    // ================================================================
+    // Supporti moderni Toon — secondo pacchetto. Gira-Pagina estende la
+    // consistenza senza scegliere il risultato; il Soldato usa il costo
+    // reale misto mano/Terreno, ma conserva la mediazione anime del gioco
+    // sull'attacco immediato e diretto con un Mondo attivo.
+    // ================================================================
+    CardEffects.register(1269, {
+        archetypes: ['toon'],
+        mentionsNames: ['Mondo dei Toon'],
+        canActivate(ctx) {
+            if (!DuelEngine.hasActiveToonWorld(ctx.owner)
+                || ctx.hasUsedOncePerTurn(`toon-page-flip:${ctx.owner}`)
+                || ctx.findEmptyMonsterSlot(ctx.owner) === -1) return false;
+            const names = new Set((Tavolo.mazzo(ctx.owner) || [])
+                .filter((card) => card.type === 'monster' && cardHasArchetype(card, 'toon'))
+                .map((card) => card.name));
+            return names.size >= 3;
+        },
+        activate(ctx) {
+            const deck = Tavolo.mazzo(ctx.owner) || [];
+            const byName = new Map();
+            deck.forEach((card) => {
+                if (card.type === 'monster' && cardHasArchetype(card, 'toon') && !byName.has(card.name)) {
+                    byName.set(card.name, card);
+                }
+            });
+            const candidates = Array.from(byName.values());
+            if (candidates.length < 3 || ctx.findEmptyMonsterSlot(ctx.owner) === -1) return;
+            ctx.markUsedOncePerTurn(`toon-page-flip:${ctx.owner}`);
+            chooseUpToNFromList(ctx, candidates, 3, {
+                min: 3,
+                title: 'Gira-Pagina Toon',
+                text: 'Rivela 3 mostri Toon con nomi diversi.',
+                pickForBot: (cards) => cards.slice().sort((a, b) => (b.attack || 0) - (a.attack || 0)).slice(0, 3)
+            }, (revealed) => {
+                if (revealed.length !== 3) return;
+                const picked = revealed[Math.floor(ctx.random() * revealed.length)];
+                const index = deck.findIndex((card) => card.uid === picked.uid);
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (index === -1 || slotIndex === -1) return;
+                const [summoned] = deck.splice(index, 1);
+                Casuale.mescola(deck);
+                gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = deck.length;
+                ctx.specialSummon(ctx.owner, summoned, slotIndex, 'attack', 'deck');
+                ctx.log(`Gira-Pagina Toon rivela ${revealed.map((card) => card.name).join(', ')}: ${summoned.name} viene scelto ed Evocato!`);
+            });
+        }
+    });
+
+    const toonBlsCandidates = (ctx) => {
+        const out = [];
+        ctx.hand(ctx.owner).forEach((card, index) => {
+            if (card.uid !== ctx.card.uid && card.type === 'monster' && cardHasArchetype(card, 'toon')) {
+                out.push({ card, zone: 'hand', index });
+            }
+        });
+        ctx.field(ctx.owner).forEach((slot, index) => {
+            if (slot && slot.card.type === 'monster' && cardHasArchetype(slot.card, 'toon')) {
+                out.push({ card: slot.card, zone: 'monster', index });
+            }
+        });
+        return out;
+    };
+    const toonBlsSelectionValid = (ctx, entries) => {
+        const enoughLevels = entries.reduce((sum, entry) => sum + (entry.card.level || 0), 0) >= 8;
+        const hasSpace = ctx.findEmptyMonsterSlot(ctx.owner) !== -1 || entries.some((entry) => entry.zone === 'monster');
+        return enoughLevels && hasSpace;
+    };
+    const toonBlsAutomaticPlan = (ctx, candidates) => {
+        let best = null;
+        const combinations = 1 << candidates.length;
+        for (let mask = 1; mask < combinations; mask++) {
+            const entries = candidates.filter((entry, index) => (mask & (1 << index)) !== 0);
+            if (!toonBlsSelectionValid(ctx, entries)) continue;
+            const total = entries.reduce((sum, entry) => sum + (entry.card.level || 0), 0);
+            // Prima conserva il maggior numero di risorse, poi evita di
+            // offrire Livelli inutili; a parita' preferisce la mano.
+            const fieldCount = entries.filter((entry) => entry.zone === 'monster').length;
+            const score = entries.length * 10000 + (total - 8) * 100 + fieldCount;
+            if (!best || score < best.score) best = { entries, score };
+        }
+        return best ? best.entries : [];
+    };
+
+    CardEffects.register(1270, {
+        archetypes: ['toon'],
+        isToon: true,
+        mentionsNames: ['Mondo dei Toon'],
+        cannotNormalSummon: true,
+        cannotBeSet: true,
+        specialSummonReleasesOwnMonsterZone: true,
+        specialSummonMixedTributeMinLevel: 8,
+        getSpecialSummonMixedTributeCandidates(ctx) { return toonBlsCandidates(ctx); },
+        isSpecialSummonMixedTributeSelectionValid(ctx, entries) { return toonBlsSelectionValid(ctx, entries); },
+        canSpecialSummonFromHand(ctx) {
+            return toonBlsAutomaticPlan(ctx, toonBlsCandidates(ctx)).length > 0;
+        },
+        paySpecialSummonCost(ctx) {
+            const candidates = toonBlsCandidates(ctx);
+            const pending = gameState.pendingSpecialSummonMixedTributeUids;
+            gameState.pendingSpecialSummonMixedTributeUids = null;
+            let selected = Array.isArray(pending)
+                ? pending.map((uid) => candidates.find((entry) => entry.card.uid === uid)).filter(Boolean)
+                : [];
+            if (!toonBlsSelectionValid(ctx, selected)) selected = toonBlsAutomaticPlan(ctx, candidates);
+            if (!toonBlsSelectionValid(ctx, selected)) return false;
+            selected.forEach((entry) => {
+                if (entry.zone === 'hand') {
+                    const index = ctx.hand(ctx.owner).findIndex((card) => card.uid === entry.card.uid);
+                    if (index !== -1) ctx.hand(ctx.owner).splice(index, 1);
+                } else {
+                    const index = ctx.field(ctx.owner).findIndex((slot) => slot && slot.card.uid === entry.card.uid);
+                    if (index !== -1) ctx.field(ctx.owner)[index] = null;
+                }
+                ctx.graveyard(ctx.owner).push(entry.card);
+                DuelEngine.notifySacrificedForTribute(ctx.owner, entry.card, ctx.card);
+            });
+            ctx.log(`${ctx.card.name}: mostri Toon di Livello totale ${selected.reduce((sum, entry) => sum + (entry.card.level || 0), 0)} vengono offerti come Tributo!`);
+            return true;
+        },
+        canActivate(ctx) {
+            if (!DuelEngine.hasActiveToonWorld(ctx.owner)
+                || ctx.hasUsedOncePerTurn(`toon-bls-banish:${ctx.card.uid}`)) return false;
+            return collectFieldTargets(ctx, { owner: 'both', zone: 'both', includiCoperte: true }).length > 0
+                || Tavolo.ordine().some((owner) => !!gameState[Tavolo.chiave(owner, 'FieldSpell')]);
+        },
+        activate(ctx) {
+            const candidates = collectFieldTargets(ctx, { owner: 'both', zone: 'both', includiCoperte: true });
+            Tavolo.ordine().forEach((owner) => {
+                const slot = gameState[Tavolo.chiave(owner, 'FieldSpell')];
+                if (slot && slot.card.uid !== ctx.card.uid) candidates.push({ owner, index: -1, zone: 'fieldSpell', card: slot.card, slot });
+            });
+            chooseFieldCardTarget(ctx, candidates, {
+                title: ctx.card.name,
+                text: 'Scegli 1 carta sul Terreno da bandire.',
+                dichiara: true
+            }, (chosen) => {
+                let slot = null;
+                if (chosen.zone === 'monster') {
+                    slot = ctx.field(chosen.owner)[chosen.index];
+                    if (slot) ctx.field(chosen.owner)[chosen.index] = null;
+                } else if (chosen.zone === 'st') {
+                    slot = ctx.stField(chosen.owner)[chosen.index];
+                    if (slot) ctx.stField(chosen.owner)[chosen.index] = null;
+                } else {
+                    const key = Tavolo.chiave(chosen.owner, 'FieldSpell');
+                    slot = gameState[key];
+                    if (slot) gameState[key] = null;
+                }
+                if (!slot) return;
+                ctx.banish(chosen.owner, slot.card);
+                ctx.card._toonBlsNoAttackTurn = gameState.turn;
+                ctx.markUsedOncePerTurn(`toon-bls-banish:${ctx.card.uid}`);
+                ctx.log(`${ctx.card.name} bandisce ${slot.card.name} e rinuncia ad attaccare in questo turno!`);
+            });
+        },
+        static(ctx) {
+            if (ctx.card._toonBlsNoAttackTurn === gameState.turn) gameState.cannotAttackUids[ctx.card.uid] = true;
+        },
+        mustTargetFilterIfPresent(card, owner) {
+            return DuelEngine.hasActiveToonWorld(owner) && cardHasArchetype(card, 'toon');
+        }
+    });
+
     (function registerLibraryEffects() {
         if (typeof cardDatabase === 'undefined' || !Array.isArray(cardDatabase)) return;
 

@@ -95,6 +95,7 @@ const Comandi = (function () {
         if (c.posizione !== undefined) gameState.pendingSpecialSummonPosition = c.posizione;
         if (c.banditi !== undefined) gameState.pendingSpecialSummonBanishUids = c.banditi;
         if (c.tributi !== undefined) gameState.pendingSpecialSummonTributeUids = c.tributi;
+        if (c.tributiMisti !== undefined) gameState.pendingSpecialSummonMixedTributeUids = c.tributiMisti;
         if (c.sacrificio !== undefined) gameState.pendingSpecialSummonSacrificeUid = c.sacrificio;
         return DuelEngine.trySpecialSummonFromHand(posto, indice);
     }
@@ -108,7 +109,7 @@ const Comandi = (function () {
         const carta = Tavolo.mano('player')[handIndex];
         if (!carta) return false;
         const comando = { tipo: 'specialeDaMano', carta: carta.uid, mano: handIndex };
-        const campi = { posizione: 'pendingSpecialSummonPosition', banditi: 'pendingSpecialSummonBanishUids', tributi: 'pendingSpecialSummonTributeUids', sacrificio: 'pendingSpecialSummonSacrificeUid' };
+        const campi = { posizione: 'pendingSpecialSummonPosition', banditi: 'pendingSpecialSummonBanishUids', tributi: 'pendingSpecialSummonTributeUids', tributiMisti: 'pendingSpecialSummonMixedTributeUids', sacrificio: 'pendingSpecialSummonSacrificeUid' };
         Object.keys(campi).forEach((k) => {
             if (gameState[campi[k]] !== undefined && gameState[campi[k]] !== null) comando[k] = gameState[campi[k]];
         });

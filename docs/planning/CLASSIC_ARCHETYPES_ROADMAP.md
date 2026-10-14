@@ -73,6 +73,10 @@ L'audit 1/2/3 (3.500 duelli) misura il pacchetto leggero al 50,4% contro una
 baseline del 39,6%, conservando e anzi rendendo piu' visibile la linea
 Abbandonato/Mille Occhi. Starter e deck Pegasus restano invariati; dettagli
 e limiti provvisori in `docs/audits/TOON_SUPPORT_AUDIT.md`.
+Il secondo pacchetto aggiunge Gira-Pagina Toon e Glorioso Soldato Nero Toon:
+dati, immagini, costo reale con Tributi misti mano/Terreno, scelta casuale
+sincronizzata e test isolati sono completi. Deck ed economia restano ancora
+invariati fino al confronto conclusivo 1/2/3 copie.
 
 ## Deck avversari: politica conservativa
 

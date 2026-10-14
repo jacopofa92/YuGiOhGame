@@ -2993,7 +2993,7 @@
         const def = getDefinition(card.id);
         if (!def || typeof def.canSpecialSummonFromHand !== 'function') return false;
         const destinationOwner = def.specialSummonToOpponentField ? Tavolo.avversario(owner) : owner;
-        if (!def.specialSummonTributeFromOpponent
+        if (!def.specialSummonTributeFromOpponent && !def.specialSummonReleasesOwnMonsterZone
             && fieldOf(destinationOwner).findIndex((slot) => slot === null) === -1) return false;
         return !!def.canSpecialSummonFromHand(makeContext(owner, { card: card, handIndex: handIndex, summonDestinationOwner: destinationOwner }));
     }
@@ -3012,7 +3012,7 @@
         const def = getDefinition(card.id);
         const destinationOwner = def.specialSummonToOpponentField ? Tavolo.avversario(owner) : owner;
         let slotIndex = fieldOf(destinationOwner).findIndex((slot) => slot === null);
-        if (slotIndex === -1 && !def.specialSummonTributeFromOpponent) {
+        if (slotIndex === -1 && !def.specialSummonTributeFromOpponent && !def.specialSummonReleasesOwnMonsterZone) {
             addToLog('❌ Il Terreno è pieno: impossibile Special Summonare.');
             return false;
         }
@@ -3025,7 +3025,12 @@
         // soltanto dopo il pagamento è quindi necessario.
         slotIndex = fieldOf(destinationOwner).findIndex((slot) => slot === null);
         if (slotIndex === -1) return false;
-        hand.splice(handIndex, 1);
+        // Il costo puo' aver rimosso altre carte dalla stessa mano. Cercare
+        // nuovamente per uid evita di togliere la carta ormai presente al
+        // vecchio indice (o di lasciare in mano il mostro appena evocato).
+        const currentHandIndex = hand.findIndex((entry) => entry.uid === card.uid);
+        if (currentHandIndex === -1) return false;
+        hand.splice(currentHandIndex, 1);
         // Per regolamento reale, se una carta Special Summona un mostro
         // senza specificarne la Posizione, sceglie chi CONTROLLA quella
         // Summon — bug reale segnalato dall'utente ("alcune carte che
