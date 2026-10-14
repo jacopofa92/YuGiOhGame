@@ -51,6 +51,13 @@ Limite giocatore provvisorio: 2 copie ciascuna, da applicare nella fase
 economica. La seconda meta' Occhi Rossi resta sospesa fino alla feature sicura
 per materiali di Fusione dal Deck; si procede intanto con Mago Nero.
 
+La Fase 3 (Mago Nero) e' completa nei due pacchetti e nell'audit 1/2/3; la
+composizione candidata per Yami Yugi Difficile resta sospesa fino al benchmark
+informativo `Custom`. Il primo pacchetto della Fase 4 (Drago Bianco) contiene
+Melodia, Drago Bianco Alternativo e Luce Autentica: dati, immagini, effetti e
+test isolati sono completi. Stato tecnico e checkpoint in
+`docs/audits/BLUE_EYES_SUPPORT_AUDIT.md`; deck ed economia restano invariati.
+
 ## Deck avversari: politica conservativa
 
 Le nuove carte non entrano automaticamente nei deck avversari. Per ogni

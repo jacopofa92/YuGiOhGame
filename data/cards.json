@@ -13805,6 +13805,41 @@
     "artOnly": true
   },
   {
+    "id": 1261,
+    "origin": "yu-gi-oh",
+    "name": "La Melodia del Drago che si Risveglia",
+    "type": "spell",
+    "subtype": "normal",
+    "archetypes": ["blue-eyes"],
+    "effect": "Scarta 1 carta; aggiungi dal tuo Deck alla tua mano fino a 2 mostri Drago con ATK 3000 o superiore e DEF 2500 o inferiore.",
+    "artOnly": true
+  },
+  {
+    "id": 1262,
+    "origin": "yu-gi-oh",
+    "name": "Drago Bianco Alternativo Occhi Blu",
+    "type": "monster",
+    "level": 8,
+    "race": "Drago",
+    "attribute": "LUCE",
+    "attack": 3000,
+    "defense": 2500,
+    "archetypes": ["blue-eyes"],
+    "effect": "Non può essere Evocato Normalmente/Posizionato. Deve prima essere Evocato Specialmente dalla tua mano rivelando \"Drago Bianco Occhi Blu\" nella tua mano. Puoi Evocare Specialmente \"Drago Bianco Alternativo Occhi Blu\" in questo modo una sola volta per turno. Il nome di questa carta diventa \"Drago Bianco Occhi Blu\" mentre è sul Terreno o nel Cimitero. Una volta per turno: puoi scegliere come bersaglio 1 mostro controllato dal tuo avversario; distruggilo. Questa carta non può attaccare nel turno in cui questo effetto viene attivato.",
+    "artOnly": true
+  },
+  {
+    "id": 1263,
+    "origin": "yu-gi-oh",
+    "name": "Luce Autentica",
+    "type": "trap",
+    "subtype": "continuous",
+    "archetypes": ["blue-eyes"],
+    "mentionsNames": ["Drago Bianco Occhi Blu"],
+    "effect": "Il tuo avversario non può scegliere come bersaglio \"Drago Bianco Occhi Blu\" nella tua Zona Mostri con gli effetti delle carte. Una volta per turno: puoi attivare 1 di questi effetti; Evoca Specialmente 1 \"Drago Bianco Occhi Blu\" dalla tua mano o Cimitero; oppure Posiziona direttamente dal tuo Deck 1 Magia/Trappola che cita \"Drago Bianco Occhi Blu\", con un nome diverso dalle carte che controlli e nel tuo Cimitero. Se questa carta scoperta viene mandata dalla Zona Magie/Trappole al Cimitero: distruggi tutti i mostri che controlli.",
+    "artOnly": true
+  },
+  {
     "id": 1200,
     "origin": "ww1",
     "fazione": "italiana",

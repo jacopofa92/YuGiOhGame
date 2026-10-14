@@ -538,7 +538,7 @@
      * carta/definizione. Serve per testi come "il nome di questa carta viene
      * considerato ..." senza cambiare l'id, il nome mostrato o i salvataggi.
      */
-    function cardHasEffectiveName(card, requestedName) {
+    function cardHasEffectiveName(card, requestedName, zone) {
         if (!card || !requestedName) return false;
         const normalize = (value) => String(value || '').trim().toLowerCase();
         const wanted = normalize(requestedName);
@@ -548,6 +548,13 @@
         const names = [card.name]
             .concat(Array.isArray(card.treatedAsNames) ? card.treatedAsNames : [])
             .concat(def && Array.isArray(def.treatedAsNames) ? def.treatedAsNames : []);
+        // Alcuni nomi assunti dipendono dalla zona. Tenerli separati dai
+        // treatedAsNames assoluti evita, per esempio, che Drago Bianco
+        // Alternativo venga considerato Drago Bianco Occhi Blu anche in
+        // mano: il suo testo limita esplicitamente Terreno e Cimitero.
+        if (zone && def && def.treatedAsNamesByZone && Array.isArray(def.treatedAsNamesByZone[zone])) {
+            names.push(...def.treatedAsNamesByZone[zone]);
+        }
         return names.some((value) => normalize(value) === wanted);
     }
 

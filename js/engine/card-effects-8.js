@@ -4242,6 +4242,169 @@
         }
     });
 
+    // ================================================================
+    // Supporti moderni Drago Bianco — primo pacchetto.
+    // ================================================================
+    const melodyDragon = (card) => card && card.type === 'monster' && card.race === 'Drago'
+        && (card.attack || 0) >= 3000 && (card.defense || 0) <= 2500;
+    CardEffects.register(1261, {
+        archetypes: ['blue-eyes'],
+        canActivate(ctx) {
+            const deck = Tavolo.mazzo(ctx.owner);
+            return ctx.hand(ctx.owner).some((c) => c.uid !== ctx.card.uid)
+                && Array.isArray(deck) && deck.some(melodyDragon);
+        },
+        activate(ctx) {
+            chooseCardFromHand(ctx, {
+                filter: (c) => c.uid !== ctx.card.uid,
+                title: 'La Melodia del Drago che si Risveglia',
+                text: 'Scegli la carta da scartare come costo.'
+            }, (discarded, index) => {
+                const paid = ctx.discardChosenFromHand(ctx.owner, index);
+                if (!paid) return;
+                const deck = Tavolo.mazzo(ctx.owner) || [];
+                const candidates = deck.filter(melodyDragon);
+                chooseUpToNFromList(ctx, candidates, 2, {
+                    min: 1,
+                    title: 'La Melodia del Drago che si Risveglia',
+                    text: 'Scegli fino a 2 Draghi da aggiungere alla mano.',
+                    pickForBot: (cards, max) => cards.slice().sort((a, b) => (b.attack || 0) - (a.attack || 0)).slice(0, max)
+                }, (chosen) => {
+                    chosen.forEach((card) => {
+                        const i = deck.indexOf(card);
+                        if (i !== -1) ctx.hand(ctx.owner).push(deck.splice(i, 1)[0]);
+                    });
+                    gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = deck.length;
+                    ctx.log(`${paid.name} viene scartata: aggiunte ${chosen.length} carte Drago alla mano!`);
+                });
+            });
+        }
+    });
+
+    CardEffects.register(1262, {
+        archetypes: ['blue-eyes'],
+        treatedAsNamesByZone: {
+            monster: ['Drago Bianco Occhi Blu'],
+            graveyard: ['Drago Bianco Occhi Blu']
+        },
+        cannotNormalSummon: true,
+        canSpecialSummonFromHand(ctx) {
+            return !ctx.hasUsedOncePerTurn(`alternative-special:${ctx.owner}`)
+                && ctx.hand(ctx.owner).some((c) => c.uid !== ctx.card.uid && c.id === 1);
+        },
+        paySpecialSummonCost(ctx) {
+            if (!ctx.hand(ctx.owner).some((c) => c.uid !== ctx.card.uid && c.id === 1)) return false;
+            ctx.markUsedOncePerTurn(`alternative-special:${ctx.owner}`);
+            ctx.log('🐉 Drago Bianco Occhi Blu viene rivelato dalla mano!');
+            return true;
+        },
+        canActivate(ctx) {
+            return ctx.zone === 'monster'
+                && !ctx.hasUsedOncePerTurn(`alternative-destroy:${ctx.card.uid}`)
+                && ctx.field(ctx.opponent).some(Boolean);
+        },
+        activate(ctx) {
+            const targets = collectFieldTargets(ctx, { owner: 'opponent', zone: 'monster', includiCoperte: true });
+            chooseFieldCardTarget(ctx, targets, {
+                title: 'Drago Bianco Alternativo Occhi Blu',
+                text: 'Scegli il mostro avversario da distruggere.', dichiara: true
+            }, (chosen) => {
+                ctx.markUsedOncePerTurn(`alternative-destroy:${ctx.card.uid}`);
+                ctx.card._alternativeNoAttackTurn = gameState.turn;
+                ctx.destroyMonster(chosen.owner, chosen.index);
+            });
+        },
+        static(ctx) {
+            if (ctx.card._alternativeNoAttackTurn === gameState.turn) {
+                gameState.cannotAttackUids[ctx.card.uid] = true;
+            }
+        }
+    });
+
+    const isBlueEyesWhiteDragonHere = (card, zone) => cardHasEffectiveName(card, 'Drago Bianco Occhi Blu', zone);
+    const trueLightLeave = (ctx) => {
+        if (ctx.wasFaceDown || ctx.card._trueLightLeaveResolved) return;
+        ctx.card._trueLightLeaveResolved = true;
+        ctx.destroyAllMonsters(ctx.owner);
+        ctx.log(`${ctx.card.name} viene mandata al Cimitero: tutti i tuoi mostri vengono distrutti!`);
+    };
+    CardEffects.register(1263, {
+        archetypes: ['blue-eyes'],
+        mentionsNames: ['Drago Bianco Occhi Blu'],
+        continuous: true,
+        repeatableWhileContinuous: true,
+        canActivate(ctx) {
+            if (ctx.hasUsedOncePerTurn(`true-light:${ctx.owner}`)) return false;
+            const deck = Tavolo.mazzo(ctx.owner) || [];
+            const canSummon = ctx.findEmptyMonsterSlot(ctx.owner) !== -1
+                && (ctx.hand(ctx.owner).some((c) => isBlueEyesWhiteDragonHere(c, 'hand'))
+                    || ctx.graveyard(ctx.owner).some((c) => isBlueEyesWhiteDragonHere(c, 'graveyard')));
+            const occupiedNames = new Set(ctx.stField(ctx.owner).filter(Boolean).map((s) => s.card.name)
+                .concat(ctx.graveyard(ctx.owner).map((c) => c.name)));
+            const canSet = DuelEngine.findFreeSTSlot(ctx.owner) !== -1
+                && deck.some((c) => (c.type === 'spell' || c.type === 'trap')
+                    && cardMentionsName(c, 'Drago Bianco Occhi Blu') && !occupiedNames.has(c.name));
+            return canSummon || canSet;
+        },
+        activate(ctx) {
+            ctx.card._trueLightLeaveResolved = false;
+            const deck = Tavolo.mazzo(ctx.owner) || [];
+            const canSummon = ctx.findEmptyMonsterSlot(ctx.owner) !== -1
+                && (ctx.hand(ctx.owner).some((c) => isBlueEyesWhiteDragonHere(c, 'hand'))
+                    || ctx.graveyard(ctx.owner).some((c) => isBlueEyesWhiteDragonHere(c, 'graveyard')));
+            const occupiedNames = new Set(ctx.stField(ctx.owner).filter(Boolean).map((s) => s.card.name)
+                .concat(ctx.graveyard(ctx.owner).map((c) => c.name)));
+            const setCandidates = deck.filter((c) => (c.type === 'spell' || c.type === 'trap')
+                && cardMentionsName(c, 'Drago Bianco Occhi Blu') && !occupiedNames.has(c.name));
+            const canSet = DuelEngine.findFreeSTSlot(ctx.owner) !== -1 && setCandidates.length > 0;
+            const resolve = (choice) => {
+                ctx.markUsedOncePerTurn(`true-light:${ctx.owner}`);
+                if (choice === 'set') {
+                    searchDeckWithChoice(ctx, (c) => setCandidates.includes(c), {
+                        title: 'Luce Autentica', text: 'Scegli la Magia/Trappola da Posizionare.'
+                    }, (chosen) => {
+                        const free = DuelEngine.findFreeSTSlot(ctx.owner);
+                        if (free === -1) { deck.push(chosen); return; }
+                        ctx.stField(ctx.owner)[free] = { card: chosen, isFaceDown: true, setOnTurn: gameState.turn };
+                    });
+                    return;
+                }
+                const pool = ctx.hand(ctx.owner).filter((c) => isBlueEyesWhiteDragonHere(c, 'hand'))
+                    .concat(ctx.graveyard(ctx.owner).filter((c) => isBlueEyesWhiteDragonHere(c, 'graveyard')));
+                chooseCardFromList(ctx, pool, {
+                    title: 'Luce Autentica', text: 'Scegli il Drago Bianco da Evocare Specialmente.'
+                }, (chosen) => {
+                    let from = 'hand';
+                    let i = ctx.hand(ctx.owner).indexOf(chosen);
+                    if (i !== -1) ctx.hand(ctx.owner).splice(i, 1);
+                    else {
+                        from = 'graveyard';
+                        i = ctx.graveyard(ctx.owner).indexOf(chosen);
+                        if (i === -1) return;
+                        ctx.graveyard(ctx.owner).splice(i, 1);
+                    }
+                    const free = ctx.findEmptyMonsterSlot(ctx.owner);
+                    if (free === -1) { (from === 'hand' ? ctx.hand(ctx.owner) : ctx.graveyard(ctx.owner)).push(chosen); return; }
+                    ctx.specialSummon(ctx.owner, chosen, free, 'attack', from);
+                });
+            };
+            if (canSummon && canSet) chooseOption(ctx, {
+                title: 'Luce Autentica', text: 'Scegli quale effetto applicare.',
+                options: [{ value: 'summon', label: 'Evoca un Drago Bianco' }, { value: 'set', label: 'Posiziona dal Deck' }],
+                pickForBot: () => 'summon'
+            }, resolve);
+            else resolve(canSummon ? 'summon' : 'set');
+        },
+        static(ctx) {
+            ctx.field(ctx.owner).forEach((slot) => {
+                if (slot && !slot.isFaceDown && isBlueEyesWhiteDragonHere(slot.card, 'monster')) {
+                    gameState.cannotBeTargetedByOpponentEffectsUids[slot.card.uid] = ctx.owner;
+                }
+            });
+        },
+        onSentToGraveyardFromField: trueLightLeave
+    });
+
     (function registerLibraryEffects() {
         if (typeof cardDatabase === 'undefined' || !Array.isArray(cardDatabase)) return;
 

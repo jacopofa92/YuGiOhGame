@@ -3993,6 +3993,17 @@
             return { allowed: false, targetOwner: currentOwner, targetIndex: currentIndex };
         }
 
+        // Protezione più stretta: non impedisce gli effetti non mirati, ma
+        // soltanto che l'avversario scelga questa istanza come bersaglio
+        // (True Light). Il valore conserva il controllore protetto.
+        const untargetableOwner = raceCheckSlot && gameState.cannotBeTargetedByOpponentEffectsUids
+            ? gameState.cannotBeTargetedByOpponentEffectsUids[raceCheckSlot.card.uid]
+            : null;
+        if (raceCheckSlot && !raceCheckSlot.isFaceDown && untargetableOwner && sourceCtx.owner !== untargetableOwner) {
+            addToLog(`🚫 ${raceCheckSlot.card.name} non può essere scelta come bersaglio dagli effetti dell'avversario!`);
+            return { allowed: false, targetOwner: currentOwner, targetIndex: currentIndex };
+        }
+
         // 1.6) Floodgate ASSOLUTO per singola carta, ma SOLO contro le Magie
         // (es. Guardiano Kay'est, id 285: "questa carta non è influenzata
         // dagli effetti delle Magie", clausola che include non poter essere
@@ -5062,6 +5073,7 @@
         // a distinguere gli effetti propri da quelli avversari senza
         // codificare i due posti nel singolo effetto carta.
         gameState.unaffectedByOpponentCardEffectsUids = {};
+        gameState.cannotBeTargetedByOpponentEffectsUids = {};
         // Come def.cannotBeTargetedBySpells (fisso per DEFINIZIONE, es.
         // Guardiano Kay'est id 285) ma per-ISTANZA — nata per Il Pescatore
         // Leggendario (id 879): "finché 'Umi' è sul Terreno, non è
