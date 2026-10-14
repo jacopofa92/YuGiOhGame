@@ -1,7 +1,7 @@
 # Audit preliminare supporti Divinita' Egizie
 
-Stato: inventario tecnico concluso; nessuna nuova carta ancora aggiunta e
-nessun deck modificato.
+Stato: inventario e primitive generiche conclusi; nessuna nuova carta ancora
+aggiunta e nessun deck modificato.
 
 ## Base gia' presente
 
@@ -42,7 +42,7 @@ per carta. Canto Antico richiede invece due primitive generiche:
 
 ## Sequenza sicura
 
-1. aggiungere e testare le tre primitive senza carte nuove;
+1. [completato] aggiungere e testare le tre primitive senza carte nuove;
 2. implementare separatamente Attacco Forza del Tuono e Pugno del Fato;
 3. implementare Canto Antico con test sui due ordini legali delle Evocazioni
    (Tributo prima o dopo quella Normale);
@@ -52,3 +52,16 @@ per carta. Canto Antico richiede invece due primitive generiche:
 Limite iniziale prudenziale da sottoporre ad audit: una copia per carta. Sono
 supporti di Carte Dio gia' limitate a uno e non devono diventare staple
 generiche o fonti ordinarie del Negozio.
+
+## Primitive concluse
+
+- `activationAndEffectCannotBeNegated` viene rispettato direttamente da
+  `ctx.negateActivation()`, quindi copre ogni vecchia e futura risposta;
+- `additionalTributeSummonFor` concede soltanto una Evocazione Tributo e
+  lascia distinta la quota Normale, in entrambi gli ordini di utilizzo;
+- ogni Evocazione Tributo conserva in `_tributedOriginalStats` id, ATK e DEF
+  originali delle carte offerte, indipendentemente dai modificatori attivi.
+
+Il test `primitive-supporti-divinita.spec.js` copre le tre regole. Restano
+verdi anche gli spec mirati sui tre Dei, sulle negazioni e sull'Evocazione
+Tributo a Terreno pieno. Typecheck verde; suite completa non eseguita.

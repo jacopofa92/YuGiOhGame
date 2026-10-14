@@ -270,6 +270,8 @@ interface CardDefinition {
     canActivate?: Condizione;
     /** L'effetto all'attivazione/risoluzione. */
     activate?: Hook;
+    /** Attivazione ed effetto non possono essere annullati. */
+    activationAndEffectCannotBeNegated?: boolean;
     /** Effetto continuo, ricalcolato ad ogni render (recomputeStaticEffects). */
     static?: Hook;
     /** Resta sul Terreno dopo l'attivazione (Magia/Trappola Continua). */

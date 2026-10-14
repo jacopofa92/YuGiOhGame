@@ -272,6 +272,9 @@ function resetGameState() {
         // che invece si ricalcola sempre da zero ad ogni render.
         revealedSwordsLanded: {},
         hasNormalSummoned: false,
+        // Permesso per una Evocazione Tributo aggiuntiva (Canto Antico).
+        // Non sostituisce hasNormalSummoned e non autorizza un normale Set.
+        additionalTributeSummonFor: { player: false, bot: false },
         // Effetti Ignition dei mostri (es. Soldato Cannone): chiave = uid
         // della carta -> true se già attivato in questo turno. Resettato
         // ad ogni cambio turno in changeTurn() qui sotto.
@@ -614,6 +617,7 @@ function changeTurn() {
         EventiDuello.emetti('annuncio-turno', 'TURNO', wordRight, `Turno ${gameState.turn}`);
     }
     gameState.hasNormalSummoned = false;
+    gameState.additionalTributeSummonFor = { player: false, bot: false };
     gameState.usedIgnitionThisTurn = {};
     gameState.usedOncePerTurnEffect = {};
     gameState.directAttackAllowedFor = {};

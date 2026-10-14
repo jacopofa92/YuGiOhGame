@@ -1558,6 +1558,11 @@
             if (chain.links.length === 0) return false;
             const target = chain.links[chain.links.length - 1];
             if (target.negated) return false;
+            // Le mosse firma delle Divinita' e future carte equivalenti
+            // dichiarano che attivazione ed effetto non possono essere
+            // annullati. Il controllo vive qui, punto unico usato da ogni
+            // carta di negazione, non nelle singole risposte.
+            if (target.def && target.def.activationAndEffectCannotBeNegated) return false;
             target.negated = true;
             return true;
         },

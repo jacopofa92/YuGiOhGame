@@ -52,7 +52,7 @@ function turnoIA(io = 'bot') {
                 // Phase — altrimenti il bot entrerebbe in battaglia dopo un
                 // timer fisso anche se quel modale è ancora aperto in attesa di
                 // una decisione, lasciando l'avversario "scavalcato".
-                return (!gameState.hasNormalSummoned && Tavolo.mano(io).length > 0) ? attemptBotSummon(io) : Promise.resolve();
+                return (Tavolo.mano(io).some((card) => canUseNormalSummonQuota(io, card))) ? attemptBotSummon(io) : Promise.resolve();
             });
             summonPromise
                 // Se l'Evocazione ha fatto partire un filmato o la
@@ -81,7 +81,7 @@ function turnoIA(io = 'bot') {
                 // Offerta Suprema e future carte equivalenti possono aver
                 // riaperto l'Evocazione Normale: sfruttala nello stesso
                 // turno, senza concedere una seconda mossa gratuitamente.
-                .then(() => (!gameState.hasNormalSummoned && Tavolo.mano(io).length > 0)
+                .then(() => (Tavolo.mano(io).some((card) => canUseNormalSummonQuota(io, card)))
                     ? attemptBotSummon(io) : Promise.resolve())
                 .then(waitForSummonCinematics)
                 // Una Magia Terreno del GIOCATORE che "il giocatore di turno"

@@ -34,6 +34,7 @@
             : (card) => card.attack || 0;
         const candidates = [...Tavolo.mano(io, gameState)]
             .filter((card) => card.type === 'monster'
+                && (typeof canUseNormalSummonQuota !== 'function' || canUseNormalSummonQuota(io, card))
                 && (!window.AI_SHARED || AI_SHARED.canNormalSummonNow(card, gameState, io))
                 && !(window.AI_SHARED && AI_SHARED.shouldHoldForExodia(card))
                 && (typeof options.allowCandidate !== 'function' || options.allowCandidate(card)))

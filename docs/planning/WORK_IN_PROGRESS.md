@@ -16,7 +16,8 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
       completati; nessun deck avversario modificato in assenza del benchmark
       `Custom`. Supporti alle Divinita': inventario preliminare completato in
       `docs/audits/EGYPTIAN_GODS_SUPPORT_AUDIT.md`; prossimo passo sono le tre
-      primitive generiche, prima di aggiungere le nuove carte.
+      primitive generiche completate e testate; prossimo passo sono Attacco
+      Forza del Tuono e Pugno del Fato, poi Canto Antico.
 
 ## Economia e acquisizione carte
 

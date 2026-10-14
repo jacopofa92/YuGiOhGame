@@ -661,7 +661,7 @@ function attemptMonsterSummon(card, handIndex, slotIndex, fromRect) {
         clearSelection();
         return;
     }
-    if (gameState.hasNormalSummoned) {
+    if (!canUseNormalSummonQuota('player', card)) {
         addToLog('❌ Hai già effettuato un\'Evocazione Normale in questo turno.');
         clearSelection();
         return;
@@ -1199,7 +1199,7 @@ function closeQuickPopover() {
 }
 
 function openSummonModal(card, slotIndex, handIndex, fromRect) {
-    if (card.type === 'monster' && gameState.hasNormalSummoned) {
+    if (card.type === 'monster' && !canUseNormalSummonQuota('player', card)) {
         addToLog('❌ Hai già effettuato un\'Evocazione Normale in questo turno.');
         return;
     }
