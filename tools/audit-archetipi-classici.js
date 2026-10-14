@@ -17,9 +17,12 @@ const LIVELLI = ['easy', 'medium', 'hard'];
 const CAMPIONI = ['yamiYugi', 'joey', 'pegasus', 'mako', 'bakura'];
 const DUELLANTI_DEFAULT = ['joey', 'yamiYugi', 'kaiba', 'pegasus', 'strings', 'marik'];
 const FIRME = {
-    joey: ['Drago Nero Occhi Rossi'], yamiYugi: ['Mago Nero', 'Slifer'],
-    kaiba: ['Drago Bianco Occhi Blu'], pegasus: ['Mondo dei Toon', 'Abbandonato', 'Mille Occhi'],
-    strings: ['Slifer'], marik: ['Drago Alato di Ra']
+    joey: [{ id: 12, nome: 'Drago Nero Occhi Rossi' }],
+    yamiYugi: [{ id: 2, nome: 'Mago Nero' }, { id: 31, nome: 'Slifer' }],
+    kaiba: [{ id: 1, nome: 'Drago Bianco Occhi Blu' }],
+    pegasus: [{ id: 487, nome: 'Mondo dei Toon' }, { id: 416, nome: 'Abbandonato' }, { id: 476, nome: 'Restrizione dai Mille Occhi' }],
+    strings: [{ id: 31, nome: 'Slifer' }],
+    marik: [{ id: 472, nome: 'Drago Alato di Ra' }]
 };
 
 function valore(argv, nome, fallback) {
@@ -92,7 +95,8 @@ async function giocaSerie(base, opzioni) {
     const esiti = [];
     for (let i = 0; i < opzioni.partite; i++) {
         const risultato = await giocaPartita(Object.assign({}, base, {
-            seme: opzioni.seme + i, turni: opzioni.turni, cercaTutte: FIRME[base.avversario] || []
+            seme: opzioni.seme + i, turni: opzioni.turni,
+            osservaBotIds: (FIRME[base.avversario] || []).map((f) => f.id)
         }), 0);
         if (risultato.erroriCarte.length || risultato.invarianti.length) {
             throw new Error(`${base.avversario}/${base.livello}/seme ${opzioni.seme + i}: ${[...risultato.erroriCarte, ...risultato.invarianti].join(' | ')}`);
@@ -114,8 +118,8 @@ async function eseguiAudit(opzioni) {
                 ufficiali.push(...await giocaSerie({ avversario: duellante, livello, giocatore: CAMPIONI[c], livelloGiocatore: 'hard' },
                     Object.assign({}, opzioni, { seme: opzioni.seme + c * 10000 })));
             }
-            const firma = Object.fromEntries((FIRME[duellante] || []).map((testo) => [testo,
-                percentuale(ufficiali.filter((e) => (e.trovatePerTesto[testo] || 0) > 0).length, ufficiali.length)]));
+            const firma = Object.fromEntries((FIRME[duellante] || []).map((f) => [f.nome,
+                percentuale(ufficiali.filter((e) => (e.osservatiBotIds || []).includes(f.id)).length, ufficiali.length)]));
             const riga = { duellante, livello, ufficiale: riassumi(ufficiali, true), firmaPartitePct: firma, custom: null };
             if (custom) {
                 const serie = await giocaSerie({

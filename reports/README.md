@@ -8,6 +8,8 @@ sono separati per area per evitare di affollare la radice del repository:
 - `logs/`: log diagnostici conservati come riferimento;
 - `pegasus/`: verifiche dedicate alle strategie di Pegasus;
 - `story/`: simulazioni della storia e della progressione delle difficoltà.
+- `archetypes/`: baseline e confronti dei supporti moderni per gli archetipi
+  classici; l'eventuale deck personale `Custom` resta una metrica separata.
 
 Le conclusioni leggibili sono conservate in `docs/audits/`. Quando si esegue
 uno strumento con `--output`, va indicato un percorso sotto questa cartella; gli

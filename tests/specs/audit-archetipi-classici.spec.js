@@ -23,6 +23,8 @@ module.exports = {
             t.assert(report.risultati.length === 3, 'Lo smoke test deve misurare i tre livelli');
             t.assert(report.risultati.every((r) => r.ufficiale.partite === 5 && r.custom.deckVittorie.partite === 1),
                 'Campione ufficiale e Custom devono restare metriche separate');
+            t.assert(report.risultati.every((r) => Object.prototype.hasOwnProperty.call(r.firmaPartitePct, 'Drago Nero Occhi Rossi')),
+                'La frequenza della carta firma deve essere osservata nelle zone del solo avversario');
             t.assert(report.custom && report.custom.impronta === custom.impronta,
                 'Il report deve conservare lista e impronta di Custom');
         } finally {

@@ -2,6 +2,11 @@
 
 Stato: pianificazione, nessuna carta ancora approvata per l'implementazione.
 
+Baseline ufficiale completata il 2026-10-14: metodo e lettura in
+`docs/audits/CLASSIC_ARCHETYPES_BASELINE.md`, dati grezzi in
+`reports/archetypes/CLASSIC_ARCHETYPES_BASELINE.json`. Il benchmark `Custom`
+resta da aggiungere appena disponibile il salvataggio esportato.
+
 ## Vincoli decisi
 
 - Niente Synchro, Xyz, Pendulum o Link.

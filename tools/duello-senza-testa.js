@@ -312,10 +312,21 @@ async function giocaPartita(opz, n) {
         turnoIA('player');
     `);
     let passi = 0;
+    // Gli audit di identita' possono chiedere se specifiche carte siano
+    // davvero comparse nelle zone del solo avversario. Leggere le zone evita
+    // il falso positivo dei log quando anche il deck campione usa la stessa
+    // carta (per esempio Slifer o Mago Nero).
+    const osservaBotIds = new Set((opz.osservaBotIds || []).map(Number));
+    const osservatiBot = new Set();
     const LIMITE_PASSI = 200000;
     while (passi < LIMITE_PASSI) {
         passi++;
         const stato = esegui('({ fine: !!gameState.gameOver || __esitoDuello !== null, turno: gameState.turn, lp: [gameState.playerLP, gameState.botLP] })');
+        if (osservaBotIds.size) {
+            const presenti = esegui(`gameState.botMonsterField.concat(gameState.botSTField, gameState.botGraveyard, gameState.botBanished)
+                .filter(Boolean).map((x) => Number((x.card || x).id))`);
+            presenti.forEach((id) => { if (osservaBotIds.has(id)) osservatiBot.add(id); });
+        }
         // Invariante: i Life Points restano numeri. Un NaN non fa fallire
         // nulla da solo (il duello continua, "LP NaN" a schermo), quindi
         // qui diventa un errore con il contesto di dove è nato.
@@ -376,7 +387,8 @@ async function giocaPartita(opz, n) {
         testo,
         esegui(`__logDuello.filter((r) => r.includes(${JSON.stringify(testo)})).length`)
     ]));
-    return { seme, passi, oraVirtualeMs: orologio.ora, alLimite, invarianti, trovate, trovatePerTesto, erroriCarte: erroriCarte.slice(), ...fine };
+    return { seme, passi, oraVirtualeMs: orologio.ora, alLimite, invarianti, trovate, trovatePerTesto,
+        osservatiBotIds: Array.from(osservatiBot), erroriCarte: erroriCarte.slice(), ...fine };
 }
 
 async function main() {
