@@ -199,15 +199,6 @@
     background: var(--card-sfondo, none);
     pointer-events: none;
 }
-/* Cornice esterna del fronte, ispirata alle carte fisiche: non è nero
-   assoluto ma un antracite appena caldo, e ha abbastanza spessore da
-   leggere come una vera fascia stampata invece che come un semplice filo.
-   È interna alla misura della carta, quindi non altera griglie o slot. Il
-   retro è escluso perché possiede già la propria cornice dedicata. */
-.card:not(.face-down)::before {
-    box-sizing: border-box;
-    border: 3px solid #1b1b1d;
-}
 .card:hover { transform: translateY(-8px) scale(1.06); box-shadow: 0 12px 28px rgba(0,0,0,0.34); }
 
 /* Colori per tipo di carta, come le vere carte Yu-Gi-Oh: Mostro = oro,
@@ -728,9 +719,6 @@ body[data-card-badges] .card { overflow: visible; }
 @container (max-width: 66px) {
     .card:not(.face-down)::before {
         --card-raggio: 1px;
-        /* Stessa fascia antracite, ridotta solo quanto basta perché sulle
-           carte minuscole non copra illustrazione e statistiche. */
-        border-width: 2px;
     }
     .card:not(.face-down) > * { --card-raggio: 1px; }
     .card:not(.face-down) > .card-frame {

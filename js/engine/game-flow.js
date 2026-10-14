@@ -1990,8 +1990,7 @@ function reconcileHandCards(handEl, nuoveCarte) {
     const vecchie = Array.from(handEl.children);
     vecchie.forEach((el) => { el.style.marginLeft = ''; });
     const usate = new Set();
-    const fragment = document.createDocumentFragment();
-    nuoveCarte.forEach((nuova, index) => {
+    const desiderate = nuoveCarte.map((nuova, index) => {
         const uid = nuova.dataset.uid;
         let vecchia = uid ? vecchie.find((el) => !usate.has(el) && el.dataset.uid === uid) : vecchie[index];
         const firmaVecchia = vecchia && (vecchia.__renderSignature || vecchia.outerHTML);
@@ -1999,12 +1998,25 @@ function reconcileHandCards(handEl, nuoveCarte) {
         if (vecchia && !usate.has(vecchia) && firmaVecchia === firmaNuova) {
             usate.add(vecchia);
             trasferisciGestori(vecchia, nuova);
-            fragment.appendChild(vecchia);
-        } else {
-            fragment.appendChild(nuova);
+            return vecchia;
         }
+        return nuova;
     });
-    handEl.replaceChildren(fragment);
+
+    // Non passare da DocumentFragment/replaceChildren: anche quando tutte
+    // le carte erano identiche quel percorso le staccava per un istante
+    // dal documento e le riagganciava subito dopo. Chromium desktop spesso
+    // conserva il layer, ma la WebView può ridipingerlo come un lampo. Qui
+    // un nodo già nella posizione corretta non viene toccato affatto; si
+    // inseriscono/spostano solo le carte realmente nuove o riordinate.
+    desiderate.forEach((carta, index) => {
+        const attuale = handEl.children[index] || null;
+        if (attuale !== carta) handEl.insertBefore(carta, attuale);
+    });
+    const daConservare = new Set(desiderate);
+    Array.from(handEl.children).forEach((carta) => {
+        if (!daConservare.has(carta)) carta.remove();
+    });
 }
 window.addEventListener('resize', () => {
     clearTimeout(window.__handFitResizeTimeout);

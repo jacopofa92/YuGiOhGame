@@ -2,6 +2,18 @@
 
 Ultimo aggiornamento verificato: 2026-10-14.
 
+## Mano stabile e fronte carte ripristinato (2026-10-14)
+
+Il bordo scuro sperimentale sul fronte delle carte è stato rimosso: resta la
+cornice colorata precedente, sia nelle carte normali sia nelle miniature. Un
+ulteriore audit del flicker ha trovato che `reconcileHandCards` conservava
+l'identità dei nodi ma li spostava tutti in un `DocumentFragment` a ogni
+`updateUI`, staccandoli temporaneamente dal documento e costringendo alcune
+WebView a ridipingerli. La mano ora lascia completamente intatte le carte già
+nella posizione corretta e muove soltanto quelle davvero nuove o riordinate.
+Il test prolungato verifica anche che 80 ridisegni invariati producano zero
+rimozioni dalla mano, oltre a zero nuove decodifiche e zero nodi FX residui.
+
 ## Mondo dei Ricordi e Duello Cerimoniale completi (2026-10-14)
 
 L'ultima area della Storia anime percorre ora entrambi gli archi conclusivi

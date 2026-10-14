@@ -34,17 +34,26 @@ module.exports = {
                 get: descrittoreSrc.get,
                 set(valore) { sorgentiRiassegnate++; return descrittoreSrc.set.call(this, valore); }
             });
+            let carteStaccate = 0;
+            const osservatore = new MutationObserver((mutazioni) => {
+                mutazioni.forEach((m) => { carteStaccate += m.removedNodes.length; });
+            });
+            osservatore.observe(document.getElementById('playerHand'), { childList: true });
+            osservatore.observe(document.getElementById('botHand'), { childList: true });
             try {
                 for (let i = 0; i < 80; i++) updateUI();
             } finally {
                 Object.defineProperty(HTMLImageElement.prototype, 'src', descrittoreSrc);
             }
+            carteStaccate += osservatore.takeRecords().reduce((totale, m) => totale + m.removedNodes.length, 0);
+            osservatore.disconnect();
             const conservate = uids.filter((uid) => document.querySelector(`.card[data-uid="${CSS.escape(uid)}"]`) === originali.get(uid)).length;
-            return { totale: uids.length, conservate, sorgentiRiassegnate, viaggiResidui: document.querySelectorAll('.fx-card-travel').length };
+            return { totale: uids.length, conservate, sorgentiRiassegnate, carteStaccate, viaggiResidui: document.querySelectorAll('.fx-card-travel').length };
         });
         t.assert(esito.totale >= 20, `La prova deve riempire davvero il duello: trovate ${esito.totale} carte`);
         t.assert(esito.conservate === esito.totale, `Dopo 80 ridisegni sono sopravvissute ${esito.conservate}/${esito.totale} carte ferme`);
         t.assert(esito.sorgentiRiassegnate === 0, `I render invariati non devono avviare decodifiche di immagini provvisorie: src riscritto ${esito.sorgentiRiassegnate} volte`);
+        t.assert(esito.carteStaccate === 0, `I render invariati non devono staccare e riagganciare la mano: rimossi ${esito.carteStaccate} nodi`);
         t.assert(esito.viaggiResidui === 0, `Nessun fantasma FX deve accumularsi: ${esito.viaggiResidui}`);
     }
 };

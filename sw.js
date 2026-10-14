@@ -474,7 +474,8 @@
 // v256: versione 1.3.17, percorso e livelli dei titoli nel Profilo.
 // v257: versione 1.3.18, distruzione dei mostri coperti sempre in Difesa.
 // v258: versione 1.3.19, cornice antracite più fedele delle carte.
-const CACHE_NAME = 'ygo-duel-arena-v258';
+// v259: versione 1.3.20, fronte senza bordo e mano senza distacchi al render.
+const CACHE_NAME = 'ygo-duel-arena-v259';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

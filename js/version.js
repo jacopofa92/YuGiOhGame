@@ -32,6 +32,9 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.3.20 — Ripristinato il fronte senza bordo scuro; la mano non viene più
+ *   staccata e riagganciata a ogni render, eliminando un altro flicker WebView.
+ *
  * 1.3.19 — La cornice del fronte delle carte diventa più spessa e
  *   antracite, più vicina all'aspetto delle carte fisiche originali.
  *
@@ -707,4 +710,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.3.19';
+window.GAME_VERSION = '1.3.20';
