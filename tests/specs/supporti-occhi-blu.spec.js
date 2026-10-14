@@ -100,11 +100,78 @@ module.exports = {
             trueLightDef.activate(setCtx);
             const trueLightSets = gameState.botSTField.some((s) => s && s.card.uid === melodyToSet.uid && s.isFaceDown);
 
+            resetGameState();
+            const bossFromPoly = copy(1265, 'boss-poly');
+            gameState.botExtraDeck = [bossFromPoly];
+            gameState.botHand = [copy(1, 'poly-blue-1'), copy(1, 'poly-blue-2'), copy(1262, 'poly-alt-hand')];
+            const alternativeInHandIsNotFusionName = !DuelEngine.getFusableExtraDeckMonsters('bot')
+                .some((entry) => entry.card.uid === bossFromPoly.uid);
+            gameState.botHand.pop();
+            gameState.botMonsterField[0] = { card: copy(1262, 'poly-alt-field'), position: 'attack', isFaceDown: false };
+            const alternativeOnFieldIsFusionName = DuelEngine.getFusableExtraDeckMonsters('bot')
+                .some((entry) => entry.card.uid === bossFromPoly.uid);
+
+            resetGameState();
+            gameState.phase = 'main1';
+            const ultimateFusion = copy(1264, 'ultimate-fusion');
+            const ultimateBoss = copy(1265, 'ultimate-boss');
+            const graveMaterial = copy(1, 'grave-material');
+            const handMaterial = copy(1, 'hand-material');
+            const fieldAlternative = copy(1262, 'field-alternative');
+            gameState.botExtraDeck = [ultimateBoss];
+            gameState.botDeck = [copy(3, 'deck-filler')];
+            gameState.botDeckCount = 1;
+            gameState.botGraveyard = [graveMaterial];
+            gameState.botHand = [handMaterial];
+            gameState.botMonsterField[0] = { card: fieldAlternative, position: 'attack', isFaceDown: false };
+            gameState.playerMonsterField[0] = { card: copy(3, 'uf-target-1'), position: 'attack', isFaceDown: false };
+            gameState.playerMonsterField[1] = { card: copy(4, 'uf-target-facedown'), position: 'defense', isFaceDown: true };
+            const ultimateFusionDef = DuelEngine.getDefinition(1264);
+            const ultimateFusionCtx = DuelEngine.makeContext('bot', { card: ultimateFusion, zone: 'hand' });
+            const ultimateFusionReady = ultimateFusionDef.canActivate(ultimateFusionCtx);
+            const oldFusionFx = window.FX;
+            window.FX = null;
+            ultimateFusionDef.activate(ultimateFusionCtx);
+            window.FX = oldFusionFx;
+            const ultimateFusionSummons = gameState.botMonsterField.some((s) => s && s.card.uid === ultimateBoss.uid);
+            const materialsReturnToDeck = [graveMaterial, handMaterial, fieldAlternative]
+                .every((material) => gameState.botDeck.some((card) => card.uid === material.uid));
+            const ultimateFusionDestroysFaceUpOnly = !gameState.playerMonsterField[0]
+                && !!gameState.playerMonsterField[1];
+            const bossRemembersAlternative = ultimateBoss._fusionSummonedWithAlternative === true;
+
+            gameState.playerMonsterField[1] = null;
+            gameState.playerMonsterField[0] = { card: copy(3, 'boss-target-1'), position: 'attack', isFaceDown: false };
+            gameState.playerMonsterField[2] = { card: copy(4, 'boss-target-2'), position: 'attack', isFaceDown: false };
+            gameState.playerSTField[0] = { card: copy(607, 'boss-target-3'), isFaceDown: true };
+            const ultimateBossDef = DuelEngine.getDefinition(1265);
+            const ultimateBossCtx = DuelEngine.makeContext('bot', { card: ultimateBoss, zone: 'monster', index: 0 });
+            ultimateBossDef.activate(ultimateBossCtx);
+            DuelEngine.recomputeStaticEffects();
+            const bossDestroysThree = !gameState.playerMonsterField[0]
+                && !gameState.playerMonsterField[2] && !gameState.playerSTField[0];
+            const bossCannotAttack = gameState.cannotAttackUids[ultimateBoss.uid] === true;
+
+            resetGameState();
+            const protectedBoss = copy(1265, 'protected-boss');
+            gameState.botMonsterField[0] = { card: protectedBoss, position: 'attack', isFaceDown: false };
+            DuelEngine.recomputeStaticEffects();
+            const bossTargetBlocked = !DuelEngine.makeContext('player', { card: copy(4, 'opponent-source') })
+                .declareTarget('bot', 0).allowed;
+            DuelEngine.makeContext('player', { card: copy(4, 'opponent-destroy') }).destroyMonster('bot', 0);
+            const bossOpponentDestroyBlocked = !!gameState.botMonsterField[0];
+            DuelEngine.makeContext('bot', { card: copy(7, 'own-destroy') }).destroyMonster('bot', 0);
+            const bossOwnDestroyAllowed = !gameState.botMonsterField[0];
+
             return {
                 melodyReady, melodyWorks, alternativeCanSummon, alternativeSummoned, revealedStaysInHand,
                 alternativeOnField, alternativeOncePerTurn, alternativeDestroys, alternativeCannotAttack,
                 trueLightSummons, trueLightProtects, trueLightPunishes, facedownDoesNotPunish,
-                alternativeIsNotBlueEyesInHand, alternativeIsBlueEyesInGrave, trueLightSets
+                alternativeIsNotBlueEyesInHand, alternativeIsBlueEyesInGrave, trueLightSets,
+                alternativeInHandIsNotFusionName, alternativeOnFieldIsFusionName, ultimateFusionReady,
+                ultimateFusionSummons, materialsReturnToDeck, ultimateFusionDestroysFaceUpOnly,
+                bossRemembersAlternative, bossDestroysThree, bossCannotAttack, bossTargetBlocked,
+                bossOpponentDestroyBlocked, bossOwnDestroyAllowed
             };
         });
         Object.entries(result).forEach(([name, value]) => {

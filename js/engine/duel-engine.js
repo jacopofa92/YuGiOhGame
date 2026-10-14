@@ -788,6 +788,14 @@
                 addToLog(`🛡️ ${slot.card.name} non può essere distrutta da un effetto Carta!`);
                 return;
             }
+            // Variante fedele limitata agli effetti dell'avversario. Non si
+            // riusa cannotBeDestroyedByCardEffect: una propria carta deve
+            // poter continuare a distruggerla quando il testo lo consente.
+            if (getDefinition(slot.card.id)?.cannotBeDestroyedByOpponentCardEffect
+                && destroyerOwner && destroyerOwner !== owner) {
+                addToLog(`🛡️ ${slot.card.name} non può essere distrutta dagli effetti dell'avversario!`);
+                return;
+            }
             // Stessa protezione qui sopra, ma per-ISTANZA (uid) invece che
             // per-DEFINIZIONE — vedi il commento su
             // gameState.cannotBeDestroyedByCardEffectUids in
@@ -5830,20 +5838,20 @@
             let versagoUsed = false;
             const takeMatchingMaterial = (matches, allowVersago) => {
                 if (fieldIsFull) {
-                    const fieldIdx = field.findIndex((s, i) => s && !s.isFaceDown && matches(s.card) && !usedFieldIdx.has(i));
+                    const fieldIdx = field.findIndex((s, i) => s && !s.isFaceDown && matches(s.card, 'monster') && !usedFieldIdx.has(i));
                     if (fieldIdx !== -1) {
                         usedFieldIdx.add(fieldIdx);
                         materialLocations.push({ zone: 'monster', index: fieldIdx });
                         return true;
                     }
                 }
-                const handIdx = hand.findIndex((c, i) => matches(c) && !usedHandIdx.has(i));
+                const handIdx = hand.findIndex((c, i) => matches(c, 'hand') && !usedHandIdx.has(i));
                 if (handIdx !== -1) {
                     usedHandIdx.add(handIdx);
                     materialLocations.push({ zone: 'hand', index: handIdx });
                     return true;
                 }
-                const fieldIdx = field.findIndex((s, i) => s && !s.isFaceDown && matches(s.card) && !usedFieldIdx.has(i));
+                const fieldIdx = field.findIndex((s, i) => s && !s.isFaceDown && matches(s.card, 'monster') && !usedFieldIdx.has(i));
                 if (fieldIdx !== -1) {
                     usedFieldIdx.add(fieldIdx);
                     materialLocations.push({ zone: 'monster', index: fieldIdx });

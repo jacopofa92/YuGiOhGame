@@ -13840,6 +13840,34 @@
     "artOnly": true
   },
   {
+    "id": 1264,
+    "origin": "yu-gi-oh",
+    "name": "Fusione Definitiva",
+    "type": "spell",
+    "subtype": "quick-play",
+    "archetypes": ["blue-eyes"],
+    "mentionsNames": ["Drago Bianco Occhi Blu", "Drago Bianco Definitivo"],
+    "effect": "Durante la Main Phase: Evoca tramite Fusione 1 Mostro Fusione dal tuo Extra Deck che cita \"Drago Bianco Occhi Blu\" o \"Drago Bianco Definitivo\" come materiale, mischiando nel Deck i Materiali da Fusione indicati su di esso dalla tua mano, Terreno e/o Cimitero, compreso almeno 1 \"Drago Bianco Occhi Blu\" o \"Drago Bianco Definitivo\", poi puoi distruggere carte scoperte controllate dal tuo avversario, fino al numero di quei mostri utilizzati dal Terreno come materiale. Puoi attivare solo 1 \"Fusione Definitiva\" per turno.",
+    "artOnly": true
+  },
+  {
+    "id": 1265,
+    "origin": "yu-gi-oh",
+    "name": "Drago Bianco Alternativo Definitivo",
+    "type": "monster",
+    "extraDeck": true,
+    "category": "fusion",
+    "level": 12,
+    "race": "Drago",
+    "attribute": "LUCE",
+    "attack": 4500,
+    "defense": 3800,
+    "archetypes": ["blue-eyes"],
+    "mentionsNames": ["Drago Bianco Occhi Blu", "Drago Bianco Alternativo Occhi Blu"],
+    "effect": "\"Drago Bianco Occhi Blu\" + \"Drago Bianco Occhi Blu\" + \"Drago Bianco Occhi Blu\". Il tuo avversario non può scegliere come bersaglio o distruggere questa carta con gli effetti delle carte. Una volta per turno: puoi scegliere come bersaglio 1 carta controllata dal tuo avversario; distruggila. Se questa carta è stata Evocata tramite Fusione utilizzando come materiale un mostro il cui nome originale è \"Drago Bianco Alternativo Occhi Blu\", puoi scegliere come bersaglio fino a 3 carte controllate dal tuo avversario invece. Questa carta non può attaccare nel turno in cui questo effetto viene attivato.",
+    "artOnly": true
+  },
+  {
     "id": 1200,
     "origin": "ww1",
     "fazione": "italiana",

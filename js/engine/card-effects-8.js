@@ -4405,6 +4405,176 @@
         onSentToGraveyardFromField: trueLightLeave
     });
 
+    // ================================================================
+    // Supporti moderni Drago Bianco — secondo pacchetto.
+    // ================================================================
+    const blueEyesFusionMaterial = (card, zone) => cardHasEffectiveName(card, 'Drago Bianco Occhi Blu', zone);
+
+    function ultimateFusionPlans(ctx) {
+        if (gameState.phase !== 'main1' && gameState.phase !== 'main2') return [];
+        const hand = ctx.hand(ctx.owner);
+        const field = ctx.field(ctx.owner);
+        const grave = ctx.graveyard(ctx.owner);
+        const extra = Tavolo.extraDeck(ctx.owner) || [];
+        const pool = grave.map((card, index) => ({ card, zone: 'graveyard', index }))
+            .concat(hand.map((card, index) => ({ card, zone: 'hand', index })))
+            .concat(field.map((slot, index) => slot && !slot.isFaceDown
+                ? { card: slot.card, zone: 'monster', index }
+                : null).filter(Boolean));
+        const fieldFull = ctx.findEmptyMonsterSlot(ctx.owner) === -1;
+        const plans = [];
+        extra.forEach((fusion, extraDeckIndex) => {
+            const def = DuelEngine.getDefinition(fusion.id);
+            if (!def) return;
+            const fixed = Array.isArray(def.fusionMaterials) ? def.fusionMaterials : [];
+            const flexible = Array.isArray(def.fusionMaterialMatchers) ? def.fusionMaterialMatchers : [];
+            if (fixed.length === 0 && flexible.length === 0) return;
+            // Fusione Definitiva accetta soltanto Fusioni che nominano uno
+            // dei due boss classici come materiale. Nel dataset le Fusioni
+            // ammesse espongono materialNames per non dipendere dal testo
+            // tradotto mostrato a video.
+            const materialNames = Array.isArray(def.fusionMaterialNames) ? def.fusionMaterialNames : [];
+            if (!materialNames.some((name) => name === 'Drago Bianco Occhi Blu' || name === 'Drago Bianco Definitivo')) return;
+            const requirements = fixed.map((id) => (card, zone) => id === 1
+                ? blueEyesFusionMaterial(card, zone)
+                : card.id === id).concat(flexible);
+            const used = new Set();
+            const materials = [];
+            const take = (matcher) => {
+                const entry = pool.find((candidate) => !used.has(candidate.card.uid)
+                    && matcher(candidate.card, candidate.zone));
+                if (!entry) return false;
+                used.add(entry.card.uid);
+                materials.push(entry);
+                return true;
+            };
+            if (!requirements.every(take)) return;
+            if (!materials.some((entry) => blueEyesFusionMaterial(entry.card, entry.zone)
+                || entry.card.id === 29)) return;
+            if (fieldFull && !materials.some((entry) => entry.zone === 'monster')) return;
+            plans.push({ fusion, extraDeckIndex, materials });
+        });
+        return plans;
+    }
+
+    function resolveUltimateFusion(ctx, plan) {
+        const hand = ctx.hand(ctx.owner);
+        const field = ctx.field(ctx.owner);
+        const grave = ctx.graveyard(ctx.owner);
+        const extra = Tavolo.extraDeck(ctx.owner) || [];
+        const freeBefore = ctx.findEmptyMonsterSlot(ctx.owner);
+        const fieldMaterialSlots = plan.materials.filter((entry) => entry.zone === 'monster').map((entry) => entry.index);
+        const destination = freeBefore !== -1 ? freeBefore : fieldMaterialSlots[0];
+        if (destination === undefined || destination === -1 || extra[plan.extraDeckIndex]?.uid !== plan.fusion.uid) return false;
+        const materialCards = plan.materials.map((entry) => entry.card);
+        const fieldBlueEyesCount = plan.materials.filter((entry) => entry.zone === 'monster'
+            && (blueEyesFusionMaterial(entry.card, 'monster') || entry.card.id === 29)).length;
+        const usedAlternative = materialCards.some((card) => card.id === 1262);
+        plan.materials.filter((entry) => entry.zone === 'hand').sort((a, b) => b.index - a.index).forEach((entry) => {
+            const index = hand.findIndex((card) => card.uid === entry.card.uid);
+            if (index !== -1) hand.splice(index, 1);
+        });
+        plan.materials.filter((entry) => entry.zone === 'graveyard').sort((a, b) => b.index - a.index).forEach((entry) => {
+            const index = grave.findIndex((card) => card.uid === entry.card.uid);
+            if (index !== -1) grave.splice(index, 1);
+        });
+        plan.materials.filter((entry) => entry.zone === 'monster').forEach((entry) => {
+            if (field[entry.index] && field[entry.index].card.uid === entry.card.uid) field[entry.index] = null;
+        });
+        extra.splice(plan.extraDeckIndex, 1);
+        const deck = Tavolo.mazzo(ctx.owner) || [];
+        deck.push(...materialCards);
+        Casuale.mescola(deck);
+        gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = deck.length;
+        plan.fusion._fusionSummonedWithAlternative = usedAlternative;
+        if (typeof updateUI === 'function') updateUI();
+        const finish = () => {
+            ctx.specialSummon(ctx.owner, plan.fusion, destination, 'attack', 'extra');
+            if (fieldBlueEyesCount <= 0) return;
+            const targets = ctx.field(ctx.opponent).map((slot, index) => slot && !slot.isFaceDown
+                ? { card: slot.card, zone: 'monster', index }
+                : null).filter(Boolean).concat(ctx.stField(ctx.opponent).map((slot, index) => slot && !slot.isFaceDown
+                ? { card: slot.card, zone: 'st', index }
+                : null).filter(Boolean));
+            chooseUpToNFromList(ctx, targets.map((entry) => entry.card), fieldBlueEyesCount, {
+                min: 0, title: 'Fusione Definitiva',
+                text: 'Scegli le carte scoperte avversarie da distruggere.',
+                pickForBot: (cards, max) => cards.slice(0, max)
+            }, (chosen) => chosen.forEach((card) => {
+                const entry = targets.find((target) => target.card.uid === card.uid);
+                if (!entry) return;
+                if (entry.zone === 'monster') ctx.destroyTargetedMonster(ctx.opponent, entry.index);
+                else ctx.destroySpellTrap(ctx.opponent, entry.index);
+            }));
+        };
+        if (window.FX && typeof FX.playFusionMaterialEffect === 'function') {
+            FX.playFusionMaterialEffect(materialCards, plan.fusion, ctx.owner, finish);
+        } else finish();
+        return true;
+    }
+
+    CardEffects.register(1264, {
+        archetypes: ['blue-eyes'],
+        mentionsNames: ['Drago Bianco Occhi Blu', 'Drago Bianco Definitivo'],
+        canActivate(ctx) {
+            return !ctx.hasUsedOncePerTurn(`ultimate-fusion:${ctx.owner}`)
+                && ultimateFusionPlans(ctx).length > 0;
+        },
+        activate(ctx) {
+            const plans = ultimateFusionPlans(ctx);
+            if (plans.length === 0) return;
+            chooseCardFromList(ctx, plans.map((plan) => plan.fusion), {
+                title: 'Fusione Definitiva', text: 'Scegli il Mostro Fusione da Evocare.'
+            }, (chosen) => {
+                const plan = plans.find((entry) => entry.fusion.uid === chosen.uid);
+                if (!plan) return;
+                ctx.markUsedOncePerTurn(`ultimate-fusion:${ctx.owner}`);
+                resolveUltimateFusion(ctx, plan);
+            });
+        }
+    });
+
+    CardEffects.register(1265, {
+        archetypes: ['blue-eyes'],
+        fusionMaterialNames: ['Drago Bianco Occhi Blu'],
+        fusionMaterialMatchers: [blueEyesFusionMaterial, blueEyesFusionMaterial, blueEyesFusionMaterial],
+        cannotBeDestroyedByOpponentCardEffect: true,
+        canActivate(ctx) {
+            return ctx.zone === 'monster'
+                && !ctx.hasUsedOncePerTurn(`alternative-ultimate-destroy:${ctx.card.uid}`)
+                && (ctx.field(ctx.opponent).some(Boolean) || ctx.stField(ctx.opponent).some(Boolean));
+        },
+        activate(ctx) {
+            const maximum = ctx.card._fusionSummonedWithAlternative ? 3 : 1;
+            const targets = ctx.field(ctx.opponent).map((slot, index) => slot
+                ? { card: slot.card, zone: 'monster', index }
+                : null).filter(Boolean).concat(ctx.stField(ctx.opponent).map((slot, index) => slot
+                ? { card: slot.card, zone: 'st', index }
+                : null).filter(Boolean));
+            chooseUpToNFromList(ctx, targets.map((entry) => entry.card), maximum, {
+                min: 1, title: 'Drago Bianco Alternativo Definitivo',
+                text: `Scegli fino a ${maximum} cart${maximum === 1 ? 'a' : 'e'} da distruggere.`,
+                pickForBot: (cards, max) => cards.slice(0, max)
+            }, (chosen) => {
+                if (!chosen.length) return;
+                ctx.markUsedOncePerTurn(`alternative-ultimate-destroy:${ctx.card.uid}`);
+                ctx.card._alternativeUltimateNoAttackTurn = gameState.turn;
+                chosen.forEach((card) => {
+                    const entry = targets.find((target) => target.card.uid === card.uid);
+                    if (!entry) return;
+                    if (entry.zone === 'monster') ctx.destroyTargetedMonster(ctx.opponent, entry.index);
+                    else ctx.destroySpellTrap(ctx.opponent, entry.index);
+                });
+            });
+        },
+        static(ctx) {
+            gameState.cannotBeTargetedByOpponentEffectsUids[ctx.card.uid] = ctx.owner;
+            if (ctx.card._alternativeUltimateNoAttackTurn === gameState.turn) {
+                gameState.cannotAttackUids[ctx.card.uid] = true;
+            }
+        }
+    });
+
     (function registerLibraryEffects() {
         if (typeof cardDatabase === 'undefined' || !Array.isArray(cardDatabase)) return;
 

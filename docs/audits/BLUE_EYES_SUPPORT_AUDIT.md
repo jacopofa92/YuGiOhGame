@@ -11,6 +11,13 @@ avversari non ancora modificati.
 | 1262 | Drago Bianco Alternativo Occhi Blu | Evocazione dalla mano rivelando Drago Bianco; una volta per turno; distruzione mirata e divieto di attacco | test isolato verde |
 | 1263 | Luce Autentica | protezione dal targeting avversario; Evocazione da mano/Cimitero oppure Posizionamento dal Deck; penalita' quando lascia scoperta la Zona Magie/Trappole | test isolato verde |
 
+## Secondo pacchetto
+
+| id | Carta | Effetto coperto | Stato |
+|---:|---|---|---|
+| 1264 | Fusione Definitiva | materiali da mano, Terreno e Cimitero rimescolati nel Deck; animazione prima della comparsa; rimozione opzionale in base ai materiali sul Terreno | test isolato verde |
+| 1265 | Drago Bianco Alternativo Definitivo | tre materiali con nome effettivo; protezione da bersaglio e distruzione avversari; distruzione di 1 o 3 carte e divieto di attacco | test isolato verde |
+
 Testi, statistiche e illustrazioni sono stati verificati il 2026-10-14 tramite
 YGOPRODeck. Le carte sono collocate prima del blocco WW1 senza rinumerare gli
 id esistenti.
@@ -26,6 +33,13 @@ id esistenti.
 - La penalita' di Luce Autentica scatta solo quando la carta era scoperta e
   viene mandata dalla sua Zona Magie/Trappole al Cimitero; una copia ancora
   coperta non distrugge i propri mostri.
+- Fusione Definitiva usa il vortice Fusione condiviso e inserisce il boss sul
+  Terreno soltanto alla fine dell'animazione. Il ritorno dei materiali nel
+  Deck non avvia un secondo volo concorrente, evitando sovrapposizioni UI.
+- Drago Bianco Alternativo vale come materiale nominato soltanto dal Terreno
+  o Cimitero, coerentemente col suo nome assunto; dalla mano conserva il nome
+  originale. Il boss ricorda separatamente se un Alternativo originale e'
+  stato davvero usato e concede i tre bersagli solo in quel caso.
 - Starter, Structure, deck avversari, limiti copie e fonti economiche restano
   invariati fino ai rispettivi audit.
 
@@ -56,8 +70,8 @@ win rate rispetto al secondo. Il pacchetto completo resta controllato: la
 composizione migliore provata raggiunge 44,4%, appena +4,4 punti sulla
 baseline e senza stalli.
 
-Decisione provvisoria: nessun deck avversario viene ancora modificato. Limiti
-giocatore consigliati per la futura economia: Melodia 2, Alternativo 2, Luce
-Autentica 2. Il secondo pacchetto con Fusione Definitiva e un singolo boss va
-implementato e misurato separatamente prima di valutare un eventuale piccolo
-intervento sul solo Kaiba Difficile.
+Decisione provvisoria dopo il primo pacchetto: nessun deck avversario viene
+ancora modificato. Limiti giocatore consigliati per la futura economia:
+Melodia 2, Alternativo 2, Luce Autentica 2. Fusione Definitiva e il boss sono
+ora implementati, ma vanno misurati separatamente prima di valutare un
+eventuale piccolo intervento sul solo Kaiba Difficile.

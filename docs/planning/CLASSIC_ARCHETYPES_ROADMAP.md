@@ -59,7 +59,9 @@ test isolati sono completi. Anche l'audit 1/2/3 (3.500 duelli) e' concluso:
 Luce Autentica e' la carta piu' positiva, mentre il pacchetto migliore resta
 moderato al 44,4% contro baseline 40,0%. Stato tecnico e dati in
 `docs/audits/BLUE_EYES_SUPPORT_AUDIT.md`; deck ed economia restano invariati
-in attesa del secondo pacchetto.
+in attesa dell'audit conclusivo. Anche il secondo pacchetto, Fusione
+Definitiva e Drago Bianco Alternativo Definitivo, ha ora dati, immagini,
+effetti e test isolati completi; non e' ancora entrato in alcun deck.
 
 ## Deck avversari: politica conservativa
 

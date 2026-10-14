@@ -461,6 +461,7 @@
     // 29 — Drago Bianco Definitivo / Blue-Eyes Ultimate Dragon: fusione
     // di TRE "Drago Bianco Occhi Blu" (id 1).
     CardEffects.register(29, {
+        fusionMaterialNames: ['Drago Bianco Occhi Blu'],
         fusionMaterials: [1, 1, 1]
     });
 
