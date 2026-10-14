@@ -318,6 +318,8 @@ async function giocaPartita(opz, n) {
     // carta (per esempio Slifer o Mago Nero).
     const osservaBotIds = new Set((opz.osservaBotIds || []).map(Number));
     const osservatiBot = new Set();
+    const osservaPlayerIds = new Set((opz.osservaPlayerIds || []).map(Number));
+    const osservatiPlayer = new Set();
     const LIMITE_PASSI = 200000;
     while (passi < LIMITE_PASSI) {
         passi++;
@@ -326,6 +328,11 @@ async function giocaPartita(opz, n) {
             const presenti = esegui(`gameState.botMonsterField.concat(gameState.botSTField, gameState.botGraveyard, gameState.botBanished)
                 .filter(Boolean).map((x) => Number((x.card || x).id))`);
             presenti.forEach((id) => { if (osservaBotIds.has(id)) osservatiBot.add(id); });
+        }
+        if (osservaPlayerIds.size) {
+            const presenti = esegui(`gameState.playerMonsterField.concat(gameState.playerSTField, gameState.playerGraveyard, gameState.playerBanished)
+                .filter(Boolean).map((x) => Number((x.card || x).id))`);
+            presenti.forEach((id) => { if (osservaPlayerIds.has(id)) osservatiPlayer.add(id); });
         }
         // Invariante: i Life Points restano numeri. Un NaN non fa fallire
         // nulla da solo (il duello continua, "LP NaN" a schermo), quindi
@@ -388,7 +395,7 @@ async function giocaPartita(opz, n) {
         esegui(`__logDuello.filter((r) => r.includes(${JSON.stringify(testo)})).length`)
     ]));
     return { seme, passi, oraVirtualeMs: orologio.ora, alLimite, invarianti, trovate, trovatePerTesto,
-        osservatiBotIds: Array.from(osservatiBot), erroriCarte: erroriCarte.slice(), ...fine };
+        osservatiBotIds: Array.from(osservatiBot), osservatiPlayerIds: Array.from(osservatiPlayer), erroriCarte: erroriCarte.slice(), ...fine };
 }
 
 async function main() {

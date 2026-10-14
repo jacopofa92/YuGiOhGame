@@ -45,6 +45,12 @@ effetti e test isolati per gli id 1250-1253. Stato e prossimi confronti sono in
 `docs/audits/RED_EYES_SUPPORT_AUDIT.md`; deck ed economia restano invariati
 finche' l'audit a 1/2/3 copie non e' concluso.
 
+Audit 1/2/3 concluso (4.000 duelli): il pacchetto non migliora Joey Hard e le
+copie multiple lo indeboliscono; nessun deck avversario viene modificato.
+Limite giocatore provvisorio: 2 copie ciascuna, da applicare nella fase
+economica. La seconda meta' Occhi Rossi resta sospesa fino alla feature sicura
+per materiali di Fusione dal Deck; si procede intanto con Mago Nero.
+
 ## Deck avversari: politica conservativa
 
 Le nuove carte non entrano automaticamente nei deck avversari. Per ogni
