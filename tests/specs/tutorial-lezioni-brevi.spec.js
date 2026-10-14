@@ -40,6 +40,28 @@ const LEZIONI = {
                 && gameState.botMonsterField.some((s) => s && s.card.id === 24),
             dettaglio: { nonno: gameState.botMonsterField.filter(Boolean).map((s) => s.card.id) }
         })
+    },
+    equip: {
+        verifica: () => ({
+            ok: gameState.playerSTField.some((s) => s && s.card.id === 618)
+                && gameState.playerMonsterField.some((s) => s && s.card.id === 4)
+                && (gameState.atkDefBonus[gameState.playerMonsterField.find((s) => s && s.card.id === 4).card.uid] || {}).atk === 1000,
+            dettaglio: { campo: gameState.playerSTField.filter(Boolean).map((s) => s.card.id) }
+        })
+    },
+    rituale: {
+        verifica: () => ({
+            ok: gameState.playerMonsterField.some((s) => s && s.card.id === 616)
+                && gameState.playerGraveyard.some((c) => c.id === 14)
+                && gameState.playerGraveyard.some((c) => c.id === 526),
+            dettaglio: { campo: gameState.playerMonsterField.filter(Boolean).map((s) => s.card.id), cimitero: gameState.playerGraveyard.map((c) => c.id) }
+        })
+    },
+    rapida: {
+        verifica: () => ({
+            ok: gameState.botMonsterField.some((s) => s && s.card.id === 1 && s.isFaceDown && s.position === 'defense'),
+            dettaglio: { nonno: gameState.botMonsterField.filter(Boolean).map((s) => ({ id: s.card.id, coperto: s.isFaceDown, posizione: s.position })) }
+        })
     }
 };
 
@@ -124,8 +146,8 @@ module.exports = {
             // "Regole del Duello" condivide lo stile delle tessere, ma è una
             // voce di consultazione: non è una quinta lezione giocabile.
             const link = await page.$$eval('.tut-lezione[data-lezione]', (els) => els.map((a) => a.getAttribute('href')));
-            t.assert(['nonno', 'catena', 'fusione', 'flip'].every((id) => link.some((h) => h.endsWith('&lezione=' + id))),
-                `Il menu Tutorial deve elencare le quattro lezioni: ${JSON.stringify(link)}`);
+            t.assert(['nonno', 'catena', 'fusione', 'flip', 'equip', 'rituale', 'rapida'].every((id) => link.some((h) => h.endsWith('&lezione=' + id))),
+                `Il menu Tutorial deve elencare tutte le lezioni: ${JSON.stringify(link)}`);
             t.assert(link.every((h) => /[?&]field=citta\.jpg(&|$)/.test(h)),
                 `Ogni lezione del menu si gioca in città: ${JSON.stringify(link)}`);
         } finally {

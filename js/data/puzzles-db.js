@@ -144,6 +144,41 @@ const puzzlesDatabase = [
         avversario: {
             magieTrappole: [[382, 'coperta'], [10, 'coperta']]   // Forza dello Specchio, Cilindro Magico
         }
+    },
+    {
+        id: 'buco-nero', titolo: 'Dopo il vuoto', emblema: '◉', difficolta: 1, personaggio: 'weevil',
+        descrizione: 'Due mostri bloccano il campo, ma all\'avversario restano 1900 Life Point. Prima fai piazza pulita, poi ricostruisci.',
+        suggerimento: 'Buco Nero distrugge anche i tuoi mostri: usalo prima della tua Evocazione Normale.',
+        lpAvversario: 1900,
+        mano: [7, 24],
+        avversario: { mostri: [[4, 'attacco'], [526, 'difesa']] }
+    },
+    {
+        id: 'tributo-dannati', titolo: 'Il prezzo della strada libera', emblema: '⚖️', difficolta: 2, personaggio: 'kaiba',
+        descrizione: 'Il Drago Bianco domina il campo. Hai l\'attaccante per vincere, ma prima devi pagare il costo della rimozione.',
+        suggerimento: 'Tributo ai Dannati richiede una seconda carta da scartare prima di distruggere il bersaglio.',
+        lpAvversario: 2500,
+        mano: [492, 526],
+        mostri: [[13, 'attacco']],
+        avversario: { mostri: [[1, 'attacco']] }
+    },
+    {
+        id: 'libro-luna', titolo: 'La forza ha due facce', emblema: '🌙', difficolta: 2, personaggio: 'darknite',
+        descrizione: 'Un Drago Berserk da 3500 ATK sembra invalicabile, ma la sua Difesa racconta un\'altra storia.',
+        suggerimento: 'Gira il mostro coperto, distruggilo combattendo sulla DEF e conserva il secondo attacco per i Life Point.',
+        lpAvversario: 300,
+        mano: [875],
+        mostri: [[4, 'attacco'], [526, 'attacco']],
+        avversario: { mostri: [[110, 'attacco']] }
+    },
+    {
+        id: 'rito-fulgore', titolo: 'Otto livelli al destino', emblema: '🕯️', difficolta: 3, personaggio: 'yamiYugi',
+        descrizione: 'Il campo è libero, ma il guerriero decisivo non può essere Evocato normalmente.',
+        suggerimento: 'Somma i Livelli dei tuoi due mostri e attiva la Magia Rituale corretta.',
+        lpAvversario: 3000,
+        mano: [616, 617],
+        mostri: [[14, 'attacco'], [526, 'difesa']],
+        avversario: {}
     }
 ];
 

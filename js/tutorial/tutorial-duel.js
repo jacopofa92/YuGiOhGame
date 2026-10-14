@@ -253,7 +253,11 @@
         raigeki: 409,
         giudizio: 448,     // Giudizio Solenne
         servo: 526,
-        robolady: 528
+        robolady: 528,
+        soldatoFulgore: 616,
+        ritoFulgore: 617,
+        ascia: 618,
+        libroLuna: 875
     };
 
     function mostro(id, posizione) {
@@ -464,11 +468,63 @@
         }
     ];
 
+    // --- Gli Equipaggiamenti ----------------------------------------
+    function preparaEquip() {
+        preparaBreve({ manoGiocatore: [ID.ascia], mostriGiocatore: [mostro(ID.celtico)], mostriNonno: [mostro(ID.elfi)] });
+    }
+    const PASSI_EQUIP = [
+        { testo: 'Una Magia Equipaggiamento resta sul Terreno e potenzia il mostro a cui viene assegnata. Scegli bene il bersaglio: se quel mostro lascia il campo, anche il suo Equipaggiamento non servirà più.', avanti: true, pronto: () => gameState.phase === 'main1' && gameState.currentPlayer === 'player' },
+        {
+            testo: 'Il tuo Guerriero Celtico ha 1400 ATK, meno dei miei Elfi Gemelli. Attiva Ascia della Disperazione e scegli il Guerriero: guadagnerà 1000 ATK.',
+            bersaglio: () => (pickerAperto() ? elNelPicker(uidInCampo('player', ID.celtico)) : modaleAperto() ? document.getElementById('activateConfirmBtn') : popoverAperto() || elCartaInMano(ID.ascia)),
+            consenti: () => [selCartaInMano(ID.ascia), SEL_POPOVER, '#activateConfirmBtn', '#activateModal', '#cardListPickerModal'],
+            fatto: () => inMagieTrappole('player', ID.ascia)
+        },
+        { testo: 'Ora il Guerriero raggiunge 2400 ATK e può superare i miei Elfi. Gli Equipaggiamenti sono potenti, ma legano due carte allo stesso mostro: una rimozione può costarti entrambe.', bersaglio: () => casellaConMostro(ID.celtico), avanti: true, pronto: () => catenaVuota() },
+        { fine: true, testo: 'Lezione completata! Usa gli Equipaggiamenti quando il vantaggio ottenuto vale il rischio.' }
+    ];
+
+    // --- L'Evocazione Rituale ---------------------------------------
+    function preparaRituale() {
+        preparaBreve({ manoGiocatore: [ID.soldatoFulgore, ID.ritoFulgore], mostriGiocatore: [mostro(ID.gaia), mostro(ID.servo)] });
+    }
+    const PASSI_RITUALE = [
+        { testo: 'Un Mostro Rituale resta nel Main Deck, ma non può essere Evocato normalmente. Servono la sua Magia Rituale e mostri da offrire con un totale di Livelli sufficiente.', avanti: true, pronto: () => gameState.phase === 'main1' && gameState.currentPlayer === 'player' },
+        { testo: 'Soldato del Fulgore Nero è di Livello 8. Sul Terreno hai Gaia di Livello 7 e Skull Servant di Livello 1: insieme raggiungono esattamente 8.', bersaglio: () => document.getElementById('playerFieldBoard'), avanti: true },
+        {
+            testo: 'Attiva Rito del Fulgore Nero. I due mostri saranno offerti e il Soldato verrà Evocato dalla tua mano.',
+            bersaglio: () => (modaleAperto() ? document.getElementById('activateConfirmBtn') : popoverAperto() || elCartaInMano(ID.ritoFulgore)),
+            consenti: () => [selCartaInMano(ID.ritoFulgore), SEL_POPOVER, '#activateConfirmBtn', '#activateModal'],
+            fatto: () => inCampo('player', ID.soldatoFulgore)
+        },
+        { testo: 'Il Rituale è riuscito: hai trasformato due mostri con Livelli sufficienti in un guerriero da 3000 ATK. Pianifica le offerte, perché consumano molte risorse.', bersaglio: () => casellaConMostro(ID.soldatoFulgore), avanti: true, pronto: () => catenaVuota() },
+        { fine: true, testo: 'Lezione completata! Mostro Rituale, Magia corretta e Livelli sufficienti: servono tutti e tre.' }
+    ];
+
+    // --- Le Magie Rapide --------------------------------------------
+    function preparaRapida() {
+        preparaBreve({ manoGiocatore: [ID.libroLuna], mostriNonno: [mostro(ID.drago)] });
+    }
+    const PASSI_RAPIDA = [
+        { testo: 'Le Magie Rapide possono cambiare una situazione all\'improvviso. Dalla mano puoi usarle nel tuo turno; se le Posizioni coperte, dal turno successivo possono rispondere anche all\'avversario.', avanti: true, pronto: () => gameState.phase === 'main1' && gameState.currentPlayer === 'player' },
+        {
+            testo: 'Attiva Libro della Luna e scegli il Drago Bianco: verrà girato coperto in Difesa. Così perde per ora la sua minacciosa posizione di Attacco e i suoi effetti scoperti.',
+            bersaglio: () => (pickerAperto() ? elNelPicker(uidInCampo('bot', ID.drago)) : modaleAperto() ? document.getElementById('activateConfirmBtn') : popoverAperto() || elCartaInMano(ID.libroLuna)),
+            consenti: () => [selCartaInMano(ID.libroLuna), SEL_POPOVER, '#activateConfirmBtn', '#activateModal', '#cardListPickerModal'],
+            fatto: () => { const s = (Tavolo.mostri('bot') || []).find((x) => x && x.card.id === ID.drago); return !!(s && s.isFaceDown && s.position === 'defense'); }
+        },
+        { testo: 'Il Drago è ancora sul Terreno, ma ora combatte con la DEF e la sua identità è nascosta. Libro della Luna non distrugge: crea il momento giusto per difenderti o attaccare.', bersaglio: () => document.getElementById('botFieldBoard'), avanti: true, pronto: () => catenaVuota() },
+        { fine: true, testo: 'Lezione completata! Le Magie Rapide premiano il tempismo, non soltanto la forza.' }
+    ];
+
     const LEZIONI = {
         nonno: { prepara: preparaLezione, passi: PASSI_NONNO },
         catena: { prepara: preparaCatena, passi: PASSI_CATENA },
         fusione: { prepara: preparaFusione, passi: PASSI_FUSIONE },
-        flip: { prepara: preparaFlip, passi: PASSI_FLIP }
+        flip: { prepara: preparaFlip, passi: PASSI_FLIP },
+        equip: { prepara: preparaEquip, passi: PASSI_EQUIP },
+        rituale: { prepara: preparaRituale, passi: PASSI_RITUALE },
+        rapida: { prepara: preparaRapida, passi: PASSI_RAPIDA }
     };
     const LEZIONE = (function () {
         const p = new URLSearchParams(window.location.search).get('lezione');

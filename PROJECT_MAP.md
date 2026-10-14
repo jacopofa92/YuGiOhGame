@@ -154,6 +154,19 @@ L'inizio di una scelta chiude un eventuale dettaglio rimasto aperto e una
 breve memoria del pointerup impedisce al click sintetico successivo a un
 attacco di riaprirlo. Regressione: `card-info-solo-consultazione`.
 
+## Tutorial specifici e nuovi Puzzle (2026-10-14)
+
+Il menu Tutorial comprende ora sette lezioni: oltre al duello col nonno e a
+Catena, Fusione e Flip, ci sono Equipaggiamenti, Evocazione Rituale e Magie
+Rapide. Restano sandbox guidate isolate in `js/tutorial/tutorial-duel.js`:
+preparano uno stato controllato, ma fanno eseguire le azioni al motore reale.
+
+I Puzzle "vinci in questo turno" sono dodici. I quattro nuovi scenari
+insegnano l'ordine corretto con Buco Nero, il costo di Tributo ai Dannati, il
+cambio ATK/DEF con Libro della Luna e la somma dei Livelli per il Rito del
+Fulgore Nero. Ogni soluzione viene giocata realmente dallo spec
+`modalita-puzzle`; i traguardi delle Sfide sono stati riallineati a 12.
+
 ## Completamento carte TCG prima serie (2026-10-12)
 
 Il perimetro LOB/MRD/SRL/PSV/LON/LOD/PGD è stato completato sul branch

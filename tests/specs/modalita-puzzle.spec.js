@@ -108,6 +108,33 @@ const SOLUZIONI = {
         await battaglia(page);
         await attacca(page, 0, -1);
         await attacca(page, 1, -1);
+    },
+    'buco-nero': async (page) => {
+        await attiva(page, 7);
+        await calma(page);
+        await page.evaluate(() => { const i = gameState.playerHand.findIndex((c) => c.id === 24); summonMonster(gameState.playerHand[i], 0, 'attack', i); });
+        await calma(page);
+        await battaglia(page);
+        await attacca(page, 0, -1);
+    },
+    'tributo-dannati': async (page) => {
+        await attiva(page, 492);
+        await calma(page, (c) => (c.card || c).id === 526);
+        await battaglia(page);
+        await attacca(page, 0, -1);
+    },
+    'libro-luna': async (page) => {
+        await attiva(page, 875);
+        await calma(page, (c) => (c.card || c).id === 110);
+        await battaglia(page);
+        await attacca(page, 0, 0);
+        await attacca(page, 1, -1);
+    },
+    'rito-fulgore': async (page) => {
+        await attiva(page, 617);
+        await calma(page);
+        await battaglia(page);
+        await attacca(page, await casellaDi(page, 616), -1);
     }
 };
 

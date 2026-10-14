@@ -262,7 +262,8 @@ righe, actions.js 3.855, game-flow.js 3.797; 205 accessi al DOM e 85
       posizione desktop/mobile.
 - [x] Service worker più leggero e verificato (vedi «Peso e velocità»).
 - [x] Tutorial: menu dedicato con lezione del nonno e lezioni brevi su
-      Catena, Fusione e mostri Flip (`tutorial.html`).
+      Catena, Fusione, mostri Flip, Equipaggiamenti, Rituali e Magie Rapide
+      (`tutorial.html`).
 - [x] Bilanciamento delle difficoltà con simulazioni bot contro bot: matrice
       completa post-intervento in `reports/story/STORY_DECK_SIMULATION_REPORT_AFTER_BALANCE.json`.
       La scala media è 1,64 / 3,45 / 4,12 tentativi per duello e 19 incontri
@@ -329,7 +330,7 @@ Decisioni aperte dell'utente: i 6 PNG di avatar non usati; le regole del
       chiusura. Verificato a occhio con screenshot (desktop e telefono in
       orizzontale): banda, velo e carte sopra il velo funzionano. Difetto
       minore: su telefono la banda copre in parte il nome dell'avversario.
-- [x] Tutorial o partita guidata per chi non conosce Yu-Gi-Oh: quattro
+- [x] Tutorial o partita guidata per chi non conosce Yu-Gi-Oh: sette
       lezioni isolate dal motore tramite `js/tutorial/tutorial-duel.js`.
 - [x] Velocità del bot regolabile (Normale/Veloce) in Impostazioni → Dispositivo.
       Accorcia solo le pause di ritmo in `js/ai/bot.js` (`botMs`).
