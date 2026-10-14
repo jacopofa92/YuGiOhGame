@@ -1,6 +1,7 @@
 # Audit supporti moderni Toon
 
-Stato: entrambi i pacchetti implementati e testati in isolamento; Starter,
+Stato: entrambi i pacchetti implementati, testati e sottoposti ad audit;
+Starter,
 Structure, deck Pegasus ed economia non modificati.
 
 ## Vincolo del progetto
@@ -84,6 +85,35 @@ Decisione provvisoria: nessun deck avversario modificato. Facile e Medio
 restano invariati; per il Difficile il massimo candidato futuro e' il
 pacchetto leggero, non le varianti al 62%. Limiti giocatore proposti in attesa
 dell'economia: Regno Toon 1, Segnalibro Toon 2, Signora Arpia Toon 2. Il
-secondo pacchetto e' ora pronto per l'audit separato 1/2/3. Soltanto quel
-confronto potra' confermare i limiti e se il pacchetto leggero abbia senso
-come candidato futuro per Pegasus Difficile.
+secondo pacchetto e' stato misurato separatamente e insieme al primo.
+
+## Audit conclusivo del secondo pacchetto
+
+Lo strumento `tools/audit-supporti-toon.js` ha eseguito altri 3.250 duelli:
+50 semi contro ciascuno dei cinque avversari Hard, per 13 varianti. Nessun
+errore carta, invariante violata o duello non concluso. Dati grezzi in
+`reports/archetypes/TOON_SUPPORT_COMPLETE_1_2_3.json`.
+
+| Variante | Vittorie Pegasus | Turni medi |
+|---|---:|---:|
+| baseline coeva | 38,4% | 16,63 |
+| Gira-Pagina 1 / 2 / 3 | 42,8% / 45,6% / 45,6% | 15,51 / 15,41 / 14,70 |
+| Soldato 1 / 2 / 3 | 38,4% / 34,8% / 29,2% | 16,56 / 16,58 / 14,96 |
+| secondo pacchetto 1+1 / 2+2 | 40,0% / 46,0% | 15,87 / 14,92 |
+| primo pacchetto leggero, controllo | 57,2% | 16,44 |
+| primo + Gira-Pagina | 63,2% | 15,86 |
+| primo + Soldato | 53,2% | 16,55 |
+| pacchetto completo leggero | 62,4% | 15,79 |
+
+Gira-Pagina aumenta la consistenza ma satura gia' a due copie. Il Soldato
+e' neutro a una copia e diventa una carta morta troppo frequente a due o
+tre: e' un boss, non un motore di consistenza. Insieme al primo pacchetto,
+Gira-Pagina spinge il deck oltre il 60%; il Soldato invece ne contiene
+leggermente il vantaggio. La linea identitaria resta visibile anche nel
+pacchetto completo: Abbandonato compare nel 36% dei duelli e Restrizione
+dai Mille Occhi nel 5,2%.
+
+Decisione: nessuna modifica ai deck Pegasus Facile/Medio/Difficile prima del
+benchmark `Custom`. Limiti giocatore proposti: Gira-Pagina Toon 2 copie,
+Glorioso Soldato Nero Toon 1 copia. Restano provvisori fino alla fase
+economica, insieme ai limiti del primo pacchetto.

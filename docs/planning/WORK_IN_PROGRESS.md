@@ -12,9 +12,9 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
       entra nei report come benchmark aggiuntivo separato, senza guidare per
       ora le decisioni di bilanciamento.
       Primitive, Occhi Rossi, Mago Nero e Drago Bianco completati nei relativi
-      audit. Toon: entrambi i pacchetti implementati e testati; prossimo passo
-      audit conclusivo 1/2/3 di Gira-Pagina e Glorioso Soldato, senza modificare
-      i deck esistenti prima dei risultati.
+      audit. Toon: entrambi i pacchetti e l'audit conclusivo 1/2/3 sono
+      completati; nessun deck avversario modificato in assenza del benchmark
+      `Custom`. Prossima fase della roadmap: supporti alle Divinita'.
 
 ## Economia e acquisizione carte
 

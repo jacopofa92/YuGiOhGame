@@ -76,7 +76,10 @@ e limiti provvisori in `docs/audits/TOON_SUPPORT_AUDIT.md`.
 Il secondo pacchetto aggiunge Gira-Pagina Toon e Glorioso Soldato Nero Toon:
 dati, immagini, costo reale con Tributi misti mano/Terreno, scelta casuale
 sincronizzata e test isolati sono completi. Deck ed economia restano ancora
-invariati fino al confronto conclusivo 1/2/3 copie.
+invariati. L'audit conclusivo (3.250 duelli) misura Gira-Pagina al 42,8-45,6%
+e Soldato al 38,4-29,2% contro baseline 38,4%: limite provvisorio 2 per la
+prima e 1 per il boss. Il pacchetto completo leggero arriva al 62,4%, quindi
+nessun inserimento nei deck avversari prima del benchmark `Custom`.
 
 ## Deck avversari: politica conservativa
 

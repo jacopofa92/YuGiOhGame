@@ -7,7 +7,9 @@ const vm = require('vm');
 const { giocaPartita } = require('./duello-senza-testa.js');
 
 const ROOT = path.join(__dirname, '..');
-const SUPPORTI = [1266, 1267, 1268];
+const PRIMO_PACCHETTO = [1266, 1267, 1268];
+const SECONDO_PACCHETTO = [1269, 1270];
+const SUPPORTI = PRIMO_PACCHETTO.concat(SECONDO_PACCHETTO);
 const OSSERVATI = [487, 416, 476].concat(SUPPORTI);
 const AVVERSARI = ['yamiYugi', 'joey', 'kaiba', 'mako', 'bakura'];
 // Si preservano tutti i Toon, Mondo, Maschera/Riavvolgimento e l'intera
@@ -42,17 +44,19 @@ function sostituisci(base, additions) {
 
 function varianti(base) {
     const rows = [{ nome: 'baseline', copie: 0, carte: [], deck: base }];
-    SUPPORTI.forEach((id) => {
+    SECONDO_PACCHETTO.forEach((id) => {
         for (let copie = 1; copie <= 3; copie++) {
             const cards = Array(copie).fill(id);
             rows.push({ nome: `${id}x${copie}`, copie, carte: cards, deck: sostituisci(base, cards) });
         }
     });
     [
-        { nome: 'pacchetto-leggero', main: [1266, 1267, 1268] },
-        { nome: 'pacchetto-regno', main: [1266, 1266, 1267, 1268] },
-        { nome: 'pacchetto-consistenza', main: [1266, 1267, 1267, 1268] },
-        { nome: 'pacchetto-doppio', main: [1266, 1266, 1267, 1267, 1268, 1268] }
+        { nome: 'secondo-leggero', main: [1269, 1270] },
+        { nome: 'secondo-doppio', main: [1269, 1269, 1270, 1270] },
+        { nome: 'primo-leggero-controllo', main: [1266, 1267, 1268] },
+        { nome: 'primo-piu-girapagina', main: [1266, 1267, 1268, 1269] },
+        { nome: 'primo-piu-soldato', main: [1266, 1267, 1268, 1270] },
+        { nome: 'completo-leggero', main: [1266, 1267, 1268, 1269, 1270] }
     ].forEach((variant) => rows.push({
         nome: variant.nome, copie: null, carte: variant.main,
         deck: sostituisci(base, variant.main)
@@ -66,7 +70,7 @@ function average(values) { return Number((values.reduce((a, b) => a + b, 0) / va
 async function main() {
     const games = Math.max(1, Number(arg('partite', '50')) || 50);
     const seed = Number(arg('seme', '149000')) || 149000;
-    const output = arg('output', 'reports/archetypes/TOON_SUPPORT_1_2_3.json');
+    const output = arg('output', 'reports/archetypes/TOON_SUPPORT_COMPLETE_1_2_3.json');
     const only = arg('solo', '').split(',').map((value) => value.trim()).filter(Boolean);
     const selected = varianti(pegasusHard()).filter((variant) => only.length === 0 || only.includes(variant.nome));
     const results = [];
@@ -99,7 +103,7 @@ async function main() {
     }
     const report = {
         generatoIl: new Date().toISOString(),
-        metodo: 'Pegasus Hard IA contro cinque deck Hard; stessi semi; supporti sostituiscono carte periferiche preservando Toon e Abbandonato/Mille Occhi',
+        metodo: 'Pegasus Hard IA contro cinque deck Hard; stessi semi; secondo pacchetto Toon isolato e poi combinato col primo, sostituendo carte periferiche e preservando Toon e Abbandonato/Mille Occhi',
         gamesPerOpponent: games, seed, opponents: AVVERSARI, supportIds: SUPPORTI,
         observedIdentityIds: OSSERVATI, results
     };
