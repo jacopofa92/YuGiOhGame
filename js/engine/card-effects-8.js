@@ -4009,6 +4009,239 @@
         onReturnedToHandSelf: eternalSoulLeave
     });
 
+    const isDarkMagicianGirl = (card) => card && card.type === 'monster'
+        && (card.id === 188 || cardHasEffectiveName(card, 'Maga Oscura'));
+    const isDarkMagicianPair = (card) => isDarkMagician(card) || isDarkMagicianGirl(card);
+
+    CardEffects.register(1257, {
+        archetypes: ['dark-magician'],
+        mentionsNames: ['Mago Nero', 'Maga Oscura'],
+        continuous: true,
+        canActivate(ctx) { return !ctx.hasUsedOncePerTurn(`magicians-salvation-activate:${ctx.owner}`); },
+        activate(ctx) {
+            ctx.markUsedOncePerTurn(`magicians-salvation-activate:${ctx.owner}`);
+            const free = DuelEngine.findFreeSTSlot(ctx.owner);
+            if (free === -1) return;
+            searchDeckWithChoice(ctx, (c) => c.id === 1256, {
+                title: 'Salvezza del Mago', text: 'Posiziona Anima Eterna direttamente dal Deck.'
+            }, (chosen) => {
+                ctx.stField(ctx.owner)[free] = { card: chosen, isFaceDown: true, setOnTurn: gameState.turn };
+                ctx.log(`${chosen.name} viene Posizionata direttamente dal Deck!`);
+            });
+        },
+        onAnyNormalOrFlipSummon(ctx) {
+            if (ctx.summonedVia !== 'normal') return;
+            this.reviveCounterpart(ctx);
+        },
+        onAnySpecialSummon(ctx) { this.reviveCounterpart(ctx); },
+        reviveCounterpart(ctx) {
+            if (!isDarkMagicianPair(ctx.summonedCard)
+                || !ctx.field(ctx.owner).some((s) => s && s.card.uid === ctx.summonedCard.uid)
+                || ctx.hasUsedOncePerTurn(`magicians-salvation-revive:${ctx.owner}`)
+                || ctx.findEmptyMonsterSlot(ctx.owner) === -1) return;
+            const needsGirl = isDarkMagician(ctx.summonedCard);
+            const match = needsGirl ? isDarkMagicianGirl : isDarkMagician;
+            if (!ctx.graveyard(ctx.owner).some(match)) return;
+            searchGraveyardWithChoice(ctx, ctx.owner, match, {
+                title: 'Salvezza del Mago',
+                text: `Evoca dal Cimitero ${needsGirl ? 'Maga Oscura' : 'Mago Nero'}.`
+            }, (chosen) => {
+                const free = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (free === -1) { ctx.graveyard(ctx.owner).push(chosen); return; }
+                ctx.markUsedOncePerTurn(`magicians-salvation-revive:${ctx.owner}`);
+                ctx.specialSummon(ctx.owner, chosen, free, 'attack', 'graveyard');
+            });
+        }
+    });
+
+    const soulServantEligible = (card) => card && card.id !== 1258
+        && (isDarkMagician(card) || cardMentionsName(card, 'Mago Nero') || cardMentionsName(card, 'Maga Oscura'));
+    CardEffects.register(1258, {
+        archetypes: ['dark-magician'],
+        mentionsNames: ['Mago Nero', 'Maga Oscura'],
+        canActivate(ctx) {
+            const deck = Tavolo.mazzo(ctx.owner) || [];
+            return ctx.hand(ctx.owner).some((c) => c.uid !== ctx.card.uid && soulServantEligible(c))
+                || deck.some(soulServantEligible)
+                || ctx.graveyard(ctx.owner).some((c) => c.uid !== ctx.card.uid && soulServantEligible(c));
+        },
+        activate(ctx) {
+            const deck = Tavolo.mazzo(ctx.owner) || [];
+            const candidates = ctx.hand(ctx.owner).filter((c) => c.uid !== ctx.card.uid && soulServantEligible(c))
+                .concat(deck.filter(soulServantEligible))
+                .concat(ctx.graveyard(ctx.owner).filter((c) => c.uid !== ctx.card.uid && soulServantEligible(c)));
+            chooseCardFromList(ctx, candidates, {
+                title: "Servitore dell'Anima", text: 'Scegli quale carta collocare in cima al Deck.'
+            }, (chosen) => {
+                const zones = [ctx.hand(ctx.owner), deck, ctx.graveyard(ctx.owner)];
+                const source = zones.find((zone) => zone.includes(chosen));
+                if (!source) return;
+                source.splice(source.indexOf(chosen), 1);
+                deck.push(chosen);
+                gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = deck.length;
+                ctx.log(`${chosen.name} viene collocata in cima al Deck.`);
+            });
+        },
+        canActivateFromGraveyardMainPhase(ctx) {
+            if (ctx.hasUsedOncePerTurn(`soul-servant-grave:${ctx.owner}`)) return false;
+            const zones = Tavolo.ordine().flatMap((owner) => ctx.field(owner).filter(Boolean).map((s) => s.card)
+                .concat(ctx.graveyard(owner)));
+            return zones.some((c) => isDarkMagicianPair(c) || /^Oracolo Palladio/i.test(c.name || ''));
+        },
+        activateFromGraveyardMainPhase(ctx) {
+            const grave = ctx.graveyard(ctx.owner);
+            const selfIndex = grave.findIndex((c) => c.uid === ctx.card.uid);
+            if (selfIndex === -1) return;
+            const names = new Set();
+            Tavolo.ordine().forEach((owner) => {
+                ctx.field(owner).forEach((slot) => {
+                    if (slot && (isDarkMagicianPair(slot.card) || /^Oracolo Palladio/i.test(slot.card.name || ''))) names.add(slot.card.name);
+                });
+                ctx.graveyard(owner).forEach((card) => {
+                    if (isDarkMagicianPair(card) || /^Oracolo Palladio/i.test(card.name || '')) names.add(card.name);
+                });
+            });
+            if (names.size === 0) return;
+            const [self] = grave.splice(selfIndex, 1);
+            ctx.banish(ctx.owner, self);
+            ctx.markUsedOncePerTurn(`soul-servant-grave:${ctx.owner}`);
+            ctx.drawCards(ctx.owner, names.size);
+            ctx.log(`${ctx.card.name} viene bandito: peschi ${names.size} cart${names.size === 1 ? 'a' : 'e'}!`);
+        }
+    });
+
+    function ritualPlansForSecrets(ctx) {
+        const hand = ctx.hand(ctx.owner);
+        const field = ctx.field(ctx.owner);
+        const rituals = hand.filter((c) => c.type === 'monster' && c.category === 'ritual');
+        const plans = [];
+        rituals.forEach((ritual) => {
+            const pool = hand.map((card, index) => card === ritual ? null : { card, zone: 'hand', index })
+                .filter(Boolean)
+                .concat(field.map((slot, index) => slot && !slot.isFaceDown ? { card: slot.card, zone: 'monster', index } : null).filter(Boolean));
+            let best = null;
+            const maxMask = 1 << pool.length;
+            for (let mask = 1; mask < maxMask; mask++) {
+                const chosen = pool.filter((entry, i) => mask & (1 << i));
+                const total = chosen.reduce((sum, entry) => sum + (entry.card.level || 0), 0);
+                if (total < ritual.level || !chosen.some((entry) => isDarkMagicianPair(entry.card))) continue;
+                if (ctx.findEmptyMonsterSlot(ctx.owner) === -1 && !chosen.some((entry) => entry.zone === 'monster')) continue;
+                const score = chosen.length * 100 + (total - ritual.level);
+                if (!best || score < best.score) best = { ritual, materials: chosen, score };
+            }
+            if (best) plans.push(best);
+        });
+        return plans;
+    }
+
+    CardEffects.register(1259, {
+        archetypes: ['dark-magician'],
+        mentionsNames: ['Mago Nero', 'Maga Oscura'],
+        canActivate(ctx) {
+            const fusions = DuelEngine.getFusableExtraDeckMonsters(ctx.owner).filter((entry) => entry.materialLocations.some((loc) => {
+                const card = loc.zone === 'hand' ? ctx.hand(ctx.owner)[loc.index] : ctx.field(ctx.owner)[loc.index]?.card;
+                return isDarkMagicianPair(card);
+            }));
+            return fusions.length > 0 || ritualPlansForSecrets(ctx).length > 0;
+        },
+        activate(ctx) {
+            const fusions = DuelEngine.getFusableExtraDeckMonsters(ctx.owner).filter((entry) => entry.materialLocations.some((loc) => {
+                const card = loc.zone === 'hand' ? ctx.hand(ctx.owner)[loc.index] : ctx.field(ctx.owner)[loc.index]?.card;
+                return isDarkMagicianPair(card);
+            }));
+            const rituals = ritualPlansForSecrets(ctx);
+            const doFusion = () => chooseCardFromList(ctx, fusions.map((entry) => entry.card), {
+                title: 'Segreti della Magia Oscura', text: 'Scegli il Mostro Fusione da Evocare.'
+            }, (chosen) => {
+                const plan = fusions.find((entry) => entry.card.uid === chosen.uid);
+                if (plan) ctx.fusionSummon(ctx.owner, plan.extraDeckIndex, plan.materialLocations);
+            });
+            const doRitual = () => chooseCardFromList(ctx, rituals.map((entry) => entry.ritual), {
+                title: 'Segreti della Magia Oscura', text: 'Scegli il Mostro Rituale da Evocare.'
+            }, (chosen) => {
+                const plan = rituals.find((entry) => entry.ritual.uid === chosen.uid);
+                if (!plan) return;
+                const materialCards = plan.materials.map((entry) => entry.card);
+                ctx._pendingRitualVisual = { materials: materialCards };
+                plan.materials.filter((e) => e.zone === 'monster').forEach((entry) => {
+                    ctx.field(ctx.owner)[entry.index] = null;
+                    ctx.graveyard(ctx.owner).push(entry.card);
+                });
+                plan.materials.filter((e) => e.zone === 'hand').sort((a, b) => b.index - a.index).forEach((entry) => {
+                    const i = ctx.hand(ctx.owner).indexOf(entry.card);
+                    if (i !== -1) ctx.graveyard(ctx.owner).push(ctx.hand(ctx.owner).splice(i, 1)[0]);
+                });
+                const ritualIndex = ctx.hand(ctx.owner).indexOf(chosen);
+                if (ritualIndex === -1) return;
+                ctx.hand(ctx.owner).splice(ritualIndex, 1);
+                const free = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (free === -1) { ctx.graveyard(ctx.owner).push(chosen); return; }
+                ctx.specialSummon(ctx.owner, chosen, free, 'attack', 'hand');
+            });
+            if (fusions.length && rituals.length) chooseOption(ctx, {
+                title: 'Segreti della Magia Oscura', text: 'Quale Evocazione vuoi effettuare?',
+                options: [{ value: 'fusion', label: 'Evocazione Fusione' }, { value: 'ritual', label: 'Evocazione Rituale' }],
+                pickForBot: () => 'fusion'
+            }, (choice) => choice === 'fusion' ? doFusion() : doRitual());
+            else if (fusions.length) doFusion();
+            else if (rituals.length) doRitual();
+        }
+    });
+
+    CardEffects.register(1260, {
+        archetypes: ['dark-magician'],
+        mentionsNames: ['Mago Nero', 'Maga Oscura'],
+        fusionMaterialMatchers: [isDarkMagicianPair, (card) => card && card.type === 'monster' && card.race === 'Incantatore'],
+        canActivateOnCardActivated(ctx) {
+            return !ctx.hasUsedOncePerTurn(`the-dark-magicians-draw:${ctx.card.uid}`);
+        },
+        onCardActivated(ctx) {
+            ctx.markUsedOncePerTurn(`the-dark-magicians-draw:${ctx.card.uid}`);
+            const before = ctx.hand(ctx.owner).length;
+            ctx.drawCards(ctx.owner, 1);
+            const drawn = ctx.hand(ctx.owner)[ctx.hand(ctx.owner).length - 1];
+            if (!drawn || ctx.hand(ctx.owner).length === before || (drawn.type !== 'spell' && drawn.type !== 'trap')) return;
+            const free = DuelEngine.findFreeSTSlot(ctx.owner);
+            if (free === -1) return;
+            const setCard = () => {
+                const index = ctx.hand(ctx.owner).indexOf(drawn);
+                if (index === -1) return;
+                ctx.hand(ctx.owner).splice(index, 1);
+                const immediatelyUsable = drawn.type === 'trap' || drawn.subtype === 'quick-play';
+                ctx.stField(ctx.owner)[free] = {
+                    card: drawn, isFaceDown: true,
+                    setOnTurn: immediatelyUsable ? gameState.turn - 1 : gameState.turn
+                };
+                ctx.log(`${drawn.name} viene Posizionata dall'effetto di ${ctx.card.name}!`);
+            };
+            chooseOption(ctx, {
+                title: 'I Maghi Neri', text: `Vuoi Posizionare ${drawn.name}?`,
+                options: [{ value: 'set', label: 'Posiziona' }, { value: 'keep', label: 'Tieni in mano' }],
+                pickForBot: () => 'set'
+            }, (choice) => { if (choice === 'set') setCard(); });
+        },
+        onDestroy(ctx) {
+            const find = (match) => {
+                const zones = [ctx.graveyard(ctx.owner), ctx.hand(ctx.owner), Tavolo.mazzo(ctx.owner) || []];
+                for (const zone of zones) {
+                    const card = zone.find(match);
+                    if (card) return { card, zone };
+                }
+                return null;
+            };
+            const dm = find(isDarkMagician);
+            const girl = find(isDarkMagicianGirl);
+            const freeSlots = ctx.field(ctx.owner).map((slot, index) => slot ? -1 : index).filter((index) => index !== -1);
+            if (!dm || !girl || dm.card.uid === girl.card.uid || freeSlots.length < 2) return;
+            [dm, girl].forEach((entry, i) => {
+                entry.zone.splice(entry.zone.indexOf(entry.card), 1);
+                ctx.specialSummon(ctx.owner, entry.card, freeSlots[i], 'attack', entry.zone === ctx.hand(ctx.owner) ? 'hand' : entry.zone === ctx.graveyard(ctx.owner) ? 'graveyard' : 'deck');
+            });
+            gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = (Tavolo.mazzo(ctx.owner) || []).length;
+            ctx.log(`${ctx.card.name} richiama Mago Nero e Maga Oscura!`);
+        }
+    });
+
     (function registerLibraryEffects() {
         if (typeof cardDatabase === 'undefined' || !Array.isArray(cardDatabase)) return;
 

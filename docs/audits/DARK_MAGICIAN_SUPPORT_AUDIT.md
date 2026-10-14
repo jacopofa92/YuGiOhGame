@@ -11,6 +11,25 @@ avversari non ancora modificati.
 | 1255 | Cerchio Magico Oscuro | guarda le prime 3 e aggiunge una carta idonea; bandisce quando Mago Nero viene Evocato | test isolato verde |
 | 1256 | Anima Eterna | Evoca Mago Nero o cerca le due Magie classiche; immunità dagli effetti avversari; distruzione dei propri mostri quando lascia il Terreno | test isolato verde |
 
+## Secondo pacchetto
+
+| id | Carta | Effetto coperto | Stato |
+|---:|---|---|---|
+| 1257 | Salvezza del Mago | Posiziona Anima Eterna dal Deck; richiama dal Cimitero il membro mancante della coppia Mago Nero/Maga Oscura | test isolato verde |
+| 1258 | Servitore dell'Anima | colloca in cima una carta idonea da mano/Deck/Cimitero; dal Cimitero si bandisce e pesca per i nomi diversi presenti | test isolato verde |
+| 1259 | Segreti della Magia Oscura | scelta reale tra Evocazione Fusione e Rituale, con Mago Nero/Maga Oscura obbligatorio tra i materiali | test isolato verde |
+| 1260 | I Maghi Neri | materiali flessibili; pesca e Posizionamento; richiamo congiunto di Mago Nero e Maga Oscura quando distrutto | test isolato verde |
+
+`I Maghi Neri` è stato scelto come boss perché chiude il piano condiviso
+delle sette carte di supporto senza introdurre una negazione generica o una
+meccanica Extra Deck successiva. Il motore Fusione ora accetta anche
+`fusionMaterialMatchers` per requisiti per categoria; tutte le Fusioni
+storiche continuano a usare l'array di id `fusionMaterials` invariato.
+
+Per `Servitore dell'Anima`, nel dataset corrente non esistono ancora mostri
+Palladio: il conteggio è già generico per nome e li includerà senza modifiche
+al motore quando verranno eventualmente aggiunti.
+
 Testi, statistiche e illustrazioni sono stati verificati il 2026-10-14
 tramite YGOPRODeck. Le carte sono collocate prima del blocco WW1 senza
 rinumerare gli id esistenti.
@@ -65,6 +84,8 @@ isolare il nucleo Mago Nero.
 
 ## Prossimo checkpoint
 
-Proseguire con Salvation, Soul Servant, Secrets of Dark Magic e il boss
-Fusione; poi ripetere il confronto, perché un secondo pacchetto completo può
-cambiare sia il valore di Cerchio/Anima sia il limite copie definitivo.
+Ripetere il confronto sul pacchetto completo con una composizione realistica:
+le sette carte non possono essere tutte triplicate senza smontare il nucleo
+anime di Yami Yugi. L'audit separerà quindi le singole copie 1/2/3 da alcuni
+pacchetti curati, mantenendo invariati Mago Nero, Maga Oscura, Slifer,
+Fusioni/Rituali e carte firma.

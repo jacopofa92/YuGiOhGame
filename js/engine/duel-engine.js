@@ -5801,7 +5801,9 @@
         const results = [];
         extraDeck.forEach((extraCard, extraDeckIndex) => {
             const def = getDefinition(extraCard.id);
-            if (!def || !Array.isArray(def.fusionMaterials) || def.fusionMaterials.length === 0) return;
+            const fixedMaterials = def && Array.isArray(def.fusionMaterials) ? def.fusionMaterials : [];
+            const flexibleMatchers = def && Array.isArray(def.fusionMaterialMatchers) ? def.fusionMaterialMatchers : [];
+            if (!def || (fixedMaterials.length === 0 && flexibleMatchers.length === 0)) return;
             const usedHandIdx = new Set();
             const usedFieldIdx = new Set();
             const materialLocations = [];
@@ -5814,28 +5816,28 @@
             // del tutto generica sulla zona/indice: non serve toccarla,
             // solo estendere qui la ricerca del materiale.
             let versagoUsed = false;
-            const ok = def.fusionMaterials.every((materialId) => {
+            const takeMatchingMaterial = (matches, allowVersago) => {
                 if (fieldIsFull) {
-                    const fieldIdx = field.findIndex((s, i) => s && !s.isFaceDown && s.card.id === materialId && !usedFieldIdx.has(i));
+                    const fieldIdx = field.findIndex((s, i) => s && !s.isFaceDown && matches(s.card) && !usedFieldIdx.has(i));
                     if (fieldIdx !== -1) {
                         usedFieldIdx.add(fieldIdx);
                         materialLocations.push({ zone: 'monster', index: fieldIdx });
                         return true;
                     }
                 }
-                const handIdx = hand.findIndex((c, i) => c.id === materialId && !usedHandIdx.has(i));
+                const handIdx = hand.findIndex((c, i) => matches(c) && !usedHandIdx.has(i));
                 if (handIdx !== -1) {
                     usedHandIdx.add(handIdx);
                     materialLocations.push({ zone: 'hand', index: handIdx });
                     return true;
                 }
-                const fieldIdx = field.findIndex((s, i) => s && !s.isFaceDown && s.card.id === materialId && !usedFieldIdx.has(i));
+                const fieldIdx = field.findIndex((s, i) => s && !s.isFaceDown && matches(s.card) && !usedFieldIdx.has(i));
                 if (fieldIdx !== -1) {
                     usedFieldIdx.add(fieldIdx);
                     materialLocations.push({ zone: 'monster', index: fieldIdx });
                     return true;
                 }
-                if (!versagoUsed) {
+                if (allowVersago && !versagoUsed) {
                     const versagoHandIdx = hand.findIndex((c, i) => c.id === 500 && !usedHandIdx.has(i));
                     if (versagoHandIdx !== -1) {
                         usedHandIdx.add(versagoHandIdx);
@@ -5852,7 +5854,13 @@
                     }
                 }
                 return false;
-            });
+            };
+            // Le Fusioni storiche continuano a usare gli id nominati. Le
+            // Fusioni moderne possono invece dichiarare predicati (es.
+            // "Mago Nero o Maga Oscura" + "1 Incantatore") senza
+            // moltiplicare artificialmente la stessa carta nell'Extra Deck.
+            const ok = fixedMaterials.every((materialId) => takeMatchingMaterial((card) => card.id === materialId, true))
+                && flexibleMatchers.every((matcher) => takeMatchingMaterial(matcher, false));
             // Non proporre neppure la Fusione se, a Terreno pieno, la
             // combinazione trovata usa solo la mano: l'attivazione deve
             // essere illegale prima di consumare carte o avviare FX.

@@ -1,5 +1,5 @@
 module.exports = {
-    name: 'Supporti Mago Nero: primo pacchetto moderno',
+    name: 'Supporti Mago Nero: pacchetto moderno completo',
     async run(t) {
         const result = await t.evaluate(() => {
             const copy = (id, uid) => ({ ...cardDatabase.find((c) => c.id === id), uid });
@@ -69,7 +69,99 @@ module.exports = {
             const soulPunishes = !gameState.botMonsterField[0]
                 && gameState.botGraveyard.some((c) => c.uid === protectedDm.uid);
 
-            return { rodSearches, rodGraveReady, rodReturns, circleSearches, circleBanishes, soulProtects, soulPunishes };
+            resetGameState();
+            const salvation = copy(1257, 'salvation');
+            const eternalToSet = copy(1256, 'eternal-to-set');
+            gameState.botDeck = [eternalToSet];
+            gameState.botDeckCount = 1;
+            const salvationDef = DuelEngine.getDefinition(1257);
+            salvationDef.activate(DuelEngine.makeContext('bot', { card: salvation, zone: 'fieldSpell' }));
+            const salvationSets = gameState.botSTField.some((s) => s && s.isFaceDown && s.card.uid === eternalToSet.uid);
+            const summonedDm = copy(2, 'salvation-dm');
+            const graveGirl = copy(188, 'salvation-girl');
+            gameState.botMonsterField[0] = { card: summonedDm, position: 'attack', isFaceDown: false };
+            gameState.botGraveyard.push(graveGirl);
+            salvationDef.onAnySpecialSummon(DuelEngine.makeContext('bot', {
+                card: salvation, zone: 'fieldSpell', summonedCard: summonedDm
+            }));
+            const salvationRevives = gameState.botMonsterField.some((s) => s && s.card.uid === graveGirl.uid);
+
+            resetGameState();
+            const servant = copy(1258, 'servant');
+            const topDm = copy(2, 'top-dm');
+            gameState.botDeck = [topDm];
+            gameState.botDeckCount = 1;
+            const servantDef = DuelEngine.getDefinition(1258);
+            const servantCtx = DuelEngine.makeContext('bot', { card: servant, zone: 'hand' });
+            servantDef.activate(servantCtx);
+            const servantStacks = gameState.botDeck[gameState.botDeck.length - 1].uid === topDm.uid;
+            gameState.botGraveyard = [servant, copy(2, 'draw-dm'), copy(188, 'draw-girl')];
+            gameState.botDeck = [copy(3, 'draw-1'), copy(4, 'draw-2')];
+            gameState.botDeckCount = 2;
+            servantDef.activateFromGraveyardMainPhase(DuelEngine.makeContext('bot', { card: servant, zone: 'graveyard' }));
+            const servantDraws = gameState.botHand.length === 2
+                && gameState.botBanished.some((c) => c.uid === servant.uid);
+
+            resetGameState();
+            const secrets = copy(1259, 'secrets');
+            const materialDm = copy(2, 'fusion-dm');
+            const materialGirl = copy(188, 'fusion-girl');
+            const boss = copy(1260, 'dark-magicians');
+            gameState.botHand = [materialDm, materialGirl];
+            gameState.botExtraDeck = [boss];
+            const fusionPlan = DuelEngine.getFusableExtraDeckMonsters('bot').find((entry) => entry.card.uid === boss.uid);
+            const flexibleFusion = !!fusionPlan && fusionPlan.materialLocations.length === 2;
+            const oldFx = window.FX;
+            window.FX = null;
+            DuelEngine.getDefinition(1259).activate(DuelEngine.makeContext('bot', { card: secrets, zone: 'hand' }));
+            window.FX = oldFx;
+            const secretsFuses = gameState.botMonsterField.some((s) => s && s.card.uid === boss.uid)
+                && gameState.botGraveyard.some((c) => c.uid === materialDm.uid)
+                && gameState.botGraveyard.some((c) => c.uid === materialGirl.uid);
+
+            resetGameState();
+            const ritualSecrets = copy(1259, 'ritual-secrets');
+            const chaosMagician = copy(854, 'chaos-magician');
+            const ritualDm = copy(2, 'ritual-dm');
+            const ritualLevel = copy(22, 'ritual-level');
+            gameState.botHand = [chaosMagician, ritualDm, ritualLevel];
+            const oldRitualFx = window.FX;
+            window.FX = null;
+            DuelEngine.getDefinition(1259).activate(DuelEngine.makeContext('bot', { card: ritualSecrets, zone: 'hand' }));
+            window.FX = oldRitualFx;
+            const secretsRituals = gameState.botMonsterField.some((s) => s && s.card.uid === chaosMagician.uid)
+                && gameState.botGraveyard.some((c) => c.uid === ritualDm.uid)
+                && gameState.botGraveyard.some((c) => c.uid === ritualLevel.uid);
+
+            resetGameState();
+            const drawingBoss = copy(1260, 'drawing-boss');
+            const drawnTrap = copy(382, 'drawn-trap');
+            gameState.botMonsterField[0] = { card: drawingBoss, position: 'attack', isFaceDown: false };
+            gameState.botDeck = [drawnTrap];
+            gameState.botDeckCount = 1;
+            DuelEngine.getDefinition(1260).onCardActivated(DuelEngine.makeContext('bot', {
+                card: drawingBoss, activatedCard: copy(474, 'activation'), activatedOwner: 'bot'
+            }));
+            const bossDrawSets = gameState.botSTField.some((s) => s && s.card.uid === drawnTrap.uid
+                && s.isFaceDown && s.setOnTurn < gameState.turn);
+
+            resetGameState();
+            const destroyedBoss = copy(1260, 'destroyed-boss');
+            const returnDm = copy(2, 'return-dm');
+            const returnGirl = copy(188, 'return-girl');
+            gameState.botGraveyard = [destroyedBoss, returnDm];
+            gameState.botDeck = [returnGirl];
+            gameState.botDeckCount = 1;
+            DuelEngine.getDefinition(1260).onDestroy(DuelEngine.makeContext('bot', { card: destroyedBoss }));
+            const bossReplacesItself = gameState.botMonsterField.filter(Boolean).length === 2
+                && gameState.botMonsterField.some((s) => s.card.uid === returnDm.uid)
+                && gameState.botMonsterField.some((s) => s.card.uid === returnGirl.uid);
+
+            return {
+                rodSearches, rodGraveReady, rodReturns, circleSearches, circleBanishes, soulProtects, soulPunishes,
+                salvationSets, salvationRevives, servantStacks, servantDraws, flexibleFusion, secretsFuses,
+                secretsRituals, bossDrawSets, bossReplacesItself
+            };
         });
         Object.entries(result).forEach(([name, value]) => t.assert(value, `${name} deve essere vero: ${JSON.stringify(result)}`));
     }

@@ -13755,6 +13755,56 @@
     "artOnly": true
   },
   {
+    "id": 1257,
+    "origin": "yu-gi-oh",
+    "name": "Salvezza del Mago",
+    "type": "spell",
+    "subtype": "field",
+    "archetypes": ["dark-magician"],
+    "mentionsNames": ["Mago Nero", "Maga Oscura"],
+    "effect": "Quando questa carta viene attivata: puoi Posizionare 1 \"Anima Eterna\" direttamente dal tuo Deck. Se Evochi Normalmente o Specialmente \"Mago Nero\" o \"Maga Oscura\": puoi scegliere come bersaglio 1 di quei mostri; Evoca Specialmente dal tuo Cimitero 1 \"Mago Nero\" o \"Maga Oscura\" con un nome diverso. Puoi utilizzare questo effetto di \"Salvezza del Mago\" una sola volta per turno. Puoi attivare solo 1 \"Salvezza del Mago\" per turno.",
+    "artOnly": true
+  },
+  {
+    "id": 1258,
+    "origin": "yu-gi-oh",
+    "name": "Servitore dell'Anima",
+    "type": "spell",
+    "subtype": "quick-play",
+    "archetypes": ["dark-magician"],
+    "mentionsNames": ["Mago Nero", "Maga Oscura"],
+    "effect": "Metti in cima al Deck dalla tua mano, Deck o Cimitero 1 carta che sia \"Mago Nero\" o che citi specificamente \"Mago Nero\" o \"Maga Oscura\", eccetto \"Servitore dell'Anima\". Durante la tua Main Phase: puoi bandire questa carta dal tuo Cimitero; pesca carte pari al numero di mostri \"Palladio\", \"Mago Nero\" e/o \"Maga Oscura\" con nomi diversi sul Terreno e nei Cimiteri. Puoi utilizzare questo effetto di \"Servitore dell'Anima\" una sola volta per turno.",
+    "artOnly": true
+  },
+  {
+    "id": 1259,
+    "origin": "yu-gi-oh",
+    "name": "Segreti della Magia Oscura",
+    "type": "spell",
+    "subtype": "quick-play",
+    "archetypes": ["dark-magician"],
+    "mentionsNames": ["Mago Nero", "Maga Oscura"],
+    "effect": "Attiva 1 di questi effetti; Evoca tramite Fusione 1 Mostro Fusione dal tuo Extra Deck, utilizzando mostri dalla tua mano o Terreno, compreso \"Mago Nero\" o \"Maga Oscura\"; oppure Evoca tramite Rituale 1 Mostro Rituale dalla tua mano, offrendo come Tributo mostri dalla tua mano o Terreno, compreso \"Mago Nero\" o \"Maga Oscura\", i cui Livelli totali siano pari o superiori al Livello del Mostro Rituale.",
+    "artOnly": true
+  },
+  {
+    "id": 1260,
+    "origin": "yu-gi-oh",
+    "name": "I Maghi Neri",
+    "type": "monster",
+    "extraDeck": true,
+    "category": "fusion",
+    "level": 8,
+    "race": "Incantatore",
+    "attribute": "OSCURITÀ",
+    "attack": 2800,
+    "defense": 2300,
+    "archetypes": ["dark-magician"],
+    "mentionsNames": ["Mago Nero", "Maga Oscura"],
+    "effect": "\"Mago Nero\" o \"Maga Oscura\" + 1 mostro Incantatore. Una volta per turno, se una Carta Magia/Trappola o un suo effetto viene attivato: puoi pescare 1 carta, poi, se era una Magia/Trappola, puoi Posizionarla e, se era una Trappola o una Magia Rapida, puoi attivarla in questo turno. Se questa carta viene distrutta: puoi Evocare Specialmente sia 1 \"Mago Nero\" che 1 \"Maga Oscura\" dalla tua mano, Deck e/o Cimitero.",
+    "artOnly": true
+  },
+  {
     "id": 1200,
     "origin": "ww1",
     "fazione": "italiana",
