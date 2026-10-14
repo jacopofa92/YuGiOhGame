@@ -39,7 +39,36 @@ La protezione resta distinta:
 
 ## Prossimo checkpoint
 
-Eseguire l'audit 1/2/3 copie del primo pacchetto sul Pegasus Difficile
-invariato, misurando separatamente Mondo/Regno, Toon giocati e frequenza della
-linea Abbandonato/Mille Occhi. Solo dopo verranno valutati Toon Page-Flip e
-Soldato dell'Oscuro Desiderio Toon.
+L'audit `tools/audit-supporti-toon.js` ha eseguito 50 semi contro ciascuno dei
+cinque avversari Hard Yami Yugi, Joey, Kaiba, Mako e Bakura: 250 duelli per
+variante, 14 varianti e 3.500 duelli complessivi. Nessun errore carta,
+invariante violata o partita non conclusa. Dati completi in
+`reports/archetypes/TOON_SUPPORT_1_2_3.json`.
+
+| Variante | Vittorie Pegasus | Turni medi |
+|---|---:|---:|
+| baseline | 39,6% | 16,77 |
+| Regno 1 / 2 / 3 | 46,8% / 50,0% / 57,6% | 16,25 / 17,08 / 18,10 |
+| Segnalibro 1 / 2 / 3 | 37,2% / 36,0% / 35,6% | 16,89 / 16,58 / 16,67 |
+| Arpia 1 / 2 / 3 | 37,2% / 38,8% / 40,4% | 16,15 / 16,91 / 17,66 |
+| pacchetto leggero 1+1+1 | 50,4% | 18,14 |
+| pacchetto Regno 2+1+1 | 62,4% | 17,69 |
+| pacchetto consistenza 1+2+1 | 62,4% | 17,72 |
+| pacchetto doppio 2+2+2 | 58,0% | 16,71 |
+
+Regno Toon e' il vero moltiplicatore: una copia porta un aumento controllato
+di 7,2 punti, mentre tre copie arrivano gia' a +18 punti. Segnalibro da solo
+peggiora un deck che possiede gia' tre Mondi; acquista valore solo insieme a
+Regno. Signora Arpia e' neutra da sola e utile come corpo tematico, non come
+staple generica.
+
+La linea parallela resta viva: Abbandonato compare nel 28% della baseline e
+nel 50% del pacchetto leggero; Restrizione dai Mille Occhi passa dal 6,4%
+all'8,8%. I supporti non hanno quindi cancellato il secondo piano di Pegasus.
+
+Decisione provvisoria: nessun deck avversario modificato. Facile e Medio
+restano invariati; per il Difficile il massimo candidato futuro e' il
+pacchetto leggero, non le varianti al 62%. Limiti giocatore proposti in attesa
+dell'economia: Regno Toon 1, Segnalibro Toon 2, Signora Arpia Toon 2. Il
+secondo pacchetto Page-Flip/Soldato Toon puo' ora essere implementato e
+misurato separatamente.

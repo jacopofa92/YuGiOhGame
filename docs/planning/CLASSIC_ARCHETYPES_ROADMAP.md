@@ -69,8 +69,10 @@ avversari: la sola candidata Kaiba Hard attende il benchmark `Custom`.
 La Fase 5 Toon e' iniziata mantenendo la deroga anime gia' adottata. Il primo
 pacchetto aggiunge Regno Toon, Segnalibro Toon e Signora Arpia Toon; effetti,
 immagini, compatibilita' col vecchio Mondo e test isolati sono completi.
-Starter e deck Pegasus restano invariati fino all'audit 1/2/3 documentato in
-`docs/audits/TOON_SUPPORT_AUDIT.md`.
+L'audit 1/2/3 (3.500 duelli) misura il pacchetto leggero al 50,4% contro una
+baseline del 39,6%, conservando e anzi rendendo piu' visibile la linea
+Abbandonato/Mille Occhi. Starter e deck Pegasus restano invariati; dettagli
+e limiti provvisori in `docs/audits/TOON_SUPPORT_AUDIT.md`.
 
 ## Deck avversari: politica conservativa
 
