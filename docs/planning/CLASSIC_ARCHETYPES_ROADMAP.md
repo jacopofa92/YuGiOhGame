@@ -107,3 +107,8 @@ non una ragione sufficiente per potenziare il deck avversario: prima si deve
 distinguere tra matchup sfavorevole, carta dominante di `Custom`, limite
 dell'IA e lista avversaria realmente debole.
 
+Strumento: `tools/audit-archetipi-classici.js`. Accetta il file prodotto da
+Profilo -> Esporta salvataggio (`--salvataggio`) oppure una singola specifica
+deck JSON (`--deck-custom`). Senza uno di questi file genera la baseline
+ufficiale e lascia correttamente assente la metrica `Custom`.
+
