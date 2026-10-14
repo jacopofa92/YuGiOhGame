@@ -2245,6 +2245,17 @@
             return card;
         },
 
+        /** Manda dalla mano al Cimitero senza considerare la carta scartata. */
+        sendChosenFromHandToGraveyard(owner, handIndex) {
+            const hand = handOf(owner);
+            if (handIndex < 0 || handIndex >= hand.length) return null;
+            animaTransizioneCarta(hand[handIndex], { kind: 'hand', owner: owner }, { kind: 'graveyard', owner: owner }, 'discard');
+            const [card] = hand.splice(handIndex, 1);
+            graveyardOf(owner).push(card);
+            notifyOwnMonsterSentToGraveyard(owner, card);
+            return card;
+        },
+
         /**
          * Manda 1 carta SCELTA (per indice) dal Deck di `owner` al suo
          * Cimitero (mill) — terza sorella di discardRandomFromHand/

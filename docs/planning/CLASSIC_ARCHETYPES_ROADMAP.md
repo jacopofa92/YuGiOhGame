@@ -40,6 +40,11 @@ La Fase 1 e' completata: inventario e scelte tecniche sono documentati in
 tutte le primitive; sono stati aggiunti soltanto identita' di archetipo e nomi
 assunti, entrambi opzionali e compatibili con carte custom.
 
+La Fase 2a (primo pacchetto Occhi Rossi) ha completato dati, illustrazioni,
+effetti e test isolati per gli id 1250-1253. Stato e prossimi confronti sono in
+`docs/audits/RED_EYES_SUPPORT_AUDIT.md`; deck ed economia restano invariati
+finche' l'audit a 1/2/3 copie non e' concluso.
+
 ## Deck avversari: politica conservativa
 
 Le nuove carte non entrano automaticamente nei deck avversari. Per ogni

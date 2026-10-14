@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { destroyTargetingSpellIfItStays, attendiScelta, chooseOption, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldMonsterTarget, chooseFieldCardTarget, collectFieldTargets, chooseCardFromList, offerHandDiscardChoice, resolveSpecialSummonBanishCost, maxRitualTributeLevel, performRitualTribute, returnSpellTrapToHand, chooseUpToNFromList } = window.CardEffectsShared;
+    const { destroyTargetingSpellIfItStays, attendiScelta, chooseOption, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldMonsterTarget, chooseFieldCardTarget, collectFieldTargets, chooseCardFromHand, chooseCardFromList, offerHandDiscardChoice, resolveSpecialSummonBanishCost, maxRitualTributeLevel, performRitualTribute, returnSpellTrapToHand, chooseUpToNFromList, equipToChosenTarget, equippedTarget, cardHasArchetype } = window.CardEffectsShared;
 
     // ================================================================
     // 1001-1008 — Il ciclo di Mostri Spirito di Legacy of Darkness (LOD),
@@ -3673,6 +3673,159 @@
     // può riferirsi anche a una di quelle) — non tocca né sovrascrive MAI
     // una carta già registrata sopra.
     // ================================================================
+    // Supporti moderni Occhi Rossi. Restano fuori dai deck avversari finche'
+    // l'audit del pacchetto non dimostra dove siano davvero necessari.
+    const isRedEyesMonster = (card) => card && card.type === 'monster' && cardHasArchetype(card, 'red-eyes');
+    const isRedEyesCard = (card) => card && cardHasArchetype(card, 'red-eyes');
+    const blackStoneKey = (owner) => `black-stone-of-legend:${owner}`;
+
+    CardEffects.register(1250, {
+        archetypes: ['red-eyes'],
+        canActivate(ctx) {
+            const deck = Tavolo.mazzo(ctx.owner);
+            return ctx.zone === 'monster' && !ctx.hasUsedOncePerTurn(blackStoneKey(ctx.owner))
+                && Array.isArray(deck) && deck.some((c) => isRedEyesMonster(c) && (c.level || 0) <= 7 && c.id !== 1250);
+        },
+        activate(ctx) {
+            const slot = ctx.field(ctx.owner)[ctx.index];
+            if (!slot || slot.card.uid !== ctx.card.uid) return;
+            const deck = Tavolo.mazzo(ctx.owner);
+            if (!Array.isArray(deck) || !deck.some((c) => isRedEyesMonster(c) && (c.level || 0) <= 7 && c.id !== 1250)) return;
+            ctx.field(ctx.owner)[ctx.index] = null;
+            ctx.graveyard(ctx.owner).push(ctx.card);
+            DuelEngine.notifySacrificedForTribute(ctx.owner, ctx.card);
+            ctx.markUsedOncePerTurn(blackStoneKey(ctx.owner));
+            searchDeckWithChoice(ctx, (c) => isRedEyesMonster(c) && (c.level || 0) <= 7 && c.id !== 1250, {
+                title: 'La Pietra Nera della Leggenda',
+                text: 'Scegli quale mostro Occhi Rossi Evocare Specialmente dal Deck.',
+                pickForBot: (cards) => cards.reduce((best, c) => !best || c.attack > best.attack ? c : best, null)
+            }, (chosen) => {
+                const free = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (free === -1) { ctx.graveyard(ctx.owner).push(chosen); return; }
+                ctx.specialSummon(ctx.owner, chosen, free, 'attack', 'deck');
+                ctx.log(`${ctx.card.name} Evoca Specialmente ${chosen.name} dal Deck!`);
+            });
+        },
+        canActivateFromGraveyardMainPhase(ctx) {
+            return !ctx.hasUsedOncePerTurn(blackStoneKey(ctx.owner))
+                && ctx.graveyard(ctx.owner).some((c) => c.uid !== ctx.card.uid && isRedEyesMonster(c) && (c.level || 0) <= 7 && c.id !== 1250);
+        },
+        activateFromGraveyardMainPhase(ctx) {
+            const opened = searchGraveyardWithChoice(ctx, ctx.owner,
+                (c) => c.uid !== ctx.card.uid && isRedEyesMonster(c) && (c.level || 0) <= 7 && c.id !== 1250,
+                { title: 'La Pietra Nera della Leggenda', text: 'Scegli quale mostro Occhi Rossi mischiare nel Deck.' },
+                (chosen) => {
+                    const grave = ctx.graveyard(ctx.owner);
+                    const selfIndex = grave.findIndex((c) => c.uid === ctx.card.uid);
+                    if (selfIndex === -1 || !ctx.shuffleIntoDeck(ctx.owner, [chosen])) { grave.push(chosen); return; }
+                    const [stone] = grave.splice(selfIndex, 1);
+                    ctx.hand(ctx.owner).push(stone);
+                    ctx.log(`${chosen.name} torna nel Deck e ${stone.name} torna in mano!`);
+                });
+            if (opened) ctx.markUsedOncePerTurn(blackStoneKey(ctx.owner));
+        }
+    });
+
+    CardEffects.register(1251, {
+        archetypes: ['red-eyes'],
+        canActivate(ctx) {
+            const deck = Tavolo.mazzo(ctx.owner);
+            if (ctx.hasUsedOncePerTurn(`red-eyes-insight:${ctx.owner}`) || !Array.isArray(deck)) return false;
+            const hasCost = ctx.hand(ctx.owner).some((c) => c.uid !== ctx.card.uid && isRedEyesMonster(c)) || deck.some(isRedEyesMonster);
+            return hasCost && deck.some((c) => c.id !== 1251 && (c.type === 'spell' || c.type === 'trap') && isRedEyesCard(c));
+        },
+        activate(ctx) {
+            const deck = Tavolo.mazzo(ctx.owner);
+            const inHand = ctx.hand(ctx.owner).some((c) => c.uid !== ctx.card.uid && isRedEyesMonster(c));
+            const inDeck = Array.isArray(deck) && deck.some(isRedEyesMonster);
+            const afterCost = (sent) => {
+                if (!sent) return;
+                ctx.markUsedOncePerTurn(`red-eyes-insight:${ctx.owner}`);
+                searchDeckWithChoice(ctx, (c) => c.id !== 1251 && (c.type === 'spell' || c.type === 'trap') && isRedEyesCard(c), {
+                    title: 'Intuito Occhi Rossi', text: 'Scegli quale Magia/Trappola Occhi Rossi aggiungere alla mano.'
+                }, (chosen) => {
+                    ctx.hand(ctx.owner).push(chosen);
+                    ctx.log(`${sent.name} va al Cimitero: ${chosen.name} viene aggiunta alla mano!`);
+                });
+            };
+            const send = (zone) => {
+                if (zone === 'hand') {
+                    chooseCardFromHand(ctx, {
+                        filter: (c) => c.uid !== ctx.card.uid && isRedEyesMonster(c),
+                        title: 'Intuito Occhi Rossi', text: 'Scegli quale mostro Occhi Rossi mandare dalla mano al Cimitero.'
+                    }, (card, index) => afterCost(ctx.sendChosenFromHandToGraveyard(ctx.owner, index)));
+                    return;
+                }
+                searchDeckWithChoice(ctx, isRedEyesMonster, {
+                    title: 'Intuito Occhi Rossi', text: 'Scegli quale mostro Occhi Rossi mandare dal Deck al Cimitero.'
+                }, (card) => {
+                    ctx.graveyard(ctx.owner).push(card);
+                    DuelEngine.notifyOwnMonsterSentToGraveyard(ctx.owner, card);
+                    afterCost(card);
+                });
+            };
+            if (inHand && inDeck) {
+                chooseOption(ctx, {
+                    title: 'Intuito Occhi Rossi', text: 'Da dove vuoi mandare il mostro al Cimitero?',
+                    options: [{ value: 'deck', label: 'Dal Deck' }, { value: 'hand', label: 'Dalla mano' }],
+                    pickForBot: () => 'deck'
+                }, send);
+            } else send(inHand ? 'hand' : 'deck');
+        }
+    });
+
+    CardEffects.register(1252, {
+        archetypes: ['red-eyes'],
+        canActivate(ctx) { return ctx.findEmptyMonsterSlot(ctx.owner) !== -1 && ctx.graveyard(ctx.owner).some(isRedEyesMonster); },
+        activate(ctx) {
+            searchGraveyardWithChoice(ctx, ctx.owner, isRedEyesMonster, {
+                title: 'Spirito Occhi Rossi', text: 'Scegli quale mostro Occhi Rossi Evocare Specialmente.'
+            }, (chosen) => {
+                const free = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (free === -1) { ctx.graveyard(ctx.owner).push(chosen); return; }
+                ctx.specialSummon(ctx.owner, chosen, free, 'attack', 'graveyard');
+                ctx.log(`${chosen.name} ritorna dal Cimitero!`);
+            });
+        }
+    });
+
+    const searchBlackMetal = (ctx) => searchDeckWithChoice(ctx, (c) => c.id !== 1253 && isRedEyesCard(c), {
+        title: 'Drago Metallo Nero', text: 'Scegli quale carta Occhi Rossi aggiungere alla mano.'
+    }, (chosen) => {
+        ctx.hand(ctx.owner).push(chosen);
+        ctx.log(`${ctx.card.name} cerca ${chosen.name} dal Deck!`);
+    });
+    CardEffects.register(1253, {
+        archetypes: ['red-eyes'],
+        continuous: true,
+        isEquip: true,
+        canActivate(ctx) {
+            if (ctx.zone !== 'hand' && ctx.zone !== 'monster') return false;
+            if (ctx.zone === 'monster' && DuelEngine.findFreeSTSlot(ctx.owner) === -1) return false;
+            return ctx.field(ctx.owner).some((s) => s && !s.isFaceDown && s.card.uid !== ctx.card.uid && isRedEyesMonster(s.card));
+        },
+        activate(ctx) {
+            if (ctx.zone === 'monster') {
+                const slot = ctx.field(ctx.owner)[ctx.index];
+                const free = DuelEngine.findFreeSTSlot(ctx.owner);
+                if (!slot || slot.card.uid !== ctx.card.uid || free === -1) return;
+                ctx.field(ctx.owner)[ctx.index] = null;
+                ctx.stField(ctx.owner)[free] = { card: ctx.card, isFaceDown: false, setOnTurn: gameState.turn };
+                ctx.index = free;
+            }
+            equipToChosenTarget(ctx, isRedEyesMonster);
+        },
+        static(ctx) {
+            if (!ctx.card.equippedToOwner) return;
+            const target = equippedTarget(ctx);
+            const bonus = gameState.atkDefBonus[target.uid] || { atk: 0, def: 0 };
+            gameState.atkDefBonus[target.uid] = { atk: bonus.atk + 600, def: bonus.def };
+        },
+        onDestroy: searchBlackMetal,
+        onSacrificedForTribute: searchBlackMetal,
+        onSentToGraveyardFromField: searchBlackMetal
+    });
+
     (function registerLibraryEffects() {
         if (typeof cardDatabase === 'undefined' || !Array.isArray(cardDatabase)) return;
 

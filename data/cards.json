@@ -13671,6 +13671,54 @@
     "artOnly": true
   },
   {
+    "id": 1250,
+    "origin": "yu-gi-oh",
+    "name": "La Pietra Nera della Leggenda",
+    "type": "monster",
+    "level": 1,
+    "race": "Drago",
+    "attribute": "OSCURITÀ",
+    "attack": 0,
+    "defense": 0,
+    "archetypes": ["red-eyes"],
+    "effect": "Puoi offrire come Tributo questa carta; Evoca Specialmente dal tuo Deck 1 mostro \"Occhi Rossi\" di Livello 7 o inferiore, eccetto \"Pulcino B. Occhi Rossi\". Se questa carta è nel tuo Cimitero: puoi scegliere come bersaglio 1 mostro \"Occhi Rossi\" di Livello 7 o inferiore nel tuo Cimitero, eccetto \"Pulcino B. Occhi Rossi\"; mischialo nel Deck e, se lo fai, aggiungi questa carta alla tua mano. Puoi utilizzare solo 1 effetto di \"La Pietra Nera della Leggenda\" per turno, e solo una volta in quel turno.",
+    "artOnly": true
+  },
+  {
+    "id": 1251,
+    "origin": "yu-gi-oh",
+    "name": "Intuito Occhi Rossi",
+    "type": "spell",
+    "subtype": "normal",
+    "archetypes": ["red-eyes"],
+    "effect": "Manda 1 mostro \"Occhi Rossi\" dalla tua mano o Deck al Cimitero; aggiungi dal tuo Deck alla tua mano 1 Magia/Trappola \"Occhi Rossi\", eccetto \"Intuito Occhi Rossi\". Puoi attivare solo 1 \"Intuito Occhi Rossi\" per turno.",
+    "artOnly": true
+  },
+  {
+    "id": 1252,
+    "origin": "yu-gi-oh",
+    "name": "Spirito Occhi Rossi",
+    "type": "trap",
+    "subtype": "normal",
+    "archetypes": ["red-eyes"],
+    "effect": "Scegli come bersaglio 1 mostro \"Occhi Rossi\" nel tuo Cimitero; Evocalo Specialmente.",
+    "artOnly": true
+  },
+  {
+    "id": 1253,
+    "origin": "yu-gi-oh",
+    "name": "Drago Metallo Nero",
+    "type": "monster",
+    "level": 1,
+    "race": "Drago",
+    "attribute": "OSCURITÀ",
+    "attack": 600,
+    "defense": 600,
+    "archetypes": ["red-eyes"],
+    "effect": "Puoi scegliere come bersaglio 1 mostro \"Occhi Rossi\" che controlli; equipaggia questo mostro dalla tua mano o Terreno a quel bersaglio. Esso guadagna 600 ATK. Se questa carta viene mandata dal Terreno al Cimitero: puoi aggiungere 1 carta \"Occhi Rossi\" dal tuo Deck alla tua mano.",
+    "artOnly": true
+  },
+  {
     "id": 1200,
     "origin": "ww1",
     "fazione": "italiana",
