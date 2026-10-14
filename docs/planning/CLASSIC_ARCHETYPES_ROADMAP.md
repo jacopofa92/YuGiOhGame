@@ -66,6 +66,12 @@ pacchetto completo leggero al 39,6%, contro baseline coeva 38,4%; la variante
 con 2 Luce Autentica arriva al 48,8%. Nessuna carta e' ancora entrata nei deck
 avversari: la sola candidata Kaiba Hard attende il benchmark `Custom`.
 
+La Fase 5 Toon e' iniziata mantenendo la deroga anime gia' adottata. Il primo
+pacchetto aggiunge Regno Toon, Segnalibro Toon e Signora Arpia Toon; effetti,
+immagini, compatibilita' col vecchio Mondo e test isolati sono completi.
+Starter e deck Pegasus restano invariati fino all'audit 1/2/3 documentato in
+`docs/audits/TOON_SUPPORT_AUDIT.md`.
+
 ## Deck avversari: politica conservativa
 
 Le nuove carte non entrano automaticamente nei deck avversari. Per ogni

@@ -13868,6 +13868,46 @@
     "artOnly": true
   },
   {
+    "id": 1266,
+    "origin": "yu-gi-oh",
+    "name": "Regno Toon",
+    "type": "spell",
+    "subtype": "field",
+    "archetypes": ["toon"],
+    "treatedAsNames": ["Mondo dei Toon"],
+    "effect": "Quando questa carta viene attivata: bandisci le prime 3 carte del tuo Deck. Il nome di questa carta diventa \"Mondo dei Toon\" mentre è nella Zona Terreno. Il tuo avversario non può scegliere come bersaglio i mostri Toon che controlli con gli effetti delle carte. Se uno o più mostri Toon che controlli stanno per essere distrutti in battaglia o dall'effetto di una carta, puoi bandire la prima carta del tuo Deck per ognuno di quei mostri, invece.",
+    "legacyOfficialEffect": "Quando questa carta viene attivata: bandisci 3 carte dalla cima del tuo Deck, coperte. Il nome di questa carta diventa \"Mondo Toon\" mentre è nella Zona Terreno. Il tuo avversario non può scegliere come bersaglio i mostri Toon che controlli con gli effetti delle carte. Se uno o più mostri Toon che controlli stanno per essere distrutti in battaglia o dall'effetto di una carta, puoi bandire 1 carta dalla cima del tuo Deck, coperta, per ognuno di quei mostri, invece.",
+    "artOnly": true
+  },
+  {
+    "id": 1267,
+    "origin": "yu-gi-oh",
+    "name": "Segnalibro Toon",
+    "type": "spell",
+    "subtype": "normal",
+    "archetypes": ["toon"],
+    "mentionsNames": ["Mondo dei Toon"],
+    "effect": "Aggiungi dal tuo Deck alla tua mano 1 \"Mondo dei Toon\", oppure 1 carta che cita specificamente \"Mondo dei Toon\" nel suo testo, eccetto \"Segnalibro Toon\". Se un \"Mondo dei Toon\" che controlli sta per essere distrutto dall'effetto di una carta, puoi invece bandire questa carta dal tuo Cimitero. Puoi attivare solo 1 \"Segnalibro Toon\" per turno.",
+    "legacyOfficialEffect": "Aggiungi 1 \"Mondo Toon\", oppure 1 carta che indica specificamente la carta \"Mondo Toon\" nel suo testo, dal tuo Deck alla tua mano, eccetto \"Segnalibro Toon\". Se uno o più \"Mondo Toon\" che controlli stanno per essere distrutti dall'effetto di una carta, puoi invece bandire questa carta dal tuo Cimitero. Puoi attivare solo 1 \"Segnalibro Toon\" per turno.",
+    "artOnly": true
+  },
+  {
+    "id": 1268,
+    "origin": "yu-gi-oh",
+    "name": "Signora Arpia Toon",
+    "type": "monster",
+    "level": 4,
+    "race": "Bestia Alata",
+    "attribute": "VENTO",
+    "attack": 1300,
+    "defense": 1400,
+    "archetypes": ["toon", "harpie"],
+    "mentionsNames": ["Mondo dei Toon"],
+    "effect": "Se controlli \"Mondo dei Toon\": puoi Evocare Specialmente questa carta dalla tua mano, poi, se controlli un altro mostro Toon, puoi distruggere 1 Magia/Trappola controllata dal tuo avversario. Puoi utilizzare questo effetto di \"Signora Arpia Toon\" una sola volta per turno. Finché controlli \"Mondo dei Toon\", questa carta può attaccare direttamente e nel turno in cui viene Evocata.",
+    "legacyOfficialEffect": "Non può attaccare nel turno in cui viene Evocata. Se controlli \"Mondo Toon\": puoi Evocare Specialmente questa carta dalla tua mano, poi, se controlli un altro mostro Toon, puoi distruggere 1 Magia/Trappola controllata dal tuo avversario. Puoi utilizzare questo effetto di \"Signora Arpia Toon\" una sola volta per turno. Mentre controlli \"Mondo Toon\" e il tuo avversario non controlla mostri Toon, questa carta può attaccare direttamente.",
+    "artOnly": true
+  },
+  {
     "id": 1200,
     "origin": "ww1",
     "fazione": "italiana",

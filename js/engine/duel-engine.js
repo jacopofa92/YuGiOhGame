@@ -721,17 +721,52 @@
      * perché deve coprire allo stesso modo distruzione da effetto e da
      * battaglia; le carte custom possono aderire con `isToon: true`.
      */
+    function activeToonWorldSlot(owner) {
+        const fieldSpell = fieldSpellOf(owner);
+        if (fieldSpell && !fieldSpell.isFaceDown && fieldSpell.card.id === 1266) return fieldSpell;
+        return stFieldOf(owner).find((slot) => slot && !slot.isFaceDown && slot.card.id === 487) || null;
+    }
+
+    function hasActiveToonWorld(owner) {
+        return !!activeToonWorldSlot(owner);
+    }
+
+    function tryProtectToonWorldWithBookmark(owner, worldCard) {
+        if (!worldCard || (worldCard.id !== 487 && worldCard.id !== 1266)) return false;
+        const grave = graveyardOf(owner);
+        const index = grave.findIndex((card) => card.id === 1267);
+        if (index === -1) return false;
+        const [bookmark] = grave.splice(index, 1);
+        ACTIONS.banish(owner, bookmark);
+        addToLog(`🔖 Segnalibro Toon viene bandito e protegge ${worldCard.name}!`);
+        return true;
+    }
+
     function tryProtectToonWithWorld(owner, card) {
         if (!card) return false;
         const def = getDefinition(card.id);
         const isToon = !!(def && def.isToon) || /Toon/i.test(card.name || '');
         if (!isToon) return false;
-        const world = stFieldOf(owner).find((slot) => slot && !slot.isFaceDown && slot.card.id === 487);
+        const world = activeToonWorldSlot(owner);
         const lpKey = Tavolo.chiave(owner, 'LP');
         const key = `toon-world-protection:${owner}`;
         const worldBlocked = world && ((gameState.blockedCardUids && gameState.blockedCardUids.has(world.card.uid))
             || (gameState.blockedCardUidsThisTurn && gameState.blockedCardUidsThisTurn.has(world.card.uid)));
-        if (!world || worldBlocked || areSpellsNegatedFor(owner) || gameState[lpKey] < 500
+        if (!world || worldBlocked || areSpellsNegatedFor(owner)) return false;
+        // Regno Toon conserva la propria protezione ufficiale: per ogni
+        // distruzione bandisce la prima carta del Deck. La carta bandita e'
+        // pubblica nel modello corrente (il motore non possiede una zona
+        // bandita coperta), ma costo e frequenza restano fedeli.
+        if (world.card.id === 1266) {
+            const deck = Tavolo.mazzo(owner);
+            if (!Array.isArray(deck) || deck.length === 0) return false;
+            const protectedWith = deck.pop();
+            ACTIONS.banish(owner, protectedWith);
+            gameState[Tavolo.chiave(owner, 'DeckCount')] = deck.length;
+            addToLog(`🏰 Regno Toon protegge ${card.name} bandendo la prima carta del Deck!`);
+            return true;
+        }
+        if (gameState[lpKey] < 500
             || (gameState.usedOncePerTurnEffect && gameState.usedOncePerTurnEffect[key])) return false;
         gameState.usedOncePerTurnEffect = gameState.usedOncePerTurnEffect || {};
         gameState.usedOncePerTurnEffect[key] = true;
@@ -934,6 +969,7 @@
             const slot = field[index];
             if (!slot) return;
             const destroyerOwner = (this && this.owner) || null;
+            if (this && this.card && tryProtectToonWorldWithBookmark(owner, slot.card)) return;
             // Effetto SOSTITUTIVO (es. Trappola Fasulla, id 600): "quando
             // l'AVVERSARIO attiverebbe un effetto che distruggerebbe 1+
             // Trappole che controlli: distruggi questa carta al loro
@@ -1093,6 +1129,7 @@
             const slot = gameState[key];
             if (!slot) return false;
             const card = slot.card;
+            if (this && this.card && tryProtectToonWorldWithBookmark(owner, card)) return false;
             // def.indestructibleByEffectOncePerTurn (Il Sigillo di Orichalcos
             // id 469: "una volta per turno, questa carta non può essere
             // distrutta da effetti carta"): la prima distruzione del turno
@@ -6269,6 +6306,7 @@
         redirectToBanishIfFlagged: redirectToBanishIfFlagged,
         tryRedirectUnionDestroy: tryRedirectUnionDestroy,
         tryProtectToonWithWorld: tryProtectToonWithWorld,
+        hasActiveToonWorld: hasActiveToonWorld,
         hasUnionProtector: hasUnionProtector,
         getDamageStepBonus: getDamageStepBonus,
         runBeforeDamageCalculation: runBeforeDamageCalculation,

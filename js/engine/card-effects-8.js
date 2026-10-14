@@ -4575,6 +4575,83 @@
         }
     });
 
+    // ================================================================
+    // Supporti moderni Toon — primo pacchetto. Conservano la mediazione
+    // anime del progetto: con un Mondo attivo i Toon attaccano subito.
+    // ================================================================
+    CardEffects.register(1266, {
+        archetypes: ['toon'],
+        treatedAsNames: ['Mondo dei Toon'],
+        canActivate(ctx) {
+            const deck = Tavolo.mazzo(ctx.owner);
+            return Array.isArray(deck) && deck.length >= 3;
+        },
+        activate(ctx) {
+            const deck = Tavolo.mazzo(ctx.owner) || [];
+            const banished = [];
+            for (let i = 0; i < 3 && deck.length; i++) banished.push(deck.pop());
+            banished.forEach((card) => ctx.banish(ctx.owner, card));
+            gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = deck.length;
+            ctx.log('🏰 Regno Toon bandisce le prime 3 carte del Deck e apre le porte del regno!');
+        },
+        static(ctx) {
+            ctx.field(ctx.owner).forEach((slot) => {
+                if (!slot || slot.isFaceDown || !cardHasArchetype(slot.card, 'toon')) return;
+                gameState.directAttackAllowedUids[slot.card.uid] = true;
+                gameState.cannotBeTargetedByOpponentEffectsUids[slot.card.uid] = ctx.owner;
+            });
+        }
+    });
+
+    const bookmarkCandidate = (card) => card && card.id !== 1267
+        && (card.id === 487 || card.id === 1266 || cardMentionsName(card, 'Mondo dei Toon'));
+    CardEffects.register(1267, {
+        archetypes: ['toon'],
+        mentionsNames: ['Mondo dei Toon'],
+        canActivate(ctx) {
+            return !ctx.hasUsedOncePerTurn(`toon-bookmark:${ctx.owner}`)
+                && (Tavolo.mazzo(ctx.owner) || []).some(bookmarkCandidate);
+        },
+        activate(ctx) {
+            ctx.markUsedOncePerTurn(`toon-bookmark:${ctx.owner}`);
+            searchDeckWithChoice(ctx, bookmarkCandidate, {
+                title: 'Segnalibro Toon', text: 'Scegli Mondo dei Toon o una carta che lo cita.',
+                pickForBot: (cards) => cards.find((card) => card.id === 1266)
+                    || cards.find((card) => card.id === 487) || cards[0]
+            }, (chosen) => ctx.hand(ctx.owner).push(chosen));
+        }
+    });
+
+    CardEffects.register(1268, {
+        archetypes: ['toon', 'harpie'],
+        isToon: true,
+        mentionsNames: ['Mondo dei Toon'],
+        canSpecialSummonFromHand(ctx) {
+            return DuelEngine.hasActiveToonWorld(ctx.owner)
+                && !ctx.hasUsedOncePerTurn(`toon-harpie-summon:${ctx.owner}`);
+        },
+        paySpecialSummonCost(ctx) {
+            ctx.markUsedOncePerTurn(`toon-harpie-summon:${ctx.owner}`);
+            return true;
+        },
+        onSpecialSummon(ctx) {
+            const hasOtherToon = ctx.field(ctx.owner).some((slot) => slot && slot.card.uid !== ctx.card.uid
+                && cardHasArchetype(slot.card, 'toon'));
+            const targets = ctx.stField(ctx.opponent).map((slot, index) => slot ? { card: slot.card, index } : null).filter(Boolean);
+            if (!hasOtherToon || targets.length === 0) return;
+            chooseCardFromList(ctx, targets.map((entry) => entry.card), {
+                title: 'Signora Arpia Toon', text: 'Scegli la Magia/Trappola avversaria da distruggere.',
+                pickForBot: (cards) => cards[0]
+            }, (chosen) => {
+                const entry = targets.find((target) => target.card.uid === chosen.uid);
+                if (entry && ctx.stField(ctx.opponent)[entry.index]) ctx.destroySpellTrap(ctx.opponent, entry.index);
+            });
+        },
+        mustTargetFilterIfPresent(card, owner) {
+            return DuelEngine.hasActiveToonWorld(owner) && cardHasArchetype(card, 'toon');
+        }
+    });
+
     (function registerLibraryEffects() {
         if (typeof cardDatabase === 'undefined' || !Array.isArray(cardDatabase)) return;
 
