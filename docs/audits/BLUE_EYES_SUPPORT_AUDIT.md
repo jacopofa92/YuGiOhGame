@@ -31,7 +31,33 @@ id esistenti.
 
 ## Prossimo checkpoint
 
-Misurare Melodia, Alternativo e Luce Autentica a 1/2/3 copie sul deck Kaiba
-Difficile invariato. Soltanto dopo si valutera' il secondo pacchetto con
-Fusione Definitiva e un singolo boss, mantenendo separati l'effetto della
-lista e quello dell'IA.
+L'audit riproducibile `tools/audit-supporti-occhi-blu.js` ha eseguito 50 semi
+contro ciascuno dei cinque avversari Hard Yami Yugi, Joey, Pegasus, Mako e
+Bakura: 250 duelli per variante, 3.500 complessivi, senza errori di carta,
+invarianti violate o partite non concluse. Dati completi in
+`reports/archetypes/BLUE_EYES_SUPPORT_1_2_3.json`.
+
+| Variante | Vittorie Kaiba | Turni medi | Carta vista |
+|---|---:|---:|---:|
+| baseline | 40,0% | 15,51 | - |
+| Melodia 1 / 2 / 3 | 33,2% / 37,2% / 34,4% | 14,74 / 15,20 / 15,28 | 37,2% / 50,8% / 67,2% |
+| Alternativo 1 / 2 / 3 | 31,2% / 33,2% / 29,2% | 14,79 / 15,19 / 15,23 | 6,0% / 8,4% / 12,4% |
+| Luce Autentica 1 / 2 / 3 | 44,0% / 49,6% / 49,6% | 14,48 / 14,38 / 15,11 | 37,6% / 52,8% / 68,4% |
+| pacchetto leggero 1+1+1 | 40,8% | 15,23 | 31,2% / 5,2% / 36,0% |
+| pacchetto doppio 2+2+2 | 44,0% | 14,21 | 57,2% / 18,4% / 55,6% |
+| consistenza 2+1+1 | 43,6% | 14,78 | 50,8% / 6,8% / 33,6% |
+| alternativo 2+2+1 | 44,4% | 14,65 | 53,6% / 20,4% / 37,2% |
+
+Melodia e Alternativo isolati non sono potenziamenti automatici: sostituire
+carte autonome con pezzi sinergici riduce il risultato, e l'Alternativo arriva
+effettivamente in partita molto meno spesso delle altre due carte. Luce
+Autentica e' il supporto piu' incisivo, ma il terzo esemplare non aumenta il
+win rate rispetto al secondo. Il pacchetto completo resta controllato: la
+composizione migliore provata raggiunge 44,4%, appena +4,4 punti sulla
+baseline e senza stalli.
+
+Decisione provvisoria: nessun deck avversario viene ancora modificato. Limiti
+giocatore consigliati per la futura economia: Melodia 2, Alternativo 2, Luce
+Autentica 2. Il secondo pacchetto con Fusione Definitiva e un singolo boss va
+implementato e misurato separatamente prima di valutare un eventuale piccolo
+intervento sul solo Kaiba Difficile.

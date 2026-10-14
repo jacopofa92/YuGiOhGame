@@ -55,8 +55,11 @@ La Fase 3 (Mago Nero) e' completa nei due pacchetti e nell'audit 1/2/3; la
 composizione candidata per Yami Yugi Difficile resta sospesa fino al benchmark
 informativo `Custom`. Il primo pacchetto della Fase 4 (Drago Bianco) contiene
 Melodia, Drago Bianco Alternativo e Luce Autentica: dati, immagini, effetti e
-test isolati sono completi. Stato tecnico e checkpoint in
-`docs/audits/BLUE_EYES_SUPPORT_AUDIT.md`; deck ed economia restano invariati.
+test isolati sono completi. Anche l'audit 1/2/3 (3.500 duelli) e' concluso:
+Luce Autentica e' la carta piu' positiva, mentre il pacchetto migliore resta
+moderato al 44,4% contro baseline 40,0%. Stato tecnico e dati in
+`docs/audits/BLUE_EYES_SUPPORT_AUDIT.md`; deck ed economia restano invariati
+in attesa del secondo pacchetto.
 
 ## Deck avversari: politica conservativa
 
