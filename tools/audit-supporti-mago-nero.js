@@ -7,13 +7,15 @@ const vm = require('vm');
 const { giocaPartita } = require('./duello-senza-testa.js');
 
 const ROOT = path.join(__dirname, '..');
-const SUPPORTI = [1254, 1255, 1256];
+const SUPPORTI_MAIN = [1254, 1255, 1256, 1257, 1258, 1259];
+const SUPPORTI_EXTRA = [1260];
+const SUPPORTI = SUPPORTI_MAIN.concat(SUPPORTI_EXTRA);
 const AVVERSARI = ['joey', 'kaiba', 'pegasus', 'mako', 'bakura'];
 // Tagli progressivi fra i corpi meno sinergici del mazzo. Non si toccano
 // Mago Nero, Maga Oscura, le Magie che li citano, Fusioni/Rituali, Slifer
 // o le difese firma: il confronto misura i supporti, non lo smantellamento
 // del nucleo di Yami Yugi.
-const TAGLI = [261, 712, 532, 533, 22, 115, 85, 112, 391];
+const TAGLI = [261, 712, 532, 533, 22, 115, 85, 112, 391, 109, 194, 13];
 
 function arg(name, fallback) {
     const index = process.argv.indexOf('--' + name);
@@ -25,7 +27,7 @@ function yamiYugiHard() {
     return JSON.parse(vm.runInNewContext(`${source}\nJSON.stringify(getCharacterDeck('yamiYugi', 'hard'));`, {}));
 }
 
-function sostituisci(base, additions) {
+function sostituisci(base, additions, extraAdditions) {
     const deck = JSON.parse(JSON.stringify(base));
     additions.forEach((id, index) => {
         const cut = TAGLI[index];
@@ -37,21 +39,39 @@ function sostituisci(base, additions) {
         if (found) found.qty++;
         else deck.main.push({ id, qty: 1 });
     });
+    (extraAdditions || []).forEach((id) => {
+        const found = deck.extra.find((e) => e.id === id);
+        if (found) found.qty++;
+        else deck.extra.push({ id, qty: 1 });
+    });
     return deck;
 }
 
 function varianti(base) {
-    const rows = [{ nome: 'baseline', copie: 0, carte: [], deck: base }];
-    SUPPORTI.forEach((id) => {
+    const rows = [{ nome: 'baseline', copie: 0, carte: [], extra: [], deck: base }];
+    SUPPORTI_MAIN.forEach((id) => {
         for (let copie = 1; copie <= 3; copie++) {
             const cards = Array(copie).fill(id);
-            rows.push({ nome: `${id}x${copie}`, copie, carte: cards, deck: sostituisci(base, cards) });
+            rows.push({ nome: `${id}x${copie}`, copie, carte: cards, extra: [], deck: sostituisci(base, cards) });
         }
     });
-    for (let copie = 1; copie <= 3; copie++) {
-        const cards = SUPPORTI.flatMap((id) => Array(copie).fill(id));
-        rows.push({ nome: `pacchettox${copie}`, copie, carte: cards, deck: sostituisci(base, cards) });
-    }
+    SUPPORTI_EXTRA.forEach((id) => {
+        for (let copie = 1; copie <= 3; copie++) {
+            const extra = Array(copie).fill(id);
+            rows.push({ nome: `${id}x${copie}`, copie, carte: [], extra, deck: sostituisci(base, [], extra) });
+        }
+    });
+    const composizioni = [
+        { nome: 'pacchetto-leggero', main: SUPPORTI_MAIN.slice(), extra: [1260] },
+        { nome: 'pacchetto-mirato', main: [1254, 1254, 1255, 1256, 1257, 1258, 1258, 1259], extra: [1260] },
+        { nome: 'pacchetto-doppio', main: SUPPORTI_MAIN.flatMap((id) => [id, id]), extra: [1260] },
+        { nome: 'pacchetto-ia-equilibrato', main: [1254, 1254, 1255, 1256, 1256, 1259], extra: [1260] },
+        { nome: 'pacchetto-ia-spinto', main: [1254, 1254, 1254, 1255, 1256, 1256, 1259], extra: [1260] }
+    ];
+    composizioni.forEach((v) => rows.push({
+        nome: v.nome, copie: null, carte: v.main, extra: v.extra,
+        deck: sostituisci(base, v.main, v.extra)
+    }));
     return rows;
 }
 
@@ -62,8 +82,10 @@ async function main() {
     const games = Math.max(1, Number(arg('partite', '50')) || 50);
     const seed = Number(arg('seme', '143000')) || 143000;
     const output = arg('output', 'reports/archetypes/DARK_MAGICIAN_SUPPORT_1_2_3.json');
+    const only = arg('solo', '').split(',').map((x) => x.trim()).filter(Boolean);
     const results = [];
-    for (const variant of varianti(yamiYugiHard())) {
+    const selectedVariants = varianti(yamiYugiHard()).filter((variant) => only.length === 0 || only.includes(variant.nome));
+    for (const variant of selectedVariants) {
         const outcomes = [];
         for (let opponentIndex = 0; opponentIndex < AVVERSARI.length; opponentIndex++) {
             for (let i = 0; i < games; i++) {
@@ -80,7 +102,7 @@ async function main() {
         }
         const wins = outcomes.filter((r) => r.esito === true).length;
         const row = {
-            variante: variant.nome, copie: variant.copie, carteAggiunte: variant.carte,
+            variante: variant.nome, copie: variant.copie, carteAggiunte: variant.carte, extraAggiunte: variant.extra,
             partite: outcomes.length, vittoriePct: pct(wins, outcomes.length),
             turniMedi: average(outcomes.map((r) => r.turno || 0)),
             nonFinite: outcomes.filter((r) => r.esito !== true && r.esito !== false).length,
@@ -92,7 +114,7 @@ async function main() {
     }
     const report = {
         generatoIl: new Date().toISOString(),
-        metodo: 'Yami Yugi Hard IA contro cinque deck Hard; stessi semi; supporti sostituiscono carte non centrali',
+        metodo: 'Yami Yugi Hard IA contro cinque deck Hard; stessi semi; supporti Main sostituiscono carte non centrali; boss aggiunto all Extra Deck',
         gamesPerOpponent: games, seed, opponents: AVVERSARI, supportIds: SUPPORTI, results
     };
     const destination = path.resolve(ROOT, output);

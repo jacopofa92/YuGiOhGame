@@ -46,46 +46,56 @@ rinumerare gli id esistenti.
   riordinarle manualmente richiederebbe un nuovo picker ordinabile e viene
   rinviata alla fase di rifinitura UI, senza alterare quali carte si vedono o
   quale carta si può aggiungere.
-- Starter, Structure, deck avversari, limiti copie e fonti economiche restano
-  invariati fino all'audit comparativo 1/2/3 copie.
-
-## Prossimo checkpoint
+- Starter, Structure, limiti copie e fonti economiche restano invariati fino
+  alla fase economica comune.
 
 ## Audit 1/2/3 copie
 
 Eseguito con `tools/audit-supporti-mago-nero.js`: 50 semi contro ciascuno dei
 cinque avversari Hard Joey, Kaiba, Pegasus, Mako e Bakura, quindi 250 duelli
-per variante e 3.250 complessivi. Ogni variante usa Yami Yugi Hard come base
-e sostituisce carte non centrali senza toccare Mago Nero, Maga Oscura,
-Fusioni/Rituali, Slifer o le carte dedicate già presenti. Dati grezzi:
-`reports/archetypes/DARK_MAGICIAN_SUPPORT_1_2_3.json`.
+per variante. Il report completo contiene 25 varianti e 6.250 duelli; le due
+composizioni IA finali aggiungono altri 500 duelli. Ogni variante usa Yami
+Yugi Hard come base e sostituisce carte non centrali senza toccare Mago Nero,
+Maga Oscura, Fusioni/Rituali, Slifer o le carte dedicate già presenti. Dati:
+`reports/archetypes/DARK_MAGICIAN_SUPPORT_1_2_3.json` e
+`reports/archetypes/DARK_MAGICIAN_SUPPORT_IA_CURATED.json`.
 
 | Variante | Vittorie Yami Yugi | Turni medi |
 |---|---:|---:|
-| baseline | 48,4% | 17,06 |
-| Bastone 1 / 2 / 3 | 42,4% / 44,0% / 44,8% | 16,30 / 15,72 / 16,48 |
-| Cerchio 1 / 2 / 3 | 40,0% / 39,6% / 32,8% | 16,79 / 15,77 / 17,42 |
-| Anima 1 / 2 / 3 | 40,0% / 40,4% / 37,2% | 16,55 / 15,95 / 17,15 |
-| pacchetto 1 / 2 / 3 | 38,0% / 39,6% / 32,0% | 17,28 / 15,49 / 15,12 |
+| baseline | 41,2% | 16,95 |
+| Bastone 1 / 2 / 3 | 46,4% / 49,6% / 50,4% | 16,57 / 16,78 / 16,66 |
+| Cerchio 1 / 2 / 3 | 42,0% / 42,8% / 37,2% | 15,92 / 16,51 / 16,55 |
+| Anima 1 / 2 / 3 | 42,8% / 46,4% / 43,2% | 16,33 / 16,25 / 16,62 |
+| Salvezza 1 / 2 / 3 | 40,0% / 42,4% / 37,2% | 16,32 / 16,19 / 16,99 |
+| Servitore 1 / 2 / 3 | 40,4% / 38,0% / 35,6% | 15,89 / 15,93 / 16,48 |
+| Segreti 1 / 2 / 3 | 42,0% / 42,4% / 40,0% | 16,36 / 16,25 / 17,10 |
+| Boss Extra Deck 1 / 2 / 3 | 41,6% / 42,4% / 41,6% | 16,70 / 16,61 / 16,96 |
+| pacchetto leggero / mirato / doppio | 39,2% / 36,8% / 30,0% | 16,50 / 14,76 / 14,32 |
+| pacchetto IA equilibrato | 47,6% | 15,98 |
+| pacchetto IA spinto | 42,4% | 15,22 |
 
-Le carte vengono realmente raggiunte: con tre copie il tasso di osservazione
-è 73,2% per Bastone, 63,6% per Cerchio e 73,6% per Anima; nel pacchetto da
-tre sale rispettivamente a 67,2%, 69,6% e 79,6%. Il calo non è quindi dovuto
-a carte mai pescate, ma al costo di togliere nove carte autonome per una
-linea che dispone ancora di un solo Mago Nero canonico.
+Triplicare o raddoppiare tutto è nettamente controproducente: troppe carte di
+setup sottraggono corpi autonomi a una lista con un solo Mago Nero canonico.
+La composizione selettiva funziona invece: 2 Bastoni, 1 Cerchio, 2 Anime,
+1 Segreti e 1 boss nell'Extra Deck salgono dal 41,2% al 47,6%. Portare
+Bastone a 3 riduce di nuovo il risultato al 42,4%, nonostante Bastone isolato
+sia la carta più positiva: le sinergie non vanno lette come somma lineare.
 
-Decisione: nessuna modifica ai deck Yami Yugi Facile/Medio/Difficile. Limite
-provvisorio consigliato per il giocatore: 2 copie per ciascuna carta, per
-ridurre le mani ridondanti e conservarne la rarità. Il limite non viene
-ancora scritto nei dati: ottenibilità e limiti entrano insieme nella fase
-economica. Il deck personale Custom resta una metrica separata del più ampio
-`tools/audit-archetipi-classici.js`; non guida questo confronto, che deve
-isolare il nucleo Mago Nero.
+Limiti provvisori consigliati per il giocatore: Bastone 2, Cerchio 2, Anima
+2, Salvezza 1, Servitore 1, Segreti 2, I Maghi Neri 1. Sono limiti di
+prudenza e rarità, non ancora scritti nei dati: verranno applicati insieme
+all'ottenibilità nella fase economica.
+
+Facile e Medio restano invariati. La sola composizione candidata per Yami
+Yugi Difficile è il pacchetto IA equilibrato sopra; prima della promozione
+definitiva va confrontato anche col deck personale `Custom`. Il relativo
+strumento esiste (`tools/audit-archetipi-classici.js`), ma il salvataggio con
+la lista Custom non è presente nel repository e quindi la metrica resta
+correttamente separata e non inventata.
 
 ## Prossimo checkpoint
 
-Ripetere il confronto sul pacchetto completo con una composizione realistica:
-le sette carte non possono essere tutte triplicate senza smontare il nucleo
-anime di Yami Yugi. L'audit separerà quindi le singole copie 1/2/3 da alcuni
-pacchetti curati, mantenendo invariati Mago Nero, Maga Oscura, Slifer,
-Fusioni/Rituali e carte firma.
+Acquisire un export del salvataggio che contenga il deck `Custom`; eseguire
+il benchmark informativo; soltanto dopo decidere se il pacchetto IA
+equilibrato entra davvero in Yami Yugi Difficile. Economia e missioni restano
+una fase successiva comune a tutti gli archetipi.

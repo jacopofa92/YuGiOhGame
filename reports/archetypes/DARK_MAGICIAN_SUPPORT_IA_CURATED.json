@@ -1,0 +1,81 @@
+{
+  "generatoIl": "2026-10-14T15:50:44.804Z",
+  "metodo": "Yami Yugi Hard IA contro cinque deck Hard; stessi semi; supporti Main sostituiscono carte non centrali; boss aggiunto all Extra Deck",
+  "gamesPerOpponent": 50,
+  "seed": 143000,
+  "opponents": [
+    "joey",
+    "kaiba",
+    "pegasus",
+    "mako",
+    "bakura"
+  ],
+  "supportIds": [
+    1254,
+    1255,
+    1256,
+    1257,
+    1258,
+    1259,
+    1260
+  ],
+  "results": [
+    {
+      "variante": "pacchetto-ia-equilibrato",
+      "copie": null,
+      "carteAggiunte": [
+        1254,
+        1254,
+        1255,
+        1256,
+        1256,
+        1259
+      ],
+      "extraAggiunte": [
+        1260
+      ],
+      "partite": 250,
+      "vittoriePct": 47.6,
+      "turniMedi": 15.98,
+      "nonFinite": 0,
+      "vistePct": {
+        "1254": 62.4,
+        "1255": 33.6,
+        "1256": 67.6,
+        "1257": 0,
+        "1258": 0,
+        "1259": 18.4,
+        "1260": 18.4
+      }
+    },
+    {
+      "variante": "pacchetto-ia-spinto",
+      "copie": null,
+      "carteAggiunte": [
+        1254,
+        1254,
+        1254,
+        1255,
+        1256,
+        1256,
+        1259
+      ],
+      "extraAggiunte": [
+        1260
+      ],
+      "partite": 250,
+      "vittoriePct": 42.4,
+      "turniMedi": 15.22,
+      "nonFinite": 0,
+      "vistePct": {
+        "1254": 69.6,
+        "1255": 39.2,
+        "1256": 70.8,
+        "1257": 0,
+        "1258": 0,
+        "1259": 16.4,
+        "1260": 15.6
+      }
+    }
+  ]
+}

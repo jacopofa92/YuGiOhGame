@@ -325,12 +325,12 @@ async function giocaPartita(opz, n) {
         passi++;
         const stato = esegui('({ fine: !!gameState.gameOver || __esitoDuello !== null, turno: gameState.turn, lp: [gameState.playerLP, gameState.botLP] })');
         if (osservaBotIds.size) {
-            const presenti = esegui(`gameState.botMonsterField.concat(gameState.botSTField, gameState.botGraveyard, gameState.botBanished)
+            const presenti = esegui(`gameState.botMonsterField.concat(gameState.botSTField, [gameState.botFieldSpell], gameState.botGraveyard, gameState.botBanished)
                 .filter(Boolean).map((x) => Number((x.card || x).id))`);
             presenti.forEach((id) => { if (osservaBotIds.has(id)) osservatiBot.add(id); });
         }
         if (osservaPlayerIds.size) {
-            const presenti = esegui(`gameState.playerMonsterField.concat(gameState.playerSTField, gameState.playerGraveyard, gameState.playerBanished)
+            const presenti = esegui(`gameState.playerMonsterField.concat(gameState.playerSTField, [gameState.playerFieldSpell], gameState.playerGraveyard, gameState.playerBanished)
                 .filter(Boolean).map((x) => Number((x.card || x).id))`);
             presenti.forEach((id) => { if (osservaPlayerIds.has(id)) osservatiPlayer.add(id); });
         }
