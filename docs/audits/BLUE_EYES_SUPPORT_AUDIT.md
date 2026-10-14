@@ -73,5 +73,37 @@ baseline e senza stalli.
 Decisione provvisoria dopo il primo pacchetto: nessun deck avversario viene
 ancora modificato. Limiti giocatore consigliati per la futura economia:
 Melodia 2, Alternativo 2, Luce Autentica 2. Fusione Definitiva e il boss sono
-ora implementati, ma vanno misurati separatamente prima di valutare un
-eventuale piccolo intervento sul solo Kaiba Difficile.
+stati poi implementati e misurati separatamente nell'audit completo seguente.
+
+## Audit completo
+
+Il secondo audit aggiunge Fusione Definitiva e il boss alle prove 1/2/3 e
+confronta tre pacchetti completi. Metodo invariato: 50 semi contro ciascuno
+dei cinque avversari Hard, 250 duelli per variante, 23 varianti e 5.750
+duelli complessivi. Nessun errore carta, stallo o invariante violata. Dati:
+`reports/archetypes/BLUE_EYES_SUPPORT_COMPLETE.json`.
+
+| Variante | Vittorie Kaiba | Turni medi | Lettura |
+|---|---:|---:|---|
+| baseline coeva | 38,4% | 15,52 | ripetuta due volte: risultato identico |
+| Melodia 1 / 2 / 3 | 39,6% / 37,2% / 33,6% | 15,16 / 15,18 / 14,67 | una copia neutra, copie multiple peggiorano |
+| Alternativo 1 / 2 / 3 | 37,6% / 33,2% / 30,8% | 15,14 / 15,38 / 15,33 | troppo raro da mettere in campo da solo |
+| Luce Autentica 1 / 2 / 3 | 49,2% / 50,0% / 50,8% | 14,93 / 14,94 / 14,41 | principale fonte del guadagno |
+| Fusione Definitiva 1 / 2 / 3 | 38,0% / 35,6% / 30,0% | 15,29 / 15,47 / 15,46 | una copia situazionale; oltre diventa morta |
+| boss Extra 1 / 2 / 3 | 38,0% / 38,0% / 40,0% | 15,12 / 15,29 / 15,27 | quasi neutro senza supporto Main |
+| completo leggero 1+1+1+1, boss 1 | 39,6% | 15,40 | non altera il bilanciamento |
+| completo Luce 1+1+2+1, boss 1 | 48,8% | 14,70 | candidato massimo prudente |
+| completo doppio 2+2+2+2, boss 1 | 53,2% | 15,06 | efficace, ma troppo carico per default |
+
+La frequenza di comparsa del boss e' soltanto 1,2-1,6% nei pacchetti completi:
+non e' lui a generare il salto. Il motore vede Fusione Definitiva nel 24,4%
+del pacchetto leggero e nel 45,6% del doppio; la carta resta sana a una copia.
+Il vero moltiplicatore e' Luce Autentica, che aumenta consistenza e resilienza
+senza richiedere di sovraccaricare la lista di Fusioni.
+
+Decisione: Facile e Medio invariati; nessuna modifica automatica neppure al
+Difficile finche' manca il benchmark informativo `Custom`. Se quel confronto
+confermera' che Kaiba Hard e' troppo facile, la sola candidata e' la lista
+`completo-luce` (+10,4 punti sulla baseline coeva), non il pacchetto doppio.
+Limiti provvisori per il giocatore: Melodia 2, Alternativo 2, Luce Autentica
+2, Fusione Definitiva 1, Drago Bianco Alternativo Definitivo 1.

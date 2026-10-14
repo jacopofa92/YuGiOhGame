@@ -61,7 +61,10 @@ moderato al 44,4% contro baseline 40,0%. Stato tecnico e dati in
 `docs/audits/BLUE_EYES_SUPPORT_AUDIT.md`; deck ed economia restano invariati
 in attesa dell'audit conclusivo. Anche il secondo pacchetto, Fusione
 Definitiva e Drago Bianco Alternativo Definitivo, ha ora dati, immagini,
-effetti e test isolati completi; non e' ancora entrato in alcun deck.
+effetti e test isolati completi. L'audit conclusivo (5.750 duelli) misura il
+pacchetto completo leggero al 39,6%, contro baseline coeva 38,4%; la variante
+con 2 Luce Autentica arriva al 48,8%. Nessuna carta e' ancora entrata nei deck
+avversari: la sola candidata Kaiba Hard attende il benchmark `Custom`.
 
 ## Deck avversari: politica conservativa
 

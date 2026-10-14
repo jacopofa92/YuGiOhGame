@@ -7,7 +7,9 @@ const vm = require('vm');
 const { giocaPartita } = require('./duello-senza-testa.js');
 
 const ROOT = path.join(__dirname, '..');
-const SUPPORTI = [1261, 1262, 1263];
+const SUPPORTI_MAIN = [1261, 1262, 1263, 1264];
+const SUPPORTI_EXTRA = [1265];
+const SUPPORTI = SUPPORTI_MAIN.concat(SUPPORTI_EXTRA);
 const AVVERSARI = ['yamiYugi', 'joey', 'pegasus', 'mako', 'bakura'];
 // Si sostituiscono prima carte periferiche o ridondanti. Restano intatti i
 // tre Draghi Bianchi, il pacchetto X/Y/Z, Obelisk, Paladino/Rituale, Fusione
@@ -25,7 +27,7 @@ function kaibaHard() {
     return JSON.parse(vm.runInNewContext(`${source}\nJSON.stringify(getCharacterDeck('kaiba', 'hard'));`, {}));
 }
 
-function sostituisci(base, additions) {
+function sostituisci(base, additions, extraAdditions) {
     const deck = JSON.parse(JSON.stringify(base));
     additions.forEach((id, index) => {
         const cut = TAGLI[index];
@@ -37,23 +39,40 @@ function sostituisci(base, additions) {
         if (found) found.qty++;
         else deck.main.push({ id, qty: 1 });
     });
+    (extraAdditions || []).forEach((id) => {
+        const found = deck.extra.find((entry) => entry.id === id);
+        if (found) found.qty++;
+        else deck.extra.push({ id, qty: 1 });
+    });
     return deck;
 }
 
 function varianti(base) {
     const rows = [{ nome: 'baseline', copie: 0, carte: [], deck: base }];
-    SUPPORTI.forEach((id) => {
+    SUPPORTI_MAIN.forEach((id) => {
         for (let copie = 1; copie <= 3; copie++) {
             const cards = Array(copie).fill(id);
             rows.push({ nome: `${id}x${copie}`, copie, carte: cards, deck: sostituisci(base, cards) });
         }
     });
+    SUPPORTI_EXTRA.forEach((id) => {
+        for (let copie = 1; copie <= 3; copie++) {
+            const extra = Array(copie).fill(id);
+            rows.push({ nome: `${id}x${copie}`, copie, carte: [], extra, deck: sostituisci(base, [], extra) });
+        }
+    });
     [
-        { nome: 'pacchetto-leggero', main: [1261, 1262, 1263] },
-        { nome: 'pacchetto-doppio', main: [1261, 1261, 1262, 1262, 1263, 1263] },
-        { nome: 'pacchetto-consistenza', main: [1261, 1261, 1262, 1263] },
-        { nome: 'pacchetto-alternativo', main: [1261, 1261, 1262, 1262, 1263] }
-    ].forEach((v) => rows.push({ nome: v.nome, copie: null, carte: v.main, deck: sostituisci(base, v.main) }));
+        { nome: 'pacchetto-leggero', main: [1261, 1262, 1263], extra: [] },
+        { nome: 'pacchetto-doppio', main: [1261, 1261, 1262, 1262, 1263, 1263], extra: [] },
+        { nome: 'pacchetto-consistenza', main: [1261, 1261, 1262, 1263], extra: [] },
+        { nome: 'pacchetto-alternativo', main: [1261, 1261, 1262, 1262, 1263], extra: [] },
+        { nome: 'completo-leggero', main: [1261, 1262, 1263, 1264], extra: [1265] },
+        { nome: 'completo-luce', main: [1261, 1262, 1263, 1263, 1264], extra: [1265] },
+        { nome: 'completo-doppio', main: [1261, 1261, 1262, 1262, 1263, 1263, 1264, 1264], extra: [1265] }
+    ].forEach((v) => rows.push({
+        nome: v.nome, copie: null, carte: v.main, extra: v.extra,
+        deck: sostituisci(base, v.main, v.extra)
+    }));
     return rows;
 }
 
@@ -63,7 +82,7 @@ function average(values) { return Number((values.reduce((a, b) => a + b, 0) / va
 async function main() {
     const games = Math.max(1, Number(arg('partite', '50')) || 50);
     const seed = Number(arg('seme', '146000')) || 146000;
-    const output = arg('output', 'reports/archetypes/BLUE_EYES_SUPPORT_1_2_3.json');
+    const output = arg('output', 'reports/archetypes/BLUE_EYES_SUPPORT_COMPLETE.json');
     const only = arg('solo', '').split(',').map((x) => x.trim()).filter(Boolean);
     const selected = varianti(kaibaHard()).filter((variant) => only.length === 0 || only.includes(variant.nome));
     const results = [];
@@ -85,6 +104,7 @@ async function main() {
         const wins = outcomes.filter((r) => r.esito === true).length;
         const row = {
             variante: variant.nome, copie: variant.copie, carteAggiunte: variant.carte,
+            extraAggiunte: variant.extra || [],
             partite: outcomes.length, vittoriePct: pct(wins, outcomes.length),
             turniMedi: average(outcomes.map((r) => r.turno || 0)),
             nonFinite: outcomes.filter((r) => r.esito !== true && r.esito !== false).length,
