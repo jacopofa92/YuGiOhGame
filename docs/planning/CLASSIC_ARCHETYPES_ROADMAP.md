@@ -1,6 +1,6 @@
 # Supporti moderni per gli archetipi classici
 
-Stato: pianificazione, nessuna carta ancora approvata per l'implementazione.
+Stato: in corso sul branch `feature/supporti-archetipi-classici`.
 
 Baseline ufficiale completata il 2026-10-14: metodo e lettura in
 `docs/audits/CLASSIC_ARCHETYPES_BASELINE.md`, dati grezzi in
@@ -34,6 +34,11 @@ resta da aggiungere appena disponibile il salvataggio esportato.
    Abbandonato/Mille Occhi di Pegasus.
 6. Divinita': prima le mosse firma e Canto Antico; Soul Crossing e le forme
    aggiuntive di Ra sono feature di motore separate e arrivano per ultime.
+
+La Fase 1 e' completata: inventario e scelte tecniche sono documentati in
+`docs/audits/CLASSIC_ARCHETYPES_PRIMITIVES.md`. Il motore possedeva gia' quasi
+tutte le primitive; sono stati aggiunti soltanto identita' di archetipo e nomi
+assunti, entrambi opzionali e compatibili con carte custom.
 
 ## Deck avversari: politica conservativa
 

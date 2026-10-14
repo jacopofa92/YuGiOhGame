@@ -499,6 +499,59 @@
     }
 
     /**
+     * Identita' di archetipo condivisa per i supporti moderni.
+     *
+     * Le carte storiche del progetto non hanno tutte un campo `archetypes`:
+     * per loro manteniamo pochi fallback di compatibilita' sui nomi italiani
+     * gia' presenti. Le carte nuove e quelle custom possono invece dichiarare
+     * `archetypes: ['toon', 'blue-eyes']` nei dati oppure nella definizione
+     * dell'effetto, senza dover aggiungere il loro id a questo helper.
+     *
+     * Non va usato per Tipo/Razza/Attributo e non prova a dedurre famiglie
+     * generiche: un tag esplicito resta sempre la fonte piu' affidabile.
+     */
+    function cardHasArchetype(card, archetype) {
+        if (!card || !archetype) return false;
+        const normalize = (value) => String(value || '').trim().toLowerCase();
+        const wanted = normalize(archetype);
+        const def = window.DuelEngine && DuelEngine.getDefinition
+            ? DuelEngine.getDefinition(card.id)
+            : null;
+        const declared = []
+            .concat(Array.isArray(card.archetypes) ? card.archetypes : [])
+            .concat(def && Array.isArray(def.archetypes) ? def.archetypes : []);
+        if (declared.some((value) => normalize(value) === wanted)) return true;
+
+        const name = normalize(card.name);
+        if (wanted === 'toon') return !!(def && def.isToon) || name.includes('toon');
+        if (wanted === 'red-eyes') return name.includes('occhi rossi') || name.includes('red-eyes');
+        if (wanted === 'blue-eyes') return name.includes('occhi blu') || name.includes('blue-eyes');
+        if (wanted === 'dark-magician') {
+            return name.includes('mago nero') || name.includes('dark magician')
+                || name === 'maga oscura' || name === 'dark magician girl';
+        }
+        return false;
+    }
+
+    /**
+     * Confronta il nome stampato o uno dei nomi assunti dichiarati dalla
+     * carta/definizione. Serve per testi come "il nome di questa carta viene
+     * considerato ..." senza cambiare l'id, il nome mostrato o i salvataggi.
+     */
+    function cardHasEffectiveName(card, requestedName) {
+        if (!card || !requestedName) return false;
+        const normalize = (value) => String(value || '').trim().toLowerCase();
+        const wanted = normalize(requestedName);
+        const def = window.DuelEngine && DuelEngine.getDefinition
+            ? DuelEngine.getDefinition(card.id)
+            : null;
+        const names = [card.name]
+            .concat(Array.isArray(card.treatedAsNames) ? card.treatedAsNames : [])
+            .concat(def && Array.isArray(def.treatedAsNames) ? def.treatedAsNames : []);
+        return names.some((value) => normalize(value) === wanted);
+    }
+
+    /**
      * Trova il primo mostro scoperto idoneo sul proprio Terreno a cui
      * equipaggiare una carta — `filterFn(card)` opzionale per restrizioni
      * (es. solo Incantatore, solo LUCE). Esclude sempre i mostri che
@@ -1736,5 +1789,5 @@
         return ctx.hand(ctx.owner).filter((c) => !selfUid || c.uid !== selfUid);
     }
 
-    window.CardEffectsShared = { chooseFieldTargetsInSequence, attendiScelta, chooseOption, chooseFieldCardTargetWaiting, dichiaraBersaglioScelto, dichiaraBersaglioSceltoWaiting, otherHandCards, blockBanishFromField, isHarpieLadySupport, findEquipTarget, collectEquipTargets, equipToChosenTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchZoneWithChoice, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, chooseCardFromList, chooseUpToNFromList, destroyTargetingSpellIfItStays, victimChoosesDiscard, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost, resolveSpecialSummonTributeCost, attachUnionMonster, maxRitualTributeLevel, performRitualTribute, findPetitMothReadyForCocoonSummon, releaseRelinquishedTarget, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach, returnSpellTrapToHand };
+    window.CardEffectsShared = { chooseFieldTargetsInSequence, attendiScelta, chooseOption, chooseFieldCardTargetWaiting, dichiaraBersaglioScelto, dichiaraBersaglioSceltoWaiting, otherHandCards, blockBanishFromField, isHarpieLadySupport, cardHasArchetype, cardHasEffectiveName, findEquipTarget, collectEquipTargets, equipToChosenTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchZoneWithChoice, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, chooseCardFromList, chooseUpToNFromList, destroyTargetingSpellIfItStays, victimChoosesDiscard, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost, resolveSpecialSummonTributeCost, attachUnionMonster, maxRitualTributeLevel, performRitualTribute, findPetitMothReadyForCocoonSummon, releaseRelinquishedTarget, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach, returnSpellTrapToHand };
 })();
