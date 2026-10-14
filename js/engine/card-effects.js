@@ -552,6 +552,31 @@
     }
 
     /**
+     * Vero se il testo della carta cita esplicitamente un nome. Le carte
+     * custom possono dichiarare `mentionsNames`, così una traduzione o un
+     * testo abbreviato non rende invisibile la carta ai cercatori come
+     * Magician's Rod. Per le carte storiche resta il fallback sul testo.
+     */
+    function cardMentionsName(card, requestedName) {
+        if (!card || !requestedName) return false;
+        const normalize = (value) => String(value || '').trim().toLowerCase();
+        const wanted = normalize(requestedName);
+        const def = window.DuelEngine && DuelEngine.getDefinition
+            ? DuelEngine.getDefinition(card.id)
+            : null;
+        const declared = []
+            .concat(Array.isArray(card.mentionsNames) ? card.mentionsNames : [])
+            .concat(def && Array.isArray(def.mentionsNames) ? def.mentionsNames : []);
+        if (declared.some((value) => normalize(value) === wanted)) return true;
+        const text = normalize(card.effect);
+        if (text.includes(wanted)) return true;
+        // Il dataset è italiano, ma le custom possono conservare il nome
+        // TCG inglese nel testo pur cercando l'identità italiana.
+        if (wanted === 'mago nero') return text.includes('dark magician');
+        return false;
+    }
+
+    /**
      * Trova il primo mostro scoperto idoneo sul proprio Terreno a cui
      * equipaggiare una carta — `filterFn(card)` opzionale per restrizioni
      * (es. solo Incantatore, solo LUCE). Esclude sempre i mostri che
@@ -1789,5 +1814,5 @@
         return ctx.hand(ctx.owner).filter((c) => !selfUid || c.uid !== selfUid);
     }
 
-    window.CardEffectsShared = { chooseFieldTargetsInSequence, attendiScelta, chooseOption, chooseFieldCardTargetWaiting, dichiaraBersaglioScelto, dichiaraBersaglioSceltoWaiting, otherHandCards, blockBanishFromField, isHarpieLadySupport, cardHasArchetype, cardHasEffectiveName, findEquipTarget, collectEquipTargets, equipToChosenTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchZoneWithChoice, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, chooseCardFromList, chooseUpToNFromList, destroyTargetingSpellIfItStays, victimChoosesDiscard, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost, resolveSpecialSummonTributeCost, attachUnionMonster, maxRitualTributeLevel, performRitualTribute, findPetitMothReadyForCocoonSummon, releaseRelinquishedTarget, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach, returnSpellTrapToHand };
+    window.CardEffectsShared = { chooseFieldTargetsInSequence, attendiScelta, chooseOption, chooseFieldCardTargetWaiting, dichiaraBersaglioScelto, dichiaraBersaglioSceltoWaiting, otherHandCards, blockBanishFromField, isHarpieLadySupport, cardHasArchetype, cardHasEffectiveName, cardMentionsName, findEquipTarget, collectEquipTargets, equipToChosenTarget, riprendiDalCimitero, attachEquip, equippedTarget, searchZoneWithChoice, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldCardTarget, chooseFieldMonsterTarget, collectFieldTargets, offerHandDiscardChoice, chooseCardFromHand, chooseCardFromList, chooseUpToNFromList, destroyTargetingSpellIfItStays, victimChoosesDiscard, banishFromGraveyardWithChoice, resolveSpecialSummonBanishCost, resolveSpecialSummonTributeCost, attachUnionMonster, maxRitualTributeLevel, performRitualTribute, findPetitMothReadyForCocoonSummon, releaseRelinquishedTarget, selfFlipToFaceDownDefense, findLevel7SpellcasterTarget, grantAttackAllEnemiesOncEach, returnSpellTrapToHand };
 })();

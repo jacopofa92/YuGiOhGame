@@ -13738,6 +13738,52 @@ const cardDatabase = [
     "artOnly": true
   },
   {
+    "id": 1254,
+    "origin": "yu-gi-oh",
+    "name": "Bastone del Mago",
+    "type": "monster",
+    "level": 3,
+    "race": "Incantatore",
+    "attribute": "OSCURITÀ",
+    "attack": 1600,
+    "defense": 100,
+    "archetypes": [
+      "dark-magician"
+    ],
+    "effect": "Quando questa carta viene Evocata Normalmente: puoi aggiungere dal tuo Deck alla tua mano 1 Magia/Trappola che cita \"Mago Nero\". Durante il turno del tuo avversario, se attivi una Carta Magia/Trappola o un suo effetto mentre questa carta è nel tuo Cimitero: puoi offrire come Tributo 1 mostro Incantatore; aggiungi questa carta alla tua mano. Puoi utilizzare ogni effetto di \"Bastone del Mago\" una sola volta per turno.",
+    "artOnly": true
+  },
+  {
+    "id": 1255,
+    "origin": "yu-gi-oh",
+    "name": "Cerchio Magico Oscuro",
+    "type": "spell",
+    "subtype": "continuous",
+    "archetypes": [
+      "dark-magician"
+    ],
+    "mentionsNames": [
+      "Mago Nero"
+    ],
+    "effect": "Quando questa carta viene attivata: guarda le prime 3 carte del tuo Deck, poi puoi rivelare 1 \"Mago Nero\" o 1 Magia/Trappola che cita \"Mago Nero\" tra esse e aggiungerla alla tua mano, inoltre metti le carte rimanenti in cima al Deck in qualsiasi ordine. Se \"Mago Nero\" viene Evocato Normalmente o Specialmente sul tuo Terreno: puoi scegliere come bersaglio 1 carta controllata dal tuo avversario; bandiscila. Puoi utilizzare ogni effetto di \"Cerchio Magico Oscuro\" una sola volta per turno.",
+    "artOnly": true
+  },
+  {
+    "id": 1256,
+    "origin": "yu-gi-oh",
+    "name": "Anima Eterna",
+    "type": "trap",
+    "subtype": "continuous",
+    "archetypes": [
+      "dark-magician"
+    ],
+    "mentionsNames": [
+      "Mago Nero"
+    ],
+    "effect": "Ogni \"Mago Nero\" nella tua Zona Mostri è immune agli effetti delle carte del tuo avversario. Una volta per turno: puoi attivare 1 di questi effetti; Evoca Specialmente 1 \"Mago Nero\" dalla tua mano o Cimitero; oppure aggiungi dal tuo Deck alla tua mano 1 \"Attacco Magico Oscuro\" o \"Mille Coltelli\". Se questa carta scoperta lascia il Terreno: distruggi tutti i mostri che controlli.",
+    "artOnly": true
+  },
+  {
     "id": 1200,
     "origin": "ww1",
     "fazione": "italiana",

@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { destroyTargetingSpellIfItStays, attendiScelta, chooseOption, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldMonsterTarget, chooseFieldCardTarget, collectFieldTargets, chooseCardFromHand, chooseCardFromList, offerHandDiscardChoice, resolveSpecialSummonBanishCost, maxRitualTributeLevel, performRitualTribute, returnSpellTrapToHand, chooseUpToNFromList, equipToChosenTarget, equippedTarget, cardHasArchetype } = window.CardEffectsShared;
+    const { destroyTargetingSpellIfItStays, attendiScelta, chooseOption, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldMonsterTarget, chooseFieldCardTarget, collectFieldTargets, chooseCardFromHand, chooseCardFromList, offerHandDiscardChoice, resolveSpecialSummonBanishCost, maxRitualTributeLevel, performRitualTribute, returnSpellTrapToHand, chooseUpToNFromList, equipToChosenTarget, equippedTarget, cardHasArchetype, cardHasEffectiveName, cardMentionsName } = window.CardEffectsShared;
 
     // ================================================================
     // 1001-1008 — Il ciclo di Mostri Spirito di Legacy of Darkness (LOD),
@@ -3824,6 +3824,189 @@
         onDestroy: searchBlackMetal,
         onSacrificedForTribute: searchBlackMetal,
         onSentToGraveyardFromField: searchBlackMetal
+    });
+
+    // ================================================================
+    // Supporti moderni Mago Nero — primo pacchetto. Nessuna di queste
+    // carte entra ancora nei deck avversari: prima vengono validate in
+    // isolamento e poi misurate a 1/2/3 copie, come per Occhi Rossi.
+    // ================================================================
+    const isDarkMagician = (card) => card && card.type === 'monster'
+        && cardHasEffectiveName(card, 'Mago Nero');
+    const mentionsDarkMagician = (card) => card && cardMentionsName(card, 'Mago Nero');
+
+    CardEffects.register(1254, {
+        archetypes: ['dark-magician'],
+        onSummon(ctx) {
+            if (ctx.summonedVia !== 'normal' || ctx.hasUsedOncePerTurn(`magicians-rod-search:${ctx.owner}`)) return;
+            ctx.markUsedOncePerTurn(`magicians-rod-search:${ctx.owner}`);
+            searchDeckWithChoice(ctx,
+                (c) => (c.type === 'spell' || c.type === 'trap') && mentionsDarkMagician(c),
+                { title: 'Bastone del Mago', text: 'Scegli una Magia/Trappola che cita Mago Nero da aggiungere alla mano.' },
+                (chosen) => {
+                    ctx.hand(ctx.owner).push(chosen);
+                    ctx.log(`${ctx.card.name} aggiunge ${chosen.name} alla mano!`);
+                });
+        },
+        canActivateOnCardActivatedWhileInGraveyard(ctx) {
+            const key = `magicians-rod-grave:${ctx.owner}`;
+            return gameState.currentPlayer === ctx.opponent
+                && ctx.activatedOwner === ctx.owner
+                && ctx.activatedCard && (ctx.activatedCard.type === 'spell' || ctx.activatedCard.type === 'trap')
+                && !ctx.hasUsedOncePerTurn(key)
+                && ctx.field(ctx.owner).some((s) => s && !s.isFaceDown && s.card.race === 'Incantatore');
+        },
+        onCardActivatedWhileInGraveyard(ctx) {
+            const candidates = collectFieldTargets(ctx, {
+                owner: 'self', zone: 'monster',
+                filter: (card, owner, slot) => !slot.isFaceDown && card.race === 'Incantatore'
+            });
+            chooseFieldCardTarget(ctx, candidates, {
+                title: 'Bastone del Mago',
+                text: 'Offri come Tributo 1 Incantatore per riprendere Bastone del Mago.',
+                dichiara: false
+            }, (chosen) => {
+                const slot = ctx.field(chosen.owner)[chosen.index];
+                const grave = ctx.graveyard(ctx.owner);
+                const rodIndex = grave.findIndex((c) => c.uid === ctx.card.uid);
+                if (!slot || rodIndex === -1) return;
+                const tribute = slot.card;
+                ctx.field(chosen.owner)[chosen.index] = null;
+                ctx.graveyard(chosen.owner).push(tribute);
+                DuelEngine.notifySacrificedForTribute(chosen.owner, tribute);
+                const [rod] = grave.splice(rodIndex, 1);
+                ctx.hand(ctx.owner).push(rod);
+                ctx.markUsedOncePerTurn(`magicians-rod-grave:${ctx.owner}`);
+                ctx.log(`${tribute.name} viene offerto: ${rod.name} torna in mano!`);
+            });
+        }
+    });
+
+    const darkCircleKey = (owner, effect) => `dark-magical-circle:${effect}:${owner}`;
+    const banishCircleTarget = (ctx) => {
+        if (ctx.hasUsedOncePerTurn(darkCircleKey(ctx.owner, 'banish'))) return;
+        const candidates = collectFieldTargets(ctx, { owner: 'opponent', zone: 'both', includiCoperte: true });
+        if (candidates.length === 0) return;
+        chooseFieldCardTarget(ctx, candidates, {
+            title: 'Cerchio Magico Oscuro', text: 'Scegli 1 carta controllata dall’avversario da bandire.', dichiara: true
+        }, (chosen) => {
+            const zone = chosen.zone === 'monster' ? ctx.field(chosen.owner) : ctx.stField(chosen.owner);
+            const slot = zone[chosen.index];
+            if (!slot) return;
+            zone[chosen.index] = null;
+            ctx.banish(chosen.owner, slot.card);
+            ctx.markUsedOncePerTurn(darkCircleKey(ctx.owner, 'banish'));
+            ctx.log(`${ctx.card.name} bandisce ${slot.card.name}!`);
+        });
+    };
+    CardEffects.register(1255, {
+        archetypes: ['dark-magician'],
+        continuous: true,
+        canActivate(ctx) { return !ctx.hasUsedOncePerTurn(darkCircleKey(ctx.owner, 'look')); },
+        activate(ctx) {
+            const deck = Tavolo.mazzo(ctx.owner);
+            if (!Array.isArray(deck) || deck.length === 0) return;
+            ctx.markUsedOncePerTurn(darkCircleKey(ctx.owner, 'look'));
+            const seen = deck.splice(Math.max(0, deck.length - 3));
+            const eligible = seen.filter((c) => isDarkMagician(c)
+                || ((c.type === 'spell' || c.type === 'trap') && mentionsDarkMagician(c)));
+            const finish = (chosen) => {
+                if (chosen) {
+                    const i = seen.indexOf(chosen);
+                    if (i !== -1) seen.splice(i, 1);
+                    ctx.hand(ctx.owner).push(chosen);
+                    ctx.log(`${ctx.card.name} rivela e aggiunge ${chosen.name} alla mano!`);
+                } else ctx.log(`${ctx.card.name} guarda le prime carte del Deck senza trovarne una idonea.`);
+                // In assenza di un ordinatore dedicato, le carte non prese
+                // tornano in cima nello stesso ordine relativo: nessuna
+                // informazione viene persa e il comportamento è stabile in
+                // Multiplayer.
+                deck.push(...seen);
+                gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = deck.length;
+            };
+            if (eligible.length === 0) finish(null);
+            else chooseCardFromList(ctx, eligible, {
+                title: 'Cerchio Magico Oscuro', text: 'Scegli Mago Nero o una carta che lo cita.'
+            }, finish);
+        },
+        onAnyNormalOrFlipSummon(ctx) {
+            if (ctx.summonedVia !== 'normal' || !isDarkMagician(ctx.summonedCard)) return;
+            if (!ctx.field(ctx.owner).some((s) => s && s.card.uid === ctx.summonedCard.uid)) return;
+            banishCircleTarget(ctx);
+        },
+        onAnySpecialSummon(ctx) {
+            if (!isDarkMagician(ctx.summonedCard)) return;
+            if (!ctx.field(ctx.owner).some((s) => s && s.card.uid === ctx.summonedCard.uid)) return;
+            banishCircleTarget(ctx);
+        }
+    });
+
+    const eternalSoulLeave = (ctx) => {
+        if (ctx.card._eternalSoulLeaveResolved) return;
+        ctx.card._eternalSoulLeaveResolved = true;
+        ctx.destroyAllMonsters(ctx.owner);
+        ctx.log(`${ctx.card.name} lascia il Terreno: tutti i tuoi mostri vengono distrutti!`);
+    };
+    CardEffects.register(1256, {
+        archetypes: ['dark-magician'],
+        continuous: true,
+        canActivate(ctx) {
+            if (ctx.hasUsedOncePerTurn(`eternal-soul:${ctx.owner}`)) return false;
+            const deck = Tavolo.mazzo(ctx.owner) || [];
+            return (ctx.findEmptyMonsterSlot(ctx.owner) !== -1
+                    && (ctx.hand(ctx.owner).some(isDarkMagician) || ctx.graveyard(ctx.owner).some(isDarkMagician)))
+                || deck.some((c) => c.id === 474 || c.id === 748);
+        },
+        activate(ctx) {
+            ctx.card._eternalSoulLeaveResolved = false;
+            const deck = Tavolo.mazzo(ctx.owner) || [];
+            const canSummon = ctx.findEmptyMonsterSlot(ctx.owner) !== -1
+                && (ctx.hand(ctx.owner).some(isDarkMagician) || ctx.graveyard(ctx.owner).some(isDarkMagician));
+            const canSearch = deck.some((c) => c.id === 474 || c.id === 748);
+            const resolve = (choice) => {
+                ctx.markUsedOncePerTurn(`eternal-soul:${ctx.owner}`);
+                if (choice === 'search') {
+                    searchDeckWithChoice(ctx, (c) => c.id === 474 || c.id === 748, {
+                        title: 'Anima Eterna', text: 'Scegli Attacco Magico Oscuro o Mille Coltelli.'
+                    }, (chosen) => { ctx.hand(ctx.owner).push(chosen); });
+                    return;
+                }
+                const pool = ctx.hand(ctx.owner).filter(isDarkMagician)
+                    .concat(ctx.graveyard(ctx.owner).filter(isDarkMagician));
+                chooseCardFromList(ctx, pool, {
+                    title: 'Anima Eterna', text: 'Scegli un Mago Nero da Evocare Specialmente.'
+                }, (chosen) => {
+                    let i = ctx.hand(ctx.owner).indexOf(chosen);
+                    let from = 'hand';
+                    if (i !== -1) ctx.hand(ctx.owner).splice(i, 1);
+                    else {
+                        from = 'graveyard';
+                        i = ctx.graveyard(ctx.owner).indexOf(chosen);
+                        if (i === -1) return;
+                        ctx.graveyard(ctx.owner).splice(i, 1);
+                    }
+                    const free = ctx.findEmptyMonsterSlot(ctx.owner);
+                    if (free === -1) { (from === 'hand' ? ctx.hand(ctx.owner) : ctx.graveyard(ctx.owner)).push(chosen); return; }
+                    ctx.specialSummon(ctx.owner, chosen, free, 'attack', from);
+                });
+            };
+            if (canSummon && canSearch) chooseOption(ctx, {
+                title: 'Anima Eterna', text: 'Scegli quale effetto applicare.',
+                options: [{ value: 'summon', label: 'Evoca Mago Nero' }, { value: 'search', label: 'Cerca una Magia' }],
+                pickForBot: () => 'summon'
+            }, resolve);
+            else resolve(canSummon ? 'summon' : 'search');
+        },
+        static(ctx) {
+            ctx.field(ctx.owner).forEach((slot) => {
+                if (slot && !slot.isFaceDown && isDarkMagician(slot.card)) {
+                    gameState.unaffectedByOpponentCardEffectsUids[slot.card.uid] = ctx.owner;
+                }
+            });
+        },
+        onSentToGraveyardFromField: eternalSoulLeave,
+        onBanished: eternalSoulLeave,
+        onReturnedToHandSelf: eternalSoulLeave
     });
 
     (function registerLibraryEffects() {

@@ -698,12 +698,21 @@
     // ============================================================
     function unaffectedBySourceCard(ctx, slot) {
         if (!slot || !slot.card || slot.card.type !== 'monster') return false;
-        if (![867, 868, 869, 870].includes(slot.card.id)) return false;
         const source = ctx && ctx.card;
         // Una regola senza carta sorgente (battaglia, costo, pulizia di
         // stato) non è un "effetto di un'altra carta" e non va fermata.
         if (!source) return false;
-        return source.id !== 866 && source.uid !== slot.card.uid;
+        if ([867, 868, 869, 870].includes(slot.card.id)) {
+            return source.id !== 866 && source.uid !== slot.card.uid;
+        }
+        // Immunità condizionata dagli effetti dell'AVVERSARIO (Eternal
+        // Soul e future carte custom). La mappa conserva il controllore
+        // protetto: un proprio effetto continua quindi a poter influenzare
+        // il mostro, mentre un effetto avversario viene fermato in tutti
+        // gli helper condivisi che passano da questo checkpoint.
+        const protectedFor = gameState.unaffectedByOpponentCardEffectsUids
+            && gameState.unaffectedByOpponentCardEffectsUids[slot.card.uid];
+        return !!protectedFor && !!ctx.owner && ctx.owner !== protectedFor;
     }
 
     /**
@@ -3572,6 +3581,28 @@
                     if (window.FX) FX.playCardActivateCenterScreen(slot.card);
                     safeCallCardHandler(slot.card, 'onCardActivated', () => def.onCardActivated(reactCtx));
                 });
+                // Alcune carte dichiarano espressamente di reagire dal
+                // Cimitero (es. Magician's Rod). È un hook separato e
+                // opt-in: non rende implicitamente attivi dal Cimitero gli
+                // oltre mille onCardActivated pensati per il Terreno.
+                const graveResponder = graveyardOf(fieldOwner).find((card) => {
+                    const def = getDefinition(card.id);
+                    if (!def || typeof def.onCardActivatedWhileInGraveyard !== 'function') return false;
+                    const reactCtx = makeContext(fieldOwner, {
+                        card: card, zone: 'graveyard',
+                        activatedCard: ctx.card, activatedOwner: ctx.owner
+                    });
+                    return typeof def.canActivateOnCardActivatedWhileInGraveyard !== 'function'
+                        || def.canActivateOnCardActivatedWhileInGraveyard(reactCtx);
+                });
+                if (graveResponder) {
+                    const def = getDefinition(graveResponder.id);
+                    const reactCtx = makeContext(fieldOwner, {
+                        card: graveResponder, zone: 'graveyard',
+                        activatedCard: ctx.card, activatedOwner: ctx.owner
+                    });
+                    safeCallCardHandler(graveResponder, 'onCardActivatedWhileInGraveyard', () => def.onCardActivatedWhileInGraveyard(reactCtx));
+                }
             });
             finish();
             return;
@@ -3946,8 +3977,19 @@
         // via id 192/866): gameState.immuneToCardEffectsExceptDestinyBoardUids,
         // per uid, ricalcolato ad ogni render dentro static() — vedi il
         // commento sul campo in recomputeStaticEffects.
-        if (raceCheckSlot && !raceCheckSlot.isFaceDown && gameState.immuneToCardEffectsExceptDestinyBoardUids[raceCheckSlot.card.uid]) {
+        if (raceCheckSlot && !raceCheckSlot.isFaceDown && gameState.immuneToCardEffectsExceptDestinyBoardUids
+            && gameState.immuneToCardEffectsExceptDestinyBoardUids[raceCheckSlot.card.uid]) {
             addToLog(`🚫 ${raceCheckSlot.card.name} non è influenzata dagli effetti di altre carte!`);
+            return { allowed: false, targetOwner: currentOwner, targetIndex: currentIndex };
+        }
+
+        // Eternal Soul-style: il mostro resta influenzabile dalle carte
+        // del proprio controllore, ma non da quelle dell'avversario.
+        const immuneOwner = raceCheckSlot && gameState.unaffectedByOpponentCardEffectsUids
+            ? gameState.unaffectedByOpponentCardEffectsUids[raceCheckSlot.card.uid]
+            : null;
+        if (raceCheckSlot && !raceCheckSlot.isFaceDown && immuneOwner && sourceCtx.owner !== immuneOwner) {
+            addToLog(`🚫 ${raceCheckSlot.card.name} non è influenzata dagli effetti dell'avversario!`);
             return { allowed: false, targetOwner: currentOwner, targetIndex: currentIndex };
         }
 
@@ -5015,6 +5057,11 @@
         // condiviso, non ogni possibile effetto di massa non mirato — nessun
         // checkpoint del genere esiste in questo motore.
         gameState.immuneToCardEffectsExceptDestinyBoardUids = {};
+        // Immunità per istanza limitata agli effetti dell'avversario. Il
+        // valore è il controllore protetto, non un semplice booleano: serve
+        // a distinguere gli effetti propri da quelli avversari senza
+        // codificare i due posti nel singolo effetto carta.
+        gameState.unaffectedByOpponentCardEffectsUids = {};
         // Come def.cannotBeTargetedBySpells (fisso per DEFINIZIONE, es.
         // Guardiano Kay'est id 285) ma per-ISTANZA — nata per Il Pescatore
         // Leggendario (id 879): "finché 'Umi' è sul Terreno, non è
@@ -5313,6 +5360,20 @@
                     safeCallCardHandler(slot.card, 'onAnySpecialSummon', () => def.onAnySpecialSummon(makeContext(owner, { card: slot.card, slotIndex: index, summonedCard: summonedCard })));
                 }
             });
+            stFieldOf(owner).forEach((slot, index) => {
+                if (!slot || slot.isFaceDown) return;
+                const def = getDefinition(slot.card.id);
+                if (def && typeof def.onAnySpecialSummon === 'function') {
+                    safeCallCardHandler(slot.card, 'onAnySpecialSummon', () => def.onAnySpecialSummon(makeContext(owner, { card: slot.card, index: index, zone: 'st', summonedCard: summonedCard })));
+                }
+            });
+            const fs = fieldSpellOf(owner);
+            if (fs && !fs.isFaceDown) {
+                const fsDef = getDefinition(fs.card.id);
+                if (fsDef && typeof fsDef.onAnySpecialSummon === 'function') {
+                    safeCallCardHandler(fs.card, 'onAnySpecialSummon', () => fsDef.onAnySpecialSummon(makeContext(owner, { card: fs.card, zone: 'fieldSpell', summonedCard: summonedCard })));
+                }
+            }
         });
     }
 
