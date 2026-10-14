@@ -14,7 +14,9 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
       Primitive, Occhi Rossi, Mago Nero e Drago Bianco completati nei relativi
       audit. Toon: entrambi i pacchetti e l'audit conclusivo 1/2/3 sono
       completati; nessun deck avversario modificato in assenza del benchmark
-      `Custom`. Prossima fase della roadmap: supporti alle Divinita'.
+      `Custom`. Supporti alle Divinita': inventario preliminare completato in
+      `docs/audits/EGYPTIAN_GODS_SUPPORT_AUDIT.md`; prossimo passo sono le tre
+      primitive generiche, prima di aggiungere le nuove carte.
 
 ## Economia e acquisizione carte
 
