@@ -8,7 +8,9 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
       prima copia tramite impresa/Sfida tematica, copie successive molto rare
       e limite 1/2/3 stabilito con audit. I deck avversari restano inizialmente
       invariati; eventuali inserimenti partono dal Difficile e soltanto dopo
-      confronto riproducibile con la baseline.
+      confronto riproducibile con la baseline. Il deck personale `Custom`
+      entra nei report come benchmark aggiuntivo separato, senza guidare per
+      ora le decisioni di bilanciamento.
 
 ## Economia e acquisizione carte
 

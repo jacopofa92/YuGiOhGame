@@ -83,6 +83,27 @@ successive, probabilita' e limite massimo.
 - 50 semi per iterazione, poi almeno 250 duelli per livello prima del merge;
 - frequenza della carta firma, carte morte, turni, stalli e vittorie precoci;
 - confronto deck invariato contro deck con supporti, partendo dal Difficile;
+- benchmark aggiuntivo contro il deck personale chiamato `Custom`, considerato
+  uno dei deck giocatore piu' forti disponibili: serve a mostrare se
+  l'avversario Difficile diventa troppo facile contro una lista ottimizzata,
+  ma per ora non determina promozione, bocciatura o bilanciamento del pacchetto;
 - simulazione di farming e controllo delle carte senza fonte;
 - suite completa soltanto alla chiusura del pacchetto e prima del merge.
+
+### Benchmark informativo `Custom`
+
+Il risultato contro `Custom` viene esposto in una sezione separata del report
+e non mescolato alle medie dei deck Starter/Structure. Per ogni esecuzione si
+salvano anche nome, Main Deck, Extra Deck e impronta della lista: il deck e'
+modificabile dal giocatore e due report con liste diverse non sono direttamente
+confrontabili.
+
+La prima metrica richiesta e' la resistenza dell'avversario Difficile contro
+`Custom`; come contesto si riportano comunque Facile e Medio con gli stessi
+semi. Il report comprende almeno win rate di `Custom`, tentativi/turni medi,
+vittorie precoci, stalli e frequenza con cui l'avversario realizza la propria
+strategia. Un risultato molto favorevole a `Custom` e' un segnale diagnostico,
+non una ragione sufficiente per potenziare il deck avversario: prima si deve
+distinguere tra matchup sfavorevole, carta dominante di `Custom`, limite
+dell'IA e lista avversaria realmente debole.
 
