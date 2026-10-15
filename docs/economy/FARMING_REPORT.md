@@ -110,7 +110,7 @@ non rappresenta il calendario di un giocatore occasionale.
 
 ## Aggiornamento supporti moderni classici — 2026-10-15
 
-Le missioni degli id 1250-1273 sono deterministiche: le ore seguenti usano
+Le missioni degli id 1250-1276 sono deterministiche: le ore seguenti usano
 lo stesso riferimento di 8 minuti per vittoria e non includono sconfitte né
 il tempo necessario a completare i capitoli.
 
@@ -123,6 +123,7 @@ il tempo necessario a completare i capitoli.
 | Attacco Forza del Tuono / Strings | 40 + Slifer | 5,3 h complessive contro Strings |
 | Pugno del Fato / Kaiba | 80 + Obelisk | 10,7 h complessive contro Kaiba |
 | Canto Antico / Marik | 50 + Ra | 6,7 h complessive contro Marik |
+| Incrocio / Sfera / Fenice di Ra | 60, 75, 100 + catena delle ricompense | 8 h, 10 h, 13,3 h contro Marik |
 
 Occhi Rossi e Toon terminano nella fascia delle vecchie carte firma da 50
 vittorie. Drago Bianco e soprattutto Mago Nero sono progressioni più lunghe,
@@ -130,3 +131,9 @@ ma distribuiscono ricompense ogni 10-15 vittorie. Le mosse delle Divinità
 riusano il totale storico già necessario ai relativi Dei: le soglie non si
 sommano dopo lo sblocco. Il tempo reale sarà superiore in base al win rate a
 Difficile e andrà confrontato con telemetria o prove manuali.
+
+Le tre ricompense finali di Ra sono volutamente a una sola copia: non
+generano farming ulteriore in busta e non possono saturare il deck. La catena
+richiede prima Ra, poi Incrocio di Anime, quindi Modalità Sfera e infine
+Fenice; i contatori storici di Marik vengono riutilizzati e non ripartono da
+zero a ogni tappa.

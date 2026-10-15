@@ -1017,7 +1017,10 @@
                 const apri = () => chooseFieldCardTarget(ctx, candidati, {
                     title: passo.title,
                     text: passo.text,
-                    dichiara: true,
+                    // Costi/Tributi scelgono carte ma non le "bersagliano"
+                    // secondo le regole: il chiamante può disattivare il
+                    // checkpoint di targeting con dichiara:false.
+                    dichiara: passo.dichiara !== false,
                     totalTargetCount: totale,
                     onNegato: prossimo,
                     onCancel: apri

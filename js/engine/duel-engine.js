@@ -702,6 +702,11 @@
         // Una regola senza carta sorgente (battaglia, costo, pulizia di
         // stato) non è un "effetto di un'altra carta" e non va fermata.
         if (!source) return false;
+        // Immunità completa dagli effetti delle ALTRE carte (es. Ra -
+        // Fenice della Divinità Egizia). La propria abilità deve invece
+        // poter muovere la carta, perciò si confrontano gli uid.
+        if (getDefinition(slot.card.id)?.unaffectedByOtherCardEffects
+            && source.uid !== slot.card.uid) return true;
         if ([867, 868, 869, 870].includes(slot.card.id)) {
             return source.id !== 866 && source.uid !== slot.card.uid;
         }
@@ -783,6 +788,33 @@
          * sotto controllo temporaneo (vedi ACTIONS.takeControl più sotto),
          * altrimenti di owner stesso come sempre.
          */
+        /**
+         * Manda un mostro dal Terreno al Cimitero senza distruggerlo.
+         * Serve agli effetti che usano espressamente "manda" (non
+         * "distruggi") e mantiene proprietario, animazione e notifiche.
+         */
+        sendMonsterToGraveyard(owner, index) {
+            const field = fieldOf(owner);
+            const slot = field[index];
+            if (!slot) return null;
+            if (unaffectedBySourceCard(this, slot)) {
+                addToLog(`🛡️ ${slot.card.name} non è influenzata dall'effetto di ${this.card ? this.card.name : 'un’altra carta'}!`);
+                return null;
+            }
+            const card = slot.card;
+            const proprietario = slot.originalOwner || owner;
+            if (window.FX && typeof FX.playCardToGraveyard === 'function') {
+                FX.playCardToGraveyard(card, owner, index, proprietario);
+            }
+            field[index] = null;
+            graveyardOf(proprietario).push(card);
+            redirectToBanishIfFlagged(proprietario, card);
+            if (graveyardOf(proprietario).includes(card)) {
+                notifyOwnMonsterSentToGraveyard(proprietario, card);
+            }
+            return card;
+        },
+
         destroyMonster(owner, index) {
             const field = fieldOf(owner);
             const slot = field[index];
@@ -1678,7 +1710,7 @@
             // Cimitero invece di lasciarla nel nulla" del controllo qui
             // sopra, per lo stesso motivo (nessun chiamante controlla il
             // valore di ritorno).
-            if (getDefinition(card.id)?.cannotSpecialSummon) {
+            if (getDefinition(card.id)?.cannotSpecialSummon && !(visualOptions && visualOptions.ignoreSummoningConditions)) {
                 addToLog(`🚫 ${card.name} non può essere Special Summonata.`);
                 graveyardOf(owner).push(card);
                 return false;
@@ -4026,6 +4058,12 @@
             addToLog(`🚫 ${raceCheckSlot.card.name} non può essere scelta come bersaglio da un effetto Carta!`);
             return { allowed: false, targetOwner: currentOwner, targetIndex: currentIndex };
         }
+        if (raceCheckSlot && !raceCheckSlot.isFaceDown
+            && getDefinition(raceCheckSlot.card.id)?.unaffectedByOtherCardEffects
+            && sourceCtx.card && sourceCtx.card.uid !== raceCheckSlot.card.uid) {
+            addToLog(`🛡️ ${raceCheckSlot.card.name} è immune agli effetti delle altre carte!`);
+            return { allowed: false, targetOwner: currentOwner, targetIndex: currentIndex };
+        }
 
         // 1.55) Come sopra, ma PER-ISTANZA invece che per-definizione (es. la
         // Spirit Message Special Summonata da Santuario Oscuro, id 867-870
@@ -5518,6 +5556,22 @@
                 safeCallCardHandler(slot.card, 'onOwnMonsterDestroyedPassive', () => sdef.onOwnMonsterDestroyedPassive(makeContext(owner, { card: slot.card, slotIndex: index, destroyedCard: sentCard, destroyedInBattle: !!viaBattleCard, destroyedByCard: viaBattleCard || null })));
             }
         });
+        // Trigger che deve essere già nel Cimitero quando un altro mostro
+        // vi arriva (Ra - Fenice della Divinità Egizia). Copia difensiva:
+        // l'handler può rimuovere se stesso dal Cimitero evocandosi.
+        graveyardOf(owner).slice().forEach((card) => {
+            if (card === sentCard) return;
+            const def = getDefinition(card.id);
+            if (def && typeof def.onOwnMonsterSentToGraveyardWhileInGraveyard === 'function') {
+                safeCallCardHandler(card, 'onOwnMonsterSentToGraveyardWhileInGraveyard', () => {
+                    def.onOwnMonsterSentToGraveyardWhileInGraveyard(makeContext(owner, {
+                        card: card,
+                        sentCard: sentCard,
+                        unrespondable: !!def.graveyardTriggerCannotBeRespondedTo
+                    }));
+                });
+            }
+        });
     }
 
     /**
@@ -6051,6 +6105,15 @@
             : zone === 'fieldSpell' ? (fieldSpellOf(owner) && fieldSpellOf(owner).card)
             : stFieldOf(owner)[index] && stFieldOf(owner)[index].card;
         if (!card) return false;
+        // Incrocio di Anime: fino alla fine del turno successivo il suo
+        // controllore può attivare una sola carta/effetto per turno; gli
+        // effetti dei mostri Divinità-Bestia non contano.
+        const soulLimit = gameState.soulCrossingActivationLimitFor
+            && gameState.soulCrossingActivationLimitFor[owner];
+        const isDivineBeastEffect = zone === 'monster'
+            && (card.race === 'Essere Divino' || card.id === 30 || card.id === 31 || card.id === 472 || card.id === 1275 || card.id === 1276);
+        if (soulLimit && gameState.turn <= soulLimit.expiresAfterTurn
+            && soulLimit.usedOnTurn === gameState.turn && !isDivineBeastEffect) return false;
         // Xing Zhen Hu (id 708): blocca l'attivazione di CARTE SPECIFICHE
         // (per uid), non di un'intera zona/proprietario come gli altri
         // divieti qui sotto — controllo per uid invece che per owner/tipo.
@@ -6156,6 +6219,13 @@
             : zone === 'fieldSpell' ? fieldSpellOf(owner).card
             : stFieldOf(owner)[index].card;
         const def = getDefinition(card.id);
+        const soulLimit = gameState.soulCrossingActivationLimitFor
+            && gameState.soulCrossingActivationLimitFor[owner];
+        const isDivineBeastEffect = zone === 'monster'
+            && (card.race === 'Essere Divino' || card.id === 30 || card.id === 31 || card.id === 472 || card.id === 1275 || card.id === 1276);
+        if (soulLimit && gameState.turn <= soulLimit.expiresAfterTurn && !isDivineBeastEffect) {
+            soulLimit.usedOnTurn = gameState.turn;
+        }
         if (window.DuelDialogues) DuelDialogues.say(owner, 'activate');
 
         addToLog(`✨ ${owner === 'player' ? 'Hai' : 'Il bot ha'} attivato ${zone === 'monster' ? `l'effetto di ${card.name}` : card.name}!`);

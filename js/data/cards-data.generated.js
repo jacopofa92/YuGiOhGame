@@ -14084,6 +14084,56 @@ const cardDatabase = [
     "artOnly": true
   },
   {
+    "id": 1274,
+    "origin": "yu-gi-oh",
+    "name": "Incrocio di Anime",
+    "limit": 1,
+    "type": "spell",
+    "subtype": "quick-play",
+    "mentionsNames": [
+      "Slifer il Drago del Cielo",
+      "Obelisk il Tormentatore",
+      "Il Drago Alato di Ra"
+    ],
+    "effect": "Durante la Main Phase: immediatamente dopo che questo effetto si è risolto, Evoca tramite Tributo 1 mostro Divinità-Bestia. Quando lo fai, puoi offrire come Tributo uno o più mostri controllati dal tuo avversario, anche se non li controlli, ma, se Evochi tramite Tributo in questo modo, applica questo effetto. ● Fino alla fine del prossimo turno dopo che questa carta si è risolta, puoi attivare solo 1 carta o effetto per turno, non contando gli effetti dei mostri Divinità-Bestia. Puoi attivare solo 1 \"Incrocio di Anime\" per turno.",
+    "artOnly": true
+  },
+  {
+    "id": 1275,
+    "origin": "yu-gi-oh",
+    "name": "Drago Alato di Ra - Modalità Sfera",
+    "limit": 1,
+    "type": "monster",
+    "level": 10,
+    "race": "Essere Divino",
+    "attribute": "DIVINO",
+    "attack": 0,
+    "defense": 0,
+    "mentionsNames": [
+      "Il Drago Alato di Ra"
+    ],
+    "effect": "Non può essere Evocato Specialmente. Richiede 3 Tributi dal Terreno di qualsiasi giocatore per essere Evocato Normalmente su quel Terreno (non può essere Posizionato Normalmente), poi passa sotto il controllo del proprietario di questa carta durante la End Phase del prossimo turno. Non può attaccare. Il tuo avversario non può scegliere questa carta come bersaglio per attacchi o con gli effetti delle carte. Puoi offrire come Tributo questa carta; Evoca Specialmente 1 \"Il Drago Alato di Ra\" dalla tua mano o Deck, ignorando le sue condizioni di Evocazione e, se lo fai, i suoi ATK/DEF diventano 4000.",
+    "artOnly": true
+  },
+  {
+    "id": 1276,
+    "origin": "yu-gi-oh",
+    "name": "Drago Alato di Ra - Fenice della Divinità Egizia",
+    "limit": 1,
+    "type": "monster",
+    "level": 10,
+    "race": "Essere Divino",
+    "attribute": "DIVINO",
+    "attack": 4000,
+    "defense": 4000,
+    "mentionsNames": [
+      "Il Drago Alato di Ra",
+      "Drago Alato di Ra - Modalità Sfera"
+    ],
+    "effect": "Non può essere Evocato Normalmente/Posizionato. Deve essere Evocato Specialmente dal suo stesso effetto. Se \"Il Drago Alato di Ra\" viene mandato dal Terreno al tuo Cimitero mentre questa carta è nel tuo Cimitero: Evoca Specialmente questa carta. Le carte e gli effetti non possono essere attivati in risposta all'attivazione di questo effetto. Immune agli effetti delle altre carte. Puoi pagare 1000 LP; manda al Cimitero 1 mostro sul Terreno. Una volta per turno, durante la End Phase: manda questa carta al Cimitero e, se lo fai, Evoca Specialmente 1 \"Drago Alato di Ra - Modalità Sfera\" dalla tua mano, Deck o Cimitero, ignorando le sue condizioni di Evocazione.",
+    "artOnly": true
+  },
+  {
     "id": 1200,
     "origin": "ww1",
     "fazione": "italiana",

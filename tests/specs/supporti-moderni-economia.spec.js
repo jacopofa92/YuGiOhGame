@@ -13,12 +13,12 @@ module.exports = {
             await page.waitForFunction(() => !!(window.CardAcquisition && window.CardRarity && window.SaveManager));
             const result = await page.evaluate(() => {
                 SaveManager.createNew('Audit supporti moderni');
-                const ids = Array.from({ length: 24 }, (_, index) => 1250 + index);
+                const ids = Array.from({ length: 27 }, (_, index) => 1250 + index);
                 const lockedBefore = ids.every((id) => !CardAcquisition.isSignatureUnlocked(id));
                 const expectedRarity = {
                     super: [1250, 1252, 1253, 1254, 1259, 1261, 1268],
                     ultra: [1251, 1255, 1256, 1257, 1258, 1263, 1264, 1266, 1267, 1269],
-                    legendary: [1260, 1262, 1265, 1270, 1271, 1272, 1273]
+                    legendary: [1260, 1262, 1265, 1270, 1271, 1272, 1273, 1274, 1275, 1276]
                 };
                 const wrongRarities = Object.entries(expectedRarity).flatMap(([rarity, list]) =>
                     list.filter((id) => CardRarity.of(id) !== rarity).map((id) => ({ id, rarity: CardRarity.of(id), expected: rarity })));
@@ -33,7 +33,7 @@ module.exports = {
                     claimed: {},
                     completedChapters: { regno: true, battlecity1: true, battlecity2: true },
                     completedChaptersByDifficulty: {}, unlockedPacks: {}, exodiaPity: 0,
-                    counters: { sliferStringsHard: 40, raMarikHard: 50 }
+                    counters: { sliferStringsHard: 40, raMarikHard: 100 }
                 });
                 SaveManager.addOwnedCards(30, 1);
                 SaveManager.addOwnedCards(31, 1);

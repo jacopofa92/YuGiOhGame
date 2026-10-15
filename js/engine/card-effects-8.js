@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { destroyTargetingSpellIfItStays, attendiScelta, chooseOption, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldMonsterTarget, chooseFieldCardTarget, collectFieldTargets, chooseCardFromHand, chooseCardFromList, offerHandDiscardChoice, resolveSpecialSummonBanishCost, maxRitualTributeLevel, performRitualTribute, returnSpellTrapToHand, chooseUpToNFromList, equipToChosenTarget, equippedTarget, cardHasArchetype, cardHasEffectiveName, cardMentionsName } = window.CardEffectsShared;
+    const { destroyTargetingSpellIfItStays, attendiScelta, chooseOption, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldMonsterTarget, chooseFieldCardTarget, chooseFieldTargetsInSequence, collectFieldTargets, chooseCardFromHand, chooseCardFromList, offerHandDiscardChoice, resolveSpecialSummonBanishCost, maxRitualTributeLevel, performRitualTribute, returnSpellTrapToHand, chooseUpToNFromList, equipToChosenTarget, equippedTarget, cardHasArchetype, cardHasEffectiveName, cardMentionsName } = window.CardEffectsShared;
 
     // ================================================================
     // 1001-1008 — Il ciclo di Mostri Spirito di Legacy of Darkness (LOD),
@@ -4964,6 +4964,273 @@
             gameState.ancientChantRaBoostTurnFor = gameState.ancientChantRaBoostTurnFor || { player: null, bot: null };
             gameState.ancientChantRaBoostTurnFor[ctx.owner] = gameState.turn;
             ctx.log(`${ctx.card.name} viene bandito: Ra riceverà la forza originale dei suoi Tributi in questo turno!`);
+        }
+    });
+
+    const isDivineBeast = (card) => card && (card.id === 30 || card.id === 31 || card.id === 472
+        || card.race === 'Essere Divino');
+
+    const tributableFieldTargets = (ctx, side) => collectFieldTargets(ctx, {
+        owner: side,
+        zone: 'monster',
+        includiCoperte: true,
+        filter: (card, owner, slot) => {
+            const def = DuelEngine.getDefinition(card.id);
+            return !(!slot.isFaceDown && def && def.cannotBeTributed)
+                && !(gameState.cannotBeTributedUids && gameState.cannotBeTributedUids.has(card.uid));
+        }
+    });
+
+    /** Risolve una Evocazione Tributo prodotta da un effetto/procedura speciale. */
+    const resolveCrossFieldTributeSummon = (ctx, card, chosen, destinationOwner, options) => {
+        const hand = ctx.hand(ctx.owner);
+        const handIndex = hand.findIndex((entry) => entry.uid === card.uid);
+        if (handIndex === -1 || chosen.length !== 3) return false;
+        const destinationField = ctx.field(destinationOwner);
+        const willFreeDestinationSlot = chosen.some((entry) => entry.owner === destinationOwner);
+        if (destinationField.every(Boolean) && !willFreeDestinationSlot) return false;
+
+        card._tributedCardIds = chosen.map((entry) => entry.card.id);
+        card._tributedOriginalStats = chosen.map((entry) => {
+            const original = cardDatabase.find((candidate) => candidate.id === entry.card.id) || entry.card;
+            return { id: entry.card.id, attack: original.attack || 0, defense: original.defense || 0 };
+        });
+        card._tributeCountForSummon = chosen.length;
+
+        // Indici decrescenti per lato: nessuno splice, ma evita che futuri
+        // campi compatti possano invalidare una seconda scelta.
+        chosen.slice().sort((a, b) => b.index - a.index).forEach((entry) => {
+            const field = ctx.field(entry.owner);
+            const slot = field[entry.index];
+            if (!slot || slot.card.uid !== entry.card.uid) return;
+            const graveOwner = slot.originalOwner || entry.owner;
+            field[entry.index] = null;
+            ctx.graveyard(graveOwner).push(slot.card);
+            DuelEngine.notifyOwnMonsterSentToGraveyard(graveOwner, slot.card);
+            DuelEngine.notifySacrificedForTribute(graveOwner, slot.card, card);
+        });
+
+        const slotIndex = ctx.findEmptyMonsterSlot(destinationOwner);
+        if (slotIndex === -1) return false;
+        hand.splice(handIndex, 1);
+        const slot = {
+            card: card,
+            position: 'attack',
+            isFaceDown: false,
+            hasAttacked: false,
+            canChangePosition: false,
+            summonedOnTurn: gameState.turn
+        };
+        if (destinationOwner !== ctx.owner) slot.originalOwner = ctx.owner;
+        destinationField[slotIndex] = slot;
+        if (options && options.returnAtNextEndPhase) card._sphereReturnAfterTurn = gameState.turn + 1;
+        consumeNormalSummonQuota(ctx.owner, card);
+        ctx.log(`🔺 Evocazione Tributo: ${card.name} entra sul Terreno ${destinationOwner === ctx.owner ? 'del suo proprietario' : 'avversario'}!`);
+        const summonCtx = DuelEngine.makeContext(destinationOwner, {
+            summonedCard: card,
+            summonedSlotIndex: slotIndex,
+            summonedPosition: 'attack',
+            summonedByOwner: ctx.owner
+        });
+        DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_NORMAL_SUMMON, summonCtx, () => updateUI());
+        return true;
+    };
+
+    // Incrocio di Anime — selezione esplicita del Dio e dei tre Tributi,
+    // anche dal Terreno avversario. Il vincolo sulle attivazioni nasce
+    // soltanto se almeno un mostro avversario viene davvero usato.
+    CardEffects.register(1274, {
+        canActivate(ctx) {
+            if (gameState.phase !== 'main1' && gameState.phase !== 'main2') return false;
+            if (gameState.currentPlayer !== ctx.owner || gameState.tributesBlocked) return false;
+            if (ctx.hasUsedOncePerTurn(`soul-crossing:${ctx.owner}`)) return false;
+            if (!canUseNormalSummonQuota(ctx.owner, { type: 'monster', level: 10 })) return false;
+            const gods = ctx.hand(ctx.owner).filter(isDivineBeast);
+            return gods.length > 0
+                && tributableFieldTargets(ctx, 'both').length >= 3
+                && (ctx.findEmptyMonsterSlot(ctx.owner) !== -1 || tributableFieldTargets(ctx, 'self').length > 0);
+        },
+        activate(ctx) {
+            const gods = ctx.hand(ctx.owner).filter(isDivineBeast);
+            const fine = attendiScelta(ctx);
+            chooseCardFromList(ctx, gods, {
+                title: ctx.card.name,
+                text: 'Scegli la Divinità-Bestia da Evocare tramite Tributo.',
+                pickForBot: (cards) => cards.slice().sort((a, b) => (b.attack || 0) - (a.attack || 0))[0]
+            }, (god) => {
+                const candidates = (selected) => {
+                    const all = tributableFieldTargets(ctx, 'both');
+                    // Con il proprio Terreno pieno almeno un Tributo deve
+                    // provenire da lì, altrimenti non esisterebbe una zona
+                    // in cui far entrare la Divinità dopo la risoluzione.
+                    if (ctx.findEmptyMonsterSlot(ctx.owner) === -1 && selected.length === 2
+                        && !selected.some((entry) => entry.owner === ctx.owner)) {
+                        return all.filter((entry) => entry.owner === ctx.owner);
+                    }
+                    return all.sort((a, b) => {
+                        if (a.owner !== b.owner) return a.owner === ctx.opponent ? -1 : 1;
+                        return a.owner === ctx.opponent
+                            ? DuelEngine.getEffectiveAtk(b.card) - DuelEngine.getEffectiveAtk(a.card)
+                            : DuelEngine.getEffectiveAtk(a.card) - DuelEngine.getEffectiveAtk(b.card);
+                    });
+                };
+                const steps = [1, 2, 3].map((number) => ({
+                    candidati: candidates,
+                    title: ctx.card.name,
+                    text: `Scegli il Tributo ${number}/3.`,
+                    dichiara: false
+                }));
+                chooseFieldTargetsInSequence(ctx, steps, (chosen) => {
+                    try {
+                        if (chosen.length !== 3) return;
+                        const usedOpponent = chosen.some((entry) => entry.owner === ctx.opponent);
+                        if (!resolveCrossFieldTributeSummon(ctx, god, chosen, ctx.owner)) return;
+                        ctx.markUsedOncePerTurn(`soul-crossing:${ctx.owner}`);
+                        if (usedOpponent) {
+                            gameState.soulCrossingActivationLimitFor = gameState.soulCrossingActivationLimitFor || {};
+                            gameState.soulCrossingActivationLimitFor[ctx.owner] = {
+                                expiresAfterTurn: gameState.turn + 1,
+                                // L'attivazione di Incrocio stessa è già
+                                // l'unica attivazione concessa in questo turno.
+                                usedOnTurn: gameState.turn
+                            };
+                        }
+                    } finally { fine(); }
+                });
+            });
+        }
+    });
+
+    CardEffects.register(1275, {
+        cannotSpecialSummon: true,
+        cannotBeSet: true,
+        beginCustomNormalSummon(ctx) {
+            if (gameState.tributesBlocked) {
+                ctx.log(`❌ Maschera della Restrizione impedisce di Evocare ${ctx.card.name}.`);
+                return;
+            }
+            if (!canUseNormalSummonQuota(ctx.owner, ctx.card)) return;
+            const own = tributableFieldTargets(ctx, 'self');
+            const enemy = tributableFieldTargets(ctx, 'opponent');
+            const sides = [];
+            if (own.length >= 3) sides.push({ value: ctx.owner, label: 'Il tuo Terreno' });
+            if (enemy.length >= 3) sides.push({ value: ctx.opponent, label: 'Terreno avversario' });
+            if (!sides.length) { ctx.log('❌ Modalità Sfera richiede tre Tributi sullo stesso Terreno.'); return; }
+            const chooseSide = (side) => {
+                const candidates = () => tributableFieldTargets(ctx, side === ctx.owner ? 'self' : 'opponent')
+                    .sort((a, b) => side === ctx.opponent
+                        ? DuelEngine.getEffectiveAtk(b.card) - DuelEngine.getEffectiveAtk(a.card)
+                        : DuelEngine.getEffectiveAtk(a.card) - DuelEngine.getEffectiveAtk(b.card));
+                const steps = [1, 2, 3].map((number) => ({
+                    candidati: candidates,
+                    title: ctx.card.name,
+                    text: `Scegli il Tributo ${number}/3.`,
+                    dichiara: false
+                }));
+                chooseFieldTargetsInSequence(ctx, steps, (chosen) => {
+                    if (chosen.length === 3) resolveCrossFieldTributeSummon(ctx, ctx.card, chosen, side, { returnAtNextEndPhase: side !== ctx.owner });
+                });
+            };
+            if (sides.length === 1) chooseSide(sides[0].value);
+            else chooseOption(ctx, {
+                title: ctx.card.name,
+                text: 'Da quale Terreno vuoi offrire i tre Tributi?',
+                options: sides,
+                pickForBot: () => ctx.opponent
+            }, chooseSide);
+        },
+        static(ctx) {
+            gameState.cannotAttackUids[ctx.card.uid] = true;
+            gameState.cannotBeAttackTargetUids[ctx.card.uid] = true;
+            gameState.cannotBeTargetedByOpponentEffectsUids[ctx.card.uid] = ctx.owner;
+        },
+        canActivate(ctx) {
+            return (ctx.hand(ctx.owner).some((card) => card.id === 472) || Tavolo.mazzo(ctx.owner).some((card) => card.id === 472))
+                && ctx.findEmptyMonsterSlot(ctx.owner) !== -1;
+        },
+        activate(ctx) {
+            const ownIndex = ctx.field(ctx.owner).findIndex((slot) => slot && slot.card.uid === ctx.card.uid);
+            if (ownIndex === -1) return;
+            const hand = ctx.hand(ctx.owner);
+            const deck = Tavolo.mazzo(ctx.owner);
+            let source = hand;
+            let index = hand.findIndex((card) => card.id === 472);
+            if (index === -1) { source = deck; index = deck.findIndex((card) => card.id === 472); }
+            if (index === -1) return;
+            ctx.sendMonsterToGraveyard(ctx.owner, ownIndex);
+            const [ra] = source.splice(index, 1);
+            gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = deck.length;
+            ra.attack = 4000;
+            ra.defense = 4000;
+            ctx.specialSummon(ctx.owner, ra, ctx.findEmptyMonsterSlot(ctx.owner), 'attack', source === deck ? 'deck' : 'hand', { ignoreSummoningConditions: true });
+        },
+        onEndPhase(ctx) {
+            if (!ctx.card._sphereReturnAfterTurn || gameState.turn < ctx.card._sphereReturnAfterTurn) return;
+            const originalOwner = ctx.slot && ctx.slot.originalOwner;
+            if (!originalOwner || originalOwner === ctx.owner) { delete ctx.card._sphereReturnAfterTurn; return; }
+            if (ctx.takeControl(originalOwner, ctx.owner, ctx.slotIndex, true)) {
+                delete ctx.card._sphereReturnAfterTurn;
+                ctx.log(`☀️ ${ctx.card.name} torna sotto il controllo del suo proprietario.`);
+            }
+        }
+    });
+
+    CardEffects.register(1276, {
+        cannotNormalSummon: true,
+        cannotSpecialSummon: true,
+        unaffectedByOtherCardEffects: true,
+        graveyardTriggerCannotBeRespondedTo: true,
+        onOwnMonsterSentToGraveyardWhileInGraveyard(ctx) {
+            if (!ctx.sentCard || ctx.sentCard.id !== 472) return;
+            const grave = ctx.graveyard(ctx.owner);
+            const index = grave.findIndex((card) => card.uid === ctx.card.uid);
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            if (index === -1 || slotIndex === -1) return;
+            const [phoenix] = grave.splice(index, 1);
+            ctx.specialSummon(ctx.owner, phoenix, slotIndex, 'attack', 'graveyard', { ignoreSummoningConditions: true });
+            ctx.log(`🔥 ${phoenix.name} risorge dal Cimitero senza possibilità di risposta!`);
+        },
+        canActivate(ctx) {
+            return Tavolo.lp(ctx.owner) > 1000
+                && collectFieldTargets(ctx, { owner: 'both', zone: 'monster', includiCoperte: true })
+                    .some((entry) => entry.card.uid !== ctx.card.uid);
+        },
+        activate(ctx) {
+            const candidates = collectFieldTargets(ctx, { owner: 'both', zone: 'monster', includiCoperte: true })
+                .filter((entry) => entry.card.uid !== ctx.card.uid)
+                .sort((a, b) => DuelEngine.getEffectiveAtk(b.card) - DuelEngine.getEffectiveAtk(a.card));
+            const fine = attendiScelta(ctx);
+            chooseFieldCardTarget(ctx, candidates, {
+                title: ctx.card.name,
+                text: 'Paga 1000 LP e scegli 1 mostro da mandare al Cimitero.',
+                dichiara: false,
+                onCancel: () => fine()
+            }, (chosen) => {
+                try {
+                    if (Tavolo.lp(ctx.owner) <= 1000) return;
+                    ctx.dealDamage(ctx.owner, 1000);
+                    ctx.sendMonsterToGraveyard(chosen.owner, chosen.index);
+                } finally { fine(); }
+            });
+        },
+        onEndPhase(ctx) {
+            const ownIndex = ctx.field(ctx.owner).findIndex((slot) => slot && slot.card.uid === ctx.card.uid);
+            if (ownIndex === -1) return;
+            const zones = [ctx.hand(ctx.owner), Tavolo.mazzo(ctx.owner), ctx.graveyard(ctx.owner)];
+            let source = null;
+            let sphereIndex = -1;
+            for (const zone of zones) {
+                sphereIndex = zone.findIndex((card) => card.id === 1275);
+                if (sphereIndex !== -1) { source = zone; break; }
+            }
+            if (!source) return;
+            ctx.sendMonsterToGraveyard(ctx.owner, ownIndex);
+            const [sphere] = source.splice(sphereIndex, 1);
+            gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = Tavolo.mazzo(ctx.owner).length;
+            ctx.specialSummon(ctx.owner, sphere, ctx.findEmptyMonsterSlot(ctx.owner), 'attack',
+                source === ctx.graveyard(ctx.owner) ? 'graveyard' : (source === Tavolo.mazzo(ctx.owner) ? 'deck' : 'hand'),
+                { ignoreSummoningConditions: true });
+            ctx.log(`☀️ ${ctx.card.name} ritorna alla ${sphere.name}.`);
         }
     });
 

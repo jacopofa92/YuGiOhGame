@@ -90,6 +90,16 @@ conclusi: 3.000 duelli senza errori o stalli, limite proposto di una copia
 per ciascuna carta e nessuna modifica ai deck avversari prima del benchmark
 `Custom`. Dettagli in `docs/audits/EGYPTIAN_GODS_SUPPORT_AUDIT.md`.
 
+La fase di motore finale delle Divinità è completata per gli id 1274-1276:
+Incrocio di Anime, Drago Alato di Ra - Modalità Sfera e Drago Alato di Ra -
+Fenice della Divinità Egizia. Sono state introdotte in forma opt-in la
+selezione di Tributi sui due Terreni, l'Evocazione sul lato sacrificato, il
+ritorno differito del controllo, il trigger dal Cimitero, l'immunità agli
+effetti altrui, il vero invio al Cimitero senza distruzione e la deroga
+esplicita alle condizioni di Evocazione. I test mirati coprono l'intero ciclo
+Sfera -> Ra e Ra -> Fenice -> Sfera. Nessun deck avversario è stato cambiato:
+il prossimo passo è il benchmark informativo contro il deck `Custom`.
+
 ## Deck avversari: politica conservativa
 
 Le nuove carte non entrano automaticamente nei deck avversari. Per ogni
@@ -136,7 +146,7 @@ tetto. Prima di fissarlo definitivamente si eseguono audit a 1/2/3 copie con
 gli stessi semi. La Cartoteca mostra requisito della prima copia, fonti delle
 successive, probabilita' e limite massimo.
 
-Questa fase e' ora implementata per tutti gli id 1250-1273. Le prime copie
+Questa fase e' ora implementata per tutti gli id 1250-1276. Le prime copie
 richiedono capitolo narrativo e vittorie a Difficile contro il personaggio
 coerente; le mosse delle Divinita' richiedono anche il relativo Dio. Dopo lo
 sblocco, le copie residue entrano con peso ridotto nelle buste tematiche e

@@ -52,7 +52,7 @@
         1133, // Golem di Lava — carta firma/boss di Marik
         // Boss e mosse firma dei pacchetti moderni classici. Restano
         // comunque fuori dai pool finché la prima copia non viene meritata.
-        1260, 1262, 1265, 1270, 1271, 1272, 1273
+        1260, 1262, 1265, 1270, 1271, 1272, 1273, 1274, 1275, 1276
     ]);
 
     /**

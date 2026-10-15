@@ -697,6 +697,19 @@ function attemptMonsterSummon(card, handIndex, slotIndex, fromRect) {
     // id 423). Stesso controllo lato IA in AI_SHARED.canNormalSummonNow
     // (js/ai/ai-shared.js), PRIMA di provare a Evocarla.
     const summonDef = window.DuelEngine && DuelEngine.getDefinition(card.id);
+    // Procedure di Evocazione Normale non rappresentabili dal flusso
+    // standard "scegli N mostri sul TUO Terreno" (es. Ra - Modalità
+    // Sfera, che sacrifica tre mostri da uno dei due lati e compare su
+    // quel lato). La definizione possiede l'intera procedura, mentre qui
+    // restano i guardrail comuni già eseguiti sopra.
+    if (summonDef && typeof summonDef.beginCustomNormalSummon === 'function') {
+        summonDef.beginCustomNormalSummon(DuelEngine.makeContext('player', {
+            card: card,
+            handIndex: handIndex,
+            fromRect: fromRect
+        }));
+        return;
+    }
     if (summonDef && summonDef.requiresFieldPresenceId) {
         const requiredCard = cardDatabase.find((c) => c.id === summonDef.requiresFieldPresenceId);
         // La carta richiesta può essere sia un mostro (zona Mostro) sia

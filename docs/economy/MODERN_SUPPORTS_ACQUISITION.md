@@ -46,6 +46,9 @@ continuano a contare, come deciso per tutte le altre imprese.
 | 1271 | Attacco Forza del Tuono | Leggendaria | 1 | Battle City I + Slifer posseduto + 40 Strings Hard |
 | 1272 | Pugno del Fato | Leggendaria | 1 | Battle City II + Obelisk posseduto + 80 Kaiba Hard |
 | 1273 | Canto Antico | Leggendaria | 1 | Battle City II + Ra posseduto + 50 Marik Hard |
+| 1274 | Incrocio di Anime | Leggendaria | 1 | Battle City II + Ra posseduto + 60 Marik Hard |
+| 1275 | Drago Alato di Ra - Modalità Sfera | Leggendaria | 1 | Battle City II + Incrocio di Anime posseduto + 75 Marik Hard |
+| 1276 | Drago Alato di Ra - Fenice della Divinità Egizia | Leggendaria | 1 | Battle City II + Modalità Sfera posseduta + 100 Marik Hard |
 
 ## Verifica
 

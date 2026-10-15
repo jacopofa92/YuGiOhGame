@@ -17,7 +17,7 @@
         1139, // Parassita Paracida: prima copia da Weevil
         1250, 1251, 1252, 1253, 1254, 1255, 1256, 1257, 1258, 1259,
         1260, 1261, 1262, 1263, 1264, 1265, 1266, 1267, 1268, 1269,
-        1270, 1271, 1272, 1273
+        1270, 1271, 1272, 1273, 1274, 1275, 1276
     ]);
     const CARD_CAP = 3;
     const COPY_CAP_CACHE = Object.create(null);
@@ -60,7 +60,12 @@
         1270: { character: 'pegasus', wins: 50, chapter: 'regno' },
         1271: { character: 'strings', wins: 40, chapter: 'battlecity1', requiredOwned: 31 },
         1272: { character: 'kaiba', wins: 80, chapter: 'battlecity2', requiredOwned: 30 },
-        1273: { character: 'marik', wins: 50, chapter: 'battlecity2', requiredOwned: 472 }
+        1273: { character: 'marik', wins: 50, chapter: 'battlecity2', requiredOwned: 472 },
+        // Catena finale di Ra: ogni tappa richiede la precedente, così le
+        // forme non possono comparire in busta prima del percorso tematico.
+        1274: { character: 'marik', wins: 60, chapter: 'battlecity2', requiredOwned: 472 },
+        1275: { character: 'marik', wins: 75, chapter: 'battlecity2', requiredOwned: 1274 },
+        1276: { character: 'marik', wins: 100, chapter: 'battlecity2', requiredOwned: 1275 }
     });
 
     function state() {

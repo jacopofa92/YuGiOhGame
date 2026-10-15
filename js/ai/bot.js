@@ -382,6 +382,18 @@ function evocaSeConviene(io) {
  */
 function botSummonMonster(card, tributeIndices, emptySlotHint, position, faceDown, io = 'bot') {
     position = position === 'defense' ? 'defense' : 'attack';
+    const customDef = window.DuelEngine && DuelEngine.getDefinition(card.id);
+    if (customDef && typeof customDef.beginCustomNormalSummon === 'function') {
+        return new Promise((resolve) => {
+            customDef.beginCustomNormalSummon(DuelEngine.makeContext(io, {
+                card,
+                handIndex: Tavolo.mano(io).indexOf(card)
+            }));
+            // Le scelte dell'IA sono sincrone; la finestra di risposta
+            // dell'Evocazione continua poi nel normale passo comune.
+            resolve();
+        });
+    }
     // Capro Espiatorio (id 434): in quel turno si può solo Settare; "puoi
     // controllarne solo 1 scoperto" (id 899) con una copia già scoperta:
     // idem. L'IA ripiega sul Set invece di far rifiutare la mossa.
