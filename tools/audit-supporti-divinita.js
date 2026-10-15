@@ -21,7 +21,14 @@ function arg(name, fallback) {
 
 function characterDeck(character) {
     const source = fs.readFileSync(path.join(ROOT, 'js/data/character-decks.js'), 'utf8');
-    return JSON.parse(vm.runInNewContext(`${source}\nJSON.stringify(getCharacterDeck('${character}', 'hard'));`, {}));
+    const deck = JSON.parse(vm.runInNewContext(`${source}\nJSON.stringify(getCharacterDeck('${character}', 'hard'));`, {}));
+    // Per Marik ricostruisce la baseline storica precedente alla promozione
+    // di Canto Antico, mantenendo riproducibile l'audit originale 1/2/3.
+    if (character === 'marik') {
+        const canto = deck.main.find((c) => Number(c.id) === 1273);
+        if (canto) deck.main.splice(deck.main.indexOf(canto), 1, { id: 646, qty: 1 });
+    }
+    return deck;
 }
 
 function replaceCards(base, config, copies) {

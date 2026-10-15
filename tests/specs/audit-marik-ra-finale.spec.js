@@ -14,9 +14,12 @@ module.exports = {
             t.assert(conta(deck, 472) === 1, `${nome}: Ra deve restare in una copia`);
         });
         [1123, 559, 750, 216, 130, 450].forEach((id) => {
-            t.assert(conta(v.cicloCompleto, id) === conta(v.pubblicato, id), `Il nucleo Marik ${id} deve restare invariato`);
+            t.assert(conta(v.cicloCompleto, id) === conta(v.precedente, id), `Il nucleo Marik ${id} deve restare invariato`);
         });
-        t.assert(conta(v.cantoSingolo, 1273) === 1, 'La variante minima deve avere un Canto Antico');
+        t.assert(conta(v.precedente, 646) === 1 && conta(v.precedente, 1273) === 0,
+            'La baseline storica deve avere Tempesta Pesante e nessun Canto Antico');
+        t.assert(conta(v.pubblicato, 646) === 0 && conta(v.pubblicato, 1273) === 1,
+            'La lista pubblicata deve sostituire Tempesta Pesante con Canto Antico');
         t.assert([1273, 1274, 1275, 1276].every((id) => conta(v.cicloCompleto, id) === 1),
             'Il ciclo completo deve contenere una copia di ogni supporto di Ra');
     }

@@ -131,7 +131,7 @@ deck Difficile; dettagli in `docs/audits/JOEY_SUPPORTS_FINAL_AUDIT.md`.
 Per Marik, Canto Antico singolo porta il risultato ufficiale dal 49,2% al
 52,0%, quello contro Custom dal 20,0% al 26,0% e la presenza di Ra dal 6,0%
 al 15,6%. I cicli con Sfera/Fenice e Incrocio di Anime sono meno stabili. La
-promozione del solo Canto attende conferma; dettagli in
+il solo Canto e' stato promosso nel deck Difficile; dettagli in
 `docs/audits/MARIK_RA_FINAL_AUDIT.md`.
 
 ## Deck avversari: politica conservativa

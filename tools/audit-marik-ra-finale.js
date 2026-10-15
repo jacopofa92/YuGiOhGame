@@ -26,12 +26,13 @@ function cambia(base, aggiunte) {
 }
 
 function varianti() {
-    const base = gods.characterDeck('marik');
+    const precedente = gods.characterDeck('marik');
+    const pubblicato = cambia(precedente, [1273]);
     return {
-        pubblicato: base,
-        cantoSingolo: cambia(base, [1273]),
-        cicloRa: cambia(base, [1273, 1275, 1276]),
-        cicloCompleto: cambia(base, [1273, 1274, 1275, 1276])
+        precedente,
+        pubblicato,
+        cicloRa: cambia(precedente, [1273, 1275, 1276]),
+        cicloCompleto: cambia(precedente, [1273, 1274, 1275, 1276])
     };
 }
 
@@ -108,7 +109,7 @@ async function eseguiAudit(opzioni) {
         opzioni: { partite: opzioni.partite, turni: opzioni.turni, seme: opzioni.seme },
         custom: { name: custom.deck.name, impronta: custom.impronta },
         varianti: {
-            cantoSingolo: [1273], cicloRa: [1273, 1275, 1276], cicloCompleto: [1273, 1274, 1275, 1276]
+            pubblicato: [1273], cicloRa: [1273, 1275, 1276], cicloCompleto: [1273, 1274, 1275, 1276]
         },
         risultati
     };

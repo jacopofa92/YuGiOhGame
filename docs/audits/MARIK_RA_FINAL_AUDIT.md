@@ -1,6 +1,6 @@
 # Decisione finale supporti moderni — Marik e Ra
 
-Data: 2026-10-15. Il mazzo pubblicato non e' ancora stato modificato.
+Data: 2026-10-15. Decisione applicata al solo mazzo Difficile.
 
 ## Varianti
 
@@ -32,9 +32,9 @@ piu' setup di quanto l'IA converta regolarmente. Incrocio di Anime alza il
 campione ufficiale ma crolla contro Custom: il pacchetto completo e' troppo
 dipendente dalla combinazione e non e' adatto al deck predefinito.
 
-## Raccomandazione in attesa di conferma
+## Decisione applicata
 
-Promuovere soltanto Canto Antico nel deck Marik Difficile, al posto di
+Promosso soltanto Canto Antico nel deck Marik Difficile, al posto di
 Tempesta Pesante. Facile e Medio restano invariati; Sfera, Fenice e Incrocio
 rimangono carte rare del giocatore.
 

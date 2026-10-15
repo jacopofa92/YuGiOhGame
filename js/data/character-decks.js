@@ -985,7 +985,7 @@ const characterDeckDatabase = {
                 { id: 10, qty: 1 }, // Cilindro Magico
                 { id: 434, qty: 1 }, // Capro Espiatorio
                 { id: 439, qty: 1 }, // Incantesimo Ombra
-                { id: 646, qty: 1 }, // Tempesta Pesante
+                { id: 1273, qty: 1 }, // Canto Antico — singola copia promossa dall'audit finale per rendere Ra realmente giocabile
                 { id: 599, qty: 1 }, // Sette Attrezzi del Bandito
                 { id: 472, qty: 1 }, // Il Drago Alato di Ra
                 { id: 382, qty: 1 }, // Forza dello Specchio
