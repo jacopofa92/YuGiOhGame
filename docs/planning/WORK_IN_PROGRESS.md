@@ -18,6 +18,9 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
       pacchetto, verifica Multiplayer e audit 1/2/3 completati in
       `docs/audits/EGYPTIAN_GODS_SUPPORT_AUDIT.md`. Limite proposto 1 copia;
       nessun deck avversario modificato senza benchmark `Custom`.
+      Economia dei 24 supporti completata: prima copia tramite missioni
+      tematiche, copie successive rarissime e limiti 1/2 applicati a deck e
+      acquisizione. Matrice in `docs/economy/MODERN_SUPPORTS_ACQUISITION.md`.
 
 ## Economia e acquisizione carte
 

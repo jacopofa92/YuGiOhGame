@@ -13685,6 +13685,7 @@ const cardDatabase = [
     "id": 1250,
     "origin": "yu-gi-oh",
     "name": "La Pietra Nera della Leggenda",
+    "limit": 2,
     "type": "monster",
     "level": 1,
     "race": "Drago",
@@ -13701,6 +13702,7 @@ const cardDatabase = [
     "id": 1251,
     "origin": "yu-gi-oh",
     "name": "Intuito Occhi Rossi",
+    "limit": 2,
     "type": "spell",
     "subtype": "normal",
     "archetypes": [
@@ -13713,6 +13715,7 @@ const cardDatabase = [
     "id": 1252,
     "origin": "yu-gi-oh",
     "name": "Spirito Occhi Rossi",
+    "limit": 2,
     "type": "trap",
     "subtype": "normal",
     "archetypes": [
@@ -13725,6 +13728,7 @@ const cardDatabase = [
     "id": 1253,
     "origin": "yu-gi-oh",
     "name": "Drago Metallo Nero",
+    "limit": 2,
     "type": "monster",
     "level": 1,
     "race": "Drago",
@@ -13741,6 +13745,7 @@ const cardDatabase = [
     "id": 1254,
     "origin": "yu-gi-oh",
     "name": "Bastone del Mago",
+    "limit": 2,
     "type": "monster",
     "level": 3,
     "race": "Incantatore",
@@ -13757,6 +13762,7 @@ const cardDatabase = [
     "id": 1255,
     "origin": "yu-gi-oh",
     "name": "Cerchio Magico Oscuro",
+    "limit": 2,
     "type": "spell",
     "subtype": "continuous",
     "archetypes": [
@@ -13772,6 +13778,7 @@ const cardDatabase = [
     "id": 1256,
     "origin": "yu-gi-oh",
     "name": "Anima Eterna",
+    "limit": 2,
     "type": "trap",
     "subtype": "continuous",
     "archetypes": [
@@ -13787,6 +13794,7 @@ const cardDatabase = [
     "id": 1257,
     "origin": "yu-gi-oh",
     "name": "Salvezza del Mago",
+    "limit": 1,
     "type": "spell",
     "subtype": "field",
     "archetypes": [
@@ -13803,6 +13811,7 @@ const cardDatabase = [
     "id": 1258,
     "origin": "yu-gi-oh",
     "name": "Servitore dell'Anima",
+    "limit": 1,
     "type": "spell",
     "subtype": "quick-play",
     "archetypes": [
@@ -13819,6 +13828,7 @@ const cardDatabase = [
     "id": 1259,
     "origin": "yu-gi-oh",
     "name": "Segreti della Magia Oscura",
+    "limit": 2,
     "type": "spell",
     "subtype": "quick-play",
     "archetypes": [
@@ -13835,6 +13845,7 @@ const cardDatabase = [
     "id": 1260,
     "origin": "yu-gi-oh",
     "name": "I Maghi Neri",
+    "limit": 1,
     "type": "monster",
     "extraDeck": true,
     "category": "fusion",
@@ -13857,6 +13868,7 @@ const cardDatabase = [
     "id": 1261,
     "origin": "yu-gi-oh",
     "name": "La Melodia del Drago che si Risveglia",
+    "limit": 2,
     "type": "spell",
     "subtype": "normal",
     "archetypes": [
@@ -13869,6 +13881,7 @@ const cardDatabase = [
     "id": 1262,
     "origin": "yu-gi-oh",
     "name": "Drago Bianco Alternativo Occhi Blu",
+    "limit": 2,
     "type": "monster",
     "level": 8,
     "race": "Drago",
@@ -13885,6 +13898,7 @@ const cardDatabase = [
     "id": 1263,
     "origin": "yu-gi-oh",
     "name": "Luce Autentica",
+    "limit": 2,
     "type": "trap",
     "subtype": "continuous",
     "archetypes": [
@@ -13900,6 +13914,7 @@ const cardDatabase = [
     "id": 1264,
     "origin": "yu-gi-oh",
     "name": "Fusione Definitiva",
+    "limit": 1,
     "type": "spell",
     "subtype": "quick-play",
     "archetypes": [
@@ -13916,6 +13931,7 @@ const cardDatabase = [
     "id": 1265,
     "origin": "yu-gi-oh",
     "name": "Drago Bianco Alternativo Definitivo",
+    "limit": 1,
     "type": "monster",
     "extraDeck": true,
     "category": "fusion",
@@ -13938,6 +13954,7 @@ const cardDatabase = [
     "id": 1266,
     "origin": "yu-gi-oh",
     "name": "Regno Toon",
+    "limit": 1,
     "type": "spell",
     "subtype": "field",
     "archetypes": [
@@ -13954,6 +13971,7 @@ const cardDatabase = [
     "id": 1267,
     "origin": "yu-gi-oh",
     "name": "Segnalibro Toon",
+    "limit": 2,
     "type": "spell",
     "subtype": "normal",
     "archetypes": [
@@ -13970,6 +13988,7 @@ const cardDatabase = [
     "id": 1268,
     "origin": "yu-gi-oh",
     "name": "Signora Arpia Toon",
+    "limit": 2,
     "type": "monster",
     "level": 4,
     "race": "Bestia Alata",
@@ -13991,6 +14010,7 @@ const cardDatabase = [
     "id": 1269,
     "origin": "yu-gi-oh",
     "name": "Gira-Pagina Toon",
+    "limit": 2,
     "type": "spell",
     "subtype": "quick-play",
     "archetypes": [
@@ -14007,6 +14027,7 @@ const cardDatabase = [
     "id": 1270,
     "origin": "yu-gi-oh",
     "name": "Glorioso Soldato Nero Toon",
+    "limit": 1,
     "type": "monster",
     "level": 8,
     "race": "Guerriero",
@@ -14027,6 +14048,7 @@ const cardDatabase = [
     "id": 1271,
     "origin": "yu-gi-oh",
     "name": "Attacco Forza del Tuono",
+    "limit": 1,
     "type": "spell",
     "subtype": "quick-play",
     "mentionsNames": [
@@ -14039,6 +14061,7 @@ const cardDatabase = [
     "id": 1272,
     "origin": "yu-gi-oh",
     "name": "Pugno del Fato",
+    "limit": 1,
     "type": "spell",
     "subtype": "quick-play",
     "mentionsNames": [
@@ -14051,6 +14074,7 @@ const cardDatabase = [
     "id": 1273,
     "origin": "yu-gi-oh",
     "name": "Canto Antico",
+    "limit": 1,
     "type": "spell",
     "subtype": "normal",
     "mentionsNames": [

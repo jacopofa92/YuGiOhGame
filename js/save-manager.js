@@ -747,7 +747,12 @@
         const save = load() || createNew();
         save.collection = save.collection || {};
         const current = Number(save.collection[cardId]) || 0;
-        const next = Math.max(0, Math.min(CARD_COPY_CAP, current + (Number(qty) || 0)));
+        // Per le carte con limite economico esplicito (oggi i supporti
+        // moderni), nessuna fonte può aggirare il tetto passando da questo
+        // punto centrale. Le vecchie carte mantengono il cap storico di 3.
+        const cap = window.CardAcquisition && typeof CardAcquisition.copyCapFor === 'function'
+            ? CardAcquisition.copyCapFor(cardId) : CARD_COPY_CAP;
+        const next = Math.max(0, Math.min(cap, current + (Number(qty) || 0)));
         if (next === 0) delete save.collection[cardId];
         else save.collection[cardId] = next;
         touch(save);
@@ -765,7 +770,9 @@
         save.collection = save.collection || {};
         [...((deck && deck.main) || []), ...((deck && deck.extra) || [])].forEach((entry) => {
             const current = Number(save.collection[entry.id]) || 0;
-            save.collection[entry.id] = Math.max(current, Math.min(CARD_COPY_CAP, entry.qty || 0));
+            const cap = window.CardAcquisition && typeof CardAcquisition.copyCapFor === 'function'
+                ? CardAcquisition.copyCapFor(entry.id) : CARD_COPY_CAP;
+            save.collection[entry.id] = Math.max(current, Math.min(cap, entry.qty || 0));
         });
         touch(save);
         return save.collection;

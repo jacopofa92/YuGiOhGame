@@ -14,9 +14,13 @@
     const SIGNATURE_GATED = new Set([
         1, 2, 12, 123, 291,
         1133, // Golem di Lava: prima copia da Marik
-        1139  // Parassita Paracida: prima copia da Weevil
+        1139, // Parassita Paracida: prima copia da Weevil
+        1250, 1251, 1252, 1253, 1254, 1255, 1256, 1257, 1258, 1259,
+        1260, 1261, 1262, 1263, 1264, 1265, 1266, 1267, 1268, 1269,
+        1270, 1271, 1272, 1273
     ]);
     const CARD_CAP = 3;
+    const COPY_CAP_CACHE = Object.create(null);
     const RULES = Object.freeze({
         // Triplicate dopo il primo audit di farming: il percorso generico
         // resta raro, ma non è più soltanto una lotteria da centinaia di ore.
@@ -28,6 +32,35 @@
         ra: Object.freeze({ marikHard: 40, controlled: 10, maxLpLost: 2000, tournamentHard: 3 }),
         slifer: Object.freeze({ stringsHard: 30, healthyWins: 1, minFinalLp: 4000 }),
         signaturesFirstSeries: Object.freeze({ lavaGolemMarikHard: 20, parasiteWeevilHard: 15 })
+    });
+
+    // Prima copia dei supporti moderni. I contatori delle Sfide già
+    // esistenti riconoscono anche il farming precedente all'aggiornamento.
+    const MODERN_SUPPORT_RULES = Object.freeze({
+        1250: { character: 'joey', wins: 10, chapter: 'battlecity1' },
+        1251: { character: 'joey', wins: 20, chapter: 'battlecity1' },
+        1252: { character: 'joey', wins: 35, chapter: 'battlecity1' },
+        1253: { character: 'joey', wins: 50, chapter: 'battlecity1' },
+        1254: { character: 'yugi', wins: 15, chapter: 'regno' },
+        1255: { character: 'yugi', wins: 30, chapter: 'regno' },
+        1256: { character: 'yugi', wins: 45, chapter: 'battlecity1' },
+        1257: { character: 'yugi', wins: 60, chapter: 'battlecity1' },
+        1258: { character: 'yugi', wins: 75, chapter: 'battlecity2' },
+        1259: { character: 'yugi', wins: 90, chapter: 'battlecity2' },
+        1260: { character: 'yugi', wins: 100, chapter: 'battlecity2' },
+        1261: { character: 'kaiba', wins: 15, chapter: 'battlecity1' },
+        1262: { character: 'kaiba', wins: 30, chapter: 'battlecity1' },
+        1263: { character: 'kaiba', wins: 45, chapter: 'battlecity1' },
+        1264: { character: 'kaiba', wins: 60, chapter: 'battlecity2' },
+        1265: { character: 'kaiba', wins: 75, chapter: 'battlecity2' },
+        1266: { character: 'pegasus', wins: 15, chapter: 'regno' },
+        1267: { character: 'pegasus', wins: 25, chapter: 'regno' },
+        1268: { character: 'pegasus', wins: 35, chapter: 'regno' },
+        1269: { character: 'pegasus', wins: 45, chapter: 'regno' },
+        1270: { character: 'pegasus', wins: 50, chapter: 'regno' },
+        1271: { character: 'strings', wins: 40, chapter: 'battlecity1', requiredOwned: 31 },
+        1272: { character: 'kaiba', wins: 80, chapter: 'battlecity2', requiredOwned: 30 },
+        1273: { character: 'marik', wins: 50, chapter: 'battlecity2', requiredOwned: 472 }
     });
 
     function state() {
@@ -50,6 +83,21 @@
         const db = typeof cardDatabase !== 'undefined' ? cardDatabase : (window.cardDatabase || []);
         const c = db.find((x) => x.id === id);
         return c ? c.name : `Carta #${id}`;
+    }
+
+    /** Tetto condiviso fra acquisizione e costruzione del deck. */
+    function copyCapFor(id) {
+        const key = Number(id);
+        if (COPY_CAP_CACHE[key]) return COPY_CAP_CACHE[key];
+        const db = typeof cardDatabase !== 'undefined' ? cardDatabase : (window.cardDatabase || []);
+        const card = db.find((entry) => entry.id === key);
+        if (typeof getCardCopyLimit === 'function') {
+            COPY_CAP_CACHE[key] = getCardCopyLimit(card);
+            return COPY_CAP_CACHE[key];
+        }
+        const limit = card && Number(card.limit);
+        COPY_CAP_CACHE[key] = limit === 1 || limit === 2 ? limit : CARD_CAP;
+        return COPY_CAP_CACHE[key];
     }
 
     function announce(entry) {
@@ -84,7 +132,7 @@
     function award(id, rule, key, shouldAnnounce) {
         const s = state();
         if (key && s.claimed[key]) return null;
-        if (!window.SaveManager || SaveManager.getOwnedCount(id) >= CARD_CAP) {
+        if (!window.SaveManager || SaveManager.getOwnedCount(id) >= copyCapFor(id)) {
             if (key) { s.claimed[key] = true; save(s); }
             return null;
         }
@@ -181,6 +229,44 @@
         return checkMilestones();
     }
 
+    function thematicWins(character) {
+        if (character === 'joey') return progressoSfida('carta-joey-occhi-rossi-50');
+        if (character === 'pegasus') return progressoSfida('carta-pegasus-toon-50');
+        if (character === 'kaiba') return Math.max(
+            progressoSfida('carta-kaiba-drago-bianco-50'),
+            progressoSfida('carta-kaiba-drago-bianco-100'));
+        if (character === 'yugi') return Math.max(
+            progressoSfida('carta-yugi-mago-nero-50'),
+            progressoSfida('carta-yugi-mago-nero-100'));
+        const counters = state().counters;
+        if (character === 'strings') return counters.sliferStringsHard || 0;
+        if (character === 'marik') return counters.raMarikHard || 0;
+        return 0;
+    }
+
+    function modernRuleText(rule) {
+        const labels = { joey: 'Joey', yugi: 'Yugi Muto o Yami Yugi', kaiba: 'Kaiba', pegasus: 'Pegasus', strings: 'Strings', marik: 'Marik' };
+        const chapters = { regno: 'Regno dei Duellanti', battlecity1: 'Battle City I', battlecity2: 'Battle City II' };
+        let text = `Completa ${chapters[rule.chapter]} e ottieni ${rule.wins} vittorie contro ${labels[rule.character]} a Difficile`;
+        if (rule.requiredOwned) text += `; devi inoltre possedere ${cardName(rule.requiredOwned)}`;
+        return text + '. Prima copia unica; le successive, entro il limite, sono rarissime in buste tematiche e rotazioni alte.';
+    }
+
+    function checkModernSupportMilestones() {
+        const s = state();
+        const out = [];
+        Object.keys(MODERN_SUPPORT_RULES).forEach((rawId) => {
+            const id = Number(rawId);
+            const rule = MODERN_SUPPORT_RULES[id];
+            if (!s.completedChapters[rule.chapter]) return;
+            if (thematicWins(rule.character) < rule.wins) return;
+            if (rule.requiredOwned && (!window.SaveManager || SaveManager.getOwnedCount(rule.requiredOwned) < 1)) return;
+            const got = award(id, modernRuleText(rule), `modern-support-${id}`, true);
+            if (got) out.push(got);
+        });
+        return out;
+    }
+
     function checkMilestones() {
         const s = state();
         const out = [];
@@ -205,7 +291,7 @@
             const got = award(472, 'Battle City II e torneo a Difficile; 40 vittorie difficili contro Marik, 10 perdendo al massimo 2000 LP', 'ra');
             if (got) out.push(got);
         }
-        return out;
+        return out.concat(checkModernSupportMilestones());
     }
 
     function isSignatureUnlocked(cardId) {
@@ -245,6 +331,10 @@
         SOURCES[id] = 'Drop dopo una vittoria PvE: 0,15% a Facile, 0,45% a Normale e 0,90% a Difficile. Contro Seeker a Difficile la probabilità raddoppia; ogni 10 vittorie è garantito un pezzo mancante. Pity globale dopo 250 vittorie valide senza un pezzo.';
     });
 
+    Object.keys(MODERN_SUPPORT_RULES).forEach((rawId) => {
+        SOURCES[Number(rawId)] = modernRuleText(MODERN_SUPPORT_RULES[rawId]);
+    });
+
     function progressoSfida(id) {
         if (!window.SaveManager || typeof SaveManager.getChallengeProgress !== 'function') return 0;
         return Number((SaveManager.getChallengeProgress(id) || {}).count) || 0;
@@ -274,6 +364,14 @@
         if (id === 30) return `Ricompensa: ${s.claimed['obelisk-anime'] ? 'ottenuta' : 'non ancora ottenuta'}`;
         if (id === 1133) return `Marik a Difficile: ${Math.min(c.lavaGolemMarikHard || 0, RULES.signaturesFirstSeries.lavaGolemMarikHard)}/${RULES.signaturesFirstSeries.lavaGolemMarikHard}`;
         if (id === 1139) return `Weevil a Difficile: ${Math.min(c.parasiteWeevilHard || 0, RULES.signaturesFirstSeries.parasiteWeevilHard)}/${RULES.signaturesFirstSeries.parasiteWeevilHard}`;
+        if (MODERN_SUPPORT_RULES[id]) {
+            const rule = MODERN_SUPPORT_RULES[id];
+            const chapterDone = !!s.completedChapters[rule.chapter];
+            const ownedDone = !rule.requiredOwned || SaveManager.getOwnedCount(rule.requiredOwned) > 0;
+            return `Capitolo: ${chapterDone ? 'completato' : 'da completare'} · vittorie a Difficile: ${Math.min(thematicWins(rule.character), rule.wins)}/${rule.wins}`
+                + (rule.requiredOwned ? ` · ${cardName(rule.requiredOwned)}: ${ownedDone ? 'posseduta' : 'mancante'}` : '')
+                + ` · limite: ${copyCapFor(id)}`;
+        }
         const capitolo = Object.keys(SPIRIT_BY_CHAPTER).find((key) => SPIRIT_BY_CHAPTER[key] === id);
         if (capitolo) return `Capitolo richiesto: ${s.completedChapters[capitolo] ? 'completato' : 'da completare'}`;
         return '';
@@ -281,11 +379,13 @@
 
     window.CardAcquisition = {
         EXODIA: EXODIA, SIGNATURE_GATED: SIGNATURE_GATED, RULES: RULES,
+        MODERN_SUPPORT_RULES: MODERN_SUPPORT_RULES,
         onDuelWin: onDuelWin, onStoryProgress: onStoryProgress,
         onTournamentWin: onTournamentWin, checkMilestones: checkMilestones,
         isSignatureUnlocked: isSignatureUnlocked, isChapterComplete: isChapterComplete,
         unlockPack: unlockPack, isPackUnlocked: isPackUnlocked,
-        persistAnimation: animateDrop,
+        persistAnimation: animateDrop, copyCapFor: copyCapFor,
+        isModernSupport: (id) => !!MODERN_SUPPORT_RULES[Number(id)],
         progressFor: progressFor,
         sourceFor: (id) => {
             const db = typeof cardDatabase !== 'undefined' ? cardDatabase : (window.cardDatabase || []);

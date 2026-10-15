@@ -136,6 +136,13 @@ tetto. Prima di fissarlo definitivamente si eseguono audit a 1/2/3 copie con
 gli stessi semi. La Cartoteca mostra requisito della prima copia, fonti delle
 successive, probabilita' e limite massimo.
 
+Questa fase e' ora implementata per tutti gli id 1250-1273. Le prime copie
+richiedono capitolo narrativo e vittorie a Difficile contro il personaggio
+coerente; le mosse delle Divinita' richiedono anche il relativo Dio. Dopo lo
+sblocco, le copie residue entrano con peso ridotto nelle buste tematiche e
+nelle rotazioni alte. Limiti, soglie e rarita' sono raccolti in
+`docs/economy/MODERN_SUPPORTS_ACQUISITION.md`.
+
 ## Verifiche per ogni archetipo
 
 - test mirati di costo, bersaglio, risoluzione, limiti e zone;

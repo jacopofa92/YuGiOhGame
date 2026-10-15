@@ -341,7 +341,17 @@
     function pescaConRipetizione(pool, quanti, random) {
         if (!pool.length) return [];
         const out = pesca(pool, quanti, random);
-        while (out.length < quanti) out.push(pool[Math.floor(random() * pool.length)]);
+        while (out.length < quanti) {
+            const disponibili = pool.filter((id) => {
+                if (!window.CardAcquisition || !CardAcquisition.isModernSupport(id)) return true;
+                const cap = window.CardAcquisition && CardAcquisition.copyCapFor
+                    ? CardAcquisition.copyCapFor(id) : 3;
+                const owned = window.SaveManager ? SaveManager.getOwnedCount(id) : 0;
+                return owned + out.filter((drawn) => drawn === id).length < cap;
+            });
+            if (!disponibili.length) break;
+            out.push(disponibili[Math.floor(random() * disponibili.length)]);
+        }
         return out;
     }
 
@@ -360,7 +370,9 @@
      */
     function acquistabileInBusta(cardId) {
         return !!window.CardRarity && CardRarity.isPurchasable(cardId)
-            && (!window.CardAcquisition || CardAcquisition.isSignatureUnlocked(cardId));
+            && (!window.CardAcquisition || CardAcquisition.isSignatureUnlocked(cardId))
+            && (!window.SaveManager || !window.CardAcquisition || !CardAcquisition.isModernSupport(cardId)
+                || SaveManager.getOwnedCount(cardId) < CardAcquisition.copyCapFor(cardId));
     }
 
     function dayKey() {
@@ -446,18 +458,27 @@
         const tema = TEMI.find((t) => t.id === busta.temaId);
         const casuale = () => Math.random();
         const estratte = [];
+        // Dopo aver meritato la prima copia, i supporti moderni entrano nel
+        // tema ma non con lo stesso peso delle carte ordinarie: il pool
+        // stretto di una busta Toon/Drago/Mago li renderebbe altrimenti
+        // comuni. Ogni supporto ha una piccola probabilità di essere ammesso
+        // al singolo gruppo di rarità (più alta soltanto nelle Premium).
+        const filtraSupportiRarissimi = (pool) => pool.filter((id) => {
+            if (!window.CardAcquisition || !CardAcquisition.isModernSupport(id)) return true;
+            return casuale() < (/^premium-/.test(busta.id) ? 0.08 : 0.035);
+        });
         Object.keys(busta.composizione || {}).forEach((rarity) => {
-            let pool = CardRarity.idsByRarity(rarity)
-                .filter(acquistabileInBusta);
+            let pool = filtraSupportiRarissimi(CardRarity.idsByRarity(rarity)
+                .filter(acquistabileInBusta));
             if (tema) {
                 const themed = pool.filter((id) => { const c = db.find((x) => x.id === id); return c && tema.test(c); });
                 // Mai carte fuori tema. Se una fascia è troppo stretta si
                 // pesca dal tema intero: la rarità promessa resta garantita
                 // dagli altri slot e la bustina non tradisce il soggetto.
-                const tuttoIlTema = db.filter((c) => (c.origin || 'yu-gi-oh') === 'yu-gi-oh'
+                const tuttoIlTema = filtraSupportiRarissimi(db.filter((c) => (c.origin || 'yu-gi-oh') === 'yu-gi-oh'
                     && tema.test(c)
                     && acquistabileInBusta(c.id))
-                    .map((c) => c.id);
+                    .map((c) => c.id));
                 pool = themed.length ? themed : tuttoIlTema;
             }
             estratte.push(...pescaConRipetizione(pool, busta.composizione[rarity], casuale));
@@ -477,8 +498,8 @@
             scelteDeboli.forEach((id, i) => { if (i < estratte.length) estratte[i] = id; });
         }
         if (busta.legendaryChance && Math.random() < busta.legendaryChance) {
-            const leggendarie = CardRarity.idsByRarity('legendary')
-                .filter(acquistabileInBusta);
+            const leggendarie = filtraSupportiRarissimi(CardRarity.idsByRarity('legendary')
+                .filter(acquistabileInBusta));
             if (leggendarie.length && estratte.length) estratte[estratte.length - 1] = pesca(leggendarie, 1, casuale)[0];
         }
         // L'Elefante Volante entra nelle sole buste Premium soltanto dopo
