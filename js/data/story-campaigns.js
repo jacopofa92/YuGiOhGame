@@ -914,7 +914,7 @@ const storyCampaignsDatabase = [
                                 label: 'Maximillion Pegasus', x: 905, y: 165,
                                 characterId: 'pegasus',
                                 field: 'images/fields/mobile/arenaCastelloPegasus.jpg',
-                                music: "57. King of Games - Yugi's Final Duel.mp3",
+                                music: "57. Duel of Shadows – The Millennium Mind.mp3",
                                 dialogo: [
                                     { chi: 'pegasus', testo: 'Il mio Occhio del Millennio vede ogni carta nella tua mente, Yugi-boy. Toon World farà il resto.' },
                                     { io: true, testo: 'Non duello da solo. Alterneremo le nostre menti e combatteremo insieme per liberare nonno, Mokuba e Kaiba.' }
@@ -1558,7 +1558,7 @@ const storyCampaignsDatabase = [
                                 label: 'Marik Ishtar', x: 790, y: 220,
                                 characterId: 'marik',
                                 field: 'images/fields/mobile/torreDeiDuelliShadow.jpg',
-                                music: "57. King of Games - Yugi's Final Duel.mp3",
+                                music: "58. Yugi vs. Marik – Wrath of the Shadow Realm.mp3",
                                 dialogo: [
                                     { chi: 'marik', testo: 'Ra diventerà una Fenice immortale e consumerà ogni ricordo del Faraone. La mia parte debole sparirà insieme a lui.' },
                                     { io: true, testo: 'Combatterò per Joey, Mai e per il vero Marik che hai imprigionato. I tre Dei porranno fine al tuo Gioco delle Ombre.' }

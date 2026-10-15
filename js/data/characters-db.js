@@ -31,6 +31,11 @@
  * Richiesta esplicita dell'utente per i due Yugi ("usalo sempre se
  * l'avversario è un Yugi qualsiasi", poi "in duello libero no").
  *
+ * `duelTrackAutomatico: true` estende lo stesso principio a tutti i modi
+ * senza scelta musicale (Storia, Tornei, Torre, Rivincite e Puzzle). Non
+ * prevale mai in Duello Libero, Sandbox o Multiplayer. Una rara eccezione
+ * narrativa si dichiara in `duelTrackEscludiTappe`.
+ *
  * Sta QUI, nell'anagrafica, e non nelle pagine dei tornei come le
  * battute: una battuta cambia col contesto (lo stesso personaggio parla
  * diversamente al Cancello del Castello e in cima alla Torre Kaiba), il
@@ -42,11 +47,11 @@ const characterDatabase = [
     // raggruppato per arco narrativo (Duelist Kingdom/Battle City/amici di
     // Domino City come prima): non modificare quest'ordine senza una
     // richiesta esplicita, è come l'utente vuole che appaia il roster. =====
-    { id: 'yugiMuto', name: 'Yugi Muto', title: 'Il Re dei Giochi', image: 'images/characters/yugiMuto.jpg', series: 'main', duelTrack: "57. King of Games - Yugi's Final Duel.mp3", duelTrackSempre: true },
+    { id: 'yugiMuto', name: 'Yugi Muto', title: 'Il Re dei Giochi', image: 'images/characters/yugiMuto.jpg', series: 'main', duelTrack: "59. King of Games - Yugi's Final Duel.mp3", duelTrackSempre: true },
     { id: 'solomonMuto', name: 'Solomon Muto', title: 'Il Nonno Collezionista', image: 'images/characters/solomonMuto.jpg', series: 'main' },
     { id: 'tea', name: 'Téa Gardner', title: "La Voce dell'Amicizia", image: 'images/characters/teaGardner.jpg', series: 'main' },
     { id: 'joey', name: 'Joey Wheeler', title: 'Il Duellante di Strada', image: 'images/characters/joeyWheeler.jpg', series: 'main' },
-    { id: 'yamiYugi', name: 'Yami Yugi', title: 'Il Faraone', image: 'images/characters/yamiYugi.jpg', series: 'main', duelTrack: "57. King of Games - Yugi's Final Duel.mp3", duelTrackSempre: true },
+    { id: 'yamiYugi', name: 'Yami Yugi', title: 'Il Faraone', image: 'images/characters/yamiYugi.jpg', series: 'main', duelTrack: "59. King of Games - Yugi's Final Duel.mp3", duelTrackSempre: true },
     { id: 'kaiba', name: 'Seto Kaiba', title: 'Presidente della Kaiba Corporation', image: 'images/characters/setoKaiba.jpg', series: 'main', duelTrack: '32. Seto Kaiba (Tournament Final).mp3' },
     { id: 'rex', name: 'Rex Raptor', title: 'Domatore di Dinosauri', image: 'images/characters/rexRaptor.jpg', series: 'main' },
     { id: 'weevil', name: 'Weevil Underwood', title: 'Maestro degli Insetti', image: 'images/characters/weevilUnderwood.jpg', series: 'main' },
@@ -56,7 +61,7 @@ const characterDatabase = [
     { id: 'paradoxBrothers', name: 'Fratelli Paradosso', title: 'I Guardiani del Labirinto', image: 'images/characters/paradoxBrothers.jpg', series: 'main' },
     { id: 'mai', name: 'Mai Valentine', title: 'La Regina delle Trappole', image: 'images/characters/maiValentine.jpg', series: 'main' },
     { id: 'bandit_keith', name: 'Bandit Keith', title: 'Il Duellante Imbroglione', image: 'images/characters/banditKeith.jpg', series: 'main' },
-    { id: 'pegasus', name: 'Maximillion Pegasus', title: 'Creatore del Duel Monsters', image: 'images/characters/maximillionPegasus.jpg', series: 'main', duelTrack: '35. High Mages.mp3' },
+    { id: 'pegasus', name: 'Maximillion Pegasus', title: 'Creatore del Duel Monsters', image: 'images/characters/maximillionPegasus.jpg', series: 'main', duelTrack: '57. Duel of Shadows – The Millennium Mind.mp3', duelTrackAutomatico: true, duelTrackEscludiTappe: ['anime-1-pegasus-video'] },
     { id: 'tristan', name: 'Tristan Taylor', title: "L'Amico Leale", image: 'images/characters/tristanTaylor.jpg', series: 'main' },
     { id: 'serenity', name: 'Serenity Wheeler', title: 'La Sorella di Joey', image: 'images/characters/serenityWheeler.jpg', series: 'main' },
     { id: 'duke', name: 'Duke Devlin', title: 'Il Creatore di Dungeon Dice Monsters', image: 'images/characters/dukeDevlin.jpg', series: 'main' },
@@ -71,7 +76,7 @@ const characterDatabase = [
     { id: 'bakura', name: 'Ryo Bakura', title: 'Il Duellante Oscuro', image: 'images/characters/yamiBakura.jpg', series: 'main' },
     { id: 'ishizu', name: 'Ishizu Ishtar', title: 'Guardiana della collana del millennio', image: 'images/characters/ishizuIshtar.jpg', series: 'main' },
     { id: 'odion', name: 'Odion', title: 'Il Guardiano di Marik', image: 'images/characters/odion.jpg', series: 'main' },
-    { id: 'marik', name: 'Marik Ishtar', title: 'Il Padrone delle Ombre', image: 'images/characters/yamiMarik.jpg', series: 'main' },
+    { id: 'marik', name: 'Marik Ishtar', title: 'Il Padrone delle Ombre', image: 'images/characters/yamiMarik.jpg', series: 'main', duelTrack: '58. Yugi vs. Marik – Wrath of the Shadow Realm.mp3', duelTrackAutomatico: true },
     // --- Il Mondo Virtuale (dopo Battle City Parte 1) ---
     // Noah, Gozaburo e i Big Five: erano l'unico pezzo della prima serie
     // senza nessuno da affrontare, e infatti la campagna si fermava a
@@ -133,9 +138,9 @@ const characterDatabase = [
     { id: 'labyrinthMage', name: 'Labyrinth Mage', title: 'Il Mago del Labirinto', image: 'images/characters/labyrinthMage.jpg', series: 'forbiddenMemories' },
     { id: 'sebek', name: 'Sebek', title: 'Il Guardiano Coccodrillo', image: 'images/characters/sebek.jpg', series: 'forbiddenMemories' },
     { id: 'neku', name: 'Neku', title: 'L\'Ultimo Guardiano', image: 'images/characters/neku.jpg', series: 'forbiddenMemories' },
-    { id: 'heishin', name: 'Heishin', title: 'L\'Usurpatore del Trono', image: 'images/characters/heishin.jpg', series: 'forbiddenMemories' },
-    { id: 'darkNite', name: 'DarkNite', title: 'Lo Spirito di Nitemare', image: 'images/characters/darkNite.jpg', series: 'forbiddenMemories' },
-    { id: 'nitemare', name: 'Nitemare', title: 'L\'Incubo Finale', image: 'images/characters/darkNite.jpg', series: 'forbiddenMemories' },
+    { id: 'heishin', name: 'Heishin', title: 'L\'Usurpatore del Trono', image: 'images/characters/heishin.jpg', series: 'forbiddenMemories', duelTrack: '57. Duel of Shadows – The Millennium Mind.mp3', duelTrackAutomatico: true },
+    { id: 'darkNite', name: 'DarkNite', title: 'Lo Spirito di Nitemare', image: 'images/characters/darkNite.jpg', series: 'forbiddenMemories', duelTrack: '58. Yugi vs. Marik – Wrath of the Shadow Realm.mp3', duelTrackAutomatico: true },
+    { id: 'nitemare', name: 'Nitemare', title: 'L\'Incubo Finale', image: 'images/characters/darkNite.jpg', series: 'forbiddenMemories', duelTrack: '58. Yugi vs. Marik – Wrath of the Shadow Realm.mp3', duelTrackAutomatico: true },
     // "Te Stesso": un avversario speciale che dà il tuo stesso deck salvato
     // al bot, invece di un mazzo a tema fisso — vedi resetGameState() in
     // js/engine/game-flow.js, che riconosce questo id come caso speciale.
