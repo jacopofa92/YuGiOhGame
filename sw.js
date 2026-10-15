@@ -513,7 +513,6 @@ const APP_SHELL = [
     'images/icons/icon-512.png',
     'images/icons/icon-180.png',
     'images/icons/icon-32.png',
-    'images/cards/backCard.jpg',
     // js/ organizzata per contesto (vedi docs/architecture/GUIDA_RIUTILIZZO.md): motore di
     // gioco in engine/, dati carte/mazzi in data/, IA in ai/, audio in
     // audio/, presentazione in ui/, multiplayer in multiplayer/, sync

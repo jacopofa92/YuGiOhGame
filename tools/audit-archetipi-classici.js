@@ -114,7 +114,9 @@ async function eseguiAudit(opzioni) {
     const risultati = [];
     for (let d = 0; d < opzioni.duellanti.length; d++) {
         const duellante = opzioni.duellanti[d];
-        for (const livello of opzioni.livelli) {
+        // Compatibilita' con chiamanti precedenti all'opzione --livelli:
+        // chi usa direttamente eseguiAudit continua a misurare tutti e tre.
+        for (const livello of (opzioni.livelli || LIVELLI)) {
             process.stdout.write(`[${d + 1}/${opzioni.duellanti.length}] ${duellante}/${livello}... `);
             const ufficiali = [];
             for (let c = 0; c < CAMPIONI.length; c++) {

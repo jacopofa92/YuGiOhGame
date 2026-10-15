@@ -3717,7 +3717,8 @@
                 (chosen) => {
                     const grave = ctx.graveyard(ctx.owner);
                     const selfIndex = grave.findIndex((c) => c.uid === ctx.card.uid);
-                    if (selfIndex === -1 || !ctx.shuffleIntoDeck(ctx.owner, [chosen])) { grave.push(chosen); return; }
+                    if (selfIndex === -1 || ctx.graveyardMoveNegated(ctx.owner)
+                        || !ctx.shuffleIntoDeck(ctx.owner, [chosen])) { grave.push(chosen); return; }
                     const [stone] = grave.splice(selfIndex, 1);
                     ctx.hand(ctx.owner).push(stone);
                     ctx.log(`${chosen.name} torna nel Deck e ${stone.name} torna in mano!`);
@@ -3870,6 +3871,7 @@
                 const grave = ctx.graveyard(ctx.owner);
                 const rodIndex = grave.findIndex((c) => c.uid === ctx.card.uid);
                 if (!slot || rodIndex === -1) return;
+                if (ctx.graveyardMoveNegated(ctx.owner)) return;
                 const tribute = slot.card;
                 ctx.field(chosen.owner)[chosen.index] = null;
                 ctx.graveyard(chosen.owner).push(tribute);
@@ -4092,6 +4094,7 @@
             const grave = ctx.graveyard(ctx.owner);
             const selfIndex = grave.findIndex((c) => c.uid === ctx.card.uid);
             if (selfIndex === -1) return;
+            if (ctx.graveyardMoveNegated(ctx.owner)) return;
             const names = new Set();
             Tavolo.ordine().forEach((owner) => {
                 ctx.field(owner).forEach((slot) => {
@@ -4466,6 +4469,7 @@
         const fieldMaterialSlots = plan.materials.filter((entry) => entry.zone === 'monster').map((entry) => entry.index);
         const destination = freeBefore !== -1 ? freeBefore : fieldMaterialSlots[0];
         if (destination === undefined || destination === -1 || extra[plan.extraDeckIndex]?.uid !== plan.fusion.uid) return false;
+        if (plan.materials.some((entry) => entry.zone === 'graveyard') && ctx.graveyardMoveNegated(ctx.owner)) return false;
         const materialCards = plan.materials.map((entry) => entry.card);
         const fieldBlueEyesCount = plan.materials.filter((entry) => entry.zone === 'monster'
             && (blueEyesFusionMaterial(entry.card, 'monster') || entry.card.id === 29)).length;
@@ -4958,6 +4962,7 @@
             const grave = ctx.graveyard(ctx.owner);
             const index = grave.findIndex((card) => card.uid === ctx.card.uid);
             if (index === -1) return;
+            if (ctx.graveyardMoveNegated(ctx.owner)) return;
             const [chant] = grave.splice(index, 1);
             ctx.banish(ctx.owner, chant);
             ctx.markUsedOncePerTurn(`ancient-chant-grave:${ctx.owner}`);

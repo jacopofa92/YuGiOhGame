@@ -1,16 +1,16 @@
 // Catalogo delle musiche da duello (js/data/arena-options.js, TRACKS):
 // sono selezionabili SOLO le tracce di audio/soundtracks/ che iniziano con
-// 30-43 o 57 (scelta dell'utente), tutte, e ognuna ha un nome visibile —
+// 30-43 o 57-59 (scelta dell'utente), tutte, e ognuna ha un nome visibile —
 // quello scritto nel catalogo o, se vuoto, il nome del file senza
 // estensione. Analisi statica: nessun duello coinvolto.
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 
-const NUMERI_AMMESSI = [30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 57];
+const NUMERI_AMMESSI = [30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 57, 58, 59];
 
 module.exports = {
-    name: 'Catalogo musiche da duello: solo 30-43 e 57, con nome visibile',
+    name: 'Catalogo musiche da duello: solo 30-43 e 57-59, con nome visibile',
     async run(t) {
         const radice = path.join(__dirname, '..', '..');
         const sandbox = { window: {} };
@@ -20,7 +20,7 @@ module.exports = {
         const numero = (file) => parseInt(file, 10);
 
         const fuori = tracce.filter((tr) => !NUMERI_AMMESSI.includes(numero(tr.file)));
-        t.assert(fuori.length === 0, `Solo tracce 30-43 e 57 (fuori elenco: ${fuori.map((x) => x.file)})`);
+        t.assert(fuori.length === 0, `Solo tracce 30-43 e 57-59 (fuori elenco: ${fuori.map((x) => x.file)})`);
 
         const attese = fs.readdirSync(cartella).filter((f) => /\.mp3$/i.test(f) && NUMERI_AMMESSI.includes(numero(f)));
         const mancanti = attese.filter((f) => !tracce.some((tr) => tr.file === f));

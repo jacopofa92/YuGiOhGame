@@ -1,5 +1,5 @@
 {
-  "generatoIl": "2026-10-15T19:12:01.676Z",
+  "generatoIl": "2026-10-15T22:01:31.476Z",
   "metodo": "campione ufficiale primario; Custom separato e soltanto informativo; stessi semi ai tre livelli",
   "opzioni": {
     "duellanti": [
@@ -145,25 +145,25 @@
       "livello": "hard",
       "ufficiale": {
         "partite": 250,
-        "vittorie": 111,
-        "vittoriePct": 44.4,
-        "turniMedi": 18,
+        "vittorie": 108,
+        "vittoriePct": 43.2,
+        "turniMedi": 17.29,
         "nonFinite": 0
       },
       "firmaPartitePct": {},
       "custom": {
         "deckVittorie": {
           "partite": 50,
-          "vittorie": 35,
-          "vittoriePct": 70,
-          "turniMedi": 20.2,
+          "vittorie": 36,
+          "vittoriePct": 72,
+          "turniMedi": 17,
           "nonFinite": 0
         },
         "avversarioVittorie": {
           "partite": 50,
-          "vittorie": 15,
-          "vittoriePct": 30,
-          "turniMedi": 20.2,
+          "vittorie": 14,
+          "vittoriePct": 28,
+          "turniMedi": 17,
           "nonFinite": 0
         }
       }
@@ -173,25 +173,25 @@
       "livello": "hard",
       "ufficiale": {
         "partite": 250,
-        "vittorie": 140,
-        "vittoriePct": 56,
-        "turniMedi": 16.64,
+        "vittorie": 131,
+        "vittoriePct": 52.4,
+        "turniMedi": 15.82,
         "nonFinite": 0
       },
       "firmaPartitePct": {},
       "custom": {
         "deckVittorie": {
           "partite": 50,
-          "vittorie": 29,
-          "vittoriePct": 58,
-          "turniMedi": 18.62,
+          "vittorie": 35,
+          "vittoriePct": 70,
+          "turniMedi": 16.04,
           "nonFinite": 0
         },
         "avversarioVittorie": {
           "partite": 50,
-          "vittorie": 21,
-          "vittoriePct": 42,
-          "turniMedi": 18.62,
+          "vittorie": 15,
+          "vittoriePct": 30,
+          "turniMedi": 16.04,
           "nonFinite": 0
         }
       }
@@ -201,9 +201,9 @@
       "livello": "hard",
       "ufficiale": {
         "partite": 250,
-        "vittorie": 114,
-        "vittoriePct": 45.6,
-        "turniMedi": 24.53,
+        "vittorie": 118,
+        "vittoriePct": 47.2,
+        "turniMedi": 24.25,
         "nonFinite": 0
       },
       "firmaPartitePct": {},
@@ -229,25 +229,25 @@
       "livello": "hard",
       "ufficiale": {
         "partite": 250,
-        "vittorie": 126,
-        "vittoriePct": 50.4,
-        "turniMedi": 22.98,
+        "vittorie": 110,
+        "vittoriePct": 44,
+        "turniMedi": 21.75,
         "nonFinite": 0
       },
       "firmaPartitePct": {},
       "custom": {
         "deckVittorie": {
           "partite": 50,
-          "vittorie": 30,
-          "vittoriePct": 60,
-          "turniMedi": 23.6,
+          "vittorie": 31,
+          "vittoriePct": 62,
+          "turniMedi": 21.9,
           "nonFinite": 0
         },
         "avversarioVittorie": {
           "partite": 50,
-          "vittorie": 20,
-          "vittoriePct": 40,
-          "turniMedi": 23.6,
+          "vittorie": 19,
+          "vittoriePct": 38,
+          "turniMedi": 21.9,
           "nonFinite": 0
         }
       }
@@ -257,25 +257,25 @@
       "livello": "hard",
       "ufficiale": {
         "partite": 250,
-        "vittorie": 213,
-        "vittoriePct": 85.2,
-        "turniMedi": 15.2,
+        "vittorie": 208,
+        "vittoriePct": 83.2,
+        "turniMedi": 14.81,
         "nonFinite": 0
       },
       "firmaPartitePct": {},
       "custom": {
         "deckVittorie": {
           "partite": 50,
-          "vittorie": 11,
-          "vittoriePct": 22,
-          "turniMedi": 19.86,
+          "vittorie": 17,
+          "vittoriePct": 34,
+          "turniMedi": 16.84,
           "nonFinite": 0
         },
         "avversarioVittorie": {
           "partite": 50,
-          "vittorie": 39,
-          "vittoriePct": 78,
-          "turniMedi": 19.86,
+          "vittorie": 33,
+          "vittoriePct": 66,
+          "turniMedi": 16.84,
           "nonFinite": 0
         }
       }
@@ -285,25 +285,25 @@
       "livello": "hard",
       "ufficiale": {
         "partite": 250,
-        "vittorie": 229,
-        "vittoriePct": 91.6,
-        "turniMedi": 15.66,
+        "vittorie": 227,
+        "vittoriePct": 90.8,
+        "turniMedi": 14.97,
         "nonFinite": 0
       },
       "firmaPartitePct": {},
       "custom": {
         "deckVittorie": {
           "partite": 50,
-          "vittorie": 8,
-          "vittoriePct": 16,
-          "turniMedi": 20.44,
+          "vittorie": 5,
+          "vittoriePct": 10,
+          "turniMedi": 16.82,
           "nonFinite": 0
         },
         "avversarioVittorie": {
           "partite": 50,
-          "vittorie": 42,
-          "vittoriePct": 84,
-          "turniMedi": 20.44,
+          "vittorie": 45,
+          "vittoriePct": 90,
+          "turniMedi": 16.82,
           "nonFinite": 0
         }
       }

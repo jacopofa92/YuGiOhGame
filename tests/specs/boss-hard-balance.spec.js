@@ -25,8 +25,8 @@ module.exports = {
         t.assert(JSON.stringify(esito.bakura) === '[1,2,2]', 'Bakura Hard deve conservare Destiny Board/Necropaura');
         t.assert(JSON.stringify(esito.gozaburo) === '[1,1,2]', 'Gozaburo Hard deve conservare il motore Exodia Necross');
         t.assert(JSON.stringify(esito.noah) === '[3,3,2]', 'Noah Hard deve restare centrato sui Mostri Spirito');
-        t.assert(JSON.stringify(esito.heishin) === '[3,3,3]', 'Heishin Hard deve avere consistenza da superboss');
-        t.assert(JSON.stringify(esito.nitemare) === '[3,3,3,1]', 'Nitemare Hard deve restare il boss estremo');
+        t.assert(JSON.stringify(esito.heishin) === '[2,1,3]', 'Heishin Hard deve avere consistenza da superboss');
+        t.assert(JSON.stringify(esito.nitemare) === '[2,1,3,2]', 'Nitemare Hard deve restare il boss estremo');
         t.assert(esito.separati, 'Nitemare non deve tornare a condividere il deck di DarkNite');
     }
 };

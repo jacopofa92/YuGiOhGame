@@ -6825,13 +6825,13 @@ function ritoccaDeckHard(personaggio, rimosse, aggiunte) {
 // troppi mostri normali deboli. Rimane il giovane Yugi del mazzo del nonno.
 ritoccaDeckHard('yugiMuto',
     { 109: 1, 237: 1, 391: 1, 28: 1, 206: 1, 143: 1, 55: 1, 56: 1 },
-    { 433: 2, 508: 2, 409: 1, 503: 1, 36: 1, 382: 1 });
+    { 433: 2, 508: 2, 409: 1, 503: 1, 36: 1, 820: 1 });
 
 // Bakura accelera la strategia Demone/Destiny Board e dispone di una sola
 // rimozione globale aggiuntiva, senza trasformarsi in un mazzo generico.
 ritoccaDeckHard('bakura',
     { 25: 2, 591: 2, 984: 2 },
-    { 259: 1, 1118: 1, 192: 1, 409: 1, 382: 1, 36: 1 });
+    { 259: 1, 1118: 1, 192: 1, 409: 1, 503: 1, 36: 1 });
 
 // Gozaburo sacrifica quattro muri/attaccanti per rendere affidabile il vero
 // piano mostrato nell'anime: spedire i cinque pezzi e chiamare Necross.
@@ -6843,20 +6843,20 @@ ritoccaDeckHard('gozaburo',
 // riducendo il frammento preistorico della sua simulazione virtuale.
 ritoccaDeckHard('noah',
     { 367: 1, 266: 2, 150: 2, 1002: 2, 1006: 1 },
-    { 1007: 1, 1001: 1, 884: 1, 409: 2, 382: 1, 36: 1, 272: 1 });
+    { 1007: 1, 1001: 1, 884: 1, 409: 1, 503: 1, 36: 1, 272: 1, 147: 1 });
 
 // Heishin e' il penultimo grande ostacolo: piu' potere Demone e controllo,
 // ma conserva una distanza netta dalla forma finale di Nitemare.
 ritoccaDeckHard('heishin',
     { 237: 2, 428: 2, 12: 2, 518: 1, 517: 1, 38: 1 },
-    { 409: 3, 382: 2, 36: 2, 272: 2 });
+    { 409: 2, 36: 2, 272: 2, 130: 2, 503: 1 });
 
 // Nitemare e' volutamente il superboss assoluto. Parte dal tema
 // Drago/Demone di DarkNite, ma la forma finale elimina quasi tutti i mostri
 // intermedi e porta al limite legale pescata, rinascita e rimozione.
 ritoccaDeckHard('nitemare',
     { 12: 2, 1125: 1, 932: 2, 13: 1, 518: 1, 436: 1, 331: 2, 642: 1, 38: 1, 517: 1 },
-    { 493: 1, 502: 1, 335: 1, 36: 2, 272: 2, 382: 2, 409: 2, 17: 1, 130: 1 });
+    { 493: 1, 502: 1, 335: 1, 36: 2, 272: 2, 409: 1, 17: 2, 130: 3 });
 
 // ================================================================
 // REGOLE DEI TRE LIVELLI — verificate carta per carta su ogni mazzo

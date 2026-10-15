@@ -1,6 +1,6 @@
 # Bilanciamento dei boss a Difficile
 
-Audit riproducibile eseguito il 15 ottobre 2026. Starter e Structure non
+Audit riproducibile eseguito il 16 ottobre 2026. Starter e Structure non
 sono stati modificati; sono cambiate soltanto le liste `hard` degli
 avversari indicati.
 
@@ -19,12 +19,12 @@ Custom: piu' e' bassa, piu' l'avversario e' impegnativo.
 
 | Avversario | Ufficiali prima | Ufficiali dopo | Custom prima | Custom dopo |
 |---|---:|---:|---:|---:|
-| Yugi Muto | 33,2% | 44,4% | 82% | 70% |
-| Bakura | 48,8% | 56,0% | 66% | 58% |
-| Gozaburo | 26,0% | 45,6% | 88% | 76% |
-| Noah | 40,8% | 50,4% | 70% | 60% |
-| Heishin | 71,2% | 85,2% | 58% | 22% |
-| Nitemare | 61,2% | 91,6% | 70% | 16% |
+| Yugi Muto | 33,2% | 43,2% | 82% | 72% |
+| Bakura | 48,8% | 52,4% | 66% | 70% |
+| Gozaburo | 26,0% | 47,2% | 88% | 76% |
+| Noah | 40,8% | 44,0% | 70% | 62% |
+| Heishin | 71,2% | 83,2% | 58% | 34% |
+| Nitemare | 61,2% | 90,8% | 70% | 10% |
 
 ## Decisioni
 
@@ -35,10 +35,10 @@ Custom: piu' e' bassa, piu' l'avversario e' impegnativo.
   pescata e rimozione sufficienti a non perdere prima della combo.
 - **Noah:** meno frammenti preistorici e piu' Mostri Spirito del duello
   nell'universo virtuale.
-- **Heishin:** 85,2% sul campione ufficiale; e' un superboss deliberatamente
+- **Heishin:** 83,2% sul campione ufficiale; e' un superboss deliberatamente
   severo, ma ancora inferiore al finale.
-- **Nitemare:** identita' e deck separati da DarkNite. Con 91,6% sul campione
-  ufficiale e 84% di vittorie contro Custom e' il picco assoluto del gioco.
+- **Nitemare:** identita' e deck separati da DarkNite. Con 90,8% sul campione
+  ufficiale e 90% di vittorie contro Custom e' il picco assoluto del gioco.
 
 Le prove intermedie sono conservate nella stessa cartella dei report: hanno
 mostrato che aggiungere pezzi combo senza ridurre le mani morte puo' perfino
