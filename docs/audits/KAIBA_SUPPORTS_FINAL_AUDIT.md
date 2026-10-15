@@ -1,6 +1,6 @@
 # Decisione finale supporti moderni — Kaiba Difficile
 
-Data: 2026-10-15. Il mazzo pubblicato non e' ancora stato modificato.
+Data: 2026-10-15. Decisione applicata al solo mazzo Difficile.
 
 ## Varianti
 
@@ -32,9 +32,9 @@ il risultato ufficiale e raddoppia la resistenza al Custom senza cambiare
 l'identita' del deck. Il pacchetto completo mostra piu' spesso il Drago
 Bianco, ma occupa cinque slot storici e rende meno del candidato minimo.
 
-## Raccomandazione in attesa di conferma
+## Decisione applicata
 
-Promuovere soltanto `luceSingola` nel deck Kaiba Difficile. Facile e Medio
+Promossa soltanto `luceSingola` nel deck Kaiba Difficile. Facile e Medio
 restano invariati; gli altri supporti moderni rimangono ricompense rare per il
 giocatore. Il 50,0% contro i campioni ufficiali e' entro la fascia desiderata
 e non rende Kaiba dominante.

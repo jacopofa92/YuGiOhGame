@@ -376,7 +376,7 @@ const characterDeckDatabase = {
                 { id: 454, qty: 1 }, // Drago Lancia
                 { id: 198, qty: 1 }, // Drago della Dimensione Diversa
                 { id: 320, qty: 1 }, // Kaiser Glider
-                { id: 431, qty: 1 }, // Saggi il Pagliaccio Oscuro
+                { id: 1263, qty: 1 }, // Luce Autentica — promossa dall'audit finale: rende piu' presente il Drago Bianco senza caricare il deck di supporti moderni
                 { id: 578, qty: 2 }, // Il Flauto per Evocare Draghi
                 { id: 38, qty: 1 }, // Fusione
                 { id: 35, qty: 1 }, // Rinascita del Mostro

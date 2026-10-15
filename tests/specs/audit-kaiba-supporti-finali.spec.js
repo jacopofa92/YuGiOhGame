@@ -11,9 +11,12 @@ module.exports = {
         const totale = (deck) => deck.main.reduce((n, c) => n + c.qty, 0);
         Object.entries(v).forEach(([nome, deck]) => t.assert(totale(deck) === 40, `${nome}: Main Deck da 40 carte`));
         [1, 30, 353, 578, 510, 513, 515].forEach((id) => {
-            t.assert(conta(v.completoLuce, id) === conta(v.pubblicato, id), `Il nucleo Kaiba ${id} deve restare invariato`);
+            t.assert(conta(v.completoLuce, id) === conta(v.precedente, id), `Il nucleo Kaiba ${id} deve restare invariato`);
         });
-        t.assert(conta(v.luceSingola, 1263) === 1, 'La variante minima deve avere una Luce Autentica');
+        t.assert(conta(v.precedente, 431) === 1 && conta(v.precedente, 1263) === 0,
+            'La baseline storica deve conservare Saggi');
+        t.assert(conta(v.pubblicato, 431) === 0 && conta(v.pubblicato, 1263) === 1,
+            'La lista pubblicata deve sostituire Saggi con una Luce Autentica');
         t.assert(conta(v.completoLuce, 1261) === 1 && conta(v.completoLuce, 1262) === 1
             && conta(v.completoLuce, 1263) === 2 && conta(v.completoLuce, 1264) === 1,
         'Il pacchetto completo deve conservare le quantità prudenti');

@@ -115,8 +115,8 @@ avversario; dati e motivazione sono in
 Per Kaiba, invece, il confronto finale individua una candidata minima: una
 sola Luce Autentica al posto di Saggi porta il risultato ufficiale dal 44,8%
 al 50,0% e quello contro Custom dal 10,0% al 20,0%. Il pacchetto completo e'
-meno efficiente e non e' raccomandato. La promozione della singola carta resta
-in attesa di conferma; dettagli in `docs/audits/KAIBA_SUPPORTS_FINAL_AUDIT.md`.
+meno efficiente e non e' raccomandato. La singola carta e' stata promossa nel
+solo deck Difficile; dettagli in `docs/audits/KAIBA_SUPPORTS_FINAL_AUDIT.md`.
 
 ## Deck avversari: politica conservativa
 

@@ -12,11 +12,15 @@ const CAMPIONI = ['yamiYugi', 'joey', 'pegasus', 'mako', 'bakura'];
 const OSSERVATI = [1, 30, 1261, 1262, 1263, 1264, 1265];
 
 function varianti() {
-    const base = occhiBlu.kaibaHard();
+    const precedente = occhiBlu.kaibaHard();
+    const pubblicato = JSON.parse(JSON.stringify(precedente));
+    const saggi = pubblicato.main.find((c) => Number(c.id) === 431);
+    if (!saggi || saggi.qty !== 1) throw new Error('La baseline storica deve contenere Saggi.');
+    pubblicato.main.splice(pubblicato.main.indexOf(saggi), 1, { id: 1263, qty: 1 });
     return {
-        pubblicato: base,
-        luceSingola: occhiBlu.sostituisci(base, [1263], []),
-        completoLuce: occhiBlu.sostituisci(base, [1261, 1262, 1263, 1263, 1264], [1265])
+        precedente,
+        pubblicato,
+        completoLuce: occhiBlu.sostituisci(precedente, [1261, 1262, 1263, 1263, 1264], [1265])
     };
 }
 
@@ -95,7 +99,7 @@ async function eseguiAudit(opzioni) {
         opzioni: { partite: opzioni.partite, turni: opzioni.turni, seme: opzioni.seme },
         custom: { name: custom.deck.name, impronta: custom.impronta },
         varianti: {
-            luceSingola: { aggiunteMain: [1263], tagliMain: [431] },
+            pubblicato: { aggiunteMain: [1263], tagliMain: [431] },
             completoLuce: { aggiunteMain: [1261, 1262, 1263, 1263, 1264], tagliMain: [431, 335, 454, 198, 320], aggiunteExtra: [1265] }
         },
         risultati

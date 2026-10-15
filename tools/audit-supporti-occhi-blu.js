@@ -25,7 +25,12 @@ function arg(name, fallback) {
 
 function kaibaHard() {
     const source = fs.readFileSync(path.join(ROOT, 'js/data/character-decks.js'), 'utf8');
-    return JSON.parse(vm.runInNewContext(`${source}\nJSON.stringify(getCharacterDeck('kaiba', 'hard'));`, {}));
+    const deck = JSON.parse(vm.runInNewContext(`${source}\nJSON.stringify(getCharacterDeck('kaiba', 'hard'));`, {}));
+    // Questo strumento riproduce l'audit storico che ha portato alla scelta:
+    // ricostruisce la baseline precedente alla promozione di Luce Autentica.
+    const luce = deck.main.find((c) => Number(c.id) === 1263);
+    if (luce) deck.main.splice(deck.main.indexOf(luce), 1, { id: 431, qty: 1 });
+    return deck;
 }
 
 function sostituisci(base, additions, extraAdditions) {
