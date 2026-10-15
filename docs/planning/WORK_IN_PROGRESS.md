@@ -130,6 +130,11 @@ sempre coerenti con il personaggio. Toon/Pegasus si affronta per ultimo.
       Difficile mantiene 40 carte ma prepara con più continuità Mille Occhi;
       il controllo del registro misura Mondo 74,5%, Abbandonato 18,5% e
       Restrizione 4%. Dettagli in `docs/audits/PEGASUS_OPPONENT_AUDIT.md`.
+- [x] Rafforzati a Difficile Yugi Muto, Bakura, Gozaburo e Noah senza
+      modificare Starter/Structure. Heishin e Nitemare sono ora due superboss
+      distinti: DarkNite resta il penultimo duello, Nitemare ha identita' e
+      lista proprie ed e' il picco assoluto. Audit su 1.800 duelli finali e
+      baseline in `docs/audits/BOSS_HARD_BALANCE.md`.
 
 ## Audio multipagina
 

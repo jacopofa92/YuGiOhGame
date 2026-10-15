@@ -32,8 +32,11 @@ function valore(argv, nome, fallback) {
 
 function opzioniDa(argv) {
     const espliciti = valore(argv, 'duellanti', '');
+    const livelli = valore(argv, 'livelli', LIVELLI.join(','))
+        .split(',').map((x) => x.trim().toLowerCase()).filter((x) => LIVELLI.includes(x));
     return {
         duellanti: espliciti ? espliciti.split(',').map((x) => x.trim()).filter(Boolean) : DUELLANTI_DEFAULT.slice(),
+        livelli: livelli.length ? livelli : LIVELLI.slice(),
         partite: Math.max(1, Number(valore(argv, 'partite', '50')) || 50),
         turni: Math.max(20, Number(valore(argv, 'turni', '80')) || 80),
         seme: Number(valore(argv, 'seme', '141000')) || 141000,
@@ -111,7 +114,7 @@ async function eseguiAudit(opzioni) {
     const risultati = [];
     for (let d = 0; d < opzioni.duellanti.length; d++) {
         const duellante = opzioni.duellanti[d];
-        for (const livello of LIVELLI) {
+        for (const livello of opzioni.livelli) {
             process.stdout.write(`[${d + 1}/${opzioni.duellanti.length}] ${duellante}/${livello}... `);
             const ufficiali = [];
             for (let c = 0; c < CAMPIONI.length; c++) {

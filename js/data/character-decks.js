@@ -6798,6 +6798,66 @@ characterDeckDatabase.umbra = {
 // Nitemare puo' essere bilanciato senza alterare il primo scontro DarkNite.
 characterDeckDatabase.nitemare = JSON.parse(JSON.stringify(characterDeckDatabase.darkNite));
 
+// Bilanciamento mirato dei soli avversari Difficili. Le liste Facile e
+// Medio restano intatte: qui si sostituiscono carte a parita' di totale,
+// senza alterare Starter/Structure o introdurre bonus nascosti nel motore.
+function ritoccaDeckHard(personaggio, rimosse, aggiunte) {
+    const main = characterDeckDatabase[personaggio].hard.main;
+    Object.entries(rimosse).forEach(([idTesto, qty]) => {
+        const id = Number(idTesto);
+        const voce = main.find((c) => c.id === id);
+        if (!voce || voce.qty < qty) throw new Error(`Ritocco ${personaggio}: impossibile rimuovere ${qty}x ${id}`);
+        voce.qty -= qty;
+    });
+    for (let i = main.length - 1; i >= 0; i--) if (main[i].qty === 0) main.splice(i, 1);
+    Object.entries(aggiunte).forEach(([idTesto, qty]) => {
+        const id = Number(idTesto);
+        const voce = main.find((c) => c.id === id);
+        if (voce) voce.qty += qty;
+        else main.push({ id, qty });
+    });
+    if (main.reduce((totale, c) => totale + c.qty, 0) !== 40) {
+        throw new Error(`Ritocco ${personaggio}: il Main Deck non contiene 40 carte`);
+    }
+}
+
+// Yugi usa i cercatori per proteggere e riunire Exodia, invece di pescare
+// troppi mostri normali deboli. Rimane il giovane Yugi del mazzo del nonno.
+ritoccaDeckHard('yugiMuto',
+    { 109: 1, 237: 1, 391: 1, 28: 1, 206: 1, 143: 1, 55: 1, 56: 1 },
+    { 433: 2, 508: 2, 409: 1, 503: 1, 36: 1, 382: 1 });
+
+// Bakura accelera la strategia Demone/Destiny Board e dispone di una sola
+// rimozione globale aggiuntiva, senza trasformarsi in un mazzo generico.
+ritoccaDeckHard('bakura',
+    { 25: 2, 591: 2, 984: 2 },
+    { 259: 1, 1118: 1, 192: 1, 409: 1, 382: 1, 36: 1 });
+
+// Gozaburo sacrifica quattro muri/attaccanti per rendere affidabile il vero
+// piano mostrato nell'anime: spedire i cinque pezzi e chiamare Necross.
+ritoccaDeckHard('gozaburo',
+    { 337: 2, 375: 2 },
+    { 409: 2, 36: 1, 272: 1 });
+
+// Noah concentra il livello Difficile sui Mostri Spirito del suo duello,
+// riducendo il frammento preistorico della sua simulazione virtuale.
+ritoccaDeckHard('noah',
+    { 367: 1, 266: 2, 150: 2, 1002: 2, 1006: 1 },
+    { 1007: 1, 1001: 1, 884: 1, 409: 2, 382: 1, 36: 1, 272: 1 });
+
+// Heishin e' il penultimo grande ostacolo: piu' potere Demone e controllo,
+// ma conserva una distanza netta dalla forma finale di Nitemare.
+ritoccaDeckHard('heishin',
+    { 237: 2, 428: 2, 12: 2, 518: 1, 517: 1, 38: 1 },
+    { 409: 3, 382: 2, 36: 2, 272: 2 });
+
+// Nitemare e' volutamente il superboss assoluto. Parte dal tema
+// Drago/Demone di DarkNite, ma la forma finale elimina quasi tutti i mostri
+// intermedi e porta al limite legale pescata, rinascita e rimozione.
+ritoccaDeckHard('nitemare',
+    { 12: 2, 1125: 1, 932: 2, 13: 1, 518: 1, 436: 1, 331: 2, 642: 1, 38: 1, 517: 1 },
+    { 493: 1, 502: 1, 335: 1, 36: 2, 272: 2, 382: 2, 409: 2, 17: 1, 130: 1 });
+
 // ================================================================
 // REGOLE DEI TRE LIVELLI — verificate carta per carta su ogni mazzo
 // ================================================================

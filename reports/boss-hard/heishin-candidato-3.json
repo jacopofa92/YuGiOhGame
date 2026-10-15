@@ -1,0 +1,167 @@
+{
+  "generatoIl": "2026-10-15T19:08:17.155Z",
+  "metodo": "campione ufficiale primario; Custom separato e soltanto informativo; stessi semi ai tre livelli",
+  "opzioni": {
+    "duellanti": [
+      "heishin"
+    ],
+    "livelli": [
+      "hard"
+    ],
+    "partite": 50,
+    "turni": 100,
+    "seme": 141000,
+    "salvataggio": "save_yugioh.json",
+    "deckCustom": null,
+    "output": "reports/boss-hard/heishin-candidato-3.json"
+  },
+  "campioni": [
+    "yamiYugi",
+    "joey",
+    "pegasus",
+    "mako",
+    "bakura"
+  ],
+  "custom": {
+    "name": "Custom",
+    "main": [
+      {
+        "id": 1,
+        "qty": 3
+      },
+      {
+        "id": 31,
+        "qty": 1
+      },
+      {
+        "id": 513,
+        "qty": 2
+      },
+      {
+        "id": 515,
+        "qty": 2
+      },
+      {
+        "id": 597,
+        "qty": 3
+      },
+      {
+        "id": 596,
+        "qty": 1
+      },
+      {
+        "id": 628,
+        "qty": 3
+      },
+      {
+        "id": 639,
+        "qty": 3
+      },
+      {
+        "id": 644,
+        "qty": 2
+      },
+      {
+        "id": 38,
+        "qty": 2
+      },
+      {
+        "id": 510,
+        "qty": 2
+      },
+      {
+        "id": 8,
+        "qty": 1
+      },
+      {
+        "id": 10,
+        "qty": 2
+      },
+      {
+        "id": 409,
+        "qty": 2
+      },
+      {
+        "id": 35,
+        "qty": 1
+      },
+      {
+        "id": 671,
+        "qty": 1
+      },
+      {
+        "id": 291,
+        "qty": 1
+      },
+      {
+        "id": 382,
+        "qty": 3
+      },
+      {
+        "id": 147,
+        "qty": 1
+      },
+      {
+        "id": 36,
+        "qty": 1
+      },
+      {
+        "id": 607,
+        "qty": 1
+      },
+      {
+        "id": 646,
+        "qty": 1
+      },
+      {
+        "id": 645,
+        "qty": 1
+      }
+    ],
+    "extra": [
+      {
+        "id": 29,
+        "qty": 1
+      },
+      {
+        "id": 512,
+        "qty": 1
+      },
+      {
+        "id": 511,
+        "qty": 1
+      }
+    ],
+    "impronta": "e1909a556263c979"
+  },
+  "risultati": [
+    {
+      "duellante": "heishin",
+      "livello": "hard",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 213,
+        "vittoriePct": 85.2,
+        "turniMedi": 15.2,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {},
+      "custom": {
+        "deckVittorie": {
+          "partite": 50,
+          "vittorie": 11,
+          "vittoriePct": 22,
+          "turniMedi": 19.86,
+          "nonFinite": 0
+        },
+        "avversarioVittorie": {
+          "partite": 50,
+          "vittorie": 39,
+          "vittoriePct": 78,
+          "turniMedi": 19.86,
+          "nonFinite": 0
+        }
+      }
+    }
+  ]
+}
