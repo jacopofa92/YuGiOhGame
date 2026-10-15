@@ -15,9 +15,9 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
       audit. Toon: entrambi i pacchetti e l'audit conclusivo 1/2/3 sono
       completati; nessun deck avversario modificato in assenza del benchmark
       `Custom`. Supporti alle Divinita': primitive e tre carte del primo
-      pacchetto completate e testate in
-      `docs/audits/EGYPTIAN_GODS_SUPPORT_AUDIT.md`; prossimo passo sono
-      verifica IA/Multiplayer e audit riproducibile 1/2/3 copie.
+      pacchetto, verifica Multiplayer e audit 1/2/3 completati in
+      `docs/audits/EGYPTIAN_GODS_SUPPORT_AUDIT.md`. Limite proposto 1 copia;
+      nessun deck avversario modificato senza benchmark `Custom`.
 
 ## Economia e acquisizione carte
 

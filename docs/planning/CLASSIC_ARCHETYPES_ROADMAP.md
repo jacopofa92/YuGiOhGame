@@ -85,9 +85,10 @@ La Fase 6 ha ora completato dati, immagini, primitive, effetti e test isolati
 di Attacco Forza del Tuono, Pugno del Fato e Canto Antico (id 1271-1273).
 Sono coperti effetti non annullabili, limite di un solo mostro attaccante,
 negazione temporanea per nome, Evocazione Tributo aggiuntiva e statistiche
-originali dei Tributi. Deck ed economia restano invariati fino alla verifica
-IA/Multiplayer e all'audit 1/2/3. Dettagli in
-`docs/audits/EGYPTIAN_GODS_SUPPORT_AUDIT.md`.
+originali dei Tributi. Anche verifica Multiplayer e audit 1/2/3 sono
+conclusi: 3.000 duelli senza errori o stalli, limite proposto di una copia
+per ciascuna carta e nessuna modifica ai deck avversari prima del benchmark
+`Custom`. Dettagli in `docs/audits/EGYPTIAN_GODS_SUPPORT_AUDIT.md`.
 
 ## Deck avversari: politica conservativa
 

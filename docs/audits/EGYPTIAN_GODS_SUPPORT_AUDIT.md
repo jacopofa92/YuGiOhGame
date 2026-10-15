@@ -80,5 +80,33 @@ Tributo a Terreno pieno. Typecheck verde; suite completa non eseguita.
 
 Copertura mirata: `supporti-divinita-slifer-obelisk.spec.js` e
 `supporto-divinita-canto-antico.spec.js`, oltre al test delle primitive.
-Prossimo passo: verifica IA/Multiplayer e audit riproducibile 1/2/3 copie;
-economia e deck restano intenzionalmente invariati fino ai risultati.
+## Audit IA 1/2/3 e Multiplayer
+
+Audit riproducibile concluso il 2026-10-15: 3.000 duelli, 50 semi contro
+cinque avversari Hard per ognuna delle dodici varianti. Dati grezzi in
+`reports/archetypes/EGYPTIAN_GODS_SUPPORT_1_2_3.json`; generatore in
+`tools/audit-supporti-divinita.js`. Tutti i duelli sono terminati senza
+errori carta, invarianti o stalli.
+
+| Deck Hard | baseline | 1 copia | 2 copie | 3 copie |
+|---|---:|---:|---:|---:|
+| Strings / Attacco Forza del Tuono | 12,4% | 14,0% | 15,2% | 11,6% |
+| Kaiba / Pugno del Fato | 34,0% | 34,8% | 34,8% | 38,0% |
+| Marik / Canto Antico | 57,2% | 55,6% | 55,6% | 54,4% |
+
+Attacco Forza del Tuono migliora Strings solo in misura contenuta e peggiora
+a tre copie. Pugno del Fato incide poco a 1-2 copie: Obelisk compare raramente,
+quindi la carta resta correttamente situazionale. Canto Antico aumenta la
+presenza di Ra (dal 7,6% al 10,4% con una copia e al 12,4% con due) e accorcia
+leggermente i duelli, senza aumentare il win rate di Marik.
+
+Limite giocatore proposto: **1 copia per carta**. Sono mosse firma associate
+a Dei gia' limitati a uno; le copie ulteriori aumentano soprattutto le mani
+morte o la saturazione, non la qualita' strategica. Nessun deck avversario
+viene modificato in assenza del benchmark informativo `Custom`; l'audit
+dimostra compatibilita', non una necessita' di potenziamento.
+
+Verifica Multiplayer: verdi `multiplayer-end-to-end`,
+`multiplayer-passo-comune` e `multiplayer-protocollo-obbligatorio`. Verdi
+anche i tre spec mirati delle nuove regole e carte. Suite completa non
+eseguita.
