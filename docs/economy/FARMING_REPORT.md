@@ -107,3 +107,26 @@ tetto). La simulazione include 6,67 Stelle settimanali attese completando le
 Stelle spese per carte/buste e non aggiunge premi delle Storie. E' inoltre uno
 scenario intensivo (70 vittorie e tre tornei completi ogni settimana), quindi
 non rappresenta il calendario di un giocatore occasionale.
+
+## Aggiornamento supporti moderni classici — 2026-10-15
+
+Le missioni degli id 1250-1273 sono deterministiche: le ore seguenti usano
+lo stesso riferimento di 8 minuti per vittoria e non includono sconfitte né
+il tempo necessario a completare i capitoli.
+
+| Linea | Soglie cumulative | Tempo minimo dell'ultima soglia |
+|---|---|---:|
+| Occhi Rossi / Joey | 10, 20, 35, 50 | 6,7 h |
+| Mago Nero / Yugi | 15, 30, 45, 60, 75, 90, 100 | 13,3 h |
+| Drago Bianco / Kaiba | 15, 30, 45, 60, 75 | 10 h |
+| Toon / Pegasus | 15, 25, 35, 45, 50 | 6,7 h |
+| Attacco Forza del Tuono / Strings | 40 + Slifer | 5,3 h complessive contro Strings |
+| Pugno del Fato / Kaiba | 80 + Obelisk | 10,7 h complessive contro Kaiba |
+| Canto Antico / Marik | 50 + Ra | 6,7 h complessive contro Marik |
+
+Occhi Rossi e Toon terminano nella fascia delle vecchie carte firma da 50
+vittorie. Drago Bianco e soprattutto Mago Nero sono progressioni più lunghe,
+ma distribuiscono ricompense ogni 10-15 vittorie. Le mosse delle Divinità
+riusano il totale storico già necessario ai relativi Dei: le soglie non si
+sommano dopo lo sblocco. Il tempo reale sarà superiore in base al win rate a
+Difficile e andrà confrontato con telemetria o prove manuali.
