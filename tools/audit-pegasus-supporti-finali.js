@@ -12,11 +12,12 @@ const CAMPIONI = ['yamiYugi', 'joey', 'kaiba', 'mako', 'bakura'];
 const OSSERVATI = [487, 416, 476, 1266, 1267, 1268];
 
 function varianti() {
-    const base = toon.pegasusHard();
+    const precedente = toon.pegasusHard();
+    const pubblicato = toon.sostituisci(precedente, [1266]);
     return {
-        pubblicato: base,
-        regnoSingolo: toon.sostituisci(base, [1266]),
-        toonLeggero: toon.sostituisci(base, [1266, 1267, 1268])
+        precedente,
+        pubblicato,
+        toonLeggero: toon.sostituisci(precedente, [1266, 1267, 1268])
     };
 }
 
@@ -95,7 +96,7 @@ async function eseguiAudit(opzioni) {
         opzioni: { partite: opzioni.partite, turni: opzioni.turni, seme: opzioni.seme },
         custom: { name: custom.deck.name, impronta: custom.impronta },
         varianti: {
-            regnoSingolo: { aggiunteMain: [1266], tagliMain: [190] },
+            pubblicato: { aggiunteMain: [1266], tagliMain: [190] },
             toonLeggero: { aggiunteMain: [1266, 1267, 1268], tagliMain: [190, 190, 190] }
         },
         risultati

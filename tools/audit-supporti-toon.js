@@ -24,7 +24,16 @@ function arg(name, fallback) {
 
 function pegasusHard() {
     const source = fs.readFileSync(path.join(ROOT, 'js/data/character-decks.js'), 'utf8');
-    return JSON.parse(vm.runInNewContext(`${source}\nJSON.stringify(getCharacterDeck('pegasus', 'hard'));`, {}));
+    const deck = JSON.parse(vm.runInNewContext(`${source}\nJSON.stringify(getCharacterDeck('pegasus', 'hard'));`, {}));
+    // Ricostruisce la baseline storica precedente alla promozione del
+    // singolo Regno Toon, così gli audit 1/2/3 restano riproducibili.
+    const regno = deck.main.find((c) => Number(c.id) === 1266);
+    if (regno) {
+        deck.main.splice(deck.main.indexOf(regno), 1);
+        const coniglio = deck.main.find((c) => Number(c.id) === 190);
+        if (coniglio) coniglio.qty++; else deck.main.push({ id: 190, qty: 1 });
+    }
+    return deck;
 }
 
 function sostituisci(base, additions) {

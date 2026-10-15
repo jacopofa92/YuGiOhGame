@@ -1,6 +1,6 @@
 # Decisione finale supporti moderni — Pegasus Difficile
 
-Data: 2026-10-15. Il mazzo pubblicato non e' ancora stato modificato.
+Data: 2026-10-15. Decisione applicata al solo mazzo Difficile.
 
 ## Varianti
 
@@ -33,9 +33,9 @@ Conigli Oscuri e rende meno contro Custom. Abbandonato rimane visibile e la
 frequenza di Mille Occhi, gia' bassa per natura della combinazione, non cambia
 in modo sostanziale.
 
-## Raccomandazione in attesa di conferma
+## Decisione applicata
 
-Promuovere soltanto `regnoSingolo` nel deck Pegasus Difficile. Facile, Medio,
+Promosso soltanto `regnoSingolo` nel deck Pegasus Difficile. Facile, Medio,
 Starter e Structure restano invariati. Segnalibro, Arpia e gli altri supporti
 moderni rimangono ricompense rare del giocatore.
 

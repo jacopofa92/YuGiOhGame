@@ -121,7 +121,7 @@ Per Pegasus il confronto finale indica una soluzione analoga: un solo Regno
 Toon al posto di un Coniglio Oscuro porta il risultato ufficiale dal 38,8%
 al 46,0% e quello contro Custom dal 12,0% al 26,0%, conservando la linea
 Abbandonato/Mille Occhi. Il pacchetto da tre carte e' meno equilibrato. La
-promozione della singola carta attende conferma; dettagli in
+singola carta e' stata promossa nel solo deck Difficile; dettagli in
 `docs/audits/PEGASUS_SUPPORTS_FINAL_AUDIT.md`.
 
 ## Deck avversari: politica conservativa

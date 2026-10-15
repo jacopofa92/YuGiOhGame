@@ -730,11 +730,12 @@ const characterDeckDatabase = {
                 { id: 481, qty: 2 }, // Alligatore Toon
                 { id: 606, qty: 1 }, // Manga Ryu-Ran
                 { id: 483, qty: 2 }, // Stregone Mascherato Toon
-                { id: 190, qty: 3 }, // Coniglio Oscuro
+                { id: 190, qty: 2 }, // Coniglio Oscuro
                 { id: 475, qty: 2 }, // Idolo dai Mille Occhi
                 { id: 416, qty: 1 }, // Abbandonato
                 { id: 306, qty: 1 }, // Mago Senza Volto Illusionista
                 { id: 487, qty: 3 }, // Mondo dei Toon
+                { id: 1266, qty: 1 }, // Regno Toon — singola copia promossa dall'audit finale, senza sostituire il piano storico
                 { id: 482, qty: 2 }, // Maschera Toon
                 { id: 485, qty: 2 }, // Riavvolgimento Toon
                 { id: 116, qty: 1 }, // Rito dell'Illusione Nera
