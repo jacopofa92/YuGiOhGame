@@ -1,0 +1,149 @@
+{
+  "generatoIl": "2026-10-15T14:32:18.328Z",
+  "metodo": "Kaiba Hard; stessi semi; 5 avversari ufficiali e Custom separato",
+  "opzioni": {
+    "partite": 50,
+    "turni": 80,
+    "seme": 191000
+  },
+  "custom": {
+    "name": "Custom",
+    "impronta": "e1909a556263c979"
+  },
+  "varianti": {
+    "luceSingola": {
+      "aggiunteMain": [
+        1263
+      ],
+      "tagliMain": [
+        431
+      ]
+    },
+    "completoLuce": {
+      "aggiunteMain": [
+        1261,
+        1262,
+        1263,
+        1263,
+        1264
+      ],
+      "tagliMain": [
+        431,
+        335,
+        454,
+        198,
+        320
+      ],
+      "aggiunteExtra": [
+        1265
+      ]
+    }
+  },
+  "risultati": [
+    {
+      "variante": "pubblicato",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 112,
+        "vittoriePct": 44.8,
+        "turniMedi": 15.2,
+        "nonFinite": 0,
+        "vistePct": {
+          "1": 28.8,
+          "30": 2.4,
+          "1261": 0,
+          "1262": 0,
+          "1263": 0,
+          "1264": 0,
+          "1265": 0
+        }
+      },
+      "controCustom": {
+        "partite": 50,
+        "vittorie": 5,
+        "vittoriePct": 10,
+        "turniMedi": 13.52,
+        "nonFinite": 0,
+        "vistePct": {
+          "1": 26,
+          "30": 2,
+          "1261": 0,
+          "1262": 0,
+          "1263": 0,
+          "1264": 0,
+          "1265": 0
+        }
+      }
+    },
+    {
+      "variante": "luceSingola",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 125,
+        "vittoriePct": 50,
+        "turniMedi": 14.78,
+        "nonFinite": 0,
+        "vistePct": {
+          "1": 38.4,
+          "30": 1.6,
+          "1261": 0,
+          "1262": 0,
+          "1263": 33.2,
+          "1264": 0,
+          "1265": 0
+        }
+      },
+      "controCustom": {
+        "partite": 50,
+        "vittorie": 10,
+        "vittoriePct": 20,
+        "turniMedi": 12.48,
+        "nonFinite": 0,
+        "vistePct": {
+          "1": 22,
+          "30": 0,
+          "1261": 0,
+          "1262": 0,
+          "1263": 26,
+          "1264": 0,
+          "1265": 0
+        }
+      }
+    },
+    {
+      "variante": "completoLuce",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 123,
+        "vittoriePct": 49.2,
+        "turniMedi": 14.43,
+        "nonFinite": 0,
+        "vistePct": {
+          "1": 50,
+          "30": 4.8,
+          "1261": 35.2,
+          "1262": 11.2,
+          "1263": 53.2,
+          "1264": 35.2,
+          "1265": 0.4
+        }
+      },
+      "controCustom": {
+        "partite": 50,
+        "vittorie": 7,
+        "vittoriePct": 14,
+        "turniMedi": 12.36,
+        "nonFinite": 0,
+        "vistePct": {
+          "1": 38,
+          "30": 2,
+          "1261": 18,
+          "1262": 0,
+          "1263": 42,
+          "1264": 22,
+          "1265": 0
+        }
+      }
+    }
+  ]
+}

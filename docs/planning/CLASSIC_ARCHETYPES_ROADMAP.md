@@ -112,6 +112,11 @@ prudente con 2 Bastoni, 1 Cerchio e 1 Anima scende dal 45,2% al 38,4% e rende
 meno frequenti Mago Nero e Slifer. Nessun supporto moderno entra nel suo deck
 avversario; dati e motivazione sono in
 `docs/audits/YAMI_SUPPORTS_FINAL_AUDIT.md`.
+Per Kaiba, invece, il confronto finale individua una candidata minima: una
+sola Luce Autentica al posto di Saggi porta il risultato ufficiale dal 44,8%
+al 50,0% e quello contro Custom dal 10,0% al 20,0%. Il pacchetto completo e'
+meno efficiente e non e' raccomandato. La promozione della singola carta resta
+in attesa di conferma; dettagli in `docs/audits/KAIBA_SUPPORTS_FINAL_AUDIT.md`.
 
 ## Deck avversari: politica conservativa
 
