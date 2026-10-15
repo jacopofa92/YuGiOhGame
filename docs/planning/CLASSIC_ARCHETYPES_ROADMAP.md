@@ -123,6 +123,11 @@ al 46,0% e quello contro Custom dal 12,0% al 26,0%, conservando la linea
 Abbandonato/Mille Occhi. Il pacchetto da tre carte e' meno equilibrato. La
 singola carta e' stata promossa nel solo deck Difficile; dettagli in
 `docs/audits/PEGASUS_SUPPORTS_FINAL_AUDIT.md`.
+Per Joey, una singola copia di Drago Metallo Nero al posto di Garoozis porta
+il risultato ufficiale dal 36,4% al 44,4% e quello contro Custom dal 16,0%
+al 20,0%, preservando azzardo, carte vinte e Fusioni anime. Pietra + Spirito
+peggiora invece il campione ufficiale. La promozione di Metallo attende
+conferma; dettagli in `docs/audits/JOEY_SUPPORTS_FINAL_AUDIT.md`.
 
 ## Deck avversari: politica conservativa
 
