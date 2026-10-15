@@ -135,6 +135,7 @@ const characterDatabase = [
     { id: 'neku', name: 'Neku', title: 'L\'Ultimo Guardiano', image: 'images/characters/neku.jpg', series: 'forbiddenMemories' },
     { id: 'heishin', name: 'Heishin', title: 'L\'Usurpatore del Trono', image: 'images/characters/heishin.jpg', series: 'forbiddenMemories' },
     { id: 'darkNite', name: 'DarkNite', title: 'Lo Spirito di Nitemare', image: 'images/characters/darkNite.jpg', series: 'forbiddenMemories' },
+    { id: 'nitemare', name: 'Nitemare', title: 'L\'Incubo Finale', image: 'images/characters/darkNite.jpg', series: 'forbiddenMemories' },
     // "Te Stesso": un avversario speciale che dà il tuo stesso deck salvato
     // al bot, invece di un mazzo a tema fisso — vedi resetGameState() in
     // js/engine/game-flow.js, che riconosce questo id come caso speciale.

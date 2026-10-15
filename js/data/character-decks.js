@@ -6792,6 +6792,12 @@ characterDeckDatabase.umbra = {
     ], extra: [] }
 };
 
+// Nel finale di Forbidden Memories DarkNite rivela la vera forma Nitemare.
+// Prima i due duelli puntavano allo stesso id e quindi allo stesso mazzo.
+// La copia profonda rende i tre livelli indipendenti: il futuro superboss
+// Nitemare puo' essere bilanciato senza alterare il primo scontro DarkNite.
+characterDeckDatabase.nitemare = JSON.parse(JSON.stringify(characterDeckDatabase.darkNite));
+
 // ================================================================
 // REGOLE DEI TRE LIVELLI — verificate carta per carta su ogni mazzo
 // ================================================================

@@ -2856,12 +2856,12 @@ const storyCampaignsDatabase = [
                     {
                         id: 'fm-7-finale-duello', kind: 'duel', icona: '👑',
                         label: 'Nitemare', x: 2560, y: 200,
-                        characterId: 'darkNite',
+                        characterId: 'nitemare',
                         field: 'images/fields/mobile/anticoEgittoNotte_3.jpg'
 ,
                         dialogo: [
-                            { chi: 'darkNite', nome: 'Nitemare', testo: 'Nessuno mi aveva mai costretto a mostrare questa forma. Nessuno.' },
-                            { chi: 'darkNite', nome: 'Nitemare', testo: 'Quando avro\' finito con te non resterai nemmeno nei racconti, principe. Sara\' come se il tuo nome non fosse mai esistito.' },
+                            { chi: 'nitemare', testo: 'Nessuno mi aveva mai costretto a mostrare questa forma. Nessuno.' },
+                            { chi: 'nitemare', testo: 'Quando avro\' finito con te non resterai nemmeno nei racconti, principe. Sara\' come se il tuo nome non fosse mai esistito.' },
                             { io: true, testo: 'Il mio regno ha aspettato cinquemila anni che tornassi. Non lo lascerò a te.' }
                         ]
                     },

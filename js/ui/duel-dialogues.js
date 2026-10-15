@@ -84,7 +84,7 @@
         crump: 'cold', lector: 'mystic', simonMuran: 'mystic', jono: 'warrior', teana: 'hero', shadi: 'mystic', priestessIsis: 'mystic', mageSoldier: 'warrior',
         oceanMage: 'mystic', highMageSecmeton: 'proud', forestMage: 'mystic', highMageAnubisius: 'dark', mountainMage: 'warrior', highMageAtenza: 'proud',
         desertMage: 'mystic', highMageMartis: 'dark', meadowMage: 'warrior', highMageKepura: 'proud', labyrinthMage: 'trickster', sebek: 'warrior', neku: 'cold',
-        heishin: 'dark', darkNite: 'dark', mirror: 'cold', robertoGiacobbo: 'mystic',
+        heishin: 'dark', darkNite: 'dark', nitemare: 'dark', mirror: 'cold', robertoGiacobbo: 'mystic',
         ww1_boroevic: 'warrior', ww1_conrad: 'cold', ww1_eugenio: 'warrior', ww1_brumowski: 'wild', ww1_arigi: 'wild', ww1_kaiserjager: 'warrior'
     };
 
