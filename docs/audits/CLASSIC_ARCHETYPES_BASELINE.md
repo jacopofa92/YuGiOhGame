@@ -37,8 +37,8 @@ rafforzare l'identita' senza produrre soltanto piu' vittorie anonime.
 
 ## Benchmark Custom
 
-Non ancora eseguito: serve il file `save_yugioh.json` esportato dal Profilo
-che contiene il deck chiamato `Custom`, oppure una specifica deck JSON. Il
-risultato sara' aggiunto come sezione separata e non cambiera' retroattivamente
-questa baseline ufficiale.
+Eseguito il 2026-10-15 senza alterare retroattivamente questa baseline.
+Risultati e interpretazione sono separati in
+`docs/audits/CLASSIC_ARCHETYPES_CUSTOM_BENCHMARK.md`; dati grezzi in
+`reports/archetypes/CLASSIC_ARCHETYPES_WITH_CUSTOM.json`.
 

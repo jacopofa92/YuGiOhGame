@@ -1,0 +1,690 @@
+{
+  "generatoIl": "2026-10-15T12:00:09.538Z",
+  "metodo": "campione ufficiale primario; Custom separato e soltanto informativo; stessi semi ai tre livelli",
+  "opzioni": {
+    "duellanti": [
+      "joey",
+      "yamiYugi",
+      "kaiba",
+      "pegasus",
+      "strings",
+      "marik"
+    ],
+    "partite": 50,
+    "turni": 80,
+    "seme": 141000,
+    "salvataggio": "save_yugioh.json",
+    "deckCustom": null,
+    "output": "reports/archetypes/CLASSIC_ARCHETYPES_WITH_CUSTOM.json"
+  },
+  "campioni": [
+    "yamiYugi",
+    "joey",
+    "pegasus",
+    "mako",
+    "bakura"
+  ],
+  "custom": {
+    "name": "Custom",
+    "main": [
+      {
+        "id": 1,
+        "qty": 3
+      },
+      {
+        "id": 31,
+        "qty": 1
+      },
+      {
+        "id": 513,
+        "qty": 2
+      },
+      {
+        "id": 515,
+        "qty": 2
+      },
+      {
+        "id": 597,
+        "qty": 3
+      },
+      {
+        "id": 596,
+        "qty": 1
+      },
+      {
+        "id": 628,
+        "qty": 3
+      },
+      {
+        "id": 639,
+        "qty": 3
+      },
+      {
+        "id": 644,
+        "qty": 2
+      },
+      {
+        "id": 38,
+        "qty": 2
+      },
+      {
+        "id": 510,
+        "qty": 2
+      },
+      {
+        "id": 8,
+        "qty": 1
+      },
+      {
+        "id": 10,
+        "qty": 2
+      },
+      {
+        "id": 409,
+        "qty": 2
+      },
+      {
+        "id": 35,
+        "qty": 1
+      },
+      {
+        "id": 671,
+        "qty": 1
+      },
+      {
+        "id": 291,
+        "qty": 1
+      },
+      {
+        "id": 382,
+        "qty": 3
+      },
+      {
+        "id": 147,
+        "qty": 1
+      },
+      {
+        "id": 36,
+        "qty": 1
+      },
+      {
+        "id": 607,
+        "qty": 1
+      },
+      {
+        "id": 646,
+        "qty": 1
+      },
+      {
+        "id": 645,
+        "qty": 1
+      }
+    ],
+    "extra": [
+      {
+        "id": 29,
+        "qty": 1
+      },
+      {
+        "id": 512,
+        "qty": 1
+      },
+      {
+        "id": 511,
+        "qty": 1
+      }
+    ],
+    "impronta": "e1909a556263c979"
+  },
+  "risultati": [
+    {
+      "duellante": "joey",
+      "livello": "easy",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 63,
+        "vittoriePct": 25.2,
+        "turniMedi": 18.2,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {
+        "Drago Nero Occhi Rossi": 54
+      },
+      "custom": {
+        "deckVittorie": {
+          "partite": 50,
+          "vittorie": 48,
+          "vittoriePct": 96,
+          "turniMedi": 13.12,
+          "nonFinite": 0
+        },
+        "avversarioVittorie": {
+          "partite": 50,
+          "vittorie": 2,
+          "vittoriePct": 4,
+          "turniMedi": 13.12,
+          "nonFinite": 0
+        }
+      }
+    },
+    {
+      "duellante": "joey",
+      "livello": "medium",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 117,
+        "vittoriePct": 46.8,
+        "turniMedi": 16.26,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {
+        "Drago Nero Occhi Rossi": 30.4
+      },
+      "custom": {
+        "deckVittorie": {
+          "partite": 50,
+          "vittorie": 35,
+          "vittoriePct": 70,
+          "turniMedi": 15,
+          "nonFinite": 0
+        },
+        "avversarioVittorie": {
+          "partite": 50,
+          "vittorie": 15,
+          "vittoriePct": 30,
+          "turniMedi": 15,
+          "nonFinite": 0
+        }
+      }
+    },
+    {
+      "duellante": "joey",
+      "livello": "hard",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 136,
+        "vittoriePct": 54.4,
+        "turniMedi": 16.36,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {
+        "Drago Nero Occhi Rossi": 32.4
+      },
+      "custom": {
+        "deckVittorie": {
+          "partite": 50,
+          "vittorie": 37,
+          "vittoriePct": 74,
+          "turniMedi": 12.66,
+          "nonFinite": 0
+        },
+        "avversarioVittorie": {
+          "partite": 50,
+          "vittorie": 13,
+          "vittoriePct": 26,
+          "turniMedi": 12.66,
+          "nonFinite": 0
+        }
+      }
+    },
+    {
+      "duellante": "yamiYugi",
+      "livello": "easy",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 57,
+        "vittoriePct": 22.8,
+        "turniMedi": 31,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {
+        "Mago Nero": 53.6,
+        "Slifer": 0
+      },
+      "custom": {
+        "deckVittorie": {
+          "partite": 50,
+          "vittorie": 48,
+          "vittoriePct": 96,
+          "turniMedi": 23.22,
+          "nonFinite": 0
+        },
+        "avversarioVittorie": {
+          "partite": 50,
+          "vittorie": 2,
+          "vittoriePct": 4,
+          "turniMedi": 23.22,
+          "nonFinite": 0
+        }
+      }
+    },
+    {
+      "duellante": "yamiYugi",
+      "livello": "medium",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 108,
+        "vittoriePct": 43.2,
+        "turniMedi": 17.09,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {
+        "Mago Nero": 29.6,
+        "Slifer": 0
+      },
+      "custom": {
+        "deckVittorie": {
+          "partite": 50,
+          "vittorie": 44,
+          "vittoriePct": 88,
+          "turniMedi": 14.06,
+          "nonFinite": 0
+        },
+        "avversarioVittorie": {
+          "partite": 50,
+          "vittorie": 6,
+          "vittoriePct": 12,
+          "turniMedi": 14.06,
+          "nonFinite": 0
+        }
+      }
+    },
+    {
+      "duellante": "yamiYugi",
+      "livello": "hard",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 133,
+        "vittoriePct": 53.2,
+        "turniMedi": 17.1,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {
+        "Mago Nero": 28.4,
+        "Slifer": 22.8
+      },
+      "custom": {
+        "deckVittorie": {
+          "partite": 50,
+          "vittorie": 37,
+          "vittoriePct": 74,
+          "turniMedi": 15.2,
+          "nonFinite": 0
+        },
+        "avversarioVittorie": {
+          "partite": 50,
+          "vittorie": 13,
+          "vittoriePct": 26,
+          "turniMedi": 15.2,
+          "nonFinite": 0
+        }
+      }
+    },
+    {
+      "duellante": "kaiba",
+      "livello": "easy",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 88,
+        "vittoriePct": 35.2,
+        "turniMedi": 16.92,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {
+        "Drago Bianco Occhi Blu": 46
+      },
+      "custom": {
+        "deckVittorie": {
+          "partite": 50,
+          "vittorie": 47,
+          "vittoriePct": 94,
+          "turniMedi": 12.38,
+          "nonFinite": 0
+        },
+        "avversarioVittorie": {
+          "partite": 50,
+          "vittorie": 3,
+          "vittoriePct": 6,
+          "turniMedi": 12.38,
+          "nonFinite": 0
+        }
+      }
+    },
+    {
+      "duellante": "kaiba",
+      "livello": "medium",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 127,
+        "vittoriePct": 50.8,
+        "turniMedi": 14.62,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {
+        "Drago Bianco Occhi Blu": 30.8
+      },
+      "custom": {
+        "deckVittorie": {
+          "partite": 50,
+          "vittorie": 38,
+          "vittoriePct": 76,
+          "turniMedi": 12.66,
+          "nonFinite": 0
+        },
+        "avversarioVittorie": {
+          "partite": 50,
+          "vittorie": 12,
+          "vittoriePct": 24,
+          "turniMedi": 12.66,
+          "nonFinite": 0
+        }
+      }
+    },
+    {
+      "duellante": "kaiba",
+      "livello": "hard",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 129,
+        "vittoriePct": 51.6,
+        "turniMedi": 14.42,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {
+        "Drago Bianco Occhi Blu": 25.6
+      },
+      "custom": {
+        "deckVittorie": {
+          "partite": 50,
+          "vittorie": 44,
+          "vittoriePct": 88,
+          "turniMedi": 13.68,
+          "nonFinite": 0
+        },
+        "avversarioVittorie": {
+          "partite": 50,
+          "vittorie": 6,
+          "vittoriePct": 12,
+          "turniMedi": 13.68,
+          "nonFinite": 0
+        }
+      }
+    },
+    {
+      "duellante": "pegasus",
+      "livello": "easy",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 90,
+        "vittoriePct": 36,
+        "turniMedi": 22.56,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {
+        "Mondo dei Toon": 60.8,
+        "Abbandonato": 0,
+        "Restrizione dai Mille Occhi": 0
+      },
+      "custom": {
+        "deckVittorie": {
+          "partite": 50,
+          "vittorie": 46,
+          "vittoriePct": 92,
+          "turniMedi": 17,
+          "nonFinite": 0
+        },
+        "avversarioVittorie": {
+          "partite": 50,
+          "vittorie": 4,
+          "vittoriePct": 8,
+          "turniMedi": 17,
+          "nonFinite": 0
+        }
+      }
+    },
+    {
+      "duellante": "pegasus",
+      "livello": "medium",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 150,
+        "vittoriePct": 60,
+        "turniMedi": 20.18,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {
+        "Mondo dei Toon": 77.2,
+        "Abbandonato": 20.4,
+        "Restrizione dai Mille Occhi": 1.6
+      },
+      "custom": {
+        "deckVittorie": {
+          "partite": 50,
+          "vittorie": 38,
+          "vittoriePct": 76,
+          "turniMedi": 17.72,
+          "nonFinite": 0
+        },
+        "avversarioVittorie": {
+          "partite": 50,
+          "vittorie": 12,
+          "vittoriePct": 24,
+          "turniMedi": 17.72,
+          "nonFinite": 0
+        }
+      }
+    },
+    {
+      "duellante": "pegasus",
+      "livello": "hard",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 134,
+        "vittoriePct": 53.6,
+        "turniMedi": 19.26,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {
+        "Mondo dei Toon": 74,
+        "Abbandonato": 34.8,
+        "Restrizione dai Mille Occhi": 12
+      },
+      "custom": {
+        "deckVittorie": {
+          "partite": 50,
+          "vittorie": 44,
+          "vittoriePct": 88,
+          "turniMedi": 15.34,
+          "nonFinite": 0
+        },
+        "avversarioVittorie": {
+          "partite": 50,
+          "vittorie": 6,
+          "vittoriePct": 12,
+          "turniMedi": 15.34,
+          "nonFinite": 0
+        }
+      }
+    },
+    {
+      "duellante": "strings",
+      "livello": "easy",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 13,
+        "vittoriePct": 5.2,
+        "turniMedi": 24.12,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {
+        "Slifer": 0
+      },
+      "custom": {
+        "deckVittorie": {
+          "partite": 50,
+          "vittorie": 50,
+          "vittoriePct": 100,
+          "turniMedi": 18.92,
+          "nonFinite": 0
+        },
+        "avversarioVittorie": {
+          "partite": 50,
+          "vittorie": 0,
+          "vittoriePct": 0,
+          "turniMedi": 18.92,
+          "nonFinite": 0
+        }
+      }
+    },
+    {
+      "duellante": "strings",
+      "livello": "medium",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 20,
+        "vittoriePct": 8,
+        "turniMedi": 21.73,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {
+        "Slifer": 0
+      },
+      "custom": {
+        "deckVittorie": {
+          "partite": 50,
+          "vittorie": 50,
+          "vittoriePct": 100,
+          "turniMedi": 18.14,
+          "nonFinite": 0
+        },
+        "avversarioVittorie": {
+          "partite": 50,
+          "vittorie": 0,
+          "vittoriePct": 0,
+          "turniMedi": 18.14,
+          "nonFinite": 0
+        }
+      }
+    },
+    {
+      "duellante": "strings",
+      "livello": "hard",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 56,
+        "vittoriePct": 22.4,
+        "turniMedi": 22.68,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {
+        "Slifer": 46.8
+      },
+      "custom": {
+        "deckVittorie": {
+          "partite": 50,
+          "vittorie": 48,
+          "vittoriePct": 96,
+          "turniMedi": 19.16,
+          "nonFinite": 0
+        },
+        "avversarioVittorie": {
+          "partite": 50,
+          "vittorie": 2,
+          "vittoriePct": 4,
+          "turniMedi": 19.16,
+          "nonFinite": 0
+        }
+      }
+    },
+    {
+      "duellante": "marik",
+      "livello": "easy",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 63,
+        "vittoriePct": 25.2,
+        "turniMedi": 22.29,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {
+        "Drago Alato di Ra": 0
+      },
+      "custom": {
+        "deckVittorie": {
+          "partite": 50,
+          "vittorie": 48,
+          "vittoriePct": 96,
+          "turniMedi": 18.58,
+          "nonFinite": 0
+        },
+        "avversarioVittorie": {
+          "partite": 50,
+          "vittorie": 2,
+          "vittoriePct": 4,
+          "turniMedi": 18.58,
+          "nonFinite": 0
+        }
+      }
+    },
+    {
+      "duellante": "marik",
+      "livello": "medium",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 132,
+        "vittoriePct": 52.8,
+        "turniMedi": 18.85,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {
+        "Drago Alato di Ra": 0
+      },
+      "custom": {
+        "deckVittorie": {
+          "partite": 50,
+          "vittorie": 33,
+          "vittoriePct": 66,
+          "turniMedi": 18.22,
+          "nonFinite": 0
+        },
+        "avversarioVittorie": {
+          "partite": 50,
+          "vittorie": 17,
+          "vittoriePct": 34,
+          "turniMedi": 18.22,
+          "nonFinite": 0
+        }
+      }
+    },
+    {
+      "duellante": "marik",
+      "livello": "hard",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 158,
+        "vittoriePct": 63.2,
+        "turniMedi": 17.58,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {
+        "Drago Alato di Ra": 12
+      },
+      "custom": {
+        "deckVittorie": {
+          "partite": 50,
+          "vittorie": 33,
+          "vittoriePct": 66,
+          "turniMedi": 18.66,
+          "nonFinite": 0
+        },
+        "avversarioVittorie": {
+          "partite": 50,
+          "vittorie": 17,
+          "vittoriePct": 34,
+          "turniMedi": 18.66,
+          "nonFinite": 0
+        }
+      }
+    }
+  ]
+}

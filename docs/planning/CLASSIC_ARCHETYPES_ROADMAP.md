@@ -5,7 +5,9 @@ Stato: in corso sul branch `feature/supporti-archetipi-classici`.
 Baseline ufficiale completata il 2026-10-14: metodo e lettura in
 `docs/audits/CLASSIC_ARCHETYPES_BASELINE.md`, dati grezzi in
 `reports/archetypes/CLASSIC_ARCHETYPES_BASELINE.json`. Il benchmark `Custom`
-resta da aggiungere appena disponibile il salvataggio esportato.
+e' stato completato il 2026-10-15: analisi in
+`docs/audits/CLASSIC_ARCHETYPES_CUSTOM_BENCHMARK.md` e dati grezzi in
+`reports/archetypes/CLASSIC_ARCHETYPES_WITH_CUSTOM.json`.
 
 ## Vincoli decisi
 
@@ -97,8 +99,10 @@ selezione di Tributi sui due Terreni, l'Evocazione sul lato sacrificato, il
 ritorno differito del controllo, il trigger dal Cimitero, l'immunità agli
 effetti altrui, il vero invio al Cimitero senza distruzione e la deroga
 esplicita alle condizioni di Evocazione. I test mirati coprono l'intero ciclo
-Sfera -> Ra e Ra -> Fenice -> Sfera. Nessun deck avversario è stato cambiato:
-il prossimo passo è il benchmark informativo contro il deck `Custom`.
+Sfera -> Ra e Ra -> Fenice -> Sfera. Nessun deck avversario è stato cambiato.
+Il benchmark informativo contro il deck `Custom` e' ora concluso: prima di
+promuovere supporti nei deck Hard servono gli audit mirati Kaiba/Pegasus e
+Strings descritti nel relativo report.
 
 ## Deck avversari: politica conservativa
 
@@ -188,4 +192,10 @@ Strumento: `tools/audit-archetipi-classici.js`. Accetta il file prodotto da
 Profilo -> Esporta salvataggio (`--salvataggio`) oppure una singola specifica
 deck JSON (`--deck-custom`). Senza uno di questi file genera la baseline
 ufficiale e lascia correttamente assente la metrica `Custom`.
+
+Prima esecuzione completata con 50 semi e lista reale di impronta
+`e1909a556263c979`: `Custom` vince in media il 95,7% contro Facile, il 79,3%
+contro Medio e l'81,0% contro Difficile. Il mancato vantaggio globale di Hard
+deriva soprattutto da Kaiba e Pegasus; non viene tradotto automaticamente in
+modifiche ai deck.
 

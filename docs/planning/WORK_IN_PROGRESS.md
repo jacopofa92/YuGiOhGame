@@ -17,7 +17,9 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
       `Custom`. Supporti alle Divinita': primitive e tre carte del primo
       pacchetto, verifica Multiplayer e audit 1/2/3 completati in
       `docs/audits/EGYPTIAN_GODS_SUPPORT_AUDIT.md`. Limite proposto 1 copia;
-      nessun deck avversario modificato senza benchmark `Custom`.
+      benchmark `Custom` completato su 5.400 duelli e documentato in
+      `docs/audits/CLASSIC_ARCHETYPES_CUSTOM_BENCHMARK.md`; restano gli audit
+      mirati Kaiba/Pegasus e Strings prima di modificare deck avversari.
       Economia dei 24 supporti completata: prima copia tramite missioni
       tematiche, copie successive rarissime e limiti 1/2 applicati a deck e
       acquisizione. Matrice in `docs/economy/MODERN_SUPPORTS_ACQUISITION.md`.
