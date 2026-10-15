@@ -20,8 +20,10 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
       benchmark `Custom` completato su 5.400 duelli e documentato in
       `docs/audits/CLASSIC_ARCHETYPES_CUSTOM_BENCHMARK.md`; restano gli audit
       audit fattoriale Kaiba/Pegasus completato: i deck Hard, non l'IA Hard,
-      causano il calo contro Custom. Restano le varianti controllate dei due
-      deck e l'audit Strings prima di modificare stabilmente gli avversari.
+      causavano il calo contro Custom. Varianti controllate promosse dopo
+      1.500 duelli: Kaiba conserva la resa generale e Pegasus la migliora,
+      mentre entrambi riducono le vittorie di Custom da 88% a 78%. Resta
+      l'audit Strings.
       Economia dei 24 supporti completata: prima copia tramite missioni
       tematiche, copie successive rarissime e limiti 1/2 applicati a deck e
       acquisizione. Matrice in `docs/economy/MODERN_SUPPORTS_ACQUISITION.md`.

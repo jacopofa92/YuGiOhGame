@@ -1,0 +1,116 @@
+{
+  "generatoIl": "2026-10-15T13:43:50.773Z",
+  "metodo": "IA hard; 5 campioni ufficiali e Custom separato; stessi semi per lista pubblicata e candidata",
+  "opzioni": {
+    "partite": 50,
+    "turni": 80,
+    "seme": 141000,
+    "salvataggio": "save_yugioh.json",
+    "deckCustom": null
+  },
+  "custom": {
+    "name": "Custom",
+    "impronta": "e1909a556263c979"
+  },
+  "modifiche": {
+    "kaiba": "precedente -> pubblicato: -1 Paladino, -1 Rituale, +1 Signore dei D., +1 Flauto",
+    "pegasus": "precedente -> pubblicato: -1 Fusione, -1 Abbandonato, +1 Capro Espiatorio, +1 Nega Attacco"
+  },
+  "risultati": [
+    {
+      "duellante": "kaiba",
+      "variante": "precedente",
+      "carteMain": 40,
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 123,
+        "vittoriePct": 49.2,
+        "turniMedi": 14.3,
+        "nonFinite": 0
+      },
+      "custom": {
+        "partite": 50,
+        "vittorie": 44,
+        "vittoriePct": 88,
+        "turniMedi": 13.68,
+        "nonFinite": 0
+      }
+    },
+    {
+      "duellante": "kaiba",
+      "variante": "pubblicato",
+      "carteMain": 40,
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 122,
+        "vittoriePct": 48.8,
+        "turniMedi": 14.92,
+        "nonFinite": 0
+      },
+      "custom": {
+        "partite": 50,
+        "vittorie": 39,
+        "vittoriePct": 78,
+        "turniMedi": 15.66,
+        "nonFinite": 0
+      }
+    },
+    {
+      "duellante": "pegasus",
+      "variante": "precedente",
+      "carteMain": 40,
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 128,
+        "vittoriePct": 51.2,
+        "turniMedi": 18.78,
+        "nonFinite": 0
+      },
+      "custom": {
+        "partite": 50,
+        "vittorie": 44,
+        "vittoriePct": 88,
+        "turniMedi": 15.34,
+        "nonFinite": 0
+      }
+    },
+    {
+      "duellante": "pegasus",
+      "variante": "nucleoDoppio",
+      "carteMain": 40,
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 139,
+        "vittoriePct": 55.6,
+        "turniMedi": 19.16,
+        "nonFinite": 0
+      },
+      "custom": {
+        "partite": 50,
+        "vittorie": 43,
+        "vittoriePct": 86,
+        "turniMedi": 17.6,
+        "nonFinite": 0
+      }
+    },
+    {
+      "duellante": "pegasus",
+      "variante": "pubblicato",
+      "carteMain": 40,
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 143,
+        "vittoriePct": 57.2,
+        "turniMedi": 18.93,
+        "nonFinite": 0
+      },
+      "custom": {
+        "partite": 50,
+        "vittorie": 39,
+        "vittoriePct": 78,
+        "turniMedi": 17.38,
+        "nonFinite": 0
+      }
+    }
+  ]
+}

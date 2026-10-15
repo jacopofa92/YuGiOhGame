@@ -4,7 +4,7 @@ module.exports = {
     name: 'Audit supporti Toon: varianti confrontabili e identita Pegasus preservata',
     async run(t) {
         const variants = varianti(pegasusHard());
-        t.assert(variants.length === 14, `attese 14 varianti, trovate ${variants.length}`);
+        t.assert(variants.length === 13, `attese 13 varianti, trovate ${variants.length}`);
         variants.forEach((variant) => {
             const total = variant.deck.main.reduce((sum, entry) => sum + entry.qty, 0);
             t.assert(total === 40, `${variant.nome}: Main Deck da ${total} carte invece di 40`);

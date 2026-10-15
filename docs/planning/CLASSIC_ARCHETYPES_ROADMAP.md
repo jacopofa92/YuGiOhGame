@@ -100,9 +100,10 @@ ritorno differito del controllo, il trigger dal Cimitero, l'immunità agli
 effetti altrui, il vero invio al Cimitero senza distruzione e la deroga
 esplicita alle condizioni di Evocazione. I test mirati coprono l'intero ciclo
 Sfera -> Ra e Ra -> Fenice -> Sfera. Nessun deck avversario è stato cambiato.
-Il benchmark informativo contro il deck `Custom` e' ora concluso: prima di
-promuovere supporti nei deck Hard servono gli audit mirati Kaiba/Pegasus e
-Strings descritti nel relativo report.
+Il benchmark informativo contro il deck `Custom` e' ora concluso. L'audit
+fattoriale Kaiba/Pegasus ha promosso due correzioni conservative dei loro deck
+Hard dopo 1.200 duelli, senza ancora inserirvi supporti moderni. Resta l'audit
+mirato di Strings prima delle decisioni finali sui deck avversari.
 
 ## Deck avversari: politica conservativa
 

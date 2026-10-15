@@ -14,7 +14,7 @@ module.exports = {
             variant.deck.extra.forEach((entry) => {
                 t.assert(entry.qty >= 1 && entry.qty <= 3, `${variant.nome}: quantita' Extra non valida per id ${entry.id}`);
             });
-            [1, 510, 513, 515, 30, 398, 506].forEach((id) => {
+            [1, 510, 513, 515, 30, 353, 578].forEach((id) => {
                 t.assert(variant.deck.main.some((entry) => entry.id === id), `${variant.nome}: nucleo Kaiba perso, id ${id}`);
             });
         });

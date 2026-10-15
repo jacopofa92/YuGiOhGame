@@ -12,9 +12,10 @@ const SUPPORTI_EXTRA = [1265];
 const SUPPORTI = SUPPORTI_MAIN.concat(SUPPORTI_EXTRA);
 const AVVERSARI = ['yamiYugi', 'joey', 'pegasus', 'mako', 'bakura'];
 // Si sostituiscono prima carte periferiche o ridondanti. Restano intatti i
-// tre Draghi Bianchi, il pacchetto X/Y/Z, Obelisk, Paladino/Rituale, Fusione
-// e le carte firma principali: l'audit deve misurare i supporti, non cambiare
-// identita' al Kaiba gia' bilanciato.
+// tre Draghi Bianchi, il pacchetto X/Y/Z, Obelisk, Signore/Flauto, Fusione e
+// le carte firma principali. Paladino/Rituale non fanno piu' parte della
+// baseline: l'audit Custom li ha identificati come pacchetto incoerente con
+// le altre linee costose di Kaiba Hard.
 const TAGLI = [431, 335, 454, 198, 320, 69, 631, 312, 40, 793, 8, 272, 607];
 
 function arg(name, fallback) {

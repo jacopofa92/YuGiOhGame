@@ -69,16 +69,32 @@ Diagnosi: il deck Hard sovraccarica la linea Mille Occhi senza abbastanza
 ricerca e paga il costo rimuovendo difese affidabili. Anche qui l'IA non e'
 la causa primaria.
 
-## Decisione sicura successiva
+## Varianti verificate e promosse
 
-Non va indebolita o riscritta l'IA Difficile. Il prossimo esperimento deve
-confrontare, senza ancora promuoverle nel gioco:
+Il confronto successivo e' in
+`reports/archetypes/HARD_VARIANTS_CLASSIC.json`: 1.500 duelli con gli stessi
+semi, IA Hard, cinque campioni ufficiali e `Custom` separato.
 
-- Kaiba Hard: conservare Obelisk e le difese, ma alleggerire o rendere piu'
-  coerente il pacchetto Rituale e ripristinare consistenza Drago;
-- Pegasus Hard: una sola Fusione e un solo Abbandonato, conservando la linea
-  Mille Occhi ma restituendo almeno due strumenti difensivi lore-friendly.
+| Duellante | Lista | Vittorie avversario sui campioni | Vittorie Custom |
+|---|---|---:|---:|
+| Kaiba | precedente | 49,2% | 88% |
+| Kaiba | pubblicata | 48,8% | 78% |
+| Pegasus | precedente | 51,2% | 88% |
+| Pegasus | nucleo doppio conservativo | 55,6% | 86% |
+| Pegasus | pubblicata | 57,2% | 78% |
 
-Le varianti vanno provate contro campioni ufficiali e `Custom` con gli stessi
-semi. Starter, Structure, Facile e Medio restano invariati.
+Le due varianti sono state promosse nei soli deck avversari Hard:
+
+- Kaiba: -1 Paladino, -1 Rituale, +1 Signore dei D., +1 Flauto;
+- Pegasus: -1 Fusione, -1 Abbandonato, +1 Capro Espiatorio, +1 Nega Attacco.
+
+Kaiba conserva la resa generale entro 0,4 punti ma resiste molto meglio al
+deck evoluto. Pegasus migliora sia contro il campione ufficiale sia contro
+`Custom`. Starter, Structure, Facile e Medio restano invariati.
+
+E' stata provata anche una variante che conservava 2x Fusione, 2x
+Abbandonato e 2x Idolo, sostituendo soltanto un Riavvolgimento con Capro
+Espiatorio. Migliorava i campioni ma lasciava `Custom` all'86%; il vecchio
+vincolo 2x e' stato quindi sostituito da un guardrail piu' utile: 2 Idoli,
+almeno una Fusione e un Abbandonato, piu' Occhio della Verita' obbligatorio.
 

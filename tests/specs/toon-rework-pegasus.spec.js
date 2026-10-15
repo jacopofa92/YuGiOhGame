@@ -103,7 +103,12 @@ module.exports = {
             }) && characterDeckDatabase.pegasus.easy.extra.length === 0;
             const hardPegasus = characterDeckDatabase.pegasus.hard;
             const pianoHardRiconoscibile = deckListCount(hardPegasus.main) === 40
-                && [38, 416, 475].every((id) => hardPegasus.main.some((e) => e.id === id && e.qty === 2))
+                // L'audit Custom ha mostrato che imporre 2 copie anche ai
+                // due pezzi piu' vincolanti produceva mani morte: restano
+                // due Idoli, mentre Fusione e Abbandonato sono presenti 1x.
+                && hardPegasus.main.some((e) => e.id === 38 && e.qty === 1)
+                && hardPegasus.main.some((e) => e.id === 416 && e.qty === 1)
+                && hardPegasus.main.some((e) => e.id === 475 && e.qty === 2)
                 // L'Occhio della Verità è meno efficiente di una rimozione,
                 // ma appartiene all'identità di Pegasus e non va sacrificato
                 // da futuri bilanciamenti puramente numerici.
@@ -180,7 +185,7 @@ module.exports = {
         t.assert(r.pianoFusionePegasus && r.iaPreparaMilleOcchi,
             `Pegasus Normale/Difficile e la sua IA devono poter preparare Restrizione dai Mille Occhi: ${JSON.stringify(r)}`);
         t.assert(r.pianoHardRiconoscibile,
-            `Pegasus Difficile deve avere 40 carte, il nucleo Mille Occhi 2x e conservare L'Occhio della Verità: ${JSON.stringify(r)}`);
+            `Pegasus Difficile deve avere 40 carte, il nucleo Mille Occhi bilanciato e conservare L'Occhio della Verità: ${JSON.stringify(r)}`);
         t.assert(r.assorbimentoMilleOcchi,
             `Restrizione dai Mille Occhi deve assorbire il bersaglio migliore, copiarne l'ATK e bloccare gli altri mostri: ${JSON.stringify(r)}`);
         t.assert(r.noteLegacy, `Ogni effetto Toon sostituito deve conservare legacyOfficialEffect: ${JSON.stringify(r)}`);

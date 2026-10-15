@@ -275,6 +275,24 @@ async function giocaPartita(opz, n) {
     const esegui = (codice) => vm.runInContext(codice, contesto);
     if (opz.diagnosi) esegui(DIAGNOSI);
     const LIMITE_TURNI = opz.turni || 60;
+    if (opz.mazzoAvversario) {
+        // Variante di audit iniettata prima del reset: viene costruita e
+        // mescolata una volta sola nello stesso punto del deck reale. Una
+        // sostituzione dopo resetGameState consumerebbe RNG aggiuntivo e
+        // invaliderebbe il confronto a parita' di seme.
+        esegui(`
+            (function () {
+                const getCharacterDeckOriginale = getCharacterDeck;
+                window.__getCharacterDeckOriginaleAudit = getCharacterDeckOriginale;
+                const personaggioAudit = ${JSON.stringify(opz.avversario)};
+                const specificaAudit = ${JSON.stringify(opz.mazzoAvversario)};
+                getCharacterDeck = function (characterId, difficulty) {
+                    if (characterId === personaggioAudit) return specificaAudit;
+                    return getCharacterDeckOriginale(characterId, difficulty);
+                };
+            })();
+        `);
+    }
     esegui('resetGameState();');
     const livelloGiocatore = opz.livelloGiocatore || opz.livello;
     // L'IA su entrambi i posti, ciascuna col suo livello. Il mazzo del
@@ -291,7 +309,7 @@ async function giocaPartita(opz, n) {
         ${(opz.mazzoGiocatore || opz.giocatore) ? `(function () {
             const spec = ${opz.mazzoGiocatore
                 ? JSON.stringify(opz.mazzoGiocatore)
-                : `getCharacterDeck(${JSON.stringify(opz.giocatore)}, ${JSON.stringify(livelloGiocatore)})`};
+                : `(window.__getCharacterDeckOriginaleAudit || getCharacterDeck)(${JSON.stringify(opz.giocatore)}, ${JSON.stringify(livelloGiocatore)})`};
             if (!spec) throw new Error('Nessun mazzo per il personaggio ' + ${JSON.stringify(opz.giocatore)});
             gameState.playerDeck = buildDeckFromSpec(spec);
             gameState.playerDeckCount = gameState.playerDeck.length;

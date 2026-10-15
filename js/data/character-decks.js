@@ -285,8 +285,9 @@ const characterDeckDatabase = {
     // Glider, Uomo Giudice, e la linea dei cannoni Union — Cannone Testa X, Testa di Drago Y,
     // Carro Armato Metallico Z, con Cannone Drago XY/XYZ nell'Extra Deck (presenti da Normale
     // in su, richiesta esplicita). Carte simbolo: Controllore Nemico, Stop Difesa,
-    // Trasportatore di Materia Interdimensionale, Nega Attacco. Difficile aggiunge Obelisk il
-    // Tormentatore (una copia) e il Paladino del Drago Bianco rituale. Facile tiene i Draghi
+    // Trasportatore di Materia Interdimensionale, Nega Attacco. Difficile aggiunge Obelisk e
+    // difese migliori, ma conserva due Signore/Flauti: l'audit Custom ha mostrato che sommare
+    // anche il pacchetto Rituale rendeva troppe mani inutilizzabili. Facile tiene i Draghi
     // Bianchi ma senza cannoni e senza Flauto, con i suoi mostri deboli del Regno dei
     // Duellanti (Gigante Un Occhio, Cavaliere Mistico, Saggi).
     kaiba: {
@@ -365,7 +366,7 @@ const characterDeckDatabase = {
         hard: {
             main: [
                 { id: 1, qty: 3 }, // Drago Bianco Occhi Blu
-                { id: 353, qty: 1 }, // Signore dei D.
+                { id: 353, qty: 2 }, // Signore dei D.
                 { id: 502, qty: 2 }, // Predone Vorse
                 { id: 335, qty: 1 }, // La Jinn il Genio Mistico della Lampada
                 { id: 510, qty: 2 }, // Cannone Testa X
@@ -376,7 +377,7 @@ const characterDeckDatabase = {
                 { id: 198, qty: 1 }, // Drago della Dimensione Diversa
                 { id: 320, qty: 1 }, // Kaiser Glider
                 { id: 431, qty: 1 }, // Saggi il Pagliaccio Oscuro
-                { id: 578, qty: 1 }, // Il Flauto per Evocare Draghi
+                { id: 578, qty: 2 }, // Il Flauto per Evocare Draghi
                 { id: 38, qty: 1 }, // Fusione
                 { id: 35, qty: 1 }, // Rinascita del Mostro
                 { id: 36, qty: 2 }, // Vaso dell'Avidità
@@ -392,9 +393,7 @@ const characterDeckDatabase = {
                 { id: 8, qty: 1 }, // Spada Rivelatrice
                 { id: 272, qty: 1 }, // Carità Aggraziata
                 { id: 607, qty: 1 }, // Tifone dello Spazio Mistico
-                { id: 30, qty: 1 }, // Obelisk il Tormentatore
-                { id: 398, qty: 1 }, // Paladino del Drago Bianco
-                { id: 506, qty: 1 } // Rituale del Drago Bianco
+                { id: 30, qty: 1 } // Obelisk il Tormentatore
             ],
             extra: [
                 { id: 29, qty: 1 }, // Drago Bianco Definitivo
@@ -733,7 +732,7 @@ const characterDeckDatabase = {
                 { id: 483, qty: 2 }, // Stregone Mascherato Toon
                 { id: 190, qty: 3 }, // Coniglio Oscuro
                 { id: 475, qty: 2 }, // Idolo dai Mille Occhi
-                { id: 416, qty: 2 }, // Abbandonato
+                { id: 416, qty: 1 }, // Abbandonato
                 { id: 306, qty: 1 }, // Mago Senza Volto Illusionista
                 { id: 487, qty: 3 }, // Mondo dei Toon
                 { id: 482, qty: 2 }, // Maschera Toon
@@ -742,14 +741,16 @@ const characterDeckDatabase = {
                 { id: 206, qty: 1 }, // Vaso Cattura-Drago
                 { id: 35, qty: 1 }, // Rinascita del Mostro
                 { id: 36, qty: 2 }, // Vaso dell'Avidità
-                { id: 38, qty: 2 }, // Fusione
+                { id: 38, qty: 1 }, // Fusione
                 { id: 7, qty: 1 }, // Buco Nero
                 { id: 8, qty: 1 }, // Spada Rivelatrice
                 { id: 10, qty: 1 }, // Cilindro Magico
                 { id: 272, qty: 1 }, // Carità Aggraziata
                 { id: 646, qty: 1 }, // Tempesta Pesante
                 { id: 466, qty: 1 }, // L'Occhio della Verità
-                { id: 382, qty: 1 } // Forza dello Specchio
+                { id: 382, qty: 1 }, // Forza dello Specchio
+                { id: 434, qty: 1 }, // Capro Espiatorio
+                { id: 820, qty: 1 } // Nega Attacco
             ],
             extra: [
                 { id: 476, qty: 1 } // Restrizione dai Mille Occhi
