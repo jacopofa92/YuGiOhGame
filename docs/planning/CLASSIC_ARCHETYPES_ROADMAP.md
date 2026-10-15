@@ -107,6 +107,11 @@ mirato di Strings e' concluso: 900 duelli hanno isolato un errore decisionale
 dopo l'Evocazione di Slifer. La IA ora conserva la mano che ne determina le
 statistiche; le varianti di lista non hanno migliorato i risultati e il deck
 pubblicato resta invariato. Dettagli in `docs/audits/STRINGS_HARD_AUDIT.md`.
+La decisione finale su Yami Yugi e' ugualmente conclusa: anche il candidato
+prudente con 2 Bastoni, 1 Cerchio e 1 Anima scende dal 45,2% al 38,4% e rende
+meno frequenti Mago Nero e Slifer. Nessun supporto moderno entra nel suo deck
+avversario; dati e motivazione sono in
+`docs/audits/YAMI_SUPPORTS_FINAL_AUDIT.md`.
 
 ## Deck avversari: politica conservativa
 
