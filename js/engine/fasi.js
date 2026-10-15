@@ -284,6 +284,10 @@ function resetGameState() {
         // Pugno del Fato: nomi originali i cui effetti Mostro sono negati
         // fino alla fine del turno, oltre al singolo bersaglio iniziale.
         monsterEffectNamesNegatedThisTurn: new Set(),
+        // Canto Antico bandito dal Cimitero: il prossimo Ra Evocato tramite
+        // Tributo in questo turno riceve le statistiche originali dei suoi
+        // Tributi. Il numero del turno evita ogni possibile trascinamento.
+        ancientChantRaBoostTurnFor: { player: null, bot: null },
         // Effetti Ignition dei mostri (es. Soldato Cannone): chiave = uid
         // della carta -> true se già attivato in questo turno. Resettato
         // ad ogni cambio turno in changeTurn() qui sotto.
@@ -494,6 +498,7 @@ function changeTurn() {
     gameState.attackedMonsterUidsThisTurn = new Set();
     gameState.onlyOneAttackingMonsterFor = { player: false, bot: false };
     gameState.monsterEffectNamesNegatedThisTurn = new Set();
+    gameState.ancientChantRaBoostTurnFor = { player: null, bot: null };
     // Guardiana delle Fate (id 1069): "Magia mandata al TUO Cimitero da
     // un effetto dell'AVVERSARIO durante QUESTO turno" — stesso schema,
     // popolato in ACTIONS.destroySpellTrap (duel-engine.js).

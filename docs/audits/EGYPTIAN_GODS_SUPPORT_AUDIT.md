@@ -1,7 +1,7 @@
 # Audit preliminare supporti Divinita' Egizie
 
-Stato: inventario e primitive generiche conclusi; nessuna nuova carta ancora
-aggiunta e nessun deck modificato.
+Stato: dati, immagini, primitive, effetti e test isolati delle tre carte
+conclusi; nessun deck avversario o fonte economica ancora modificato.
 
 ## Base gia' presente
 
@@ -31,9 +31,8 @@ Yu-Gi-Oh! Neuron.
 | 1273 | Canto Antico | Ra | ricerca da Deck/Cimitero; una Evocazione Tributo aggiuntiva; effetto dal Cimitero che assegna a Ra la somma delle statistiche originali dei Tributi |
 
 Le mosse firma dichiarano che attivazione ed effetto non possono essere
-annullati. Il motore non possiede ancora un attributo generico affidabile per
-questa clausola: va aggiunto nel punto unico della Catena, non simulato carta
-per carta. Canto Antico richiede invece due primitive generiche:
+annullati. La clausola passa ora dal punto unico della Catena. Canto Antico
+usa invece due primitive generiche:
 
 1. una Evocazione Tributo aggiuntiva che non diventi una seconda Evocazione
    Normale libera;
@@ -43,8 +42,8 @@ per carta. Canto Antico richiede invece due primitive generiche:
 ## Sequenza sicura
 
 1. [completato] aggiungere e testare le tre primitive senza carte nuove;
-2. implementare separatamente Attacco Forza del Tuono e Pugno del Fato;
-3. implementare Canto Antico con test sui due ordini legali delle Evocazioni
+2. [completato] implementare separatamente Attacco Forza del Tuono e Pugno del Fato;
+3. [completato] implementare Canto Antico con test sui due ordini legali delle Evocazioni
    (Tributo prima o dopo quella Normale);
 4. verificare Multiplayer e IA, poi audit 1/2/3 mantenendo invariati i deck;
 5. lasciare Soul Crossing e le forme aggiuntive di Ra a una feature distinta.
@@ -65,3 +64,21 @@ generiche o fonti ordinarie del Negozio.
 Il test `primitive-supporti-divinita.spec.js` copre le tre regole. Restano
 verdi anche gli spec mirati sui tre Dei, sulle negazioni e sull'Evocazione
 Tributo a Terreno pieno. Typecheck verde; suite completa non eseguita.
+
+## Carte implementate
+
+- `Attacco Forza del Tuono` distrugge soltanto i mostri scoperti, conta solo
+  quelli realmente arrivati nel Cimitero per la pescata opzionale e applica
+  il vincolo di un unico mostro attaccante senza impedire eventuali attacchi
+  multipli dello stesso mostro;
+- `Pugno del Fato` sceglie un Mostro con Effetto scoperto, ne annulla il nome
+  fino a fine turno, lo distrugge e offre la rimozione opzionale dell'intera
+  retroguardia se attivato nella propria Main Phase;
+- `Canto Antico` recupera Ra da Deck o Cimitero, concede una quota distinta
+  di Evocazione Tributo e, dal Cimitero, assegna al prossimo Ra Evocato tramite
+  Tributo in quel turno la somma di ATK/DEF originali dei Tributi.
+
+Copertura mirata: `supporti-divinita-slifer-obelisk.spec.js` e
+`supporto-divinita-canto-antico.spec.js`, oltre al test delle primitive.
+Prossimo passo: verifica IA/Multiplayer e audit riproducibile 1/2/3 copie;
+economia e deck restano intenzionalmente invariati fino ai risultati.

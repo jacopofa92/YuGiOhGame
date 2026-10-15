@@ -81,12 +81,13 @@ e Soldato al 38,4-29,2% contro baseline 38,4%: limite provvisorio 2 per la
 prima e 1 per il boss. Il pacchetto completo leggero arriva al 62,4%, quindi
 nessun inserimento nei deck avversari prima del benchmark `Custom`.
 
-La Fase 6 e' iniziata con l'inventario tecnico delle Divinita'. I tre Dei
-esistenti risultano gia' coperti nelle regole essenziali; il primo pacchetto
-riserva gli id 1271-1273 ad Attacco Forza del Tuono, Pugno del Fato e Canto
-Antico. Prima delle carte si aggiungono le primitive generiche per effetti
-non annullabili, Evocazione Tributo aggiuntiva e statistiche originali dei
-Tributi. Dettagli in `docs/audits/EGYPTIAN_GODS_SUPPORT_AUDIT.md`.
+La Fase 6 ha ora completato dati, immagini, primitive, effetti e test isolati
+di Attacco Forza del Tuono, Pugno del Fato e Canto Antico (id 1271-1273).
+Sono coperti effetti non annullabili, limite di un solo mostro attaccante,
+negazione temporanea per nome, Evocazione Tributo aggiuntiva e statistiche
+originali dei Tributi. Deck ed economia restano invariati fino alla verifica
+IA/Multiplayer e all'audit 1/2/3. Dettagli in
+`docs/audits/EGYPTIAN_GODS_SUPPORT_AUDIT.md`.
 
 ## Deck avversari: politica conservativa
 

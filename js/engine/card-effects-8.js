@@ -4918,6 +4918,55 @@
         }
     });
 
+    // Canto Antico — supporto moderno del Drago Alato di Ra.
+    CardEffects.register(1273, {
+        mentionsNames: ['Il Drago Alato di Ra'],
+        canActivate(ctx) {
+            if (ctx.hasUsedOncePerTurn(`ancient-chant-search:${ctx.owner}`)) return false;
+            return Tavolo.mazzo(ctx.owner).some((card) => card.id === 472)
+                || ctx.graveyard(ctx.owner).some((card) => card.id === 472);
+        },
+        activate(ctx) {
+            const deck = Tavolo.mazzo(ctx.owner);
+            const grave = ctx.graveyard(ctx.owner);
+            const candidates = deck.filter((card) => card.id === 472).concat(grave.filter((card) => card.id === 472));
+            const fine = attendiScelta(ctx);
+            chooseCardFromList(ctx, candidates, {
+                title: ctx.card.name,
+                text: 'Scegli Il Drago Alato di Ra da aggiungere alla mano.',
+                pickForBot: (cards) => cards[0]
+            }, (chosen) => {
+                try {
+                    const source = deck.includes(chosen) ? deck : grave;
+                    const index = source.indexOf(chosen);
+                    if (index === -1) return;
+                    source.splice(index, 1);
+                    ctx.hand(ctx.owner).push(chosen);
+                    gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = deck.length;
+                    gameState.additionalTributeSummonFor = gameState.additionalTributeSummonFor || { player: false, bot: false };
+                    gameState.additionalTributeSummonFor[ctx.owner] = true;
+                    ctx.markUsedOncePerTurn(`ancient-chant-search:${ctx.owner}`);
+                    ctx.log(`${ctx.card.name} aggiunge ${chosen.name} alla mano e concede un’Evocazione Tributo aggiuntiva!`);
+                } finally { fine(); }
+            });
+        },
+        canActivateFromGraveyardMainPhase(ctx) {
+            return !ctx.hasUsedOncePerTurn(`ancient-chant-grave:${ctx.owner}`)
+                && ctx.hand(ctx.owner).some((card) => card.id === 472);
+        },
+        activateFromGraveyardMainPhase(ctx) {
+            const grave = ctx.graveyard(ctx.owner);
+            const index = grave.findIndex((card) => card.uid === ctx.card.uid);
+            if (index === -1) return;
+            const [chant] = grave.splice(index, 1);
+            ctx.banish(ctx.owner, chant);
+            ctx.markUsedOncePerTurn(`ancient-chant-grave:${ctx.owner}`);
+            gameState.ancientChantRaBoostTurnFor = gameState.ancientChantRaBoostTurnFor || { player: null, bot: null };
+            gameState.ancientChantRaBoostTurnFor[ctx.owner] = gameState.turn;
+            ctx.log(`${ctx.card.name} viene bandito: Ra riceverà la forza originale dei suoi Tributi in questo turno!`);
+        }
+    });
+
     (function registerLibraryEffects() {
         if (typeof cardDatabase === 'undefined' || !Array.isArray(cardDatabase)) return;
 

@@ -2725,6 +2725,17 @@
             // — mascherato nei test perché costruivano un ctx "a mano" con
             // {card: ra}, bypassando fireTrigger.
             if (ctx.summonedVia !== 'normal') return;
+            if (gameState.ancientChantRaBoostTurnFor
+                && gameState.ancientChantRaBoostTurnFor[ctx.owner] === gameState.turn
+                && Array.isArray(ctx.summonedCard._tributedOriginalStats)) {
+                const totals = ctx.summonedCard._tributedOriginalStats.reduce((sum, stats) => ({
+                    attack: sum.attack + (stats.attack || 0),
+                    defense: sum.defense + (stats.defense || 0)
+                }), { attack: 0, defense: 0 });
+                ctx.summonedCard.ancientChantOriginalStats = totals;
+                gameState.ancientChantRaBoostTurnFor[ctx.owner] = null;
+                ctx.log(`☀️ Canto Antico conferisce a Ra ${totals.attack} ATK e ${totals.defense} DEF originali!`);
+            }
             // "Puoi pagare..." — non automatico: card._raPayLp arriva dalla
             // scelta del giocatore (maybeAskRaLpChoice, actions.js) o
             // dall'euristica del bot (botSummonMonster, bot.js). Se manca
@@ -2742,7 +2753,8 @@
         },
         static(ctx) {
             const bonus = ctx.card.raPaidLp || 0;
-            gameState.atkDefBonus[ctx.card.uid] = { atk: bonus, def: bonus };
+            const chant = ctx.card.ancientChantOriginalStats || { attack: 0, defense: 0 };
+            gameState.atkDefBonus[ctx.card.uid] = { atk: bonus + chant.attack, def: bonus + chant.defense };
         },
         canActivate(ctx) {
             const lpKey = Tavolo.chiave(ctx.owner, 'LP');

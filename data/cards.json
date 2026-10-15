@@ -13956,6 +13956,16 @@
     "artOnly": true
   },
   {
+    "id": 1273,
+    "origin": "yu-gi-oh",
+    "name": "Canto Antico",
+    "type": "spell",
+    "subtype": "normal",
+    "mentionsNames": ["Il Drago Alato di Ra"],
+    "effect": "Aggiungi 1 \"Il Drago Alato di Ra\" dal tuo Deck o Cimitero alla tua mano e, se lo fai, puoi effettuare 1 Evocazione tramite Tributo durante la tua Main Phase in questo turno, in aggiunta alla tua Evocazione Normale/Posizionamento. (Puoi guadagnare questo effetto una sola volta per turno.) Puoi bandire questa carta dal tuo Cimitero; se Evochi tramite Tributo \"Il Drago Alato di Ra\" in questo turno, i suoi ATK/DEF originali diventano pari alla somma degli ATK/DEF originali dei mostri offerti come Tributo per la sua Evocazione. Puoi utilizzare ogni effetto di \"Canto Antico\" una sola volta per turno.",
+    "artOnly": true
+  },
+  {
     "id": 1200,
     "origin": "ww1",
     "fazione": "italiana",

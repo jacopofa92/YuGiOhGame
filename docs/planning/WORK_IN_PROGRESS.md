@@ -14,10 +14,10 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
       Primitive, Occhi Rossi, Mago Nero e Drago Bianco completati nei relativi
       audit. Toon: entrambi i pacchetti e l'audit conclusivo 1/2/3 sono
       completati; nessun deck avversario modificato in assenza del benchmark
-      `Custom`. Supporti alle Divinita': inventario preliminare completato in
-      `docs/audits/EGYPTIAN_GODS_SUPPORT_AUDIT.md`; prossimo passo sono le tre
-      primitive generiche completate e testate; prossimo passo sono Attacco
-      Forza del Tuono e Pugno del Fato, poi Canto Antico.
+      `Custom`. Supporti alle Divinita': primitive e tre carte del primo
+      pacchetto completate e testate in
+      `docs/audits/EGYPTIAN_GODS_SUPPORT_AUDIT.md`; prossimo passo sono
+      verifica IA/Multiplayer e audit riproducibile 1/2/3 copie.
 
 ## Economia e acquisizione carte
 
