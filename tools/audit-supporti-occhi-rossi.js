@@ -20,7 +20,12 @@ function arg(name, fallback) {
 
 function joeyHard() {
     const source = fs.readFileSync(path.join(ROOT, 'js/data/character-decks.js'), 'utf8');
-    return JSON.parse(vm.runInNewContext(`${source}\nJSON.stringify(getCharacterDeck('joey', 'hard'));`, {}));
+    const deck = JSON.parse(vm.runInNewContext(`${source}\nJSON.stringify(getCharacterDeck('joey', 'hard'));`, {}));
+    // Baseline storica precedente alla promozione del singolo Drago Metallo
+    // Nero: necessaria per mantenere riproducibile l'audit 1/2/3 originale.
+    const metallo = deck.main.find((c) => Number(c.id) === 1253);
+    if (metallo) deck.main.splice(deck.main.indexOf(metallo), 1, { id: 256, qty: 1 });
+    return deck;
 }
 
 function sostituisci(base, additions) {

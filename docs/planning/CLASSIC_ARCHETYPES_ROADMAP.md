@@ -126,8 +126,8 @@ singola carta e' stata promossa nel solo deck Difficile; dettagli in
 Per Joey, una singola copia di Drago Metallo Nero al posto di Garoozis porta
 il risultato ufficiale dal 36,4% al 44,4% e quello contro Custom dal 16,0%
 al 20,0%, preservando azzardo, carte vinte e Fusioni anime. Pietra + Spirito
-peggiora invece il campione ufficiale. La promozione di Metallo attende
-conferma; dettagli in `docs/audits/JOEY_SUPPORTS_FINAL_AUDIT.md`.
+peggiora invece il campione ufficiale. Metallo e' stato promosso nel solo
+deck Difficile; dettagli in `docs/audits/JOEY_SUPPORTS_FINAL_AUDIT.md`.
 
 ## Deck avversari: politica conservativa
 

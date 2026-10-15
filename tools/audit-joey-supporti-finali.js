@@ -12,11 +12,12 @@ const CAMPIONI = ['yamiYugi', 'kaiba', 'pegasus', 'mako', 'bakura'];
 const OSSERVATI = [12, 17, 1250, 1252, 1253];
 
 function varianti() {
-    const base = occhiRossi.joeyHard();
+    const precedente = occhiRossi.joeyHard();
+    const pubblicato = occhiRossi.sostituisci(precedente, [1253]);
     return {
-        pubblicato: base,
-        metalloSingolo: occhiRossi.sostituisci(base, [1253]),
-        pietraSpirito: occhiRossi.sostituisci(base, [1250, 1252])
+        precedente,
+        pubblicato,
+        pietraSpirito: occhiRossi.sostituisci(precedente, [1250, 1252])
     };
 }
 
@@ -95,7 +96,7 @@ async function eseguiAudit(opzioni) {
         opzioni: { partite: opzioni.partite, turni: opzioni.turni, seme: opzioni.seme },
         custom: { name: custom.deck.name, impronta: custom.impronta },
         varianti: {
-            metalloSingolo: { aggiunteMain: [1253], tagliMain: [256] },
+            pubblicato: { aggiunteMain: [1253], tagliMain: [256] },
             pietraSpirito: { aggiunteMain: [1250, 1252], tagliMain: [256, 101] }
         },
         risultati

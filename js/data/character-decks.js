@@ -494,6 +494,7 @@ const characterDeckDatabase = {
         hard: {
             main: [
                 { id: 12, qty: 3 }, // Drago Nero Occhi Rossi
+                { id: 1253, qty: 1 }, // Drago Metallo Nero — singola copia promossa dall'audit finale
                 { id: 16, qty: 2 }, // Gearfried il Cavaliere di Ferro
                 { id: 399, qty: 1 }, // Guerriero Pantera
                 { id: 101, qty: 2 }, // Assalitore con l'Ascia
@@ -506,7 +507,6 @@ const characterDeckDatabase = {
                 { id: 27, qty: 2 }, // Cucciolo di Drago
                 { id: 28, qty: 2 }, // Mago del Tempo
                 { id: 269, qty: 1 }, // Forza d'Attacco Goblin
-                { id: 256, qty: 1 }, // Garoozis
                 { id: 35, qty: 1 }, // Rinascita del Mostro
                 { id: 36, qty: 2 }, // Vaso dell'Avidità
                 { id: 38, qty: 1 }, // Fusione

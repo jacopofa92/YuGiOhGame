@@ -1,6 +1,6 @@
 # Decisione finale supporti moderni — Joey Difficile
 
-Data: 2026-10-15. Il mazzo pubblicato non e' ancora stato modificato.
+Data: 2026-10-15. Decisione applicata al solo mazzo Difficile.
 
 ## Varianti
 
@@ -28,9 +28,9 @@ Rossi senza sostituire una carta identitaria. Pietra + Spirito resiste meglio
 al solo Custom, ma peggiora il campione ufficiale: il dato aggiuntivo non e'
 sufficiente per promuovere una variante complessivamente peggiore.
 
-## Raccomandazione in attesa di conferma
+## Decisione applicata
 
-Promuovere soltanto `metalloSingolo` nel deck Joey Difficile. Facile e Medio
+Promosso soltanto `metalloSingolo` nel deck Joey Difficile. Facile e Medio
 restano invariati; gli altri supporti rimangono ricompense rare del giocatore.
 
 Strumento: `tools/audit-joey-supporti-finali.js`.
