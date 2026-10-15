@@ -196,7 +196,11 @@ function creaContesto(opz) {
     // oggetti. `document` NON esiste.
     vm.runInContext('var window = globalThis;', contesto);
     // L'avversario e il livello, come li passerebbe la pagina del duello.
-    vm.runInContext(`window.DuelSession = { opponent: { id: ${JSON.stringify(opz.avversario)}, name: ${JSON.stringify(opz.avversario)} }, aiDifficultyKey: ${JSON.stringify(opz.livello)} };`, contesto);
+    // Negli audit fattoriali il deck puo' avere un livello diverso dall'IA.
+    // Lo comunichiamo PRIMA di resetGameState: sostituire e rimescolare il
+    // mazzo dopo il reset consumerebbe altri numeri casuali e renderebbe i
+    // semi non confrontabili con una partita naturale dello stesso livello.
+    vm.runInContext(`window.DuelSession = { opponent: { id: ${JSON.stringify(opz.avversario)}, name: ${JSON.stringify(opz.avversario)} }, aiDifficultyKey: ${JSON.stringify(opz.livelloDeckAvversario || opz.livello)} };`, contesto);
     SCRIPT.forEach((f) => {
         const codice = fs.readFileSync(path.join(RADICE, f), 'utf8');
         vm.runInContext(codice, contesto, { filename: f });
@@ -293,21 +297,13 @@ async function giocaPartita(opz, n) {
             gameState.playerDeckCount = gameState.playerDeck.length;
             gameState.playerExtraDeck = buildExtraDeckFromSpec(spec);
         })();` : ''}
-        ${opz.livelloDeckAvversario ? `(function () {
-            // Audit fattoriale: il livello dell'IA passato a parte resta
-            // indipendente dalla versione del deck che le affidiamo.
-            const specBot = getCharacterDeck(${JSON.stringify(opz.avversario)}, ${JSON.stringify(opz.livelloDeckAvversario)});
-            if (!specBot) throw new Error('Nessun mazzo ' + ${JSON.stringify(opz.livelloDeckAvversario)} + ' per ' + ${JSON.stringify(opz.avversario)});
-            gameState.botDeck = buildDeckFromSpec(specBot);
-            gameState.botDeckCount = gameState.botDeck.length;
-            gameState.botExtraDeck = buildExtraDeckFromSpec(specBot);
-        })();` : ''}
         window.__deckBotIniziale = (gameState.botDeck || []).map((c) => c.id).sort((a, b) => a - b).join(',');
     `);
     // Mano iniziale di 5 carte per lato, poi il primo turno: lo guida l'IA
     // del posto 'player', come farebbe initGame in una pagina.
     esegui(`
         for (let i = 0; i < 5; i++) { drawCardsToHand('player', 1, { silent: true }); drawCardsToHand('bot', 1, { silent: true }); }
+        window.__manoBotIniziale = gameState.botHand.map((c) => Number(c.id));
         gameState.turn = 1; gameState.currentPlayer = 'player';
         turnoIA('player');
     `);
@@ -374,7 +370,9 @@ async function giocaPartita(opz, n) {
         catena: DuelEngine.isChainActive(), finestra: DuelEngine.isPriorityWindowOpen && DuelEngine.isPriorityWindowOpen(),
         campoG: gameState.playerMonsterField.map((s) => s && (s.card.name + (s.hasAttacked ? '*' : ''))),
         campoB: gameState.botMonsterField.map((s) => s && s.card.name),
-        deckBotIniziale: __deckBotIniziale
+        deckBotIniziale: __deckBotIniziale,
+        manoBotInizialeIds: (__manoBotIniziale || []).slice(),
+        manoBotFinaleIds: gameState.botHand.map((c) => Number(c.id))
     })`);
     // Una partita che arriva al limite di turni non è ferma: è lunga. Si
     // distingue dallo stallo vero (coda vuota senza vincitore).
@@ -394,8 +392,13 @@ async function giocaPartita(opz, n) {
         testo,
         esegui(`__logDuello.filter((r) => r.includes(${JSON.stringify(testo)})).length`)
     ]));
+    // Solo per diagnosi puntuali: i report di massa conservano la coda breve
+    // per non gonfiare migliaia di risultati. Il registro completo va chiesto
+    // esplicitamente dal chiamante quando confronta pochi semi anomali.
+    const registroCompleto = opz.registroCompleto ? esegui('__logDuello.slice()') : undefined;
     return { seme, passi, oraVirtualeMs: orologio.ora, alLimite, invarianti, trovate, trovatePerTesto,
-        osservatiBotIds: Array.from(osservatiBot), osservatiPlayerIds: Array.from(osservatiPlayer), erroriCarte: erroriCarte.slice(), ...fine };
+        osservatiBotIds: Array.from(osservatiBot), osservatiPlayerIds: Array.from(osservatiPlayer),
+        erroriCarte: erroriCarte.slice(), registroCompleto, ...fine };
 }
 
 async function main() {

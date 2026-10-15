@@ -62,8 +62,10 @@ singolo avversario soffra rimozioni di massa e difese reattive.
 
 ## Prossimo audit sicuro
 
-1. Isolare Kaiba e Pegasus Medio/Hard sugli stessi semi persi da Hard e vinti
-   da Medio, registrando mano iniziale, carte morte e decisioni principali.
+1. [Completato] Isolare Kaiba e Pegasus Medio/Hard sugli stessi semi persi da
+   Hard e vinti da Medio. L'audit fattoriale e' in
+   `docs/audits/CUSTOM_DIFFICULTY_FACTORIAL.md`: la causa primaria sono i
+   deck Hard, non l'IA Hard.
 2. Verificare Strings Hard separando comparsa di Slifer, sua evocazione e
    vittoria successiva: aumentare la frequenza del Dio non basta.
 3. Non inserire ancora automaticamente i nuovi supporti moderni nei deck

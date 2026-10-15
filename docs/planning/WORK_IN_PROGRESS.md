@@ -19,7 +19,9 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
       `docs/audits/EGYPTIAN_GODS_SUPPORT_AUDIT.md`. Limite proposto 1 copia;
       benchmark `Custom` completato su 5.400 duelli e documentato in
       `docs/audits/CLASSIC_ARCHETYPES_CUSTOM_BENCHMARK.md`; restano gli audit
-      mirati Kaiba/Pegasus e Strings prima di modificare deck avversari.
+      audit fattoriale Kaiba/Pegasus completato: i deck Hard, non l'IA Hard,
+      causano il calo contro Custom. Restano le varianti controllate dei due
+      deck e l'audit Strings prima di modificare stabilmente gli avversari.
       Economia dei 24 supporti completata: prima copia tramite missioni
       tematiche, copie successive rarissime e limiti 1/2 applicati a deck e
       acquisizione. Matrice in `docs/economy/MODERN_SUPPORTS_ACQUISITION.md`.
