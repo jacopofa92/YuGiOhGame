@@ -102,8 +102,11 @@ esplicita alle condizioni di Evocazione. I test mirati coprono l'intero ciclo
 Sfera -> Ra e Ra -> Fenice -> Sfera. Nessun deck avversario è stato cambiato.
 Il benchmark informativo contro il deck `Custom` e' ora concluso. L'audit
 fattoriale Kaiba/Pegasus ha promosso due correzioni conservative dei loro deck
-Hard dopo 1.200 duelli, senza ancora inserirvi supporti moderni. Resta l'audit
-mirato di Strings prima delle decisioni finali sui deck avversari.
+Hard dopo 1.200 duelli, senza ancora inserirvi supporti moderni. Anche l'audit
+mirato di Strings e' concluso: 900 duelli hanno isolato un errore decisionale
+dopo l'Evocazione di Slifer. La IA ora conserva la mano che ne determina le
+statistiche; le varianti di lista non hanno migliorato i risultati e il deck
+pubblicato resta invariato. Dettagli in `docs/audits/STRINGS_HARD_AUDIT.md`.
 
 ## Deck avversari: politica conservativa
 

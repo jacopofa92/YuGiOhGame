@@ -332,6 +332,8 @@ async function giocaPartita(opz, n) {
     // carta (per esempio Slifer o Mago Nero).
     const osservaBotIds = new Set((opz.osservaBotIds || []).map(Number));
     const osservatiBot = new Set();
+    const evocatiBot = new Set();
+    const primaEvocazioneBot = {};
     const osservaPlayerIds = new Set((opz.osservaPlayerIds || []).map(Number));
     const osservatiPlayer = new Set();
     const LIMITE_PASSI = 200000;
@@ -339,6 +341,19 @@ async function giocaPartita(opz, n) {
         passi++;
         const stato = esegui('({ fine: !!gameState.gameOver || __esitoDuello !== null, turno: gameState.turn, lp: [gameState.playerLP, gameState.botLP] })');
         if (osservaBotIds.size) {
+            const mostriPresenti = esegui(`gameState.botMonsterField.filter(Boolean).map((x) => Number(x.card.id))`);
+            mostriPresenti.forEach((id) => {
+                if (!osservaBotIds.has(id)) return;
+                evocatiBot.add(id);
+                if (!primaEvocazioneBot[id]) {
+                    primaEvocazioneBot[id] = esegui(`({
+                        turno: gameState.turn,
+                        mano: gameState.botHand.length,
+                        lp: gameState.botLP,
+                        posizione: (gameState.botMonsterField.find((s) => s && Number(s.card.id) === ${id}) || {}).position || null
+                    })`);
+                }
+            });
             const presenti = esegui(`gameState.botMonsterField.concat(gameState.botSTField, [gameState.botFieldSpell], gameState.botGraveyard, gameState.botBanished)
                 .filter(Boolean).map((x) => Number((x.card || x).id))`);
             presenti.forEach((id) => { if (osservaBotIds.has(id)) osservatiBot.add(id); });
@@ -416,6 +431,7 @@ async function giocaPartita(opz, n) {
     const registroCompleto = opz.registroCompleto ? esegui('__logDuello.slice()') : undefined;
     return { seme, passi, oraVirtualeMs: orologio.ora, alLimite, invarianti, trovate, trovatePerTesto,
         osservatiBotIds: Array.from(osservatiBot), osservatiPlayerIds: Array.from(osservatiPlayer),
+        evocatiBotIds: Array.from(evocatiBot), primaEvocazioneBot,
         erroriCarte: erroriCarte.slice(), registroCompleto, ...fine };
 }
 

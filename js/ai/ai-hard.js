@@ -254,6 +254,9 @@
 
     function chooseNextSpellTrapAction(gameState, usedThisTurn, io = 'bot') {
         usedThisTurn = usedThisTurn || {};
+        const personaggio = gameState.personaggioPerPosto && gameState.personaggioPerPosto[io];
+        const sliferScoperto = personaggio === 'strings' && Tavolo.mostri(io, gameState)
+            .some((slot) => slot && !slot.isFaceDown && slot.card.id === 31);
         const statoMedia = {
             activateDone: (usedThisTurn.activateCount || 0) > 0,
             setDone: (usedThisTurn.setCount || 0) > 0,
@@ -263,6 +266,15 @@
         // prudenza proprio della Media: a parità di candidate tende quindi
         // più nettamente verso la carta dall'impatto maggiore.
         const scelta = AI_MEDIUM.chooseNextSpellTrapAction(gameState, statoMedia, io, { restraintBonus: 0 });
+        // L'ATK/DEF di Slifer vale 1000 per ogni carta in mano. Una volta
+        // schierato, il comportamento Hard generico (attiva una Magia e
+        // Setta una Trappola) poteva svuotare le ultime due carte e
+        // trasformare il Dio appena Evocato in uno 0/0. Strings conserva
+        // quindi la mano: fa eccezione soltanto una pescata a vantaggio
+        // netto immediato, oggi Vaso dell'Avidità. Le risposte già Set
+        // restano pienamente utilizzabili nelle normali finestre di Chain.
+        if (sliferScoperto && scelta
+            && (scelta.action === 'set' || scelta.card.id !== 36)) return null;
         if (scelta && scelta.action === 'activate') usedThisTurn.activateCount = (usedThisTurn.activateCount || 0) + 1;
         if (scelta && scelta.action === 'set') usedThisTurn.setCount = (usedThisTurn.setCount || 0) + 1;
         return scelta;
