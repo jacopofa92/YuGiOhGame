@@ -491,7 +491,8 @@
 // v273: stepper piu' leggibile e avatar/pedina corretti per Nitemare.
 // v274: retro carta in CSS, sigilli fasi scenici e pedine uniformi fuori dal Duello Libero.
 // v275: stepper ricomposto come barra rituale compatta, senza anelli orbitanti.
-const CACHE_NAME = 'ygo-duel-arena-v275';
+// v276: dorso CSS alleggerito eliminando i doppi contorni interni.
+const CACHE_NAME = 'ygo-duel-arena-v276';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

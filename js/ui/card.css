@@ -489,7 +489,6 @@
     width: auto;
     height: auto;
     border-radius: clamp(2px, 1.1cqw, 6px);
-    border: max(1px, .4cqw) solid rgb(8 8 8);
     background: rgb(86 49 33);
     display: flex;
     align-items: center;
@@ -500,7 +499,6 @@
     height: 50%;
     border-radius: 50%;
     background: rgb(29 29 29);
-    box-shadow: 0 0 0 max(1px, .4cqw) rgb(0 0 0);
 }
 .card.face-down .card-back-emblem::after {
     content: '';
