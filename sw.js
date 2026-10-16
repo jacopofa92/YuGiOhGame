@@ -490,7 +490,8 @@
 // v272: il campo desktop resta centrato anche con il box informazioni carta.
 // v273: stepper piu' leggibile e avatar/pedina corretti per Nitemare.
 // v274: retro carta in CSS, sigilli fasi scenici e pedine uniformi fuori dal Duello Libero.
-const CACHE_NAME = 'ygo-duel-arena-v274';
+// v275: stepper ricomposto come barra rituale compatta, senza anelli orbitanti.
+const CACHE_NAME = 'ygo-duel-arena-v275';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

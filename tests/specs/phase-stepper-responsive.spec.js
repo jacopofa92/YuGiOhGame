@@ -80,13 +80,14 @@ module.exports = {
             const leggi = (el) => {
                 const s = getComputedStyle(el);
                 const badge = getComputedStyle(el.querySelector('.step-badge'));
-                const ring = getComputedStyle(el.querySelector('.step-badge'), '::before');
+                const marker = getComputedStyle(el, '::before');
+                const glint = getComputedStyle(el, '::after');
                 return {
                     shadow: s.boxShadow, border: s.borderColor, opacity: Number(s.opacity), background: s.backgroundImage,
                     badgeShadow: badge.boxShadow, badgeBackground: badge.backgroundImage,
-                    transform: s.transform, ringContent: ring.content,
-                    ringBackground: ring.backgroundImage, ringOpacity: Number(ring.opacity),
-                    ringAnimation: ring.animationName
+                    transform: s.transform, markerContent: marker.content,
+                    markerBackground: marker.backgroundImage || marker.backgroundColor,
+                    glintAnimation: glint.animationName
                 };
             };
             return {
@@ -95,28 +96,26 @@ module.exports = {
             };
         });
         t.assert(statiDesktop.railLine === 'none', 'Lo stepper non deve avere una linea orizzontale dietro i sigilli');
-        t.assert(statiDesktop.active.background === 'none' && statiDesktop.active.shadow === 'none'
-            && statiDesktop.active.badgeShadow !== 'none' && statiDesktop.active.ringOpacity > 0.9
-            && statiDesktop.active.ringBackground !== 'none'
-            && statiDesktop.active.ringAnimation.includes('phaseSealOrbit')
+        t.assert(statiDesktop.active.background !== 'none' && statiDesktop.active.shadow === 'none'
+            && statiDesktop.active.markerContent !== 'none'
+            && statiDesktop.active.glintAnimation.includes('phasePlateGlint')
             && statiDesktop.active.transform === 'none',
-        `La fase attiva deve emergere come sigillo, non come pulsante stock: ${JSON.stringify(statiDesktop.active)}`);
+        `La fase attiva deve emergere come placca rituale, non come pulsante stock: ${JSON.stringify(statiDesktop.active)}`);
         t.assert(statiDesktop.clickable.background === 'none' && statiDesktop.clickable.shadow === 'none'
-            && statiDesktop.clickable.badgeShadow !== 'none' && statiDesktop.clickable.ringOpacity > 0.25
-            && statiDesktop.clickable.ringBackground !== 'none'
+            && statiDesktop.clickable.badgeBackground === 'none'
             && statiDesktop.clickable.transform === 'none',
-        `La fase cliccabile deve essere un sigillo luminoso e non un rettangolo scuro: ${JSON.stringify(statiDesktop.clickable)}`);
+        `La fase cliccabile deve restare una tacca leggera e non un rettangolo scuro: ${JSON.stringify(statiDesktop.clickable)}`);
         t.assert(statiDesktop.disabled.opacity < 0.6,
             `La fase disabilitata deve restare attenuata: ${JSON.stringify(statiDesktop.disabled)}`);
 
         await t.page.setViewportSize({ width: 393, height: 851 });
         const mobile = await t.evaluate(() => {
-            const badge = document.querySelector('.phase-step.clickable .step-badge');
-            const s = getComputedStyle(badge);
-            const ring = getComputedStyle(badge, '::before');
-            return { shadow: s.boxShadow, background: s.backgroundImage, ring: ring.backgroundImage };
+            const active = document.querySelector('.phase-step.active');
+            const s = getComputedStyle(active);
+            const marker = getComputedStyle(active, '::before');
+            return { background: s.backgroundImage, marker: marker.content, transform: s.transform };
         });
-        t.assert(mobile.shadow !== 'none' && mobile.background !== 'none' && mobile.ring !== 'none',
-            `Su mobile lo stato cliccabile deve restare leggibile sul badge: ${JSON.stringify(mobile)}`);
+        t.assert(mobile.background !== 'none' && mobile.marker !== 'none' && mobile.transform === 'none',
+            `Su mobile la fase attiva deve restare leggibile e allineata: ${JSON.stringify(mobile)}`);
     }
 };
