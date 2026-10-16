@@ -1,0 +1,308 @@
+{
+  "generatoIl": "2026-10-16T19:12:45.006Z",
+  "metodo": "Yami Yugi Hard IA contro cinque deck Hard; stessi semi; Custom solo metrica aggiuntiva",
+  "opzioni": {
+    "partitePerAvversario": 50,
+    "turni": 80,
+    "seme": 191000
+  },
+  "custom": {
+    "nome": "Custom",
+    "impronta": "e1909a556263c979"
+  },
+  "varianti": {
+    "soloGamma": {
+      "rimosse": [
+        109
+      ],
+      "aggiunte": [
+        1277
+      ]
+    },
+    "magnetici": {
+      "rimosse": [
+        109,
+        194
+      ],
+      "aggiunte": [
+        1277,
+        1278
+      ]
+    },
+    "cavalieri": {
+      "rimosse": [
+        261,
+        712,
+        391
+      ],
+      "aggiunte": [
+        1279,
+        1280,
+        1281
+      ],
+      "extra": [
+        1282
+      ]
+    },
+    "cavalieriGamma": {
+      "rimosse": [
+        109,
+        261,
+        712,
+        391
+      ],
+      "aggiunte": [
+        1277,
+        1279,
+        1280,
+        1281
+      ],
+      "extra": [
+        1282
+      ]
+    },
+    "completo": {
+      "rimosse": [
+        109,
+        194,
+        261,
+        712,
+        391
+      ],
+      "aggiunte": [
+        1277,
+        1278,
+        1279,
+        1280,
+        1281
+      ],
+      "extra": [
+        1282
+      ]
+    }
+  },
+  "risultati": [
+    {
+      "variante": "pubblicato",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 91,
+        "vittoriePct": 36.4,
+        "turniMedi": 16.86,
+        "nonFinite": 0,
+        "vistePct": {
+          "85": 32.4,
+          "112": 30.4,
+          "1277": 0,
+          "1278": 0,
+          "1279": 0,
+          "1280": 0,
+          "1281": 0,
+          "1282": 0
+        }
+      },
+      "controCustom": {
+        "partite": 50,
+        "vittorie": 7,
+        "vittoriePct": 14,
+        "turniMedi": 15.26,
+        "nonFinite": 0,
+        "vistePct": {
+          "85": 36,
+          "112": 22,
+          "1277": 0,
+          "1278": 0,
+          "1279": 0,
+          "1280": 0,
+          "1281": 0,
+          "1282": 0
+        }
+      }
+    },
+    {
+      "variante": "soloGamma",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 91,
+        "vittoriePct": 36.4,
+        "turniMedi": 16.33,
+        "nonFinite": 0,
+        "vistePct": {
+          "85": 34,
+          "112": 30.8,
+          "1277": 37.2,
+          "1278": 0,
+          "1279": 0,
+          "1280": 0,
+          "1281": 0,
+          "1282": 0
+        }
+      },
+      "controCustom": {
+        "partite": 50,
+        "vittorie": 4,
+        "vittoriePct": 8,
+        "turniMedi": 13.68,
+        "nonFinite": 0,
+        "vistePct": {
+          "85": 26,
+          "112": 16,
+          "1277": 22,
+          "1278": 0,
+          "1279": 0,
+          "1280": 0,
+          "1281": 0,
+          "1282": 0
+        }
+      }
+    },
+    {
+      "variante": "magnetici",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 82,
+        "vittoriePct": 32.8,
+        "turniMedi": 16.64,
+        "nonFinite": 0,
+        "vistePct": {
+          "85": 34.4,
+          "112": 31.6,
+          "1277": 30,
+          "1278": 7.2,
+          "1279": 0,
+          "1280": 0,
+          "1281": 0,
+          "1282": 0
+        }
+      },
+      "controCustom": {
+        "partite": 50,
+        "vittorie": 7,
+        "vittoriePct": 14,
+        "turniMedi": 16.48,
+        "nonFinite": 0,
+        "vistePct": {
+          "85": 28,
+          "112": 24,
+          "1277": 36,
+          "1278": 6,
+          "1279": 0,
+          "1280": 0,
+          "1281": 0,
+          "1282": 0
+        }
+      }
+    },
+    {
+      "variante": "cavalieri",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 84,
+        "vittoriePct": 33.6,
+        "turniMedi": 15.7,
+        "nonFinite": 0,
+        "vistePct": {
+          "85": 34.4,
+          "112": 32,
+          "1277": 0,
+          "1278": 0,
+          "1279": 34,
+          "1280": 28.4,
+          "1281": 21.6,
+          "1282": 0.4
+        }
+      },
+      "controCustom": {
+        "partite": 50,
+        "vittorie": 5,
+        "vittoriePct": 10,
+        "turniMedi": 12.54,
+        "nonFinite": 0,
+        "vistePct": {
+          "85": 32,
+          "112": 40,
+          "1277": 0,
+          "1278": 0,
+          "1279": 10,
+          "1280": 30,
+          "1281": 14,
+          "1282": 0
+        }
+      }
+    },
+    {
+      "variante": "cavalieriGamma",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 89,
+        "vittoriePct": 35.6,
+        "turniMedi": 16.69,
+        "nonFinite": 0,
+        "vistePct": {
+          "85": 38,
+          "112": 32,
+          "1277": 33.6,
+          "1278": 0,
+          "1279": 32.8,
+          "1280": 32,
+          "1281": 26,
+          "1282": 0
+        }
+      },
+      "controCustom": {
+        "partite": 50,
+        "vittorie": 4,
+        "vittoriePct": 8,
+        "turniMedi": 12.92,
+        "nonFinite": 0,
+        "vistePct": {
+          "85": 38,
+          "112": 46,
+          "1277": 26,
+          "1278": 0,
+          "1279": 10,
+          "1280": 32,
+          "1281": 18,
+          "1282": 0
+        }
+      }
+    },
+    {
+      "variante": "completo",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 86,
+        "vittoriePct": 34.4,
+        "turniMedi": 15.6,
+        "nonFinite": 0,
+        "vistePct": {
+          "85": 35.2,
+          "112": 28.8,
+          "1277": 32.4,
+          "1278": 4.8,
+          "1279": 31.6,
+          "1280": 28.4,
+          "1281": 20.8,
+          "1282": 0
+        }
+      },
+      "controCustom": {
+        "partite": 50,
+        "vittorie": 7,
+        "vittoriePct": 14,
+        "turniMedi": 13.1,
+        "nonFinite": 0,
+        "vistePct": {
+          "85": 36,
+          "112": 46,
+          "1277": 20,
+          "1278": 2,
+          "1279": 10,
+          "1280": 30,
+          "1281": 4,
+          "1282": 0
+        }
+      }
+    }
+  ]
+}

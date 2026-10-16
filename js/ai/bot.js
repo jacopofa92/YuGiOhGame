@@ -44,6 +44,11 @@ function turnoIA(io = 'bot') {
             // strutturale per passare prima.
             const summonPromise = attemptBotMassDestructionBeforeSummon(io)
                 .then(() => attemptBotTacticalSpellBeforeSummon(io))
+                // La Difficile sa avviare anche le procedure proprie dei
+                // mostri in mano (Valkyrion, Toon, Megacyber, ecc.). Prima
+                // questo comando esisteva solo per il click della persona.
+                .then(() => attemptBotHandSpecialSummon(io))
+                .then(waitForSummonCinematics)
                 .then(() => {
                 // Come per botPerformAttacks() più sotto: aspetta la
                 // RISOLUZIONE PIENA dell'Evocazione (compresa un'eventuale
@@ -347,6 +352,23 @@ function attemptBotPositionChanges(io) {
 
 function attemptBotSummon(io) {
     return quandoFermo(() => evocaSeConviene(io));
+}
+
+/** Esegue l'eventuale auto-Evocazione Speciale scelta dal livello IA. */
+function attemptBotHandSpecialSummon(io) {
+    return quandoFermo(() => {
+        if (gameState.currentPlayer !== io || gameState.gameOver || !window.BotAI) return Promise.resolve();
+        const decision = BotAI.chooseHandSpecialSummon(gameState, io);
+        if (!decision) return Promise.resolve();
+        const started = Comandi.esegui(io, {
+            tipo: 'specialeDaMano',
+            carta: decision.card.uid,
+            mano: decision.handIndex,
+            posizione: 'attack'
+        });
+        if (started) updateUI();
+        return Promise.resolve();
+    });
 }
 
 function evocaSeConviene(io) {

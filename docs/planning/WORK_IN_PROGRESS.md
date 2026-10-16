@@ -63,6 +63,13 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
 
 ## Completamento prima serie TCG
 
+- [x] Primo lotto Yugi/Yami Yugi pre-GX: completati Gamma/Valkyrion e i
+      Cavalieri delle Figure con test funzionale, IA Hard capace di avviare
+      le procedure di Evocazione Speciale dalla mano e audit deck/Custom.
+      Nessun deck pubblicato modificato: le varianti non superano la baseline.
+      Restano Gandora, Maghi Silenti, Spadaccini Silenti, Marshmallon e
+      Sarcofago d'Oro, rinviati a una decisione successiva.
+
 - [x] Aggiungere le 26 carte TCG rimaste nel perimetro LOB/MRD/SRL/PSV/
       LON/LOD/PGD, con dati e immagini ufficiali, effetti verificati e test
       mirati. Il catalogo ha richiesto anche 4 Materiali da Fusione normali

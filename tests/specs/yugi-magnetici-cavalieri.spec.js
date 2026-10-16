@@ -20,6 +20,24 @@ module.exports = {
             const valkyrionOnField = gameState.playerMonsterField.some((entry) => entry && entry.card.uid === 'valkyrion-hand');
             const materialsInGrave = [85, 112, 1277].every((id) => gameState.playerGraveyard.some((card) => card.id === id));
 
+            // L'IA Difficile deve riconoscere la stessa procedura dalla
+            // propria mano: senza questa decisione Valkyrion diventerebbe
+            // una carta morta nel mazzo avversario.
+            resetGameState();
+            gameState.botHand = [copy(1278, 'valkyrion-bot'), copy(85, 'alpha-bot'), copy(112, 'beta-bot'), copy(1277, 'gamma-bot')];
+            gameState.botMonsterField = [null, null, null, null, null];
+            gameState.personaggioPerPosto = { bot: 'yamiYugi' };
+            gameState.livelloIA = { bot: 'hard' };
+            gameState.botDifficulty = 'hard';
+            const valkyrionAiChoice = BotAI.chooseHandSpecialSummon(gameState, 'bot');
+            gameState.currentPlayer = 'bot';
+            gameState.phase = 'main1';
+            const valkyrionAiSummoned = Comandi.esegui('bot', {
+                tipo: 'specialeDaMano', carta: valkyrionAiChoice.card.uid,
+                mano: valkyrionAiChoice.handIndex, posizione: 'attack'
+            });
+            const valkyrionAiOnField = gameState.botMonsterField.some((entry) => entry && entry.card.id === 1278);
+
             // La separazione richiede i tre nomi nel Cimitero e tre Zone
             // libere dopo che Valkyrion si è offerto come Tributo.
             resetGameState();
@@ -74,6 +92,8 @@ module.exports = {
 
             return {
                 valkyrionCan, valkyrionSummoned, valkyrionOnField, materialsInGrave,
+                valkyrionAiChoice: valkyrionAiChoice && valkyrionAiChoice.card.id,
+                valkyrionAiSummoned, valkyrionAiOnField,
                 canSeparate, separated, valkyrionInGrave, kingCalledJack,
                 jokerFusable, jokerNegated, oncePerTurn
             };
@@ -81,6 +101,8 @@ module.exports = {
 
         t.assert(result.valkyrionCan && result.valkyrionSummoned && result.valkyrionOnField && result.materialsInGrave,
             `Valkyrion deve usare Alpha/Beta/Gamma fra mano e Terreno anche a campo pieno: ${JSON.stringify(result)}`);
+        t.assert(result.valkyrionAiChoice === 1278 && result.valkyrionAiSummoned && result.valkyrionAiOnField,
+            `L'IA Difficile deve scegliere Valkyrion quando i tre materiali sono disponibili: ${JSON.stringify(result)}`);
         t.assert(result.canSeparate && result.separated && result.valkyrionInGrave,
             `Valkyrion deve separarsi nei tre Guerrieri Magnetici: ${JSON.stringify(result)}`);
         t.assert(result.kingCalledJack,
