@@ -70,6 +70,14 @@
         return decision;
     }
 
+    function chooseHandSpecialSummon(gameStateArg, io = 'bot') {
+        const level = currentLevel(io);
+        const decision = level && typeof level.chooseHandSpecialSummon === 'function'
+            ? level.chooseHandSpecialSummon(gameStateArg, io) : null;
+        debugLog('chooseHandSpecialSummon', decision ? { card: decision.card.name } : null, io);
+        return decision;
+    }
+
     function choosePreSummonSpellAction(gameStateArg, io = 'bot') {
         const level = currentLevel(io);
         const decision = level && typeof level.choosePreSummonSpellAction === 'function'
@@ -156,6 +164,7 @@
 
     window.BotAI = {
         chooseSummon: chooseSummon,
+        chooseHandSpecialSummon: chooseHandSpecialSummon,
         choosePreSummonSpellAction: choosePreSummonSpellAction,
         orderAttackers: orderAttackers,
         estimateLethal: estimateLethal,

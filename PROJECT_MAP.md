@@ -1,6 +1,23 @@
 # Yu-Gi-Oh! Millennium Duel Arena — mappa tecnica persistente
 
-Ultimo aggiornamento verificato: 2026-10-14.
+Ultimo aggiornamento verificato: 2026-10-16.
+
+## Nuclei Yugi: Magnetici e Cavalieri delle Figure (2026-10-16)
+
+Sei carte TCG pre-GX completano i due nuclei: Gamma/Valkyrion e Regina/Re/
+Jack/Cavaliere Joker Arcano (ID 1277-1282). Gli effetti riusano le primitive
+condivise di Evocazione Speciale, Fusione e dichiarazione del bersaglio; il
+test dedicato copre campo pieno, costi misti mano/Terreno, separazione di
+Valkyrion, chiamata dal Deck del Re e negazione una volta per turno del Joker.
+La IA Difficile può ora avviare le procedure proprie di Evocazione Speciale
+dalla mano; Media e Facile restano invariate.
+
+L'audit riproducibile `tools/audit-yami-magnetici-cavalieri.js` confronta sei
+varianti su 50 duelli per ciascuno di cinque avversari Hard, più il deck
+personale Custom come metrica separata. Nessuna variante supera stabilmente
+la baseline, quindi i deck pubblicati di Yugi Muto e Yami Yugi non sono stati
+alterati. Risultati in
+`reports/archetypes/YAMI_MAGNETICI_CAVALIERI_AUDIT.json`.
 
 ## Mano stabile e fronte carte ripristinato (2026-10-14)
 

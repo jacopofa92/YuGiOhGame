@@ -32,6 +32,9 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.3.22 — Completati Guerrieri Magnetici e Cavalieri delle Figure di
+ *   Yugi; la IA Difficile riconosce le Evocazioni Speciali dalla mano.
+ *
  * 1.3.21 — Aggiunte tre lezioni guidate specifiche (Equipaggiamenti,
  * Rituali e Magie Rapide) e quattro puzzle realmente risolvibili.
  *
@@ -713,4 +716,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.3.21';
+window.GAME_VERSION = '1.3.22';

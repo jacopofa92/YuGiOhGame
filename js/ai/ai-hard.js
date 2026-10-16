@@ -153,6 +153,31 @@
     }
 
     /**
+     * Sceglie un mostro che puo' Evocarsi Specialmente dalla mano tramite
+     * la propria procedura. Questo percorso era disponibile soltanto alla
+     * persona tramite il comando `specialeDaMano`: l'IA poteva quindi usare
+     * Rinascita del Mostro e altre carte che Evocano, ma non boss come
+     * Valkyrion anche quando aveva gia' tutti i materiali.
+     *
+     * La scelta resta propria della Difficile: ordina le procedure davvero
+     * valide ORA e preferisce il corpo con la statistica migliore. Facile e
+     * Media non ricevono gratuitamente questa linea avanzata.
+     */
+    function chooseHandSpecialSummon(gameState, io = 'bot') {
+        if (!window.DuelEngine) return null;
+        return Tavolo.mano(io, gameState)
+            .map((card, handIndex) => ({ card, handIndex }))
+            .filter(({ card, handIndex }) => card.type === 'monster'
+                && !AI_SHARED.shouldHoldForExodia(card)
+                && DuelEngine.canSpecialSummonFromHand(io, handIndex))
+            .sort((a, b) => {
+                const aStats = AI_SHARED.estimateSummonedStats(a.card, gameState, io);
+                const bStats = AI_SHARED.estimateSummonedStats(b.card, gameState, io);
+                return Math.max(bStats.atk, bStats.def) - Math.max(aStats.atk, aStats.def);
+            })[0] || null;
+    }
+
+    /**
      * Prima dell'Evocazione Normale Hard può usare una Magia che aumenta
      * subito le opzioni in mano. Farlo dopo l'Evocazione, come nel turno
      * lineare della Media, rende inutilizzabile fino al turno seguente un
@@ -339,6 +364,7 @@
     window.AI_HARD = {
         evaluateBoard,
         chooseSummon,
+        chooseHandSpecialSummon,
         choosePreSummonSpellAction,
         orderAttackers,
         estimateLethal,

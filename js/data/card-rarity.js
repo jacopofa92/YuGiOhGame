@@ -74,7 +74,9 @@
         130,  // Controllo Mentale — ruba un mostro, in modo permanente
         874,  // Confisca — guarda la mano avversaria e ne scarta una carta
         1155, // Ryu Senshi — Fusione con doppia negazione
-        1251, 1255, 1256, 1257, 1258, 1263, 1264, 1266, 1267, 1269
+        1251, 1255, 1256, 1257, 1258, 1263, 1264, 1266, 1267, 1269,
+        1278, // Valkyrion — boss da 3500 ATK, ma richiede i tre Magnetici esatti
+        1282  // Cavaliere Joker Arcano — Fusione a tre materiali con negazione
     ]);
 
     const SUPER_IDS = new Set([
@@ -111,7 +113,8 @@
         // Nuovo lotto prima serie: utility situazionale e Fusioni che
         // richiedono comunque materiali specifici + una carta Fusione.
         1132, 1134, 1135, 1136, 1138, 1140,
-        1142, 1143, 1144, 1145, 1147, 1149, 1150, 1151, 1152, 1154, 1156
+        1142, 1143, 1144, 1145, 1147, 1149, 1150, 1151, 1152, 1154, 1156,
+        1280 // Cavaliere del Re — converte la Regina già in campo in due corpi
     ]);
 
     /**
