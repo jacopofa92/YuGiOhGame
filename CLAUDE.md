@@ -4419,3 +4419,25 @@ mobile il pulsante è trasparente e il quadratino porta tutto. Spec
 Se in futuro si riprova a ridisegnarla, l'utente ha respinto: celle tutte
 uguali "scolastiche", cornici elaborate, rombi, giallo acceso, fasce uniche
 a capsula.
+Subito dopo, controllando su 12 schermi e sul telefono vero (adb):
+- **la barra veniva SCHIACCIATA quasi ovunque** (flex-shrink nella colonna
+  centrale, `overflow: hidden`): 41px invece di 58 a 1400x900, 9px a
+  740x360, con i pulsanti tagliati. Ora `flex-shrink: 0`; sui telefoni
+  bassi in orizzontale è alta 20px con margini negativi, così occupa in
+  pagina lo stesso spazio di prima e il campo non si sposta. Tolta la fascia
+  scura arrotondata dietro i pulsanti (resta il filo). Su mobile i pulsanti
+  si misurano in `cqw` della barra (crescono sui tablet).
+- **Dorsi sulle carte piccole** (≤72px, regola "carta compatta" di card.css):
+  restavano a 6px di raggio a ogni misura (pillole a 24px, cornice mangiata
+  a 43px) e backCard.jpg rimpicciolita lasciava un filo nero solo sopra e a
+  sinistra. Ora il dorso piccolo è disegnato in CSS con colori e proporzioni
+  misurati sull'immagine, raggio 2px, cornice mai sotto 1px.
+- **Pile e carte non allineate**: la carta sta al centro della casella, la
+  pila era nell'angolo in alto a sinistra (6,3px su desktop dal 19/09;
+  2,3px su telefono da quando le carte sono scese a 43px). Ora il dorso in
+  cima ha misura e posizione di una carta (`--pila-x/--pila-y`), lo spessore
+  sta nel margine verso il basso a destra.
+- **Carte sollevate dopo un tocco**: `.card:hover` (-8px, ×1.06) scattava
+  anche sui telefoni e restava attivo dopo il tocco. Ora solo con
+  `(hover: hover) and (pointer: fine)`.
+Spec `pile-allineate-alle-carte` (verificato al contrario). Cache `v270`.

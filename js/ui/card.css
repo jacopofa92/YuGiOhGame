@@ -199,7 +199,13 @@
     background: var(--card-sfondo, none);
     pointer-events: none;
 }
-.card:hover { transform: translateY(-8px) scale(1.06); box-shadow: 0 12px 28px rgba(0,0,0,0.34); }
+/* Il sollevamento "sotto il mouse" vale solo dove un mouse c'è davvero. Su un
+   telefono il browser considera la carta "sotto il dito" anche DOPO il
+   tocco, finché non si tocca altrove: la carta restava sollevata e fuori
+   allineamento con le altre (segnalato dall'utente, 2026-10-16). */
+@media (hover: hover) and (pointer: fine) {
+    .card:hover { transform: translateY(-8px) scale(1.06); box-shadow: 0 12px 28px rgba(0,0,0,0.34); }
+}
 
 /* Colori per tipo di carta, come le vere carte Yu-Gi-Oh: Mostro = oro,
    Magia = verde, Trappola = magenta. Ogni regola dice solo QUALI colori
@@ -733,6 +739,51 @@ body[data-card-badges] .card { overflow: visible; }
         display: none;
     }
     .card:not(.face-down) .card-frame-art { border-width: 0; }
+
+    /* IL DORSO, sulle carte piccole (campo, mano avversaria, pile, telefono).
+       Prima restava a 6px di raggio a qualunque misura (era escluso da
+       questa regola): su una carta larga 24px gli angoli diventavano una
+       pillola, e su una da 43px l'arrotondamento mangiava la cornice agli
+       angoli, mentre le carte scoperte accanto erano quasi squadrate. E
+       l'immagine backCard.jpg (740px) rimpicciolita di 17-30 volte
+       lasciava un filo nero solo sopra e a sinistra (il suo contorno
+       interno, ricampionato male). Segnalato dall'utente guardando il
+       telefono vero, 2026-10-16.
+       Qui il dorso si disegna in CSS con i colori e le proporzioni MISURATI
+       su backCard.jpg: cornice cuoio (185,137,91) larga il 3,4% ai lati e
+       il 2,3% in alto e in basso, interno marrone (86,49,33) col filo nero,
+       ovale (29,29,29) largo il 38% e alto il 49%. Nitido a ogni misura e
+       con lo stesso raggio piccolo delle carte scoperte. Sopra i 72px
+       resta l'immagine vera, che lì si vede bene. */
+    .card.face-down::before {
+        --card-raggio: 2px;
+        background: rgb(185 137 91);
+    }
+    .card.face-down > .card-image { display: none; }
+    .card.face-down .card-back-frame,
+    .card.face-down.has-image .card-back-frame {
+        opacity: 1;
+        /* La scatola ha 3px di padding: il riquadro interno si allarga dentro
+           quel padding fino a lasciare la cornice della proporzione giusta.
+           Mai sotto 1px: sulla mano avversaria (24px) il 3,4% è 0,6px, e un
+           filo sotto il pixel il telefono lo disegnava da un lato solo. */
+        --cornice-x: max(1px, 3.4cqw);
+        --cornice-y: max(1px, 2.3cqw);
+        margin: calc(var(--cornice-y) - 3px) calc(var(--cornice-x) - 3px);
+        width: calc(100% - 2 * var(--cornice-x) + 6px);
+        height: calc(100% - 2 * var(--cornice-y) + 6px);
+        border: 0;
+        border-radius: 1px;
+        background: rgb(86 49 33);
+        box-shadow: inset 0 0 0 max(0.5px, 0.4cqw) rgb(0 0 0 / 0.85);
+    }
+    .card.face-down .card-back-emblem {
+        width: 41%;
+        height: 50%;
+        border-radius: 50%;
+        background: rgb(29 29 29);
+        box-shadow: 0 0 0 max(0.5px, 0.4cqw) rgb(0 0 0);
+    }
 }
 
 /* ============================================================

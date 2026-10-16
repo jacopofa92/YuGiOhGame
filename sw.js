@@ -484,7 +484,8 @@
 // v267: ATK/DEF e contatori senza box, su una riga, con rilievo 3D.
 // v268: ologrammi su mobile un po' più bassi (base al 68% della carta).
 // v269: barra delle fasi dal Terreno al Cimitero, col colore del campo e un solo bordo.
-const CACHE_NAME = 'ygo-duel-arena-v269';
+// v270: barra delle fasi responsive senza fascia d'ombra, dorsi nitidi sulle carte piccole, pile allineate alle carte, niente sollevamento al tocco.
+const CACHE_NAME = 'ygo-duel-arena-v270';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
