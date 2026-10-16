@@ -2068,7 +2068,12 @@
             width: min(100%, calc(var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-gap) + var(--field-gap) + var(--field-gap) + var(--field-gap) + var(--field-gap) + var(--field-gap)));
             box-sizing: border-box;
             margin: clamp(2px, 0.75vh, 8px) auto clamp(3px, 0.8vh, 9px);
-            padding: clamp(4px, 0.55vw, 7px);
+            /* Niente padding ai lati e i pulsanti spinti ai due capi: il
+               primo comincia dove comincia la casella Terreno, l'ultimo
+               finisce dove finisce il Cimitero, anche quando i pulsanti
+               hanno raggiunto il loro max-width e avanzerebbe spazio. */
+            padding: clamp(4px, 0.55vw, 7px) 0;
+            justify-content: space-between;
             isolation: isolate;
             container-type: inline-size;
             container-name: phase-rail;
@@ -2490,6 +2495,78 @@
                 border-color: rgba(247,215,116,.52);
                 background: linear-gradient(135deg, rgba(47,39,24,.9), rgba(64,45,17,.78));
                 box-shadow: 0 4px 10px rgba(0,0,0,.24);
+            }
+        }
+        /* ============================================================
+           BARRA DELLE FASI COL COLORE DEL CAMPO (richiesta dell'utente,
+           2026-10-16): le luci della barra prendono la tinta dell'arena
+           invece di essere sempre oro. La tinta è la stessa che colora già
+           le caselle, --campo-tinta, scritta da js/ui/tinta-campo.js (dai
+           valori pre-calcolati di js/data/tinte-campi.js, o letta
+           dall'immagine per un'arena nuova): un campo aggiunto domani
+           colora anche la barra senza toccare nulla qui.
+           Quella tinta è il colore PIENO dell'arena, spesso scuro (il blu
+           notte del Dirigibile, il grigio delle Rovine): usata così la
+           barra sparirebbe nel campo. --fase-accento ne è la versione
+           chiara, stessa tonalità ma luminosità e saturazione portate in
+           una fascia leggibile; dove il browser non conosce la sintassi
+           oklch "from", la si schiarisce mescolandola con un bianco caldo.
+           Senza --campo-tinta resta l'oro tenue di sempre.
+           Solo colori: forme e misure restano quelle delle regole sopra.
+           ============================================================ */
+        .phase-stepper {
+            --fase-accento: color-mix(in oklab, var(--campo-tinta, rgb(190 165 120)) 45%, #fff4d8);
+        }
+        @supports (color: oklch(from red l c h)) {
+            .phase-stepper {
+                --fase-accento: oklch(from var(--campo-tinta, rgb(190 165 120)) clamp(0.8, l, 0.88) clamp(0.06, c, 0.13) h);
+            }
+        }
+        .phase-stepper {
+            background: linear-gradient(90deg, transparent, rgba(7,8,13,.34) 8%, color-mix(in srgb, var(--fase-accento) 9%, rgba(10,10,14,.38)) 50%, rgba(7,8,13,.34) 92%, transparent);
+            box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--fase-accento) 14%, transparent), 0 4px 14px rgba(0,0,0,.12);
+        }
+        .phase-stepper::before {
+            background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--fase-accento) 14%, transparent) 18%, color-mix(in srgb, var(--fase-accento) 30%, transparent) 50%, color-mix(in srgb, var(--fase-accento) 14%, transparent) 82%, transparent);
+        }
+        .phase-step::after { background: color-mix(in srgb, var(--fase-accento) 16%, transparent); }
+        /* UN solo bordo per pulsante (richiesta dell'utente, 2026-10-16): il
+           cerchietto dell'icona non ha più la sua cornice, che dentro quella
+           del pulsante si leggeva come un doppio bordo (soprattutto sulle
+           fasi cliccabili). Resta solo il contorno del pulsante intero. */
+        .phase-step .step-badge,
+        .phase-step.active .step-badge,
+        .phase-step.completed .step-badge {
+            border-color: transparent;
+        }
+        .phase-step .step-badge {
+            background: radial-gradient(circle at 38% 30%, color-mix(in srgb, var(--fase-accento) 13%, transparent), rgba(5,7,12,.38) 68%);
+        }
+        .phase-step .step-num {
+            border-color: color-mix(in srgb, var(--fase-accento) 28%, transparent);
+            color: color-mix(in srgb, var(--fase-accento) 72%, #9a968c);
+        }
+        .phase-step.active {
+            background: radial-gradient(circle at 28% 30%, color-mix(in srgb, var(--fase-accento) 18%, transparent), transparent 42%), linear-gradient(135deg, color-mix(in srgb, var(--fase-accento) 20%, rgba(20,16,10,.42)), rgba(23,18,11,.28));
+            color: color-mix(in srgb, var(--fase-accento) 30%, #fff);
+            box-shadow: 0 5px 14px rgba(0,0,0,.18), 0 0 16px color-mix(in srgb, var(--fase-accento) 14%, transparent);
+        }
+        .phase-step.active .step-badge {
+            color: var(--fase-accento);
+            background: radial-gradient(circle at 38% 30%, color-mix(in srgb, var(--fase-accento) 38%, transparent), color-mix(in srgb, var(--fase-accento) 22%, rgba(25,18,8,.6)) 58%, rgba(25,18,8,.62));
+            box-shadow: 0 0 13px color-mix(in srgb, var(--fase-accento) 24%, transparent), inset 0 0 7px color-mix(in srgb, var(--fase-accento) 10%, transparent);
+        }
+        .phase-step.active::before {
+            background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--fase-accento) 85%, transparent), transparent);
+        }
+        .phase-step.clickable:not(.active) {
+            background: linear-gradient(135deg, rgba(31,30,31,.88), color-mix(in srgb, var(--fase-accento) 14%, rgba(30,26,20,.8)));
+            border-color: color-mix(in srgb, var(--fase-accento) 32%, transparent);
+        }
+        @media (hover: hover) and (pointer: fine) {
+            .phase-step.clickable:hover {
+                border-color: color-mix(in srgb, var(--fase-accento) 52%, transparent);
+                background: linear-gradient(135deg, color-mix(in srgb, var(--fase-accento) 14%, rgba(30,26,20,.9)), color-mix(in srgb, var(--fase-accento) 24%, rgba(40,30,15,.78)));
             }
         }
         /* Promemoria Tributo: banda ben visibile in alto, non un semplice
@@ -4035,24 +4112,43 @@
                 height: clamp(25px, 7.2vw, 30px);
                 border-radius: 8px;
             }
-            .phase-step::after { display: block; }
+            /* Niente trattini fra un pulsante e l'altro: con i pulsanti
+               distribuiti su tutta la fila non arriverebbero al vicino, e la
+               linea sottile della barra (.phase-stepper::before) li collega
+               già tutti. */
+            .phase-step::after { display: none; }
+            /* Una sola forma per pulsante: qui il pulsante è grande poco più
+               del quadratino dell'icona, e i due fondi uno dentro l'altro si
+               leggevano come un doppio riquadro. Il pulsante resta l'area da
+               toccare ma diventa trasparente; il quadratino porta tutto,
+               compreso il contorno della fase in cui puoi andare. */
+            .phase-stepper .phase-step,
+            .phase-stepper .phase-step.active,
+            .phase-stepper .phase-step.completed,
+            .phase-stepper .phase-step.clickable:not(.active) {
+                background: transparent;
+                border-color: transparent;
+                box-shadow: none;
+            }
+            .phase-stepper .phase-step.clickable:not(.active) .step-badge {
+                border-color: color-mix(in srgb, var(--fase-accento) 45%, transparent);
+                background: linear-gradient(135deg, rgba(31,30,31,.9), color-mix(in srgb, var(--fase-accento) 18%, rgba(30,26,20,.85)));
+            }
             .phase-stepper {
-                /* justify-content:space-between (prima) distribuiva TUTTO
-                   lo spazio libero della larghezza dell'80% tra le
-                   icone: il "gap" restava solo un minimo, quindi
-                   ridurlo da solo non stringeva nulla — a distanziarle
-                   era lo spazio vuoto, non il gap. Passato a
-                   justify-content:center con un gap vero e proprio: le
-                   icone si raggruppano compatte e ravvicinate, e
-                   l'intero gruppo resta comunque centrato sullo
-                   schermo grazie al margin:auto qui sotto (stesso
-                   principio già verificato per .battlefield-main). */
+                /* I sei pulsanti vanno dall'INIZIO della casella Terreno alla
+                   FINE del Cimitero (richiesta dell'utente, 2026-10-16): il
+                   primo appoggiato al bordo sinistro, l'ultimo a quello
+                   destro, lo spazio diviso in mezzo. Prima erano raccolti al
+                   centro (justify-content:center), e su telefono lasciavano
+                   vuoti i due lati della fila. Padding orizzontale a zero per
+                   lo stesso motivo: la barra è già larga esatta quanto la
+                   fila (syncPhaseStepperToFieldWidth in game-flow.js). */
                 gap: clamp(2px, 1vw, 5px);
                 margin: 1px auto 3px;
                 width: min(100%, calc(var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-gap) + var(--field-gap) + var(--field-gap) + var(--field-gap) + var(--field-gap) + var(--field-gap)));
-                padding: 3px 5px;
+                padding: 3px 0;
                 border-radius: 13px;
-                justify-content: center;
+                justify-content: space-between;
                 flex-wrap: nowrap;
             }
 
@@ -4143,7 +4239,7 @@
             /*.battlefield-main { gap: 1px; }*/
             .hand--bot { margin-bottom: 2px; gap: 2px; }
             /* Tempo/Difficoltà/Abbandona: compattati in .hud-sistema. */
-            .phase-stepper { width: min(100%, calc(var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-gap) + var(--field-gap) + var(--field-gap) + var(--field-gap) + var(--field-gap) + var(--field-gap))); margin-top: 0; margin-bottom: 0; gap: 2px; padding: 2px 4px; }
+            .phase-stepper { width: min(100%, calc(var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-slot-w) + var(--field-gap) + var(--field-gap) + var(--field-gap) + var(--field-gap) + var(--field-gap) + var(--field-gap))); margin-top: 0; margin-bottom: 0; gap: 2px; padding: 2px 0; justify-content: space-between; }
             .phase-step { flex-basis: 34px; max-width: 36px; padding: 2px; border-radius: 7px; }
             .phase-step .step-badge { width: 21px; height: 21px; border-radius: 6px; }
             .phase-step .step-num { width: 9px; min-width: 9px; height: 9px; font-size: 5px; }

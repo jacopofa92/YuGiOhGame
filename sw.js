@@ -483,7 +483,8 @@
 // v266: badge ATK/DEF e contatori delle pile senza sovrapposizioni su mobile.
 // v267: ATK/DEF e contatori senza box, su una riga, con rilievo 3D.
 // v268: ologrammi su mobile un po' più bassi (base al 68% della carta).
-const CACHE_NAME = 'ygo-duel-arena-v268';
+// v269: barra delle fasi dal Terreno al Cimitero, col colore del campo e un solo bordo.
+const CACHE_NAME = 'ygo-duel-arena-v269';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

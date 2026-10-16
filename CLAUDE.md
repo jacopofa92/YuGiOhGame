@@ -4404,3 +4404,18 @@ sopra la pila. Il lampo delle variazioni (duel-feedback.js) anima `scale` e
 aggiunge il bagliore alla catena di drop-shadow, non `transform`/`box-shadow`.
 Spec `badge-campo-non-si-sovrappongono-su-mobile` (nessuna sovrapposizione,
 una riga, nessun box). Cache `v267`.
+
+Barra delle fasi (2026-10-16): dopo sette giri di proposte grafiche tutte
+respinte, l'utente ha scelto di tenere la barra ORIGINALE e cambiare solo
+tre cose. 1) Misure: il primo pulsante comincia dove comincia la casella
+Terreno, l'ultimo finisce dove finisce il Cimitero (`justify-content:
+space-between`, padding laterale zero); su mobile prima erano raccolti al
+centro. 2) Colori dal campo: `--fase-accento`, versione chiara della
+`--campo-tinta` già usata dalle caselle (js/ui/tinta-campo.js +
+js/data/tinte-campi.js), al posto dell'oro fisso; un'arena nuova la eredita.
+3) Un solo bordo: il cerchietto dell'icona non ha più la sua cornice, e su
+mobile il pulsante è trasparente e il quadratino porta tutto. Spec
+`barra-fasi-dal-terreno-al-cimitero` (verificato al contrario). Cache `v269`.
+Se in futuro si riprova a ridisegnarla, l'utente ha respinto: celle tutte
+uguali "scolastiche", cornici elaborate, rombi, giallo acceso, fasce uniche
+a capsula.
