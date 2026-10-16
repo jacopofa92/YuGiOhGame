@@ -6,7 +6,10 @@ liste TCG di Yugi pubblicate nel database ufficiale Yu-Gi-Oh! Neuron.
 ## Perimetro
 
 - solo carte realmente pubblicate nel TCG;
-- personaggi e strategie della serie originale `Duel Monsters`;
+- personaggi e strategie della serie originale `Duel Monsters`: questo non
+  significa necessariamente carte appartenenti alle primissime espansioni
+  TCG, perché diverse carte viste o associate a Yugi sono state stampate
+  ufficialmente solo negli anni successivi;
 - escluse le carte rimaste esclusivamente anime/manga;
 - priorità alla riconoscibilità, alle combo complete e a effetti che
   aggiungono gioco reale, non alla completezza enciclopedica.
@@ -45,8 +48,16 @@ Valkyrion.
 | Carta della Santità | Iconica, ma il testo TCG è molto più debole e diverso dalla versione anime; va implementato quello TCG. |
 | Sipario di Magia Oscura; Formula Magica | Supporti classici del Mago Nero presenti nella lista Battle City ufficiale. |
 | Corda dell'Anima; Distruzione a Catena; Tragedia | Trappole canoniche con interazioni utili, ma meno identitarie dei nuclei in Priorità A. |
-| Ragnarok; Unione dei Maghi; Dedizione attraverso Luce e Oscurità | Completano alcune giocate memorabili e il passaggio al Mago Nero del Caos. |
+| Unione dei Maghi; Dedizione attraverso Luce e Oscurità | Completano alcune giocate memorabili e il passaggio al Mago Nero del Caos. |
 | Ripristino Miracoloso | Recupero dedicato ai Guerrieri Magnetici; acquista valore dopo Gamma/Valkyrion. |
+
+## Esclusioni verificate
+
+- `Ragnarok`, la Magia usata da Yugi contro Yami Marik, è una carta
+  esclusivamente anime e non è mai stata pubblicata nel TCG. Era stata
+  inclusa per errore nella prima revisione dell'audit e va quindi esclusa
+  dall'implementazione. Non va confusa con il mostro TCG `Divine Dragon
+  Ragnarok` né con l'espansione `Storm of Ragnarok`.
 
 ## Carte importanti già presenti
 
