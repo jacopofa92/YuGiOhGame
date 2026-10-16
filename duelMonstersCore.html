@@ -1262,6 +1262,14 @@
            slot (non alla carta, che ha overflow:hidden) così l'etichetta
            può sporgere leggermente sotto il bordo della carta.
            ============================================================ */
+        /* Niente pillola né bordo (richiesta dell'utente, 2026-10-16): solo
+           i numeri, in rilievo. Il rilievo 3D lo fanno le ombre IMPILATE di
+           `filter: drop-shadow` sul contenitore (un px alla volta verso il
+           basso = spessore, poi un'ombra morbida = distacco dal campo), e
+           non `text-shadow`: con il testo a gradiente (background-clip:
+           text) l'ombra del testo verrebbe dipinta SOPRA il gradiente e lo
+           sporcherebbe. La stessa catena di ombre è ripresa dal lampo delle
+           variazioni ATK/DEF in js/ui/duel-feedback.js, che la legge da qui. */
         .field-stats-badge {
             position: absolute;
             left: 50%;
@@ -1269,21 +1277,30 @@
             transform: translate(-50%, 1px);
             z-index: 4;
             display: flex;
-            align-items: center;
-            gap: 3px;
-            background: linear-gradient(145deg, rgba(8,8,12,0.94), rgba(32,20,10,0.94));
-            border: 1px solid rgba(247,215,116,0.6);
-            border-radius: 999px;
-            padding: 1px 6px;
-            font-size: clamp(0.5rem, 1.3vw, 0.7rem);
-            font-weight: 800;
+            align-items: baseline;
+            gap: 2px;
+            font-size: clamp(0.62rem, 1.5vw, 0.86rem);
+            font-weight: 900;
+            line-height: 1;
+            letter-spacing: -0.01em;
+            font-variant-numeric: tabular-nums;
             white-space: nowrap;
-            box-shadow: 0 3px 8px rgba(0,0,0,0.45);
             pointer-events: none;
+            filter:
+                drop-shadow(0 0 0.6px rgba(0, 0, 0, 0.95))
+                drop-shadow(0 1px 0 rgba(40, 22, 6, 0.95))
+                drop-shadow(0 1px 0 rgba(20, 10, 2, 0.85))
+                drop-shadow(0 2px 3px rgba(0, 0, 0, 0.75));
         }
-        .field-stats-badge .fsb-atk { color: #ff8a65; }
-        .field-stats-badge .fsb-def { color: #7dd3fc; }
-        .field-stats-badge .fsb-sep { color: rgba(255,255,255,0.45); }
+        .field-stats-badge .fsb-atk,
+        .field-stats-badge .fsb-def {
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .field-stats-badge .fsb-atk { background-image: linear-gradient(180deg, #ffe7d9 0%, #ff9b6e 48%, #e0522a 100%); }
+        .field-stats-badge .fsb-def { background-image: linear-gradient(180deg, #e6f7ff 0%, #8fdcff 48%, #2f95d6 100%); }
+        .field-stats-badge .fsb-sep { color: rgba(255, 244, 220, 0.7); font-weight: 600; font-size: 0.85em; }
         /* Stesso badge, riusato per il conteggio carte di Deck/Cimitero/
            Extra Deck (vedi createSlotElement in game-flow.js): colore
            neutro invece delle tinte ATK/DEF, dato che qui è solo un
@@ -1295,42 +1312,43 @@
            che ognuna è già ancorata al proprio .field-slot: nessuna
            distinzione lato giocatore/bot necessaria qui. */
         .field-pile-badge {
-            color: #f7d774;
             left: 50%;
             top: 0;
             transform: translate(-50%, -100%);
+            font-size: clamp(0.72rem, 1.6vw, 0.98rem);
+            background-image: linear-gradient(180deg, #fff6cf 0%, #f7d774 50%, #c9891c 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
         }
         /* Su mobile (verticale e orizzontale) fra una riga e l'altra del
            campo restano pochi pixel, e i badge appesi FUORI dalla casella
            finivano sulle carte vicine (segnalato dall'utente, 2026-10-16):
-           - ATK/DEF, largo una riga sola, era più largo della casella e si
-             accavallava col badge del mostro accanto, e sotto toccava la
-             riga Magie/Trappole. Qui va su due righe (ATK sopra, DEF sotto)
-             e si appoggia sul FONDO della propria carta, dove copre solo la
-             riga di statistiche stampata sulla carta, che dice lo stesso;
+           - ATK/DEF, appeso sotto la carta, toccava la riga Magie/Trappole:
+             qui resta su UNA riga (mai su due: scartato dall'utente) ma
+             appoggiato sul FONDO della propria carta, dove copre solo la
+             riga di statistiche stampata, che dice lo stesso. Senza più la
+             pillola il testo è stretto quanto la carta, quindi non tocca
+             nemmeno quello del mostro accanto (lo sorveglia lo spec
+             badge-campo-non-si-sovrappongono-su-mobile);
            - il contatore delle pile sporgeva sopra la casella fino alla
              pila di sopra: resta in cima alla PROPRIA pila, ma dentro, sopra
              il dorso (z-index oltre il 5 del dorso in cima).
-           Il desktop, con spazio a sufficienza, resta com'era. */
+           Il desktop, con spazio a sufficienza, resta sotto la carta. */
         @media (max-width: 900px) {
             .field-stats-badge:not(.field-pile-badge) {
-                flex-direction: column;
-                gap: 0;
-                line-height: 1.05;
                 top: auto;
                 bottom: 2px;
                 transform: translateX(-50%);
-                padding: 1px 3px;
-                border-radius: 5px;
-                font-size: clamp(7px, calc(var(--card-w) * 0.17), 11px);
+                gap: 1px;
+                letter-spacing: -0.04em;
+                font-size: clamp(7px, calc(var(--card-w) * 0.19), 12px);
             }
-            .field-stats-badge:not(.field-pile-badge) .fsb-sep { display: none; }
             .field-pile-badge {
-                top: 2px;
+                top: 3px;
                 transform: translateX(-50%);
                 z-index: 6;
-                padding: 0 5px;
-                font-size: clamp(7px, calc(var(--card-w) * 0.2), 11px);
+                font-size: clamp(9px, calc(var(--card-w) * 0.26), 14px);
             }
         }
 

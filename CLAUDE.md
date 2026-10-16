@@ -4392,11 +4392,15 @@ e pile sono a metà strada: `--card-w` scende a ~43px e `--field-slot-pad`
 cresce di quanto lei cala (casella e campo restano larghi uguale), la pila
 sale dall'86% al 92% della casella con sfalsamento 2%/1,3% per strato
 (ultimo strato esatto sul bordo). Desktop e orizzontale invariati. Cache `v265`.
-Subito dopo, badge senza sovrapposizioni su mobile (`max-width: 900px`,
-entrambi gli orientamenti): ATK/DEF su due righe appoggiato sul FONDO della
-propria carta (prima, su una riga, era più largo della casella e toccava il
-mostro accanto e la riga sotto) e contatore delle pile DENTRO la cima della
-propria pila (prima sporgeva sulla pila di sopra). Desktop invariato: lì
-restano due contatti di pochi pixel preesistenti, lasciati apposta. Spec
-`badge-campo-non-si-sovrappongono-su-mobile` (proprietà, non misure;
-verificato al contrario). Cache `v266`.
+Badge del campo (ATK/DEF e contatori delle pile), stesso giorno, due scelte
+esplicite dell'utente da NON annullare: **una riga sola, mai due** (una
+versione su due righe è stata respinta) e **niente pillola né bordo**: solo
+i numeri, a gradiente (ATK arancio, DEF azzurro, pile oro) con rilievo 3D
+dato da `filter: drop-shadow` impilati (non `text-shadow`, che sporcherebbe
+il gradiente). Su mobile (`max-width: 900px`) ATK/DEF sta sul fondo della
+propria carta e il contatore dentro la cima della propria pila, così nessuno
+dei due arriva sulle carte vicine; sul desktop restano sotto la carta e
+sopra la pila. Il lampo delle variazioni (duel-feedback.js) anima `scale` e
+aggiunge il bagliore alla catena di drop-shadow, non `transform`/`box-shadow`.
+Spec `badge-campo-non-si-sovrappongono-su-mobile` (nessuna sovrapposizione,
+una riga, nessun box). Cache `v267`.

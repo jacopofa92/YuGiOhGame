@@ -481,7 +481,8 @@
 // v264: Extra Deck che pulsa in viola quando una Fusione senza Polimerizzazione è evocabile.
 // v265: dorso con un solo bordo; in verticale carte e pile a misure vicine.
 // v266: badge ATK/DEF e contatori delle pile senza sovrapposizioni su mobile.
-const CACHE_NAME = 'ygo-duel-arena-v266';
+// v267: ATK/DEF e contatori senza box, su una riga, con rilievo 3D.
+const CACHE_NAME = 'ygo-duel-arena-v267';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

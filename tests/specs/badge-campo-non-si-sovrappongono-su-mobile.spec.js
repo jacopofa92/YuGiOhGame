@@ -54,6 +54,23 @@ module.exports = {
                         badges.slice(i + 1).forEach((c) => { if (area(b, c) > 1) esito.push(`badge "${b.testo}" su badge "${c.testo}"`); });
                         carte.forEach((c) => { if (c.slot !== b.slot && area(b, c) > 1) esito.push(`badge "${b.testo}" su una carta di un'altra casella`); });
                     });
+                    // Due scelte esplicite dell'utente (2026-10-16): ATK/DEF
+                    // su UNA riga, mai su due; e nessuna pillola né bordo,
+                    // solo i numeri in rilievo.
+                    const stile = [...document.querySelectorAll('.field-stats-badge')].filter((e) => e.getBoundingClientRect().width > 0).map((e) => {
+                        const cs = getComputedStyle(e);
+                        const r = e.getBoundingClientRect();
+                        return {
+                            testo: e.textContent.trim(),
+                            unaRiga: r.height < parseFloat(cs.fontSize) * 1.6,
+                            senzaBox: (cs.backgroundColor === 'rgba(0, 0, 0, 0)' || cs.backgroundColor === 'transparent')
+                                && parseFloat(cs.borderTopWidth) === 0 && cs.boxShadow === 'none'
+                        };
+                    });
+                    stile.forEach((s) => {
+                        if (!s.unaRiga) esito.push(`badge "${s.testo}" va su più righe`);
+                        if (!s.senzaBox) esito.push(`badge "${s.testo}" ha ancora sfondo, bordo o ombra a box`);
+                    });
                     return { esito, quanti: badges.length };
                 });
                 assert(conflitti.quanti >= 10, `${schermo.nome}: attesi almeno 10 badge in campo, trovati ${conflitti.quanti}`);

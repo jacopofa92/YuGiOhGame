@@ -174,10 +174,19 @@
         const badge = slot && slot.querySelector('.field-stats-badge');
         if (badge && typeof badge.animate === 'function' && !movimentoRidotto()) {
             const colore = (dAtk || dDef) > 0 ? 'rgba(111,224,138,0.95)' : 'rgba(255,107,91,0.95)';
+            // `scale` e non `transform`: il badge è centrato con un
+            // transform suo (translate -50%), che un'animazione di transform
+            // sostituirebbe facendolo saltare di lato. E il bagliore va
+            // AGGIUNTO alla catena di drop-shadow che dà il rilievo ai numeri
+            // (vedi .field-stats-badge in duelMonstersCore.html), non come
+            // box-shadow: il badge non ha più una pillola, e un box-shadow
+            // disegnerebbe un rettangolo luminoso intorno al testo.
+            const rilievo = getComputedStyle(badge).filter;
+            const base = rilievo && rilievo !== 'none' ? rilievo : '';
             badge.animate([
-                { transform: 'scale(1)', boxShadow: '0 0 0 0 transparent' },
-                { transform: 'scale(1.22)', boxShadow: `0 0 14px 3px ${colore}`, offset: 0.3 },
-                { transform: 'scale(1)', boxShadow: '0 0 0 0 transparent' }
+                { scale: '1', filter: base || 'none' },
+                { scale: '1.25', filter: `${base} drop-shadow(0 0 6px ${colore})`.trim(), offset: 0.3 },
+                { scale: '1', filter: base || 'none' }
             ], { duration: 900, easing: 'cubic-bezier(.22,.7,.25,1)' });
         }
     }
