@@ -480,7 +480,8 @@
 // v263: Tifone dello Spazio Mistico rifatto come imbuto di vento (merge VFX).
 // v264: Extra Deck che pulsa in viola quando una Fusione senza Polimerizzazione è evocabile.
 // v265: dorso con un solo bordo; in verticale carte e pile a misure vicine.
-const CACHE_NAME = 'ygo-duel-arena-v265';
+// v266: badge ATK/DEF e contatori delle pile senza sovrapposizioni su mobile.
+const CACHE_NAME = 'ygo-duel-arena-v266';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

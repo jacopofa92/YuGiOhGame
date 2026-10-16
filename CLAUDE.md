@@ -4392,3 +4392,11 @@ e pile sono a metà strada: `--card-w` scende a ~43px e `--field-slot-pad`
 cresce di quanto lei cala (casella e campo restano larghi uguale), la pila
 sale dall'86% al 92% della casella con sfalsamento 2%/1,3% per strato
 (ultimo strato esatto sul bordo). Desktop e orizzontale invariati. Cache `v265`.
+Subito dopo, badge senza sovrapposizioni su mobile (`max-width: 900px`,
+entrambi gli orientamenti): ATK/DEF su due righe appoggiato sul FONDO della
+propria carta (prima, su una riga, era più largo della casella e toccava il
+mostro accanto e la riga sotto) e contatore delle pile DENTRO la cima della
+propria pila (prima sporgeva sulla pila di sopra). Desktop invariato: lì
+restano due contatti di pochi pixel preesistenti, lasciati apposta. Spec
+`badge-campo-non-si-sovrappongono-su-mobile` (proprietà, non misure;
+verificato al contrario). Cache `v266`.

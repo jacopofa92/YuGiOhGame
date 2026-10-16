@@ -1300,6 +1300,39 @@
             top: 0;
             transform: translate(-50%, -100%);
         }
+        /* Su mobile (verticale e orizzontale) fra una riga e l'altra del
+           campo restano pochi pixel, e i badge appesi FUORI dalla casella
+           finivano sulle carte vicine (segnalato dall'utente, 2026-10-16):
+           - ATK/DEF, largo una riga sola, era più largo della casella e si
+             accavallava col badge del mostro accanto, e sotto toccava la
+             riga Magie/Trappole. Qui va su due righe (ATK sopra, DEF sotto)
+             e si appoggia sul FONDO della propria carta, dove copre solo la
+             riga di statistiche stampata sulla carta, che dice lo stesso;
+           - il contatore delle pile sporgeva sopra la casella fino alla
+             pila di sopra: resta in cima alla PROPRIA pila, ma dentro, sopra
+             il dorso (z-index oltre il 5 del dorso in cima).
+           Il desktop, con spazio a sufficienza, resta com'era. */
+        @media (max-width: 900px) {
+            .field-stats-badge:not(.field-pile-badge) {
+                flex-direction: column;
+                gap: 0;
+                line-height: 1.05;
+                top: auto;
+                bottom: 2px;
+                transform: translateX(-50%);
+                padding: 1px 3px;
+                border-radius: 5px;
+                font-size: clamp(7px, calc(var(--card-w) * 0.17), 11px);
+            }
+            .field-stats-badge:not(.field-pile-badge) .fsb-sep { display: none; }
+            .field-pile-badge {
+                top: 2px;
+                transform: translateX(-50%);
+                z-index: 6;
+                padding: 0 5px;
+                font-size: clamp(7px, calc(var(--card-w) * 0.2), 11px);
+            }
+        }
 
         /* Segnalini sulla carta (card.counters, vedi la convenzione in
            cima a js/card-effects.js e renderFields() in game-flow.js):
