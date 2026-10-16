@@ -2047,7 +2047,16 @@ window.DuelEngineUI = {
      * sceglie da sola la prima carta invece di bloccare l'effetto, stesso
      * spirito di openActivateModal qui sopra.
      */
-    openCardListPicker(cards, { title, text, selectable = true, emptyText, onSelect, onCancel } = {}) {
+    /*
+     * `evocabili` (facoltativo, elenco di uid): mostra TUTTE le carte ma
+     * rende selezionabili solo quelle elencate, che pulsano in viola; le
+     * altre restano visibili e spente. Nato per l'Extra Deck (vedi
+     * createSlotElement in game-flow.js): così si vede quali Fusioni si
+     * possono Evocare ADESSO in mezzo a tutte quelle che si possiedono,
+     * come in Master Duel, invece di un elenco che contiene solo loro.
+     */
+    openCardListPicker(cards, { title, text, selectable = true, emptyText, onSelect, onCancel, evocabili } = {}) {
+        const uidEvocabili = Array.isArray(evocabili) ? new Set(evocabili) : null;
         const modal = document.getElementById('cardListPickerModal');
         const row = document.getElementById('cardListPickerRow');
         if (!modal || !row) {
@@ -2105,7 +2114,13 @@ window.DuelEngineUI = {
         } else {
             cards.forEach((card, index) => {
                 const item = document.createElement('div');
-                item.className = 'card-list-item' + (selectable ? '' : ' not-selectable');
+                // Il confronto vuole un uid vero: due carte SENZA uid
+                // (undefined === undefined) si accenderebbero insieme.
+                const evocabile = uidEvocabili ? (card.uid != null && uidEvocabili.has(card.uid)) : null;
+                const selezionabile = selectable && evocabile !== false;
+                item.className = 'card-list-item' + (selezionabile ? '' : ' not-selectable')
+                    + (evocabile === true ? ' card-list-item--evocabile' : '')
+                    + (evocabile === false ? ' card-list-item--spenta' : '');
                 // `__mostraCoperta`: la carta va disegnata COL RETRO, non
                 // scoperta. Lo imposta chi costruisce l'elenco (vedi
                 // chooseFieldCardTarget in card-effects.js) per le carte
@@ -2123,7 +2138,7 @@ window.DuelEngineUI = {
                     ? createCardElement(card, true, 'defense')
                     : createCardElement(card));
                 item.onmouseenter = () => showCardInfo(card);
-                if (selectable) {
+                if (selezionabile) {
                     item.onclick = () => {
                         close();
                         if (onSelect) onSelect(card, index);

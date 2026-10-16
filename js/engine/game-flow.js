@@ -2168,6 +2168,21 @@ function pileDepthForCount(count) {
     return 5;
 }
 
+/**
+ * Le Fusioni che `owner` può Evocare dall'Extra Deck ADESSO senza
+ * Polimerizzazione (bandendo i materiali, es. Cannone Drago XYZ): solo
+ * nella propria Main Phase e solo per il giocatore davanti allo schermo.
+ * Un solo punto per due usi: la pulsazione viola della zona Extra Deck
+ * (createSlotElement) e l'elenco che si apre cliccandola. Se le due cose
+ * leggessero condizioni diverse, la zona potrebbe pulsare e poi non
+ * offrire niente, o il contrario.
+ */
+function fusioniEvocabiliOra(owner) {
+    const isMainPhase = gameState.phase === 'main1' || gameState.phase === 'main2';
+    const canAct = owner === 'player' && gameState.currentPlayer === 'player' && isMainPhase && window.DuelEngine;
+    return canAct ? DuelEngine.getBanishFusableExtraDeckMonsters('player') : [];
+}
+
 function createSlotElement(owner, type, index, options = {}) {
     const slotEl = document.createElement('div');
     slotEl.className = 'field-slot';
@@ -2182,6 +2197,13 @@ function createSlotElement(owner, type, index, options = {}) {
     slotEl.dataset.type = type;
     if (index !== -1) slotEl.dataset.index = index;
     if (options.zone) slotEl.dataset.zone = options.zone;
+    // Extra Deck che pulsa in viola: c'è almeno una Fusione evocabile ora
+    // senza Polimerizzazione. Senza questo segnale nessuno scopriva che
+    // cliccare la pila serviva a Evocarle. La classe si ricalcola a ogni
+    // render, quindi si spegne da sola appena un materiale lascia il Terreno.
+    if (options.zone === 'fusion' && fusioniEvocabiliOra(owner).length > 0) {
+        slotEl.classList.add('fusion-ready');
+    }
     slotEl.onclick = () => {
         // Zona Extra Deck: normalmente solo consultabile (mai un bersaglio
         // di piazzamento — vi si arriva soprattutto tramite la Magia
@@ -2193,13 +2215,21 @@ function createSlotElement(owner, type, index, options = {}) {
         // Evocarli (DuelEngine.getBanishFusableExtraDeckMonsters), invece
         // del solo elenco informativo.
         if (options.zone === 'fusion') {
-            const isMainPhase = gameState.phase === 'main1' || gameState.phase === 'main2';
-            const canAct = owner === 'player' && gameState.currentPlayer === 'player' && isMainPhase && window.DuelEngine;
-            const banishOptions = canAct ? DuelEngine.getBanishFusableExtraDeckMonsters('player') : [];
+            const banishOptions = fusioniEvocabiliOra(owner);
             if (banishOptions.length > 0 && window.DuelEngineUI) {
-                window.DuelEngineUI.openCardListPicker(banishOptions.map((o) => o.card), {
+                // Tutto l'Extra Deck, con le evocabili che pulsano in viola
+                // (opzione `evocabili`): si vede COSA si può Evocare in
+                // mezzo a ciò che si possiede, non un elenco a parte. Le
+                // evocabili si riconoscono per uid: se una ne fosse priva
+                // (non succede con buildExtraDeckFromSpec) si mostrano solo
+                // loro, come prima, invece di un elenco tutto spento.
+                const conUid = banishOptions.every((o) => o.card.uid != null);
+                window.DuelEngineUI.openCardListPicker(conUid ? gameState.playerExtraDeck : banishOptions.map((o) => o.card), {
                     title: '🌀 Evoca dall\'Extra Deck',
-                    text: 'Puoi Special Summonare bandendo i materiali che controlli scoperti sul Terreno. Scegli quale Evocare.',
+                    text: banishOptions.length === 1
+                        ? 'La carta in viola si può Special Summonare ora, bandendo i materiali che controlli scoperti sul Terreno. Toccala per Evocarla.'
+                        : 'Le carte in viola si possono Special Summonare ora, bandendo i materiali che controlli scoperti sul Terreno. Tocca quella da Evocare.',
+                    evocabili: conUid ? banishOptions.map((o) => o.card.uid) : undefined,
                     onSelect: (card) => {
                         const match = banishOptions.find((o) => o.card.uid === card.uid);
                         if (match) {
@@ -2217,7 +2247,7 @@ function createSlotElement(owner, type, index, options = {}) {
             if (owner === 'player' && gameState.playerExtraDeck.length > 0 && window.DuelEngineUI) {
                 window.DuelEngineUI.openCardListPicker(gameState.playerExtraDeck, {
                     title: '🔗 Extra Deck',
-                    text: `${gameState.playerExtraDeck.length} carta${gameState.playerExtraDeck.length === 1 ? '' : 'e'} nell'Extra Deck.`,
+                    text: `${gameState.playerExtraDeck.length} cart${gameState.playerExtraDeck.length === 1 ? 'a' : 'e'} nell'Extra Deck.`,
                     selectable: false
                 });
             }

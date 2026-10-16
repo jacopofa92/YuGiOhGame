@@ -4373,3 +4373,13 @@ movimento Terreno → mano generico (evento `transizione-carta` emesso da
 cilindri scanalati" del branch sono stati scartati di proposito. Il
 guardrail in `return-to-hand-mechanism` ascolta l'evento, non una classe
 CSS. Cache `v263`.
+
+Extra Deck evocabile in viola (2026-10-16, stile Master Duel): quando una
+Fusione senza Polimerizzazione (`banishFusionMaterials`, es. Cannone Drago
+XY/XYZ) si può Evocare ora, la zona Extra Deck del giocatore pulsa in viola
+(`.fusion-ready`, casella + dorsi della pila); cliccandola si apre TUTTO
+l'Extra Deck con le evocabili in viola e selezionabili e le altre spente.
+Una sola condizione per entrambe, `fusioniEvocabiliOra` (game-flow.js), e
+opzione generica `evocabili: [uid]` di `openCardListPicker` (actions.js),
+riusabile per qualunque elenco "mostra tutto, scegli solo alcune". Nessuna
+regola toccata. Spec `extra-deck-evocabile-pulsa`; cache `v264`.

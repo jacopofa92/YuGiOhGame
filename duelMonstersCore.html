@@ -1059,6 +1059,33 @@
             flex-direction: column;
             gap: 6px;
         }
+        /* Extra Deck con una Fusione evocabile ORA senza Polimerizzazione
+           (es. Cannone Drago XYZ): la zona pulsa in viola per dire "toccami".
+           La classe la mette createSlotElement (game-flow.js) solo nella
+           propria Main Phase; si ricalcola a ogni render. */
+        .field-slot.fusion-ready {
+            border-color: rgba(190, 130, 255, 0.95);
+            animation: fusionReadyPulse 1.6s ease-in-out infinite;
+            cursor: pointer;
+        }
+        @keyframes fusionReadyPulse {
+            0%, 100% { box-shadow: 0 0 6px rgba(176, 108, 255, 0.55), inset 0 0 8px rgba(140, 66, 245, 0.35); }
+            50%      { box-shadow: 0 0 16px 3px rgba(190, 130, 255, 0.95), 0 0 30px 6px rgba(120, 52, 230, 0.55), inset 0 0 14px rgba(190, 130, 255, 0.6); }
+        }
+        /* Il bagliore della sola casella su telefono quasi non si vede (la
+           pila la copre e la casella è minuscola): pulsano anche i dorsi
+           della pila, con un drop-shadow che segue la loro sagoma. */
+        .field-slot.fusion-ready .deck-preview {
+            animation: fusionReadyCards 1.6s ease-in-out infinite;
+        }
+        @keyframes fusionReadyCards {
+            0%, 100% { filter: drop-shadow(0 0 3px rgba(190, 130, 255, 0.7)); }
+            50%      { filter: drop-shadow(0 0 6px #e3c8ff) drop-shadow(0 0 14px rgba(150, 70, 255, 0.95)); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .field-slot.fusion-ready { animation: none; box-shadow: 0 0 14px 2px rgba(190, 130, 255, 0.85), inset 0 0 12px rgba(190, 130, 255, 0.5); }
+            .field-slot.fusion-ready .deck-preview { animation: none; filter: drop-shadow(0 0 6px #e3c8ff) drop-shadow(0 0 12px rgba(150, 70, 255, 0.85)); }
+        }
         .field-slot.deck-slot {
             /*background: transparent;
             border: none;
@@ -3297,6 +3324,27 @@
         }
         .card-list-item.not-selectable { cursor: default; }
         .card-list-item.not-selectable:hover { transform: none; filter: none; }
+        /* Extra Deck aperto con qualcosa da Evocare (opzione `evocabili` di
+           openCardListPicker, actions.js): la Fusione evocabile ora pulsa
+           in viola, lo stesso viola della zona sul campo (.fusion-ready);
+           le altre restano leggibili ma spente, perché adesso non si
+           possono scegliere. */
+        .card-list-item--evocabile {
+            animation: evocabilePulse 1.6s ease-in-out infinite;
+        }
+        .card-list-item--evocabile:hover {
+            animation-play-state: paused;
+            filter: drop-shadow(0 0 6px #fff) drop-shadow(0 0 20px rgba(176, 108, 255, 0.95));
+        }
+        .card-list-item--spenta { opacity: 0.42; filter: grayscale(0.75); }
+        .card-list-item--spenta:hover { filter: grayscale(0.75); }
+        @keyframes evocabilePulse {
+            0%, 100% { filter: drop-shadow(0 0 3px rgba(176, 108, 255, 0.55)) drop-shadow(0 0 8px rgba(120, 52, 230, 0.35)); }
+            50%      { filter: drop-shadow(0 0 7px rgba(214, 170, 255, 0.95)) drop-shadow(0 0 22px rgba(140, 66, 245, 0.85)); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .card-list-item--evocabile { animation: none; filter: drop-shadow(0 0 6px rgba(214, 170, 255, 0.9)) drop-shadow(0 0 16px rgba(140, 66, 245, 0.7)); }
+        }
         .card-list-empty { color: #e7dcc6; padding: 30px 14px; font-style: italic; }
         /* Descrizione della carta sotto il mouse/tocco dentro il picker
            (#cardListPickerInfo) — il pannello normale (#cardInfoPanel,
