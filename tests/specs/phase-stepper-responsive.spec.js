@@ -67,5 +67,36 @@ module.exports = {
             t.assert(m.clickableKeyboard,
                 'Gli step azionabili devono restare raggiungibili da tastiera');
         }
+
+        // Gli stati devono distinguersi anche senza affidarsi alla sola tinta:
+        // attivo e cliccabile hanno luce/volume, il disabilitato resta spento.
+        await t.page.setViewportSize({ width: 1440, height: 900 });
+        const statiDesktop = await t.evaluate(() => {
+            const steps = [...document.querySelectorAll('.phase-step')];
+            steps.forEach((el) => { el.className = 'phase-step'; });
+            steps[0].classList.add('active');
+            steps[1].classList.add('clickable');
+            steps[2].classList.add('disabled');
+            const leggi = (el) => {
+                const s = getComputedStyle(el);
+                return { shadow: s.boxShadow, border: s.borderColor, opacity: Number(s.opacity), background: s.backgroundImage };
+            };
+            return { active: leggi(steps[0]), clickable: leggi(steps[1]), disabled: leggi(steps[2]) };
+        });
+        t.assert(statiDesktop.active.shadow !== 'none' && !/rgba\(0, 0, 0, 0\)/.test(statiDesktop.active.border),
+            `La fase attiva deve emergere con bordo e luce: ${JSON.stringify(statiDesktop.active)}`);
+        t.assert(statiDesktop.clickable.shadow !== 'none' && statiDesktop.clickable.background !== 'none',
+            `La fase cliccabile non deve essere un pulsante scuro e piatto: ${JSON.stringify(statiDesktop.clickable)}`);
+        t.assert(statiDesktop.disabled.opacity < 0.6,
+            `La fase disabilitata deve restare attenuata: ${JSON.stringify(statiDesktop.disabled)}`);
+
+        await t.page.setViewportSize({ width: 393, height: 851 });
+        const mobile = await t.evaluate(() => {
+            const badge = document.querySelector('.phase-step.clickable .step-badge');
+            const s = getComputedStyle(badge);
+            return { shadow: s.boxShadow, background: s.backgroundImage };
+        });
+        t.assert(mobile.shadow !== 'none' && mobile.background !== 'none',
+            `Su mobile lo stato cliccabile deve restare leggibile sul badge: ${JSON.stringify(mobile)}`);
     }
 };

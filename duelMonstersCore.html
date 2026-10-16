@@ -2594,27 +2594,49 @@
             color: color-mix(in srgb, var(--fase-accento) 72%, #9a968c);
         }
         .phase-step.active {
-            background: radial-gradient(circle at 28% 30%, color-mix(in srgb, var(--fase-accento) 18%, transparent), transparent 42%), linear-gradient(135deg, color-mix(in srgb, var(--fase-accento) 20%, rgba(20,16,10,.42)), rgba(23,18,11,.28));
-            color: color-mix(in srgb, var(--fase-accento) 30%, #fff);
-            box-shadow: 0 5px 14px rgba(0,0,0,.18), 0 0 16px color-mix(in srgb, var(--fase-accento) 14%, transparent);
+            background: radial-gradient(circle at 28% 24%, color-mix(in srgb, var(--fase-accento) 42%, transparent), transparent 48%), linear-gradient(145deg, color-mix(in srgb, var(--fase-accento) 30%, rgba(36,29,17,.8)), rgba(23,18,11,.52));
+            border-color: color-mix(in srgb, var(--fase-accento) 62%, transparent);
+            color: color-mix(in srgb, var(--fase-accento) 18%, #fff);
+            box-shadow: 0 5px 12px rgba(0,0,0,.22), 0 0 18px color-mix(in srgb, var(--fase-accento) 27%, transparent), inset 0 1px 0 rgba(255,255,255,.14);
         }
         .phase-step.active .step-badge {
             color: var(--fase-accento);
-            background: radial-gradient(circle at 38% 30%, color-mix(in srgb, var(--fase-accento) 38%, transparent), color-mix(in srgb, var(--fase-accento) 22%, rgba(25,18,8,.6)) 58%, rgba(25,18,8,.62));
-            box-shadow: 0 0 13px color-mix(in srgb, var(--fase-accento) 24%, transparent), inset 0 0 7px color-mix(in srgb, var(--fase-accento) 10%, transparent);
+            background: radial-gradient(circle at 36% 26%, color-mix(in srgb, var(--fase-accento) 60%, #fff 4%), color-mix(in srgb, var(--fase-accento) 31%, rgba(35,25,11,.72)) 58%, rgba(23,17,9,.72));
+            box-shadow: 0 0 15px color-mix(in srgb, var(--fase-accento) 38%, transparent), inset 0 1px 1px rgba(255,255,255,.16);
         }
         .phase-step.active::before {
             background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--fase-accento) 85%, transparent), transparent);
         }
         .phase-step.clickable:not(.active) {
-            background: linear-gradient(135deg, rgba(31,30,31,.88), color-mix(in srgb, var(--fase-accento) 14%, rgba(30,26,20,.8)));
-            border-color: color-mix(in srgb, var(--fase-accento) 32%, transparent);
+            background: radial-gradient(circle at 25% 22%, rgba(255,255,255,.1), transparent 45%), linear-gradient(135deg, color-mix(in srgb, var(--fase-accento) 26%, rgba(63,58,48,.9)), color-mix(in srgb, var(--fase-accento) 18%, rgba(43,39,32,.86)));
+            border-color: color-mix(in srgb, var(--fase-accento) 48%, transparent);
+            color: color-mix(in srgb, var(--fase-accento) 12%, #f5f1e8);
+            box-shadow: 0 3px 8px rgba(0,0,0,.18), 0 0 10px color-mix(in srgb, var(--fase-accento) 12%, transparent), inset 0 1px 0 rgba(255,255,255,.11);
+        }
+        .phase-step.clickable:not(.active) .step-badge {
+            color: color-mix(in srgb, var(--fase-accento) 65%, #fff);
+            background: radial-gradient(circle at 35% 28%, color-mix(in srgb, var(--fase-accento) 35%, rgba(255,255,255,.16)), color-mix(in srgb, var(--fase-accento) 18%, rgba(28,27,25,.68)) 68%);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.1);
         }
         @media (hover: hover) and (pointer: fine) {
-            .phase-step.clickable:hover {
+            .phase-step.clickable:not(.active):hover {
                 border-color: color-mix(in srgb, var(--fase-accento) 52%, transparent);
-                background: linear-gradient(135deg, color-mix(in srgb, var(--fase-accento) 14%, rgba(30,26,20,.9)), color-mix(in srgb, var(--fase-accento) 24%, rgba(40,30,15,.78)));
+                background: radial-gradient(circle at 25% 20%, rgba(255,255,255,.16), transparent 47%), linear-gradient(135deg, color-mix(in srgb, var(--fase-accento) 38%, rgba(69,61,47,.94)), color-mix(in srgb, var(--fase-accento) 25%, rgba(45,39,30,.9)));
+                box-shadow: 0 6px 13px rgba(0,0,0,.24), 0 0 15px color-mix(in srgb, var(--fase-accento) 22%, transparent), inset 0 1px 0 rgba(255,255,255,.16);
             }
+            .phase-step.clickable:not(.active):hover .step-badge {
+                color: color-mix(in srgb, var(--fase-accento) 48%, #fff);
+                filter: brightness(1.08);
+            }
+        }
+        .phase-step.clickable:not(.active):active {
+            transform: translateY(0) scale(.97);
+            box-shadow: 0 1px 4px rgba(0,0,0,.28), inset 0 2px 5px rgba(0,0,0,.2);
+            transition-duration: 80ms;
+        }
+        .phase-step.clickable:focus-visible {
+            outline: 2px solid color-mix(in srgb, var(--fase-accento) 72%, #fff);
+            outline-offset: 2px;
         }
         /* Promemoria Tributo: banda ben visibile in alto, non un semplice
            messaggio nel log — resta a schermo finché la selezione non è
@@ -4182,8 +4204,12 @@
                 box-shadow: none;
             }
             .phase-stepper .phase-step.clickable:not(.active) .step-badge {
-                border-color: color-mix(in srgb, var(--fase-accento) 45%, transparent);
-                background: linear-gradient(135deg, rgba(31,30,31,.9), color-mix(in srgb, var(--fase-accento) 18%, rgba(30,26,20,.85)));
+                border-color: color-mix(in srgb, var(--fase-accento) 52%, transparent);
+                background: radial-gradient(circle at 34% 25%, color-mix(in srgb, var(--fase-accento) 42%, rgba(255,255,255,.14)), color-mix(in srgb, var(--fase-accento) 22%, rgba(39,36,30,.86)) 68%);
+                box-shadow: 0 3px 8px rgba(0,0,0,.2), 0 0 10px color-mix(in srgb, var(--fase-accento) 14%, transparent), inset 0 1px 0 rgba(255,255,255,.12);
+            }
+            .phase-stepper .phase-step.active .step-badge {
+                box-shadow: 0 0 16px color-mix(in srgb, var(--fase-accento) 42%, transparent), inset 0 1px 1px rgba(255,255,255,.18);
             }
             .phase-stepper {
                 /* I sei pulsanti vanno dall'INIZIO della casella Terreno alla

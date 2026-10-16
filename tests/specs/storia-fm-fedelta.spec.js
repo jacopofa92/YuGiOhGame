@@ -57,6 +57,10 @@ module.exports = {
                     problemi.push('Seto nel labirinto va dopo Labyrinth Mage e prima di Sebek');
                 }
                 if (!characterDatabase.some((c) => c.id === 'mageSoldier')) problemi.push('Mage Soldier deve esistere nel roster');
+                const nitemare = characterDatabase.find((c) => c.id === 'nitemare');
+                if (!nitemare || nitemare.image !== 'images/characters/nitemare.jpg') {
+                    problemi.push('Nitemare deve usare il proprio avatar, non quello di DarkNite');
+                }
                 const testi = JSON.stringify(fm);
                 if (/tremila/i.test(testi)) problemi.push('Memorie Proibite conta cinquemila anni, mai tremila');
                 if (/QUALCUN ALTRO/.test(testi)) problemi.push('Heishin vuole gli Oggetti per sé, non per qualcun altro');
@@ -96,6 +100,10 @@ module.exports = {
                 return problemi;
             });
             t.assert(esito.length === 0, `Problemi in Memorie Proibite:\n${esito.join('\n')}`);
+            t.assert(require('fs').existsSync(path.join(RADICE, 'images', 'characters', 'avatarTrasparenza', 'nitemare.png')),
+                'Deve esistere lo scontorno trasparente originale di Nitemare');
+            t.assert(require('fs').existsSync(path.join(RADICE, 'images', 'characters', 'pedine', 'nitemare.png')),
+                'Deve esistere la pedina trasparente ottimizzata di Nitemare');
             t.assert(errori.length === 0, `Nessun errore in pagina: ${JSON.stringify(errori)}`);
         } finally {
             await page.close();

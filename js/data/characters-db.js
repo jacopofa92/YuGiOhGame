@@ -140,7 +140,7 @@ const characterDatabase = [
     { id: 'neku', name: 'Neku', title: 'L\'Ultimo Guardiano', image: 'images/characters/neku.jpg', series: 'forbiddenMemories' },
     { id: 'heishin', name: 'Heishin', title: 'L\'Usurpatore del Trono', image: 'images/characters/heishin.jpg', series: 'forbiddenMemories', duelTrack: '57. Duel of Shadows – The Millennium Mind.mp3', duelTrackAutomatico: true },
     { id: 'darkNite', name: 'DarkNite', title: 'Lo Spirito di Nitemare', image: 'images/characters/darkNite.jpg', series: 'forbiddenMemories', duelTrack: '58. Yugi vs. Marik – Wrath of the Shadow Realm.mp3', duelTrackAutomatico: true },
-    { id: 'nitemare', name: 'Nitemare', title: 'L\'Incubo Finale', image: 'images/characters/darkNite.jpg', series: 'forbiddenMemories', duelTrack: '58. Yugi vs. Marik – Wrath of the Shadow Realm.mp3', duelTrackAutomatico: true },
+    { id: 'nitemare', name: 'Nitemare', title: 'L\'Incubo Finale', image: 'images/characters/nitemare.jpg', series: 'forbiddenMemories', duelTrack: '58. Yugi vs. Marik – Wrath of the Shadow Realm.mp3', duelTrackAutomatico: true },
     // "Te Stesso": un avversario speciale che dà il tuo stesso deck salvato
     // al bot, invece di un mazzo a tema fisso — vedi resetGameState() in
     // js/engine/game-flow.js, che riconosce questo id come caso speciale.

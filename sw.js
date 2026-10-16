@@ -488,7 +488,8 @@
 // v271: su mobile ATK/DEF appena sotto la carta, artwork compatto ad angoli
 // vivi, riquadro marrone del dorso arrotondato e ovale sempre nero.
 // v272: il campo desktop resta centrato anche con il box informazioni carta.
-const CACHE_NAME = 'ygo-duel-arena-v272';
+// v273: stepper piu' leggibile e avatar/pedina corretti per Nitemare.
+const CACHE_NAME = 'ygo-duel-arena-v273';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
