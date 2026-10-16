@@ -482,7 +482,8 @@
 // v265: dorso con un solo bordo; in verticale carte e pile a misure vicine.
 // v266: badge ATK/DEF e contatori delle pile senza sovrapposizioni su mobile.
 // v267: ATK/DEF e contatori senza box, su una riga, con rilievo 3D.
-const CACHE_NAME = 'ygo-duel-arena-v267';
+// v268: ologrammi su mobile un po' più bassi (base al 68% della carta).
+const CACHE_NAME = 'ygo-duel-arena-v268';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

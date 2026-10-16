@@ -58,7 +58,12 @@
     // dal centro. Un sollevamento di 0.45 la porta al 55%, poco sotto la
     // meta', conservando pero' abbastanza carta sotto da leggere il varco.
     // Larghezza e altezza restano quelle gia' calibrate per mobile.
-    const MISURE_COMPATTE = { larghezza: 1.5, altezza: 1.25, sollevamento: 0.45 };
+    // Poi abbassata ancora un po' su richiesta dell'utente (2026-10-16, "un
+    // po' più in basso ma non troppo"): 0.32, cioè base al 68% della carta.
+    // Non scendere oltre: su mobile ATK/DEF sta sul FONDO della carta (vedi
+    // .field-stats-badge in duelMonstersCore.html) e la base dell'ologramma
+    // deve restare sopra quei numeri, non coprirli.
+    const MISURE_COMPATTE = { larghezza: 1.5, altezza: 1.25, sollevamento: 0.32 };
     // Ritoccate dopo averle viste su un monitor 2K (segnalazione
     // dell'utente: "troppo grandi e troppo oltre la carta"). Con 2.0 × 1.7
     // e il fondo sollevato dell'85% della carta, la figura partiva quasi
