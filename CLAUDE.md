@@ -4383,3 +4383,12 @@ Una sola condizione per entrambe, `fusioniEvocabiliOra` (game-flow.js), e
 opzione generica `evocabili: [uid]` di `openCardListPicker` (actions.js),
 riusabile per qualunque elenco "mostra tutto, scegli solo alcune". Nessuna
 regola toccata. Spec `extra-deck-evocabile-pulsa`; cache `v264`.
+
+Dorso e pile (2026-10-16, richiesta dell'utente): il dorso delle carte ha UN
+solo bordo, quello esterno di `images/cards/backCard.jpg`; tolto il `::after`
+di `card.css` che ci disegnava sopra un secondo filo dorato (non
+reintrodurlo). Su telefono in verticale (`max-width: 600px`) carte in campo
+e pile sono a metà strada: `--card-w` scende a ~43px e `--field-slot-pad`
+cresce di quanto lei cala (casella e campo restano larghi uguale), la pila
+sale dall'86% al 92% della casella con sfalsamento 2%/1,3% per strato
+(ultimo strato esatto sul bordo). Desktop e orizzontale invariati. Cache `v265`.
