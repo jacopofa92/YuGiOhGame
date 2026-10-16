@@ -485,7 +485,10 @@
 // v268: ologrammi su mobile un po' più bassi (base al 68% della carta).
 // v269: barra delle fasi dal Terreno al Cimitero, col colore del campo e un solo bordo.
 // v270: barra delle fasi responsive senza fascia d'ombra, dorsi nitidi sulle carte piccole, pile allineate alle carte, niente sollevamento al tocco.
-const CACHE_NAME = 'ygo-duel-arena-v270';
+// v271: su mobile ATK/DEF appena sotto la carta, artwork compatto ad angoli
+// vivi, riquadro marrone del dorso arrotondato e ovale sempre nero.
+// v272: il campo desktop resta centrato anche con il box informazioni carta.
+const CACHE_NAME = 'ygo-duel-arena-v272';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

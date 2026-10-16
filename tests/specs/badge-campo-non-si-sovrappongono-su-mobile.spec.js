@@ -45,7 +45,17 @@ module.exports = {
                     const rect = (e) => { const b = e.getBoundingClientRect(); return { x: b.left, y: b.top, r: b.right, b: b.bottom, slot: e.closest('.field-slot'), w: b.width }; };
                     const badges = [...document.querySelectorAll('.field-stats-badge')]
                         .filter((e) => e.getBoundingClientRect().width > 0)
-                        .map((e) => ({ testo: e.textContent.trim(), ...rect(e) }));
+                        .map((e) => {
+                            const misura = { testo: e.textContent.trim(), ...rect(e) };
+                            const propriaCarta = e.classList.contains('field-pile-badge')
+                                ? null : e.closest('.field-slot').querySelector(':scope > .card');
+                            if (propriaCarta) {
+                                const c = propriaCarta.getBoundingClientRect();
+                                misura.bordoCarta = c.bottom;
+                                misura.distanzaDalBordo = misura.y - c.bottom;
+                            }
+                            return misura;
+                        });
                     const carte = [...document.querySelectorAll('.field-slot .card, .field-slot .deck-preview')]
                         .filter((e) => e.getBoundingClientRect().width > 0).map(rect);
                     const area = (a, c) => Math.max(0, Math.min(a.r, c.r) - Math.max(a.x, c.x)) * Math.max(0, Math.min(a.b, c.b) - Math.max(a.y, c.y));
@@ -53,6 +63,9 @@ module.exports = {
                     badges.forEach((b, i) => {
                         badges.slice(i + 1).forEach((c) => { if (area(b, c) > 1) esito.push(`badge "${b.testo}" su badge "${c.testo}"`); });
                         carte.forEach((c) => { if (c.slot !== b.slot && area(b, c) > 1) esito.push(`badge "${b.testo}" su una carta di un'altra casella`); });
+                        if (b.bordoCarta !== undefined && (b.distanzaDalBordo < -0.6 || b.distanzaDalBordo > 3)) {
+                            esito.push(`badge "${b.testo}" non è appena sotto la propria carta (distanza ${b.distanzaDalBordo.toFixed(1)}px)`);
+                        }
                     });
                     // Due scelte esplicite dell'utente (2026-10-16): ATK/DEF
                     // su UNA riga, mai su due; e nessuna pillola né bordo,

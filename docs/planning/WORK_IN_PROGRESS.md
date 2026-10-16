@@ -8,14 +8,12 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
       prolungata reale, distinguendo ricostruzioni DOM, compositing degli
       effetti laminati, video e cambi di orientamento. Non considerare chiuso
       il problema solo perché lo stress test desktop resta verde.
-- [ ] In verticale, riallineare la scala delle carte sul Terreno a quella
-      percepita dalle pile Deck/Extra Deck/Cimitero: le carte giocate sono
-      attualmente leggermente più grandi. Misurare prima di modificare per
-      non rompere landscape e desktop.
-- [ ] Ricontrollare il retro delle carte: compare un doppio bordo giallo,
-      mentre il riferimento corretto ha una sola cornice esterna coerente.
-      Verificare separatamente immagine sorgente, pseudo-elementi e bordi CSS
-      per non mascherare il difetto con un semplice ritaglio.
+- [x] In verticale, riallineata la scala delle pile Deck/Extra Deck/Cimitero
+      alle carte sul Terreno, con controllo dedicato anche in landscape e
+      desktop.
+- [x] Retro delle carte corretto: una sola cornice esterna, rendering CSS
+      nitido alle misure piccole e riquadro marrone interno leggermente
+      arrotondato senza reintrodurre il doppio bordo.
 
 ## Supporti moderni agli archetipi classici
 

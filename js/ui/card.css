@@ -510,8 +510,12 @@
     width: 38%;
     height: 50%;
     border-radius: 50%;
-    background: radial-gradient(circle at 35% 30%, #fff6c2, #f2c94c 55%, #b8860b 100%);
-    box-shadow: 0 0 0 2px rgba(0,0,0,0.25), inset 0 0 8px rgba(139,94,17,0.4);
+    /* Deve essere nero in OGNI rappresentazione del dorso, non soltanto
+       nella container query delle carte piccole. Mentre backCard.jpg si
+       caricava (e durante il flip, che crea una nuova faccia temporanea)
+       affiorava per un fotogramma il vecchio ovale giallo del fallback. */
+    background: rgb(29 29 29);
+    box-shadow: 0 0 0 1px rgb(0 0 0);
 }
 .card.face-down .card-back-emblem::after {
     content: '';
@@ -738,7 +742,11 @@ body[data-card-badges] .card { overflow: visible; }
     .card:not(.face-down) .card-frame-typeline {
         display: none;
     }
-    .card:not(.face-down) .card-frame-art { border-width: 0; }
+    /* Riquadro dell'illustrazione ad angoli VIVI sulle carte piccole: fuori
+       da qui ha 3px di raggio, che su una carta da 43px (col resto della
+       carta a 1px) si vedeva come un'immagine arrotondata dentro la cornice
+       — l'utente non la vuole (2026-10-17). */
+    .card:not(.face-down) .card-frame-art { border-width: 0; border-radius: 0; }
 
     /* IL DORSO, sulle carte piccole (campo, mano avversaria, pile, telefono).
        Prima restava a 6px di raggio a qualunque misura (era escluso da
@@ -755,8 +763,11 @@ body[data-card-badges] .card { overflow: visible; }
        ovale (29,29,29) largo il 38% e alto il 49%. Nitido a ogni misura e
        con lo stesso raggio piccolo delle carte scoperte. Sopra i 72px
        resta l'immagine vera, che lì si vede bene. */
+    /* Cornice cuoio a 3px e riquadro marrone a 2px: tutti e due appena
+       arrotondati, uno dentro l'altro (richiesta dell'utente, 2026-10-17:
+       il marrone ad angoli vivi dentro la cornice tonda stonava). */
     .card.face-down::before {
-        --card-raggio: 2px;
+        --card-raggio: 3px;
         background: rgb(185 137 91);
     }
     .card.face-down > .card-image { display: none; }
@@ -773,7 +784,7 @@ body[data-card-badges] .card { overflow: visible; }
         width: calc(100% - 2 * var(--cornice-x) + 6px);
         height: calc(100% - 2 * var(--cornice-y) + 6px);
         border: 0;
-        border-radius: 1px;
+        border-radius: 2px;
         background: rgb(86 49 33);
         box-shadow: inset 0 0 0 max(0.5px, 0.4cqw) rgb(0 0 0 / 0.85);
     }

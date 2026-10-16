@@ -897,6 +897,31 @@
             position: relative;
             z-index: 1;
         }
+        /* Desktop: il pannello informazioni e' piu' largo della colonna
+           laterale sinistra. Se entrambe le colonne partecipano alla grid,
+           la traccia centrale viene inevitabilmente spinta verso sinistra
+           anche quando il pannello e' nascosto. Il terreno occupa quindi
+           l'intera larghezza della battlefield e resta centrato sul viewport;
+           le due fasce laterali gli si sovrappongono senza modificarne la
+           geometria. Il pannello conserva i click, la fascia vuota no. */
+        @media (min-width: 901px) {
+            .battlefield-main {
+                grid-column: 1 / -1;
+                grid-row: 1;
+            }
+            .battlefield-side.left {
+                grid-column: 1;
+                grid-row: 1;
+            }
+            .battlefield-side.right {
+                grid-column: 3;
+                grid-row: 1;
+                pointer-events: none;
+            }
+            .battlefield-side.right .card-info-panel {
+                pointer-events: auto;
+            }
+        }
         .field-section {
             display: flex;
             flex-direction: column;
@@ -1340,13 +1365,26 @@
              il dorso (z-index oltre il 5 del dorso in cima).
            Il desktop, con spazio a sufficienza, resta sotto la carta. */
         @media (max-width: 900px) {
+            /* AGGIORNAMENTO 2026-10-17, richiesta dell'utente: i numeri non
+               stanno più SOPRA la carta ma APPENA SOTTO il suo bordo. La
+               carta è centrata nella casella, quindi il suo bordo inferiore
+               è a metà casella più metà carta: ci si aggancia lì (+0,5px),
+               non al fondo della casella, così fra carta e numeri non resta
+               il margine della casella. In Difesa la carta è ruotata e il
+               suo bordo è a metà della sua LARGHEZZA. Il corpo un filo più
+               piccolo di prima è ciò che li fa stare nello spazio fra le due
+               righe senza toccare la carta sotto (lo sorveglia lo spec
+               badge-campo-non-si-sovrappongono-su-mobile). */
             .field-stats-badge:not(.field-pile-badge) {
-                top: auto;
-                bottom: 2px;
+                top: calc(50% + var(--card-h) / 2 + 0.5px);
+                bottom: auto;
                 transform: translateX(-50%);
                 gap: 1px;
                 letter-spacing: -0.04em;
-                font-size: clamp(7px, calc(var(--card-w) * 0.19), 12px);
+                font-size: clamp(7px, calc(var(--card-w) * 0.17), 11px);
+            }
+            .field-slot:has(> .card.defense-pos) > .field-stats-badge:not(.field-pile-badge) {
+                top: calc(50% + var(--card-w) / 2 + 0.5px);
             }
             .field-pile-badge {
                 top: 3px;
@@ -4605,7 +4643,6 @@
                 <div class="right-panel-stack">
                     <div class="card-info-panel" id="cardInfoPanel">
                         <button type="button" class="card-info-close" id="cardInfoCloseBtn" title="Chiudi" onclick="updateCardInfoPanel(null)">✖</button>
-                        <div class="card-info-title">🃏 Descrizione carta</div>
                         <div class="card-info-preview" id="cardInfoPreview"></div>
                         <div class="card-info-content" id="cardInfoContent">Clicca o passa il mouse su una carta per vedere il suo effetto.</div>
                     </div>

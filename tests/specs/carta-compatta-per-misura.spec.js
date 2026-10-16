@@ -22,15 +22,25 @@ module.exports = {
                 prova.appendChild(el);
                 const vis = (sel) => { const x = el.querySelector(sel); return !!x && getComputedStyle(x).display !== 'none'; };
                 const corpo = getComputedStyle(el, '::before');
+                const arte = el.querySelector('.card-frame-art');
+                const retro = el.querySelector('.card-back-frame');
+                const emblemaRetro = el.querySelector('.card-back-emblem');
                 return {
                     larghezza: Math.round(el.getBoundingClientRect().width),
                     altezza: Math.round(el.getBoundingClientRect().height),
                     nome: vis('.card-frame-top'), stelle: vis('.card-frame-stars'), riga: vis('.card-frame-typeline'),
                     statistiche: vis('.card-stats'), raggio: corpo.borderTopLeftRadius,
-                    sfondo: corpo.backgroundImage !== 'none'
+                    sfondo: corpo.backgroundImage !== 'none',
+                    raggioArte: arte ? getComputedStyle(arte).borderTopLeftRadius : null,
+                    raggioRetro: retro ? getComputedStyle(retro).borderTopLeftRadius : null,
+                    coloreEmblemaRetro: emblemaRetro ? getComputedStyle(emblemaRetro).backgroundColor : null,
+                    immagineEmblemaRetro: emblemaRetro ? getComputedStyle(emblemaRetro).backgroundImage : null
                 };
             };
-            const r = { piccola: misura(58), soglia: misura(72), sopra: misura(74), grande: misura(160), dorsoPiccolo: misura(58, true) };
+            const r = {
+                piccola: misura(58), soglia: misura(72), sopra: misura(74), grande: misura(160),
+                dorsoPiccolo: misura(58, true), dorsoGrande: misura(160, true)
+            };
             prova.remove();
             return r;
         });
@@ -39,13 +49,20 @@ module.exports = {
             'una carta da 58px è compatta (niente nome/stelle/riga): ' + JSON.stringify(esito.piccola));
         t.assert(esito.piccola.statistiche, 'la carta compatta tiene ATK/DEF');
         t.assert(esito.piccola.raggio === '1px', 'angolo 1px sulla carta compatta, trovato ' + esito.piccola.raggio);
+        t.assert(esito.piccola.raggioArte === '0px',
+            'l artwork della carta compatta deve avere angoli vivi, trovato ' + esito.piccola.raggioArte);
         t.assert(!esito.soglia.nome, 'a 72px (la soglia) la carta è ancora compatta');
         t.assert(esito.sopra.nome && esito.sopra.riga, 'a 74px torna la cornice completa (miniature del Negozio)');
         t.assert(esito.grande.nome && esito.grande.stelle && esito.grande.riga,
             'una carta grande ha la cornice completa: ' + JSON.stringify(esito.grande));
         t.assert(esito.grande.raggio !== '1px', 'la carta classica non ha l\'angolo della compatta');
         t.assert(esito.piccola.sfondo && esito.grande.sfondo, 'il corpo colorato della carta (::before) si vede a ogni misura');
-        t.assert(esito.dorsoPiccolo.raggio !== '1px', 'il dorso resta uguale a ogni misura, anche piccolo');
+        t.assert(esito.dorsoPiccolo.raggio === '3px', 'la cornice esterna del dorso piccolo deve avere raggio 3px');
+        t.assert(esito.dorsoPiccolo.raggioRetro === '2px', 'il riquadro marrone del dorso piccolo deve avere raggio 2px');
+        [esito.dorsoPiccolo, esito.dorsoGrande].forEach((dorso) => {
+            t.assert(dorso.coloreEmblemaRetro === 'rgb(29, 29, 29)' && dorso.immagineEmblemaRetro === 'none',
+                'l ovale del dorso deve restare nero a ogni misura, anche durante caricamento e flip: ' + JSON.stringify(dorso));
+        });
         t.assert(Math.abs(esito.grande.altezza - Math.round(160 / 0.685)) <= 1, 'proporzioni della carta da --card-ratio: altezza ' + esito.grande.altezza);
     }
 };
