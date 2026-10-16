@@ -5239,6 +5239,138 @@
         }
     });
 
+    // ================================================================
+    // 1277-1282 — due nuclei incompleti di Yugi/Yami Yugi.
+    //
+    // I tre Guerrieri Magnetici non sono una Fusione: Valkyrion resta nel
+    // Main Deck e si Evoca dalla mano offrendo i tre nomi esatti dalla
+    // mano e/o dal Terreno. I Cavalieri delle Figure usano invece la vera
+    // Evocazione tramite Fusione condivisa, con Polimerizzazione.
+    // ================================================================
+
+    // 1277 — Guerriero Magnetico Gamma: Mostro Normale, nessun handler.
+
+    // 1278 — Valkyrion Guerriero Magnetico.
+    (function registerValkyrion() {
+        const MATERIAL_IDS = [85, 112, 1277];
+
+        function findMaterials(ctx) {
+            const field = ctx.field(ctx.owner);
+            const hand = ctx.hand(ctx.owner);
+            const usedField = new Set();
+            const usedHand = new Set();
+            const chosen = [];
+            // Preferire il Terreno libera una Zona Mostri e non rende
+            // impossibile l'Evocazione quando tutte le caselle sono piene.
+            for (const id of MATERIAL_IDS) {
+                let index = field.findIndex((slot, i) => slot && slot.card.id === id && !usedField.has(i));
+                if (index !== -1) {
+                    usedField.add(index);
+                    chosen.push({ zone: 'field', uid: field[index].card.uid });
+                    continue;
+                }
+                index = hand.findIndex((card, i) => card.id === id && !usedHand.has(i));
+                if (index === -1) return null;
+                usedHand.add(index);
+                chosen.push({ zone: 'hand', uid: hand[index].uid });
+            }
+            return chosen;
+        }
+
+        CardEffects.register(1278, {
+            cannotNormalSummon: true,
+            specialSummonReleasesOwnMonsterZone: true,
+            canSpecialSummonFromHand(ctx) {
+                const materials = findMaterials(ctx);
+                if (!materials) return false;
+                return ctx.findEmptyMonsterSlot(ctx.owner) !== -1
+                    || materials.some((entry) => entry.zone === 'field');
+            },
+            paySpecialSummonCost(ctx) {
+                const materials = findMaterials(ctx);
+                if (!materials) return false;
+                materials.forEach((entry) => {
+                    if (entry.zone === 'field') {
+                        const index = ctx.field(ctx.owner).findIndex((slot) => slot && slot.card.uid === entry.uid);
+                        if (index !== -1) ctx.sendMonsterToGraveyard(ctx.owner, index);
+                    } else {
+                        const index = ctx.hand(ctx.owner).findIndex((card) => card.uid === entry.uid);
+                        if (index !== -1) ctx.sendChosenFromHandToGraveyard(ctx.owner, index);
+                    }
+                });
+                ctx.log('🧲 Alpha, Beta e Gamma si uniscono per chiamare Valkyrion!');
+                return true;
+            },
+            canActivate(ctx) {
+                const grave = ctx.graveyard(ctx.owner);
+                const field = ctx.field(ctx.owner);
+                return MATERIAL_IDS.every((id) => grave.some((card) => card.id === id))
+                    && field.filter((slot) => slot === null).length + 1 >= 3;
+            },
+            activate(ctx) {
+                const ownIndex = ctx.field(ctx.owner).findIndex((slot) => slot && slot.card.uid === ctx.card.uid);
+                if (ownIndex === -1) return;
+                const materialCards = MATERIAL_IDS.map((id) => ctx.graveyard(ctx.owner).find((card) => card.id === id));
+                if (materialCards.some((card) => !card)) return;
+                ctx.sendMonsterToGraveyard(ctx.owner, ownIndex);
+                materialCards.forEach((material) => {
+                    const grave = ctx.graveyard(ctx.owner);
+                    const graveIndex = grave.findIndex((card) => card.uid === material.uid);
+                    const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                    if (graveIndex === -1 || slotIndex === -1) return;
+                    const [card] = grave.splice(graveIndex, 1);
+                    ctx.specialSummon(ctx.owner, card, slotIndex, 'attack', 'graveyard');
+                });
+                ctx.log('🧲 Valkyrion si separa: Alpha, Beta e Gamma tornano sul Terreno!');
+            }
+        });
+    })();
+
+    // 1279 — Cavaliere della Regina: Mostro Normale, nessun handler.
+
+    // 1280 — Cavaliere del Re: il trigger è valido solo per una vera
+    // Evocazione Normale, non per Flip o Special Summon.
+    CardEffects.register(1280, {
+        onSummon(ctx) {
+            if (ctx.summonedVia !== 'normal') return;
+            const controlsQueen = ctx.field(ctx.owner).some((slot) => slot
+                && !slot.isFaceDown && slot.card.id === 1279);
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            const deck = Tavolo.mazzo(ctx.owner);
+            const jackIndex = deck.findIndex((card) => card.id === 1281);
+            if (!controlsQueen || slotIndex === -1 || jackIndex === -1) return;
+            const [jack] = deck.splice(jackIndex, 1);
+            gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = deck.length;
+            ctx.specialSummon(ctx.owner, jack, slotIndex, 'attack', 'deck');
+            ctx.log('🃏 Cavaliere del Re chiama Cavaliere del Jack dal Deck!');
+        }
+    });
+
+    // 1281 — Cavaliere del Jack: Mostro Normale, nessun handler.
+
+    // 1282 — Cavaliere Joker Arcano. Il checkpoint condiviso di targeting
+    // lo interpella soltanto quando è proprio lui il bersaglio. Scarta una
+    // carta dello stesso tipo della fonte e annulla quell'effetto, senza
+    // distruggere la carta sorgente (testo TCG). Il primo scarto idoneo è
+    // deterministico anche nel Multiplayer; non serve una nuova finestra
+    // asincrona nel mezzo della risoluzione del bersaglio.
+    CardEffects.register(1282, {
+        fusionMaterials: [1279, 1281, 1280],
+        canReactToTargetDeclare(ctx) {
+            if (!ctx.sourceCard || ctx.sourceOwner === ctx.owner) return false;
+            if (ctx.hasUsedOncePerTurn(`arcana-joker:${ctx.card.uid}`)) return false;
+            return ctx.hand(ctx.owner).some((card) => card.type === ctx.sourceCard.type);
+        },
+        onCardEffectTargetDeclare(ctx) {
+            const index = ctx.hand(ctx.owner).findIndex((card) => card.type === ctx.sourceCard.type);
+            if (index === -1) return;
+            const discarded = ctx.discardChosenFromHand(ctx.owner, index);
+            ctx.markUsedOncePerTurn(`arcana-joker:${ctx.card.uid}`);
+            ctx.cancel();
+            ctx.log(`🃏 Cavaliere Joker Arcano scarta ${discarded.name} e annulla l'effetto che lo bersaglia!`);
+        }
+    });
+
     (function registerLibraryEffects() {
         if (typeof cardDatabase === 'undefined' || !Array.isArray(cardDatabase)) return;
 

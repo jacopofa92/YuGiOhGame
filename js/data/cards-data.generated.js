@@ -14134,6 +14134,103 @@ const cardDatabase = [
     "artOnly": true
   },
   {
+    "id": 1277,
+    "origin": "yu-gi-oh",
+    "name": "Guerriero Magnetico Gamma",
+    "type": "monster",
+    "level": 4,
+    "race": "Roccia",
+    "attribute": "TERRA",
+    "attack": 1500,
+    "defense": 1800,
+    "effect": "Alfa, Beta e Gamma si fondono in un'unica creatura formando un mostro potentissimo.",
+    "artOnly": true,
+    "vanilla": true
+  },
+  {
+    "id": 1278,
+    "origin": "yu-gi-oh",
+    "name": "Valkyrion Guerriero Magnetico",
+    "type": "monster",
+    "level": 8,
+    "race": "Roccia",
+    "attribute": "TERRA",
+    "attack": 3500,
+    "defense": 3850,
+    "mentionsNames": [
+      "Alpha il Guerriero Magnetico",
+      "Beta il Guerriero Magnetico",
+      "Guerriero Magnetico Gamma"
+    ],
+    "effect": "Non può essere Evocato Normalmente/Posizionato. Deve prima essere Evocato Specialmente (dalla tua mano) offrendo come Tributo 1 \"Alpha il Guerriero Magnetico\", \"Beta il Guerriero Magnetico\" e \"Guerriero Magnetico Gamma\" dalla tua mano e/o Terreno. Puoi offrire come Tributo questa carta, poi scegliere come bersaglio 1 \"Alpha il Guerriero Magnetico\", 1 \"Beta il Guerriero Magnetico\" e 1 \"Guerriero Magnetico Gamma\" nel tuo Cimitero; Evoca Specialmente quei bersagli.",
+    "artOnly": true
+  },
+  {
+    "id": 1279,
+    "origin": "yu-gi-oh",
+    "name": "Cavaliere della Regina",
+    "type": "monster",
+    "level": 4,
+    "race": "Guerriero",
+    "attribute": "LUCE",
+    "attack": 1500,
+    "defense": 1600,
+    "effect": "Questo cavaliere prende i suoi avversari alla sprovvista, dominandoli con attacchi fulminei ma aggraziati.",
+    "artOnly": true,
+    "vanilla": true
+  },
+  {
+    "id": 1280,
+    "origin": "yu-gi-oh",
+    "name": "Cavaliere del Re",
+    "type": "monster",
+    "level": 4,
+    "race": "Guerriero",
+    "attribute": "LUCE",
+    "attack": 1600,
+    "defense": 1400,
+    "mentionsNames": [
+      "Cavaliere della Regina",
+      "Cavaliere del Jack"
+    ],
+    "effect": "Quando questa carta viene Evocata Normalmente mentre controlli \"Cavaliere della Regina\": puoi Evocare Specialmente 1 \"Cavaliere del Jack\" dal tuo Deck.",
+    "artOnly": true
+  },
+  {
+    "id": 1281,
+    "origin": "yu-gi-oh",
+    "name": "Cavaliere del Jack",
+    "type": "monster",
+    "level": 5,
+    "race": "Guerriero",
+    "attribute": "LUCE",
+    "attack": 1900,
+    "defense": 1000,
+    "effect": "Un abile maestro spadaccino. Fedele alla giustizia, è suo compito proteggere i deboli.",
+    "artOnly": true,
+    "vanilla": true
+  },
+  {
+    "id": 1282,
+    "origin": "yu-gi-oh",
+    "name": "Cavaliere Joker Arcano",
+    "type": "monster",
+    "extraDeck": true,
+    "category": "fusion",
+    "level": 9,
+    "race": "Guerriero",
+    "attribute": "LUCE",
+    "attack": 3800,
+    "defense": 2500,
+    "mentionsNames": [
+      "Cavaliere della Regina",
+      "Cavaliere del Jack",
+      "Cavaliere del Re"
+    ],
+    "effect": "\"Cavaliere della Regina\" + \"Cavaliere del Jack\" + \"Cavaliere del Re\". L'Evocazione tramite Fusione di questa carta può essere effettuata solo con i materiali sopra indicati. Una volta per turno, quando viene attivata una Carta Magia/Trappola, o l'effetto di un mostro che sceglie come bersaglio questa carta scoperta sul Terreno (Effetto Rapido): puoi scartare lo stesso tipo di carta (Mostro, Magia o Trappola); annulla l'effetto.",
+    "artOnly": true
+  },
+  {
     "id": 1200,
     "origin": "ww1",
     "fazione": "italiana",
