@@ -43,10 +43,12 @@ module.exports = {
                 altro: getCharacterImageFor('joey', 'duelistKingdom'),
                 joeyRoster: characterDatabase.find((c) => c.id === 'joey').image
             }));
-            t.assert(v.regno === DK, `Torneo Regno dei Duellanti: ${v.regno}`);
-            t.assert(v.kaibaTorneo === FM, `Torneo Kaiba: ${v.kaibaTorneo}`);
-            t.assert(v.battleCity === 'images/characters/setoKaiba.jpg' && v.libero === v.battleCity, `Battle City e Duello Libero restano col ritratto del roster: ${v.battleCity} / ${v.libero}`);
-            t.assert(v.altro === v.joeyRoster, 'Gli altri personaggi non cambiano aspetto');
+            t.assert(v.regno === 'images/characters/pedine/setoKaiba_duelist_Kingdom.png', `Torneo Regno dei Duellanti: ${v.regno}`);
+            t.assert(v.kaibaTorneo === 'images/characters/pedine/setoKaiba_forbiddenMemories.png', `Torneo Kaiba: ${v.kaibaTorneo}`);
+            t.assert(v.battleCity === 'images/characters/pedine/setoKaiba.png' && v.libero === v.battleCity,
+                `Fuori dalla griglia del Duello Libero Kaiba usa la pedina standard: ${v.battleCity} / ${v.libero}`);
+            t.assert(v.altro === 'images/characters/pedine/joeyWheeler.png' && v.joeyRoster === 'images/characters/joeyWheeler.jpg',
+                'Gli altri personaggi usano la pedina, mentre il roster conserva il ritratto per la griglia libera');
 
             // Storia: ogni nodo con Kaiba, per area.
             const nodi = await page.evaluate(() => {
@@ -81,7 +83,8 @@ module.exports = {
                 const el = document.querySelector('.sc-ritratto');
                 return el ? el.dataset.fonte : null;
             });
-            t.assert(fonte === FM, `La scena deve usare il ritratto passato in \`ritratti\`: ${fonte}`);
+            t.assert(fonte === 'images/characters/pedine/setoKaiba_forbiddenMemories.png',
+                `La scena deve convertire in pedina il ritratto passato in \`ritratti\`: ${fonte}`);
 
             // Il duello vero: l'avversario porta l'avatar del contesto.
             const duello = async (query) => {
@@ -104,8 +107,8 @@ module.exports = {
             t.assert(imgRegnoStoria === DK, `Duello di Storia nel Regno: ${imgRegnoStoria}`);
             t.assert(imgBattleCity === 'images/characters/setoKaiba.jpg', `Duello di Storia a Battle City: ${imgBattleCity}`);
             t.assert(imgFmStoria === FM, `Duello di Storia nel torneo di Forbidden Memories: ${imgFmStoria}`);
-            t.assert(imgTorneoKaiba === FM, `Duello del Torneo Kaiba: ${imgTorneoKaiba}`);
-            t.assert(imgTorneoRegno === DK, `Duello del torneo Regno dei Duellanti: ${imgTorneoRegno}`);
+            t.assert(imgTorneoKaiba === 'images/characters/pedine/setoKaiba_forbiddenMemories.png', `Duello del Torneo Kaiba: ${imgTorneoKaiba}`);
+            t.assert(imgTorneoRegno === 'images/characters/pedine/setoKaiba_duelist_Kingdom.png', `Duello del torneo Regno dei Duellanti: ${imgTorneoRegno}`);
             t.assert(imgLibero === 'images/characters/setoKaiba.jpg', `Duello Libero: ${imgLibero}`);
 
             t.assert(erroriPagina.length === 0, 'Nessun errore JS: ' + erroriPagina.join(' | '));

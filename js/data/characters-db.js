@@ -183,12 +183,25 @@ function getCharacterImageVariants(contextId) {
     return CHARACTER_IMAGE_VARIANTS[contextId] || {};
 }
 
-/** Il ritratto di un personaggio in un contesto: la variante se c'è, altrimenti quello del roster. */
+/**
+ * Percorso della figura scontornata/pedina corrispondente a un ritratto.
+ * Il nome del FILE e' la chiave (non sempre coincide con l'id del roster).
+ * I ritratti pieni restano in `character.image` esclusivamente per la griglia
+ * del Duello Libero; il resto dell'interfaccia passa da questa funzione.
+ */
+function getCharacterPawnImage(image) {
+    if (!image) return null;
+    if (/\/pedine\//.test(image)) return image;
+    const nome = String(image).split(/[\\/]/).pop().replace(/\.[a-z0-9]+(?:\?.*)?$/i, '');
+    return nome ? 'images/characters/pedine/' + nome + '.png' : null;
+}
+
+/** La pedina di un personaggio in un contesto: variante se c'è, altrimenti roster. */
 function getCharacterImageFor(characterId, contextId) {
     const variante = getCharacterImageVariants(contextId)[characterId];
-    if (variante) return variante;
+    if (variante) return getCharacterPawnImage(variante);
     const c = characterDatabase.find((x) => x.id === characterId);
-    return (c && c.image) || null;
+    return getCharacterPawnImage(c && c.image);
 }
 
 function getCharacterRecord(characterId) {

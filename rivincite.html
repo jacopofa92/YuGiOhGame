@@ -79,7 +79,10 @@
     const LIVELLI = ['Facile', 'Medio', 'Difficile'];
     const MEDAGLIE = { Facile: '🥉', Medio: '🥈', Difficile: '🥇' };
     const stato = SaveManager.getModeState('rivincite') || {};
-    const pers = (id) => characterDatabase.find((c) => c.id === id) || { name: id, image: null };
+    const pers = (id) => {
+        const c = characterDatabase.find((x) => x.id === id);
+        return c ? { ...c, image: getCharacterPawnImage(c.image) } : { name: id, image: null };
+    };
 
     // Riepilogo: quante Rivincite vinte almeno una volta, e quante medaglie.
     let vinte = 0;

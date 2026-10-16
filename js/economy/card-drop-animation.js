@@ -85,7 +85,7 @@
         const stage = make('div', 'cdrop-stage');
         const card = make('div', 'cdrop-card');
         // Il dorso è quello di ogni altra carta coperta del gioco (stesso
-        // renderer, stessa immagine backCard.jpg quando c'è), non un motivo
+        // renderer, stesso retro costruito interamente in CSS), non un motivo
         // disegnato apposta per questa schermata.
         const back = make('div', 'cdrop-card-back');
         back.appendChild(window.createCardElement(null));

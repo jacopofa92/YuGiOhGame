@@ -460,11 +460,10 @@
 .card .card-stats span { white-space: nowrap; }
 
 /* ============================================================
-   Retro della carta (coperta) — replica del retro "anime" originale
-   (marrone scuro pieno, ovale dorato al centro, niente anello/stelle
-   come nel retro TCG moderno) usata finché non esiste una vera
-   images/cards/backCard.jpg, che quando presente la sostituisce
-   automaticamente (stesso meccanismo di has-image sopra).
+   RETRO DELLA CARTA, INTERAMENTE CSS.
+   L'immagine originale e' soltanto il riferimento delle proporzioni:
+   cornice cuoio, pannello marrone con filo scuro e ovale nero centrale.
+   Non viene caricata alcuna texture, a nessuna dimensione.
    ============================================================ */
 /* !important qui, non per pigrizia: card-renderer.js scrive SEMPRE
    data-type/data-has-effect/data-category anche su una carta coperta
@@ -477,31 +476,21 @@
    sapesse leggerlo). "Coperta" deve vincere SEMPRE su "che tipo è",
    qualunque altra regola esista oggi o si aggiunga in futuro. */
 .card.face-down {
-    --card-sfondo: linear-gradient(160deg, #4a2f16 0%, #2b1a0a 55%, #3d2610 100%) !important;
-    --card-tinta: #c99a4a !important;
+    --card-sfondo: rgb(185 137 91) !important;
+    --card-tinta: rgb(185 137 91) !important;
+    padding: 0;
     box-shadow: 0 8px 20px rgba(0,0,0,0.28);
 }
-/* L'anello dorato interno del dorso: sta sul corpo, perché un'ombra
-   interna sulla scatola resterebbe SOTTO il corpo e non si vedrebbe. */
-.card.face-down::before { box-shadow: inset 0 0 0 2px rgba(201,154,74,0.35); }
-.card.face-down.has-image .card-back-frame { opacity: 0; transition: opacity 0.25s ease; }
-.card.face-down .card-image {
-    border-radius: var(--card-raggio);
-}
-/* NIENTE secondo bordo sopra il dorso (images/cards/backCard.jpg): c'era un
-   ::after che ne disegnava uno dorato appena dentro la cornice, per coprire
-   gli spigoli del riquadro marrone interno, e si leggeva come un doppio
-   bordo (segnalato dall'utente, 2026-10-16: "ci deve essere solo quello
-   esterno"). L'immagine ha già il suo bordo esterno, e il riquadro interno
-   è già arrotondato a sufficienza. Non reintrodurlo. */
+.card.face-down::before { box-shadow: none; }
 .card.face-down .card-back-frame {
-    position: relative;
+    position: absolute;
     z-index: 1;
-    width: 100%;
-    height: 100%;
-    border-radius: var(--card-raggio);
-    border: 1.5px solid rgba(201,154,74,0.6);
-    background: linear-gradient(160deg, #4a2f16 0%, #2b1a0a 55%, #3d2610 100%);
+    inset: 2.3% 3.4%;
+    width: auto;
+    height: auto;
+    border-radius: clamp(2px, 1.1cqw, 6px);
+    border: max(1px, .4cqw) solid rgb(8 8 8);
+    background: rgb(86 49 33);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -510,15 +499,37 @@
     width: 38%;
     height: 50%;
     border-radius: 50%;
-    /* Deve essere nero in OGNI rappresentazione del dorso, non soltanto
-       nella container query delle carte piccole. Mentre backCard.jpg si
-       caricava (e durante il flip, che crea una nuova faccia temporanea)
-       affiorava per un fotogramma il vecchio ovale giallo del fallback. */
     background: rgb(29 29 29);
-    box-shadow: 0 0 0 1px rgb(0 0 0);
+    box-shadow: 0 0 0 max(1px, .4cqw) rgb(0 0 0);
 }
 .card.face-down .card-back-emblem::after {
     content: '';
+}
+
+/* Carta coperta volante della pescata: stesso disegno CSS del componente
+   reale, ricostruito sui due pseudo-elementi dello strato animato. */
+.fx-gsap-draw-card {
+    overflow: hidden;
+    background: rgb(185 137 91);
+}
+.fx-gsap-draw-card::before {
+    content: '';
+    position: absolute;
+    inset: 2.3% 3.4%;
+    border: 1px solid rgb(8 8 8);
+    border-radius: 3px;
+    background: rgb(86 49 33);
+}
+.fx-gsap-draw-card::after {
+    content: '';
+    position: absolute;
+    left: 31%;
+    top: 25%;
+    width: 38%;
+    height: 50%;
+    border-radius: 50%;
+    background: rgb(29 29 29);
+    box-shadow: 0 0 0 1px rgb(0 0 0);
 }
 
 /* ============================================================
@@ -569,21 +580,6 @@
 }
 .card-flip-face-front {
     transform: rotateY(180deg);
-}
-
-/* ============================================================
-   Pila di carte (es. la zona Deck sul campo): 3 dorsi impilati e
-   leggermente sfalsati come fallback CSS — le pagine che la usano
-   (duelMonstersCore.html) aggiungono i propri offset via .deck-preview.
-   Se esiste una vera images/cards/backPilaCards.jpg, prende il posto
-   dell'intera pila (vedi .has-pile-image, gestito in card-renderer.js).
-   ============================================================ */
-.deck-pile-image {
-    position: absolute;
-    z-index: 4;
-    object-fit: cover;
-    border-radius: 6px;
-    box-shadow: 0 5px 14px rgba(0,0,0,0.26);
 }
 
 /* ============================================================
@@ -748,52 +744,10 @@ body[data-card-badges] .card { overflow: visible; }
        — l'utente non la vuole (2026-10-17). */
     .card:not(.face-down) .card-frame-art { border-width: 0; border-radius: 0; }
 
-    /* IL DORSO, sulle carte piccole (campo, mano avversaria, pile, telefono).
-       Prima restava a 6px di raggio a qualunque misura (era escluso da
-       questa regola): su una carta larga 24px gli angoli diventavano una
-       pillola, e su una da 43px l'arrotondamento mangiava la cornice agli
-       angoli, mentre le carte scoperte accanto erano quasi squadrate. E
-       l'immagine backCard.jpg (740px) rimpicciolita di 17-30 volte
-       lasciava un filo nero solo sopra e a sinistra (il suo contorno
-       interno, ricampionato male). Segnalato dall'utente guardando il
-       telefono vero, 2026-10-16.
-       Qui il dorso si disegna in CSS con i colori e le proporzioni MISURATI
-       su backCard.jpg: cornice cuoio (185,137,91) larga il 3,4% ai lati e
-       il 2,3% in alto e in basso, interno marrone (86,49,33) col filo nero,
-       ovale (29,29,29) largo il 38% e alto il 49%. Nitido a ogni misura e
-       con lo stesso raggio piccolo delle carte scoperte. Sopra i 72px
-       resta l'immagine vera, che lì si vede bene. */
-    /* Cornice cuoio a 3px e riquadro marrone a 2px: tutti e due appena
-       arrotondati, uno dentro l'altro (richiesta dell'utente, 2026-10-17:
-       il marrone ad angoli vivi dentro la cornice tonda stonava). */
+    /* Sulle carte piccole varia soltanto il raggio esterno: colori,
+       proporzioni e ovale restano gli stessi del dorso CSS grande. */
     .card.face-down::before {
         --card-raggio: 3px;
-        background: rgb(185 137 91);
-    }
-    .card.face-down > .card-image { display: none; }
-    .card.face-down .card-back-frame,
-    .card.face-down.has-image .card-back-frame {
-        opacity: 1;
-        /* La scatola ha 3px di padding: il riquadro interno si allarga dentro
-           quel padding fino a lasciare la cornice della proporzione giusta.
-           Mai sotto 1px: sulla mano avversaria (24px) il 3,4% è 0,6px, e un
-           filo sotto il pixel il telefono lo disegnava da un lato solo. */
-        --cornice-x: max(1px, 3.4cqw);
-        --cornice-y: max(1px, 2.3cqw);
-        margin: calc(var(--cornice-y) - 3px) calc(var(--cornice-x) - 3px);
-        width: calc(100% - 2 * var(--cornice-x) + 6px);
-        height: calc(100% - 2 * var(--cornice-y) + 6px);
-        border: 0;
-        border-radius: 2px;
-        background: rgb(86 49 33);
-        box-shadow: inset 0 0 0 max(0.5px, 0.4cqw) rgb(0 0 0 / 0.85);
-    }
-    .card.face-down .card-back-emblem {
-        width: 41%;
-        height: 50%;
-        border-radius: 50%;
-        background: rgb(29 29 29);
-        box-shadow: 0 0 0 max(0.5px, 0.4cqw) rgb(0 0 0);
     }
 }
 

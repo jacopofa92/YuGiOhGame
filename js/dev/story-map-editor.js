@@ -571,6 +571,7 @@
         return p && p.image ? p.image : '';
     }
     function ritrattoHtml(src, alt) {
+        if (src && typeof getCharacterPawnImage === 'function') src = getCharacterPawnImage(src);
         return src
             ? `<img class="sme-ritratto" src="${escapeHtml(src)}" alt="${escapeHtml(alt || '')}" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'sme-ritratto sme-ritratto--vuoto',textContent:'?'}))">`
             : '<span class="sme-ritratto sme-ritratto--vuoto">—</span>';
@@ -620,7 +621,7 @@
             elenco.innerHTML = personaggi()
                 .filter((p) => !q || (p.name || '').toLowerCase().includes(q) || (p.id || '').toLowerCase().includes(q))
                 .map((p) => `<button type="button" class="sme-pg" data-id="${escapeHtml(p.id)}" aria-pressed="${p.id === valore.value}">
-                    ${p.image ? `<img src="${escapeHtml(p.image)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">` : '<span class="sme-ritratto sme-ritratto--vuoto">?</span>'}
+                    ${p.image ? `<img src="${escapeHtml(typeof getCharacterPawnImage === 'function' ? getCharacterPawnImage(p.image) : p.image)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">` : '<span class="sme-ritratto sme-ritratto--vuoto">?</span>'}
                     <span>${escapeHtml(p.name)}</span></button>`).join('');
         };
         document.querySelector(`[data-sme-apri-griglia="${prefisso}"]`).addEventListener('click', () => {

@@ -2202,7 +2202,7 @@
         let cls = 'fighter';
         if (resultWinner) cls += (resultWinner === id ? ' winner' : ' loser');
         const avatar = character && character.image
-            ? `<span class="avatar"><img src="${character.image}" alt=""></span>`
+            ? `<span class="avatar"><img src="${getCharacterPawnImage(character.image)}" alt=""></span>`
             : `<span class="avatar">${isPlayer ? '🫵' : '?'}</span>`;
         return `<div class="${cls}">${avatar}<span class="who">${label}</span></div>`;
     }
@@ -2401,7 +2401,7 @@
             img.alt = '';
             img.onload = () => portrait.classList.add('has-image');
             img.onerror = () => img.remove();
-            img.src = character.image;
+            img.src = getCharacterPawnImage(character.image);
             portrait.appendChild(img);
         }
         document.getElementById('wagerName').textContent = character ? character.name : 'Duellante';

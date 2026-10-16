@@ -489,7 +489,8 @@
 // vivi, riquadro marrone del dorso arrotondato e ovale sempre nero.
 // v272: il campo desktop resta centrato anche con il box informazioni carta.
 // v273: stepper piu' leggibile e avatar/pedina corretti per Nitemare.
-const CACHE_NAME = 'ygo-duel-arena-v273';
+// v274: retro carta in CSS, sigilli fasi scenici e pedine uniformi fuori dal Duello Libero.
+const CACHE_NAME = 'ygo-duel-arena-v274';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

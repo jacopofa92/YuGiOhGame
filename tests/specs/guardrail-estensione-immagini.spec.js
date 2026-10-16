@@ -19,7 +19,6 @@ const SALTA = /(^|\/)(node_modules|\.git|android|vendor)(\/|$)|package-lock/;
 // File che il codice nomina ma che possono non esistere: ognuno ha un
 // ripiego dichiarato accanto al punto d'uso.
 const OPZIONALI = new Set([
-    'images/cards/backCard.jpg', 'images/cards/backPilaCards.jpg', // dorso carta/mazzo: sostituiscono la cornice CSS se presenti
     'images/maps/storia_torneo_kaiba_1.jpg', 'images/maps/storia_ww1_1.jpg', 'images/maps/storia_ww2_1.jpg', // mappe delle storie ancora da disegnare
     'images/maps/regno_dei_duellanti_castello_pegasus.jpg', // candidato di una lista: i successivi esistono
     'images/characters/bakura.jpg', 'images/story/ww1.jpg', 'images/fields/torreKaiba.jpg', // candidati di ripiego
@@ -46,11 +45,15 @@ module.exports = {
         });
         t.assert(fuori.length === 0, `Sotto images/ ci devono essere solo .jpg minuscoli (${fuori.length} fuori regola, es. ${fuori.slice(0, 3).join(', ')})`);
 
-        const jpeg = []; const inesistenti = {};
+        const jpeg = []; const inesistenti = {}; const retroRaster = [];
         cammina(RADICE, (p, rel, nome) => {
             if (!/\.(js|html|css|md|json|yml|xml)$/.test(nome)) return;
             if (rel === 'tests/specs/guardrail-estensione-immagini.spec.js' || rel.endsWith('local-servers.js')) return;
             const testo = fs.readFileSync(p, 'utf8');
+            // La documentazione puo' citare i vecchi asset per raccontare
+            // la migrazione; il vincolo riguarda solo file caricabili dal
+            // gioco, nei quali il raster tornerebbe davvero a runtime.
+            if (!/\.(md|yml)$/.test(nome) && /back(?:Card|PilaCards)\.jpg/.test(testo)) retroRaster.push(rel);
             // Solo un NOME FILE (un carattere di nome/segnaposto subito prima
             // del punto): la parola ".jpeg" in una frase, per spiegare la
             // storia di questa regola, non è un riferimento a un file.
@@ -64,6 +67,8 @@ module.exports = {
             }
         });
         t.assert(jpeg.length === 0, `Nessun file di testo deve nominare un .jpeg: ${jpeg.join(', ')}`);
+        t.assert(retroRaster.length === 0,
+            `Il retro delle carte deve essere solo CSS, mai un'immagine runtime: ${retroRaster.join(', ')}`);
         const elenco = Object.entries(inesistenti).map(([k, v]) => `${k} (in ${[...v].join(', ')})`);
         t.assert(elenco.length === 0, `Riferimenti a immagini che non esistono (errore di nome/estensione?): ${elenco.slice(0, 5).join(' | ')}`);
     }

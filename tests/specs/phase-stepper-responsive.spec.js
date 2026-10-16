@@ -79,14 +79,33 @@ module.exports = {
             steps[2].classList.add('disabled');
             const leggi = (el) => {
                 const s = getComputedStyle(el);
-                return { shadow: s.boxShadow, border: s.borderColor, opacity: Number(s.opacity), background: s.backgroundImage };
+                const badge = getComputedStyle(el.querySelector('.step-badge'));
+                const ring = getComputedStyle(el.querySelector('.step-badge'), '::before');
+                return {
+                    shadow: s.boxShadow, border: s.borderColor, opacity: Number(s.opacity), background: s.backgroundImage,
+                    badgeShadow: badge.boxShadow, badgeBackground: badge.backgroundImage,
+                    transform: s.transform, ringContent: ring.content,
+                    ringBackground: ring.backgroundImage, ringOpacity: Number(ring.opacity),
+                    ringAnimation: ring.animationName
+                };
             };
-            return { active: leggi(steps[0]), clickable: leggi(steps[1]), disabled: leggi(steps[2]) };
+            return {
+                active: leggi(steps[0]), clickable: leggi(steps[1]), disabled: leggi(steps[2]),
+                railLine: getComputedStyle(document.getElementById('phaseStepper'), '::before').display
+            };
         });
-        t.assert(statiDesktop.active.shadow !== 'none' && !/rgba\(0, 0, 0, 0\)/.test(statiDesktop.active.border),
-            `La fase attiva deve emergere con bordo e luce: ${JSON.stringify(statiDesktop.active)}`);
-        t.assert(statiDesktop.clickable.shadow !== 'none' && statiDesktop.clickable.background !== 'none',
-            `La fase cliccabile non deve essere un pulsante scuro e piatto: ${JSON.stringify(statiDesktop.clickable)}`);
+        t.assert(statiDesktop.railLine === 'none', 'Lo stepper non deve avere una linea orizzontale dietro i sigilli');
+        t.assert(statiDesktop.active.background === 'none' && statiDesktop.active.shadow === 'none'
+            && statiDesktop.active.badgeShadow !== 'none' && statiDesktop.active.ringOpacity > 0.9
+            && statiDesktop.active.ringBackground !== 'none'
+            && statiDesktop.active.ringAnimation.includes('phaseSealOrbit')
+            && statiDesktop.active.transform === 'none',
+        `La fase attiva deve emergere come sigillo, non come pulsante stock: ${JSON.stringify(statiDesktop.active)}`);
+        t.assert(statiDesktop.clickable.background === 'none' && statiDesktop.clickable.shadow === 'none'
+            && statiDesktop.clickable.badgeShadow !== 'none' && statiDesktop.clickable.ringOpacity > 0.25
+            && statiDesktop.clickable.ringBackground !== 'none'
+            && statiDesktop.clickable.transform === 'none',
+        `La fase cliccabile deve essere un sigillo luminoso e non un rettangolo scuro: ${JSON.stringify(statiDesktop.clickable)}`);
         t.assert(statiDesktop.disabled.opacity < 0.6,
             `La fase disabilitata deve restare attenuata: ${JSON.stringify(statiDesktop.disabled)}`);
 
@@ -94,9 +113,10 @@ module.exports = {
         const mobile = await t.evaluate(() => {
             const badge = document.querySelector('.phase-step.clickable .step-badge');
             const s = getComputedStyle(badge);
-            return { shadow: s.boxShadow, background: s.backgroundImage };
+            const ring = getComputedStyle(badge, '::before');
+            return { shadow: s.boxShadow, background: s.backgroundImage, ring: ring.backgroundImage };
         });
-        t.assert(mobile.shadow !== 'none' && mobile.background !== 'none',
+        t.assert(mobile.shadow !== 'none' && mobile.background !== 'none' && mobile.ring !== 'none',
             `Su mobile lo stato cliccabile deve restare leggibile sul badge: ${JSON.stringify(mobile)}`);
     }
 };

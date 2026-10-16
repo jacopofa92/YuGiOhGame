@@ -66,7 +66,7 @@
     function giocatore() {
         const r = trovaRivincita();
         const c = r && personaggio(r.giocatore);
-        return c ? { id: c.id, name: c.name, title: c.title || 'Duellante', image: c.image || null, icon: '🧑‍🎤' } : null;
+        return c ? { id: c.id, name: c.name, title: c.title || 'Duellante', image: getCharacterPawnImage(c.image), icon: '🧑‍🎤' } : null;
     }
 
     /**

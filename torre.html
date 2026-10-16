@@ -162,7 +162,7 @@
                 </div>
             </div>
             <div class="torre-avversario">
-                <span class="torre-avversario-ritratto">${avv.image ? `<img src="${esc(avv.image)}" alt="">` : '<b>?</b>'}</span>
+                <span class="torre-avversario-ritratto">${avv.image ? `<img src="${esc(getCharacterPawnImage(avv.image))}" alt="">` : '<b>?</b>'}</span>
                 <span><small>Guardiano del piano</small><strong>${esc(avv.name)}</strong><em>${esc(LIVELLI[prossimo.livello] || prossimo.livello)}</em></span>
             </div>
             <div class="mp-oggetti">${oggetti.join('') || '<span class="mp-lp-testo">Nessun oggetto, per ora.</span>'}</div>
@@ -234,7 +234,7 @@
                 const img = document.createElement('img');
                 img.alt = '';
                 img.onerror = () => { img.remove(); finestra.textContent = '?'; };
-                img.src = p.image;
+                img.src = getCharacterPawnImage(p.image);
                 finestra.appendChild(img);
             } else {
                 const q = document.createElement('span');

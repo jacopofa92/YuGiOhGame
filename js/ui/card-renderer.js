@@ -33,7 +33,6 @@
     // Retro Duel Monsters in stile anime di Gaia206. La copia locale evita
     // dipendenze da DeviantArt e conserva il gioco utilizzabile offline.
     // Fonte: https://www.deviantart.com/gaia206/art/Yu-Gi-Oh-Duel-Monsters-Back-Card-335785397
-    const CARD_BACK_IMAGE = 'images/cards/backCard.jpg';
     let caricamentoImmaginiDifferito = 0;
 
     /**
@@ -71,7 +70,6 @@
             if (img.complete && img.naturalWidth > 0 && typeof img.onload === 'function') img.onload();
         });
     }
-    const CARD_PILE_IMAGE = 'images/cards/backPilaCards.jpg';
 
     // Le carte che Yu-Gi-Oh NON sono (set storici 'ww1'/'ww2', carte
     // 'fanmade': vedi il campo "origin" in js/data/cards-db.js) tengono le
@@ -267,45 +265,12 @@
     }
 
     /**
-     * Applica al div `el` (già con classe "card") l'aspetto di un retro
-     * carta coperto: prova prima l'immagine reale (CARD_BACK_IMAGE), e se
-     * manca/non carica lascia visibile il fallback CSS sottostante —
-     * stesso meccanismo dell'immagine fronte-carta più sotto.
+     * Applica al div `el` il retro costruito interamente in CSS. Lo stesso
+     * markup vale in mano, sul campo, nelle pile e nelle facce del flip 3D.
      */
     function applyCardBackVisual(el) {
         el.classList.add('face-down');
         el.innerHTML = '<div class="card-back-frame"><div class="card-back-emblem"></div></div>';
-        const img = document.createElement('img');
-        img.className = 'card-image';
-        // alt="" (decorativa, non "Carta coperta"): con un alt non vuoto,
-        // mentre l'immagine è ancora in fase di decodifica (ri-creata da
-        // zero ad ogni renderFields(), che ridisegna l'intero Terreno ad
-        // ogni updateUI() — anche solo un cambio fase) il browser può
-        // dipingere brevemente il testo alternativo sopra la cornice CSS
-        // già visibile sotto — bug reale segnalato dall'utente ("si vede
-        // il testo 'carta coperta'... specialmente ai cambi fase"). Un
-        // alt vuoto è lo standard per un'immagine puramente decorativa: i
-        // browser non mostrano mai alcun testo per lei, né in caricamento
-        // né in errore.
-        img.alt = '';
-        img.draggable = false;
-        img.loading = 'lazy';
-        img.onload = () => el.classList.add('has-image');
-        img.onerror = () => img.remove();
-        assegnaSorgenteImmagine(img, CARD_BACK_IMAGE);
-        // renderFields() ricrea l'intero Terreno da zero ad ogni cambio
-        // fase (anche per carte il cui aspetto non è affatto cambiato):
-        // senza questo controllo, la STESSA immagine già mostrata un
-        // istante prima riparte ogni volta dalla dissolvenza invisibile
-        // (onload è sempre asincrono, anche a cache calda), causando lo
-        // sfarfallio segnalato dall'utente. Se il browser la ha già
-        // decodificata in cache (complete=true SINCRONO dopo aver
-        // impostato src, e naturalWidth>0 per escludere un fallimento
-        // già in cache), saltiamo la dissolvenza e mostriamo l'immagine
-        // subito piena — visivamente indistinguibile da "non è cambiato
-        // nulla".
-        if (img.complete && img.naturalWidth > 0) el.classList.add('has-image');
-        el.insertBefore(img, el.firstChild);
     }
 
     /**
@@ -478,28 +443,13 @@
         return el;
     }
 
-    /**
-     * Aggiunge alla zona Deck (slotEl) la visualizzazione della pila:
-     * di default 3 dorsi-carta sovrapposti in CSS (le pagine che la usano
-     * decidono l'offset di ciascuno con .deck-preview, vedi duelMonstersCore.html);
-     * se esiste una vera images/cards/backPilaCards.jpg, quella sostituisce
-     * l'intero fallback CSS (non si sovrappongono).
-     */
+    /** Aggiunge alla zona Deck tre dorsi CSS sovrapposti. */
     function appendDeckPile(slotEl, layers = 3) {
         for (let i = 0; i < layers; i++) {
             const back = renderCardBack();
             back.classList.add('deck-preview');
             slotEl.appendChild(back);
         }
-        const pileImg = document.createElement('img');
-        pileImg.className = 'deck-pile-image';
-        pileImg.alt = ''; // decorativa — stesso motivo di applyCardBackVisual() più sopra
-        pileImg.draggable = false;
-        pileImg.loading = 'lazy';
-        pileImg.onload = () => slotEl.classList.add('has-pile-image');
-        pileImg.onerror = () => pileImg.remove();
-        assegnaSorgenteImmagine(pileImg, CARD_PILE_IMAGE);
-        slotEl.appendChild(pileImg);
     }
 
     /**

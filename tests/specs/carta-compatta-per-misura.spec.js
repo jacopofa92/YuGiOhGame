@@ -34,7 +34,8 @@ module.exports = {
                     raggioArte: arte ? getComputedStyle(arte).borderTopLeftRadius : null,
                     raggioRetro: retro ? getComputedStyle(retro).borderTopLeftRadius : null,
                     coloreEmblemaRetro: emblemaRetro ? getComputedStyle(emblemaRetro).backgroundColor : null,
-                    immagineEmblemaRetro: emblemaRetro ? getComputedStyle(emblemaRetro).backgroundImage : null
+                    immagineEmblemaRetro: emblemaRetro ? getComputedStyle(emblemaRetro).backgroundImage : null,
+                    immaginiNelRetro: coperta ? el.querySelectorAll('img').length : null
                 };
             };
             const r = {
@@ -62,6 +63,8 @@ module.exports = {
         [esito.dorsoPiccolo, esito.dorsoGrande].forEach((dorso) => {
             t.assert(dorso.coloreEmblemaRetro === 'rgb(29, 29, 29)' && dorso.immagineEmblemaRetro === 'none',
                 'l ovale del dorso deve restare nero a ogni misura, anche durante caricamento e flip: ' + JSON.stringify(dorso));
+            t.assert(dorso.immaginiNelRetro === 0,
+                'il dorso deve essere ricostruito solo in CSS, senza alcuna immagine: ' + JSON.stringify(dorso));
         });
         t.assert(Math.abs(esito.grande.altezza - Math.round(160 / 0.685)) <= 1, 'proporzioni della carta da --card-ratio: altezza ' + esito.grande.altezza);
     }

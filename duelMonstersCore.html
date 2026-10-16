@@ -4369,6 +4369,138 @@
             }
             .card-info-content p { margin-top: 5px; margin-bottom: 14px; }
         }
+
+        /* Stepper come costellazione di sigilli. I sei centri restano sempre
+           sullo stesso asse: nessuna fase si sposta o si ingrandisce al
+           cambio di stato (era la causa dell'effetto "sfasato"). L'energia
+           gira invece attorno al medaglione, senza ricreare pulsanti o una
+           rotaia orizzontale. */
+        .phase-stepper::before,
+        .phase-step::after {
+            display: none;
+        }
+        .phase-stepper .phase-step,
+        .phase-stepper .phase-step.active,
+        .phase-stepper .phase-step.completed,
+        .phase-stepper .phase-step.clickable:not(.active),
+        .phase-stepper .phase-step.clickable:not(.active):hover,
+        .phase-stepper .phase-step.clickable:not(.active):active {
+            background: transparent;
+            border-color: transparent;
+            box-shadow: none;
+        }
+        .phase-stepper .phase-step {
+            transform: none;
+            overflow: visible;
+        }
+        .phase-stepper .phase-step .step-badge {
+            isolation: isolate;
+            transform: none;
+            filter: none;
+            color: color-mix(in srgb, var(--fase-accento) 38%, #817f79);
+            background: radial-gradient(circle at 38% 30%,
+                color-mix(in srgb, var(--fase-accento) 12%, rgba(255,255,255,.04)),
+                rgba(5,7,12,.62) 72%);
+            box-shadow: inset 0 0 9px rgba(0,0,0,.42), 0 2px 5px rgba(0,0,0,.24);
+        }
+        .phase-stepper .phase-step .step-badge::before,
+        .phase-stepper .phase-step .step-badge::after {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            transition: opacity .24s ease, filter .24s ease;
+        }
+        .phase-stepper .phase-step .step-badge::before {
+            inset: -4px;
+            z-index: -1;
+            padding: 1px;
+            opacity: .32;
+            background: conic-gradient(from 20deg,
+                transparent 0 12%, var(--fase-accento) 18% 23%,
+                transparent 29% 49%, var(--fase-accento) 56% 63%,
+                transparent 70% 88%, var(--fase-accento) 94% 98%, transparent);
+            -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+        }
+        .phase-stepper .phase-step .step-badge::after {
+            inset: -8px;
+            z-index: -2;
+            opacity: 0;
+            background: radial-gradient(circle,
+                color-mix(in srgb, var(--fase-accento) 34%, transparent) 0,
+                color-mix(in srgb, var(--fase-accento) 12%, transparent) 42%,
+                transparent 72%);
+        }
+        .phase-stepper .step-icon,
+        .phase-stepper .step-num {
+            z-index: 1;
+        }
+        .phase-stepper .phase-step.active {
+            color: color-mix(in srgb, var(--fase-accento) 18%, #fff);
+            text-shadow: 0 0 10px color-mix(in srgb, var(--fase-accento) 38%, transparent);
+        }
+        .phase-stepper .phase-step.active .step-badge {
+            color: color-mix(in srgb, var(--fase-accento) 12%, #fff);
+            background: radial-gradient(circle at 40% 32%,
+                color-mix(in srgb, var(--fase-accento) 40%, rgba(255,255,255,.12)),
+                color-mix(in srgb, var(--fase-accento) 14%, rgba(8,9,13,.78)) 62%,
+                rgba(5,6,10,.9) 100%);
+            box-shadow: inset 0 0 8px color-mix(in srgb, var(--fase-accento) 20%, transparent),
+                0 0 13px color-mix(in srgb, var(--fase-accento) 42%, transparent);
+        }
+        .phase-stepper .phase-step.active .step-badge::before {
+            opacity: .98;
+            animation: phaseSealOrbit 4.8s linear infinite;
+            filter: drop-shadow(0 0 3px color-mix(in srgb, var(--fase-accento) 70%, transparent));
+        }
+        .phase-stepper .phase-step.active .step-badge::after {
+            opacity: .9;
+            animation: phaseSealBreath 2.6s ease-in-out infinite;
+        }
+        .phase-stepper .phase-step.clickable:not(.active) {
+            color: color-mix(in srgb, var(--fase-accento) 20%, #e7e3d8);
+        }
+        .phase-stepper .phase-step.clickable:not(.active) .step-badge {
+            color: color-mix(in srgb, var(--fase-accento) 28%, #eee);
+            box-shadow: inset 0 0 8px color-mix(in srgb, var(--fase-accento) 10%, transparent),
+                0 0 8px color-mix(in srgb, var(--fase-accento) 18%, transparent);
+        }
+        .phase-stepper .phase-step.clickable:not(.active) .step-badge::before {
+            opacity: .48;
+        }
+        @keyframes phaseSealOrbit {
+            from { transform: rotate(0deg); opacity: .98; }
+            to { transform: rotate(360deg); opacity: .98; }
+        }
+        @keyframes phaseSealBreath {
+            0%, 100% { opacity: .52; filter: blur(.2px); }
+            50% { opacity: .94; filter: blur(1px); }
+        }
+        @media (hover: hover) and (pointer: fine) {
+            .phase-stepper .phase-step.clickable:not(.active):hover .step-badge {
+                color: #fff;
+                box-shadow: inset 0 0 9px color-mix(in srgb, var(--fase-accento) 18%, transparent),
+                    0 0 14px color-mix(in srgb, var(--fase-accento) 36%, transparent);
+            }
+            .phase-stepper .phase-step.clickable:not(.active):hover .step-badge::before {
+                opacity: .82;
+                filter: drop-shadow(0 0 3px color-mix(in srgb, var(--fase-accento) 50%, transparent));
+            }
+        }
+        .phase-stepper .phase-step.clickable:not(.active):active {
+            transform: none;
+        }
+        .phase-stepper .phase-step.clickable:not(.active):active .step-badge {
+            filter: brightness(1.2);
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .phase-stepper .phase-step.active .step-badge::before,
+            .phase-stepper .phase-step.active .step-badge::after {
+                animation: none;
+            }
+        }
     </style>
 </head>
 <body>

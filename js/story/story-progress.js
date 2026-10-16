@@ -114,7 +114,7 @@
                     // Ritratto e nome vero arrivano dal roster, non dal
                     // catalogo: una campagna dichiara CHI si affronta, non
                     // che faccia abbia.
-                    immagine: pg ? pg.image : null,
+                    immagine: pg && typeof getCharacterPawnImage === 'function' ? getCharacterPawnImage(pg.image) : (pg ? pg.image : null),
                     nomeAvversario: pg ? pg.name : null,
                     titoloAvversario: pg ? pg.title : null
                 }));
@@ -923,7 +923,7 @@
                 music: prova.music || (tappaContenitore && tappaContenitore.music)
                     || (getCampaign(campaignId) && getCampaign(campaignId).musicaDuello) || null,
                 difficulty: difficoltaEsposta(campaignId, prova.difficulty),
-                immagine: pg ? pg.image : null,
+                immagine: pg && typeof getCharacterPawnImage === 'function' ? getCharacterPawnImage(pg.image) : (pg ? pg.image : null),
                 nomeAvversario: pg ? pg.name : null,
                 stato: stato
             });

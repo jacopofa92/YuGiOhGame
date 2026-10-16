@@ -482,7 +482,10 @@
             // FILE del ritratto, non l'id del personaggio), che sulla plancia
             // ad angolo sta senza cornice. Se manca si ripiega sul ritratto
             // normale, e la plancia lo sfuma ai bordi invece di ritagliarlo.
-            const pedina = options.pedina ? percorsoPedina(duelist.image) : null;
+            // Fuori dalla griglia del Duello Libero la figura standard e'
+            // sempre la pedina scontornata. `pedina:false` resta disponibile
+            // soltanto per un eventuale contesto esplicitamente fotografico.
+            const pedina = options.pedina !== false ? percorsoPedina(duelist.image) : null;
             img.onerror = () => {
                 if (pedina && img.dataset.ripiego !== '1') {
                     img.dataset.ripiego = '1';
@@ -500,6 +503,7 @@
     }
 
     function percorsoPedina(immagine) {
+        if (typeof getCharacterPawnImage === 'function') return getCharacterPawnImage(immagine);
         const nome = String(immagine).split(/[\\/]/).pop().replace(/\.[a-z0-9]+(\?.*)?$/i, '');
         return nome ? 'images/characters/pedine/' + nome + '.png' : null;
     }

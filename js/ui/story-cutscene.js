@@ -449,9 +449,11 @@
                 // un personaggio SOLO in questa scena (Kaiba nel Regno dei
                 // Duellanti non è il Kaiba di Battle City): vince sul roster
                 // ma non sul ritratto scritto a mano sulla riga.
+                const ritrattoContesto = opt.ritratti && riga.chi && opt.ritratti[riga.chi];
                 const fonteRitratto = riga.ritratto
-                    || (opt.ritratti && riga.chi && opt.ritratti[riga.chi])
-                    || (chi && chi.image) || '';
+                    || (ritrattoContesto && typeof getCharacterPawnImage === 'function'
+                        ? getCharacterPawnImage(ritrattoContesto) : ritrattoContesto)
+                    || (chi && typeof getCharacterPawnImage === 'function' ? getCharacterPawnImage(chi.image) : (chi && chi.image)) || '';
 
                 box.classList.toggle('is-narratore', !nome);
                 box.classList.remove('is-completa');
