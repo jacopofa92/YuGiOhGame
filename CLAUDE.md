@@ -4361,3 +4361,15 @@ Fatto in `equipToChosenTarget` (tutte le Equip comuni), Flamberge (727) e
 Sepoltura Prematura (633). Un Equip nuovo con una scelta propria deve fare lo
 stesso. Spec `equip-con-scelta-del-bersaglio`: ogni Equip con più bersagli,
 scegliendo l'ULTIMO della lista e toccandolo come un giocatore.
+
+Tifone dello Spazio Mistico rifatto (branch `feature/vfx-tifone-cilindro-ritorno-mano`,
+mergiato il 2026-10-16): imbuto di vento verticale che solleva e strappa la
+carta bersaglio (`.fx-mst-scene`/`-funnel`/`-card`), al posto della vecchia
+singolarità. Del branch è entrato SOLO il Tifone: nel frattempo `main` aveva
+già un Cilindro Magico rifatto (portali con vignetta, sigillo e ponte) e un
+movimento Terreno → mano generico (evento `transizione-carta` emesso da
+`returnMonsterToHand`/`returnSpellTrapToHand`/Turbine Gigante, disegnato da
+`FX.playZoneTransition`), quindi `FX.playCardToHand` e il Cilindro "a
+cilindri scanalati" del branch sono stati scartati di proposito. Il
+guardrail in `return-to-hand-mechanism` ascolta l'evento, non una classe
+CSS. Cache `v263`.

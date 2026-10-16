@@ -11,7 +11,7 @@ module.exports = {
         const css = fs.readFileSync(path.join(root, 'js', 'ui', 'effects.css'), 'utf8');
         ['playRingOfDestruction', 'playHeavyStorm', 'playMysticalSpaceTyphoon', 'playMindControl', 'playCallOfTheHaunted']
             .forEach((name) => t.assert(effects.includes(`function ${name}`) && effects.includes(`${name},`), `${name} deve essere implementato ed esposto`));
-        ['.fx-ring-collar', '.fx-heavy-storm', '.fx-mst-vortex', '.fx-control-mark', '.fx-call-haunted', '.call-haunted-link']
+        ['.fx-ring-collar', '.fx-heavy-storm', '.fx-mst-scene', '.fx-mst-funnel', '.fx-mst-card', '.fx-control-mark', '.fx-call-haunted', '.call-haunted-link']
             .forEach((selector) => t.assert(css.includes(selector), `${selector} deve avere resa dedicata`));
 
         const rules = await t.evaluate(() => {
@@ -36,7 +36,7 @@ module.exports = {
             callbacks.tempesta();
             const tempestaDopo = gameState.playerSTField.filter(Boolean).length + gameState.botSTField.filter(Boolean).length;
 
-            // Tifone del bot preferisce una carta avversaria e aspetta l'implosione.
+            // Tifone del bot preferisce una carta avversaria e aspetta lo strappo del vortice.
             gameState.playerSTField = [{ card: copia(40, 'mst-target'), isFaceDown: true }, null, null, null, null];
             gameState.botSTField = [null, null, null, null, null];
             DuelEngine.getDefinition(607).activate(DuelEngine.makeContext('bot', { card: copia(607, 'mst') }));
@@ -101,7 +101,7 @@ module.exports = {
             FX.playMindControl(card, 'player', 0, 'heart');
             FX.playCallOfTheHaunted('player', card, 1, () => {});
             await new Promise((resolve) => setTimeout(resolve, 80));
-            const presenti = ['.fx-destruction-ring', '.fx-heavy-storm', '.fx-mst-vortex', '.fx-control-mark', '.fx-call-haunted']
+            const presenti = ['.fx-destruction-ring', '.fx-heavy-storm', '.fx-mst-scene', '.fx-mst-funnel', '.fx-mst-card', '.fx-control-mark', '.fx-call-haunted']
                 .every((selector) => !!document.querySelector(selector));
             gameState.playerSTField[0] = null;
             updateUI();

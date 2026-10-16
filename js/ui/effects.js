@@ -1060,7 +1060,11 @@
         return 1800;
     }
 
-    /** Tifone dello Spazio Mistico comprime lo spazio sul singolo slot. */
+    /**
+     * Tifone dello Spazio Mistico: un vero imbuto di vento mistico si
+     * avvita sulla carta, la solleva e la strappa dal Terreno. Non usa la
+     * vecchia implosione circolare (troppo simile a Buco Nero).
+     */
     function playMysticalSpaceTyphoon(owner, index, onImpact) {
         const boardId = owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard';
         const slot = document.querySelector(`#${boardId} .field-slot[data-owner="${owner}"][data-type="st"][data-index="${index}"]`);
@@ -1070,11 +1074,29 @@
             return 0;
         }
         beginSummonCinematic();
-        const vortex = document.createElement('div');
-        vortex.className = 'fx-mst-vortex';
-        Object.assign(vortex.style, { left: `${rect.left + rect.width / 2}px`, top: `${rect.top + rect.height / 2}px`, width: `${rect.width * 2.4}px`, height: `${rect.width * 2.4}px` });
-        vortex.innerHTML = '<i></i><i></i><i></i><b></b><span></span>';
-        document.body.appendChild(vortex);
+        const scene = document.createElement('div');
+        scene.className = 'fx-mst-scene';
+        scene.setAttribute('aria-hidden', 'true');
+        Object.assign(scene.style, {
+            left: `${rect.left + rect.width / 2}px`,
+            top: `${rect.top + rect.height / 2}px`,
+            '--mst-size': `${Math.max(rect.width * 2.7, 150)}px`
+        });
+        scene.innerHTML = '<div class="fx-mst-funnel"><i></i><i></i><i></i><i></i><b></b></div><div class="fx-mst-ground"></div><div class="fx-mst-shards"><i></i><i></i><i></i><i></i><i></i><i></i></div>';
+        const cardEl = slot.querySelector('.card');
+        if (cardEl && typeof window.createCardElement === 'function') {
+            const cardSlot = (owner === 'player' ? gameState.playerSTField : gameState.botSTField)[index];
+            if (cardSlot && cardSlot.card) {
+                const ghost = window.createCardElement(cardSlot.card);
+                ghost.classList.add('fx-mst-card');
+                Object.assign(ghost.style, {
+                    width: `${rect.width}px`, height: `${rect.height}px`,
+                    left: `${-rect.width / 2}px`, top: `${-rect.height / 2}px`
+                });
+                scene.appendChild(ghost);
+            }
+        }
+        document.body.appendChild(scene);
         if (window.SFX && typeof SFX.wind === 'function') SFX.wind();
         let resolved = false;
         const impact = () => {
@@ -1085,10 +1107,10 @@
         setTimeout(impact, 820);
         setTimeout(() => {
             impact();
-            vortex.remove();
+            scene.remove();
             endSummonCinematic();
-        }, 1370);
-        return 1370;
+        }, 1540);
+        return 1540;
     }
 
     /** Occhio/mescolanza di cuori sul bersaglio prima del normale viaggio di controllo. */

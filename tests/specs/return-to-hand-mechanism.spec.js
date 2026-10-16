@@ -85,5 +85,40 @@ module.exports = {
             return gameState.botMonsterField.some((s) => s && s.card.uid === 'obelisk-671-1');
         });
         t.assert(r3, '671 non deve poter scegliere Obelisk come bersaglio (immune al targeting da effetti Carta)');
+
+        // Guardrail visivo: sia un mostro sia una Magia/Trappola che tornano
+        // in mano devono avvisare l'interfaccia col movimento Terreno -> mano
+        // (evento 'transizione-carta', disegnato da FX.playZoneTransition),
+        // senza che il disegno cambi la regola. Si ascolta l'evento invece di
+        // cercare una classe CSS: è il contratto fra regole e interfaccia.
+        const visual = await t.evaluate(() => {
+            const mostro = { ...cardDatabase.find((c) => c.id === 4), uid: 'return-fx-monster' };
+            const magia = { ...cardDatabase.find((c) => c.type === 'spell'), uid: 'return-fx-spell' };
+            gameState.playerMonsterField = [{ card: mostro, position: 'attack', isFaceDown: false }, null, null, null, null];
+            gameState.botSTField = [{ card: magia, isFaceDown: true }, null, null, null, null];
+            gameState.playerHand = [];
+            gameState.botHand = [];
+            updateUI();
+            const movimenti = [];
+            const togli = EventiDuello.ascolta('transizione-carta', (m) => movimenti.push(m));
+            try {
+                DuelEngine.actions.returnMonsterToHand('player', 0);
+                const ctx = DuelEngine.makeContext('player', { card: { ...magia, uid: 'helper-source' } });
+                CardEffectsShared.returnSpellTrapToHand(ctx, 'bot', 0);
+            } finally {
+                togli();
+            }
+            const versoMano = (uid, tipo, proprietario) => movimenti.some((m) =>
+                m.carta && m.carta.uid === uid && m.a && m.a.kind === 'hand' && m.a.owner === proprietario
+                && m.da && m.da.kind === 'field' && m.da.type === tipo);
+            return {
+                mostroAnimato: versoMano('return-fx-monster', 'monster', 'player'),
+                magiaAnimata: versoMano('return-fx-spell', 'st', 'bot'),
+                mostroInMano: gameState.playerHand.some((c) => c.uid === 'return-fx-monster'),
+                magiaInMano: gameState.botHand.some((c) => c.uid === 'return-fx-spell')
+            };
+        });
+        t.assert(visual.mostroAnimato && visual.magiaAnimata, 'Mostri e Magie/Trappole devono annunciare il movimento Terreno -> mano');
+        t.assert(visual.mostroInMano && visual.magiaInMano, 'Il VFX non deve alterare la destinazione reale delle carte');
     }
 };

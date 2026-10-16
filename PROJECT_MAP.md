@@ -1166,8 +1166,9 @@ Secondo gruppo:
 - Anello della Distruzione (`419`) serra un collare a sei cariche sul
   bersaglio e mostra il danno realmente inflitto a entrambi i lati;
 - Tempesta Pesante (`646`) oscura l'arena e investe entrambe le file M/T con
-  due fronti di vento; Tifone dello Spazio Mistico (`607`) usa invece una
-  singolarità blu-viola localizzata, distinta dal Tornado di Polvere;
+  due fronti di vento; Tifone dello Spazio Mistico (`607`) genera invece un
+  imbuto verticale blu-viola che solleva, inclina e strappa la carta dal suo
+  slot, distinto sia dal Tornado di Polvere sia dalla singolarità di Buco Nero;
 - entrambe risolvono la distruzione alla callback d'impatto, lasciando le
   carte visibili fino al passaggio del fenomeno;
 - Cambio di Cuore (`147`) e Controllo Mentale (`130`) condividono
@@ -1179,6 +1180,14 @@ Secondo gruppo:
   fra il mostro e lo slot della Trappola finché il suo `targetUid` è valido;
 - cache PWA `v199`; guardrail:
   `tests/specs/cinematiche-carte-iconiche-secondo-gruppo.spec.js`.
+
+Movimento Terreno → mano: lo annuncia l'evento `transizione-carta` (emesso da
+`ACTIONS.returnMonsterToHand`, `returnSpellTrapToHand` e Turbine Gigante
+`262`) e lo disegna `FX.playZoneTransition`. Il `FX.playCardToHand` del branch
+`feature/vfx-tifone-cilindro-ritorno-mano` NON è stato integrato (doppione di
+questo meccanismo); del branch è entrato solo il Tifone. Guardrail:
+`tests/specs/return-to-hand-mechanism.spec.js` (ascolta l'evento); cache PWA
+`v263`.
 
 Terzo gruppo:
 

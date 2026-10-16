@@ -477,7 +477,8 @@
 // v260: versione 1.3.21, nuove lezioni guidate e nuovi puzzle.
 // v261: nuove tracce 57-58 e King of Games rinumerata 59; temi automatici
 // per Pegasus, Heishin, Marik, DarkNite e Nitemare nei modi senza selezione.
-const CACHE_NAME = 'ygo-duel-arena-v262';
+// v263: Tifone dello Spazio Mistico rifatto come imbuto di vento (merge VFX).
+const CACHE_NAME = 'ygo-duel-arena-v263';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
