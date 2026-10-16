@@ -285,8 +285,9 @@ const characterDeckDatabase = {
     // Glider, Uomo Giudice, e la linea dei cannoni Union — Cannone Testa X, Testa di Drago Y,
     // Carro Armato Metallico Z, con Cannone Drago XY/XYZ nell'Extra Deck (presenti da Normale
     // in su, richiesta esplicita). Carte simbolo: Controllore Nemico, Stop Difesa,
-    // Trasportatore di Materia Interdimensionale, Nega Attacco. Difficile aggiunge Obelisk il
-    // Tormentatore (una copia) e il Paladino del Drago Bianco rituale. Facile tiene i Draghi
+    // Trasportatore di Materia Interdimensionale, Nega Attacco. Difficile aggiunge Obelisk e
+    // difese migliori, ma conserva due Signore/Flauti: l'audit Custom ha mostrato che sommare
+    // anche il pacchetto Rituale rendeva troppe mani inutilizzabili. Facile tiene i Draghi
     // Bianchi ma senza cannoni e senza Flauto, con i suoi mostri deboli del Regno dei
     // Duellanti (Gigante Un Occhio, Cavaliere Mistico, Saggi).
     kaiba: {
@@ -365,7 +366,7 @@ const characterDeckDatabase = {
         hard: {
             main: [
                 { id: 1, qty: 3 }, // Drago Bianco Occhi Blu
-                { id: 353, qty: 1 }, // Signore dei D.
+                { id: 353, qty: 2 }, // Signore dei D.
                 { id: 502, qty: 2 }, // Predone Vorse
                 { id: 335, qty: 1 }, // La Jinn il Genio Mistico della Lampada
                 { id: 510, qty: 2 }, // Cannone Testa X
@@ -375,8 +376,8 @@ const characterDeckDatabase = {
                 { id: 454, qty: 1 }, // Drago Lancia
                 { id: 198, qty: 1 }, // Drago della Dimensione Diversa
                 { id: 320, qty: 1 }, // Kaiser Glider
-                { id: 431, qty: 1 }, // Saggi il Pagliaccio Oscuro
-                { id: 578, qty: 1 }, // Il Flauto per Evocare Draghi
+                { id: 1263, qty: 1 }, // Luce Autentica — promossa dall'audit finale: rende piu' presente il Drago Bianco senza caricare il deck di supporti moderni
+                { id: 578, qty: 2 }, // Il Flauto per Evocare Draghi
                 { id: 38, qty: 1 }, // Fusione
                 { id: 35, qty: 1 }, // Rinascita del Mostro
                 { id: 36, qty: 2 }, // Vaso dell'Avidità
@@ -392,9 +393,7 @@ const characterDeckDatabase = {
                 { id: 8, qty: 1 }, // Spada Rivelatrice
                 { id: 272, qty: 1 }, // Carità Aggraziata
                 { id: 607, qty: 1 }, // Tifone dello Spazio Mistico
-                { id: 30, qty: 1 }, // Obelisk il Tormentatore
-                { id: 398, qty: 1 }, // Paladino del Drago Bianco
-                { id: 506, qty: 1 } // Rituale del Drago Bianco
+                { id: 30, qty: 1 } // Obelisk il Tormentatore
             ],
             extra: [
                 { id: 29, qty: 1 }, // Drago Bianco Definitivo
@@ -495,6 +494,7 @@ const characterDeckDatabase = {
         hard: {
             main: [
                 { id: 12, qty: 3 }, // Drago Nero Occhi Rossi
+                { id: 1253, qty: 1 }, // Drago Metallo Nero — singola copia promossa dall'audit finale
                 { id: 16, qty: 2 }, // Gearfried il Cavaliere di Ferro
                 { id: 399, qty: 1 }, // Guerriero Pantera
                 { id: 101, qty: 2 }, // Assalitore con l'Ascia
@@ -507,7 +507,6 @@ const characterDeckDatabase = {
                 { id: 27, qty: 2 }, // Cucciolo di Drago
                 { id: 28, qty: 2 }, // Mago del Tempo
                 { id: 269, qty: 1 }, // Forza d'Attacco Goblin
-                { id: 256, qty: 1 }, // Garoozis
                 { id: 35, qty: 1 }, // Rinascita del Mostro
                 { id: 36, qty: 2 }, // Vaso dell'Avidità
                 { id: 38, qty: 1 }, // Fusione
@@ -731,25 +730,28 @@ const characterDeckDatabase = {
                 { id: 481, qty: 2 }, // Alligatore Toon
                 { id: 606, qty: 1 }, // Manga Ryu-Ran
                 { id: 483, qty: 2 }, // Stregone Mascherato Toon
-                { id: 190, qty: 3 }, // Coniglio Oscuro
+                { id: 190, qty: 2 }, // Coniglio Oscuro
                 { id: 475, qty: 2 }, // Idolo dai Mille Occhi
-                { id: 416, qty: 2 }, // Abbandonato
+                { id: 416, qty: 1 }, // Abbandonato
                 { id: 306, qty: 1 }, // Mago Senza Volto Illusionista
                 { id: 487, qty: 3 }, // Mondo dei Toon
+                { id: 1266, qty: 1 }, // Regno Toon — singola copia promossa dall'audit finale, senza sostituire il piano storico
                 { id: 482, qty: 2 }, // Maschera Toon
                 { id: 485, qty: 2 }, // Riavvolgimento Toon
                 { id: 116, qty: 1 }, // Rito dell'Illusione Nera
                 { id: 206, qty: 1 }, // Vaso Cattura-Drago
                 { id: 35, qty: 1 }, // Rinascita del Mostro
                 { id: 36, qty: 2 }, // Vaso dell'Avidità
-                { id: 38, qty: 2 }, // Fusione
+                { id: 38, qty: 1 }, // Fusione
                 { id: 7, qty: 1 }, // Buco Nero
                 { id: 8, qty: 1 }, // Spada Rivelatrice
                 { id: 10, qty: 1 }, // Cilindro Magico
                 { id: 272, qty: 1 }, // Carità Aggraziata
                 { id: 646, qty: 1 }, // Tempesta Pesante
                 { id: 466, qty: 1 }, // L'Occhio della Verità
-                { id: 382, qty: 1 } // Forza dello Specchio
+                { id: 382, qty: 1 }, // Forza dello Specchio
+                { id: 434, qty: 1 }, // Capro Espiatorio
+                { id: 820, qty: 1 } // Nega Attacco
             ],
             extra: [
                 { id: 476, qty: 1 } // Restrizione dai Mille Occhi
@@ -983,7 +985,7 @@ const characterDeckDatabase = {
                 { id: 10, qty: 1 }, // Cilindro Magico
                 { id: 434, qty: 1 }, // Capro Espiatorio
                 { id: 439, qty: 1 }, // Incantesimo Ombra
-                { id: 646, qty: 1 }, // Tempesta Pesante
+                { id: 1273, qty: 1 }, // Canto Antico — singola copia promossa dall'audit finale per rendere Ra realmente giocabile
                 { id: 599, qty: 1 }, // Sette Attrezzi del Bandito
                 { id: 472, qty: 1 }, // Il Drago Alato di Ra
                 { id: 382, qty: 1 }, // Forza dello Specchio
@@ -6789,6 +6791,72 @@ characterDeckDatabase.umbra = {
         { id: 36, qty: 2 }, { id: 272, qty: 2 }, { id: 35, qty: 1 }, { id: 7, qty: 1 }, { id: 10, qty: 1 }
     ], extra: [] }
 };
+
+// Nel finale di Forbidden Memories DarkNite rivela la vera forma Nitemare.
+// Prima i due duelli puntavano allo stesso id e quindi allo stesso mazzo.
+// La copia profonda rende i tre livelli indipendenti: il futuro superboss
+// Nitemare puo' essere bilanciato senza alterare il primo scontro DarkNite.
+characterDeckDatabase.nitemare = JSON.parse(JSON.stringify(characterDeckDatabase.darkNite));
+
+// Bilanciamento mirato dei soli avversari Difficili. Le liste Facile e
+// Medio restano intatte: qui si sostituiscono carte a parita' di totale,
+// senza alterare Starter/Structure o introdurre bonus nascosti nel motore.
+function ritoccaDeckHard(personaggio, rimosse, aggiunte) {
+    const main = characterDeckDatabase[personaggio].hard.main;
+    Object.entries(rimosse).forEach(([idTesto, qty]) => {
+        const id = Number(idTesto);
+        const voce = main.find((c) => c.id === id);
+        if (!voce || voce.qty < qty) throw new Error(`Ritocco ${personaggio}: impossibile rimuovere ${qty}x ${id}`);
+        voce.qty -= qty;
+    });
+    for (let i = main.length - 1; i >= 0; i--) if (main[i].qty === 0) main.splice(i, 1);
+    Object.entries(aggiunte).forEach(([idTesto, qty]) => {
+        const id = Number(idTesto);
+        const voce = main.find((c) => c.id === id);
+        if (voce) voce.qty += qty;
+        else main.push({ id, qty });
+    });
+    if (main.reduce((totale, c) => totale + c.qty, 0) !== 40) {
+        throw new Error(`Ritocco ${personaggio}: il Main Deck non contiene 40 carte`);
+    }
+}
+
+// Yugi usa i cercatori per proteggere e riunire Exodia, invece di pescare
+// troppi mostri normali deboli. Rimane il giovane Yugi del mazzo del nonno.
+ritoccaDeckHard('yugiMuto',
+    { 109: 1, 237: 1, 391: 1, 28: 1, 206: 1, 143: 1, 55: 1, 56: 1 },
+    { 433: 2, 508: 2, 409: 1, 503: 1, 36: 1, 820: 1 });
+
+// Bakura accelera la strategia Demone/Destiny Board e dispone di una sola
+// rimozione globale aggiuntiva, senza trasformarsi in un mazzo generico.
+ritoccaDeckHard('bakura',
+    { 25: 2, 591: 2, 984: 2 },
+    { 259: 1, 1118: 1, 192: 1, 409: 1, 503: 1, 36: 1 });
+
+// Gozaburo sacrifica quattro muri/attaccanti per rendere affidabile il vero
+// piano mostrato nell'anime: spedire i cinque pezzi e chiamare Necross.
+ritoccaDeckHard('gozaburo',
+    { 337: 2, 375: 2 },
+    { 409: 2, 36: 1, 272: 1 });
+
+// Noah concentra il livello Difficile sui Mostri Spirito del suo duello,
+// riducendo il frammento preistorico della sua simulazione virtuale.
+ritoccaDeckHard('noah',
+    { 367: 1, 266: 2, 150: 2, 1002: 2, 1006: 1 },
+    { 1007: 1, 1001: 1, 884: 1, 409: 1, 503: 1, 36: 1, 272: 1, 147: 1 });
+
+// Heishin e' il penultimo grande ostacolo: piu' potere Demone e controllo,
+// ma conserva una distanza netta dalla forma finale di Nitemare.
+ritoccaDeckHard('heishin',
+    { 237: 2, 428: 2, 12: 2, 518: 1, 517: 1, 38: 1 },
+    { 409: 2, 36: 2, 272: 2, 130: 2, 503: 1 });
+
+// Nitemare e' volutamente il superboss assoluto. Parte dal tema
+// Drago/Demone di DarkNite, ma la forma finale elimina quasi tutti i mostri
+// intermedi e porta al limite legale pescata, rinascita e rimozione.
+ritoccaDeckHard('nitemare',
+    { 12: 2, 1125: 1, 932: 2, 13: 1, 518: 1, 436: 1, 331: 2, 642: 1, 38: 1, 517: 1 },
+    { 493: 1, 502: 1, 335: 1, 36: 2, 272: 2, 409: 1, 17: 2, 130: 3 });
 
 // ================================================================
 // REGOLE DEI TRE LIVELLI — verificate carta per carta su ogni mazzo

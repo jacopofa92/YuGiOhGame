@@ -75,10 +75,10 @@ module.exports = {
         // of null (reading 'card')", l'errore raro del test del bot). Questa
         // partita passa da lì: deve arrivare in fondo e averlo attraversato.
         // Il bilanciamento dei mazzi/IA può cambiare quali semi attraversano
-        // il caso. Il 19 è la riproduzione corrente verificata sul roster
+        // il caso. Il 235 è la riproduzione corrente verificata sul roster
         // attuale; l'asserzione `trovate` impedisce che il test passi se in
         // futuro il percorso non viene più esercitato.
-        const bersaglioSparito = await giocaPartita({ avversario: 'pegasus', giocatore: 'joey', livello: 'medium', seme: 19, turni: 60, cerca: 'non è più sul Terreno' }, 0);
+        const bersaglioSparito = await giocaPartita({ avversario: 'pegasus', giocatore: 'joey', livello: 'medium', seme: 235, turni: 60, cerca: 'non è più sul Terreno' }, 0);
         assert(bersaglioSparito.trovate >= 1 && bersaglioSparito.esito !== null && !bersaglioSparito.erroriCarte.length,
             `La partita col bersaglio sparito prima del calcolo dei danni deve attraversare il caso e finire: ${JSON.stringify({ trovate: bersaglioSparito.trovate, esito: bersaglioSparito.esito })}`);
     }

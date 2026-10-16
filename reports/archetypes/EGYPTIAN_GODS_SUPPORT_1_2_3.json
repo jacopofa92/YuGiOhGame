@@ -1,0 +1,179 @@
+{
+  "generatoIl": "2026-10-15T06:33:28.325Z",
+  "metodo": "Deck Hard lore invariato come baseline; ogni supporto firma testato a 1/2/3 copie sostituendo utility periferiche; cinque avversari Hard e stessi semi",
+  "gamesPerOpponent": 50,
+  "seed": 153000,
+  "opponents": [
+    "yamiYugi",
+    "joey",
+    "kaiba",
+    "mako",
+    "bakura"
+  ],
+  "config": [
+    {
+      "personaggio": "strings",
+      "supporto": 1271,
+      "dio": 31,
+      "tagli": [
+        6,
+        38,
+        35
+      ]
+    },
+    {
+      "personaggio": "kaiba",
+      "supporto": 1272,
+      "dio": 30,
+      "tagli": [
+        506,
+        398,
+        607
+      ]
+    },
+    {
+      "personaggio": "marik",
+      "supporto": 1273,
+      "dio": 472,
+      "tagli": [
+        646,
+        439,
+        434
+      ]
+    }
+  ],
+  "results": [
+    {
+      "personaggio": "strings",
+      "supporto": 1271,
+      "copie": 0,
+      "partite": 250,
+      "vittoriePct": 12.4,
+      "turniMedi": 20.32,
+      "nonFinite": 0,
+      "dioVistoPct": 19.2,
+      "supportoVistoPct": 0
+    },
+    {
+      "personaggio": "strings",
+      "supporto": 1271,
+      "copie": 1,
+      "partite": 250,
+      "vittoriePct": 14,
+      "turniMedi": 20.32,
+      "nonFinite": 0,
+      "dioVistoPct": 21.6,
+      "supportoVistoPct": 10
+    },
+    {
+      "personaggio": "strings",
+      "supporto": 1271,
+      "copie": 2,
+      "partite": 250,
+      "vittoriePct": 15.2,
+      "turniMedi": 19.89,
+      "nonFinite": 0,
+      "dioVistoPct": 24.4,
+      "supportoVistoPct": 14.8
+    },
+    {
+      "personaggio": "strings",
+      "supporto": 1271,
+      "copie": 3,
+      "partite": 250,
+      "vittoriePct": 11.6,
+      "turniMedi": 20.18,
+      "nonFinite": 0,
+      "dioVistoPct": 21.2,
+      "supportoVistoPct": 21.2
+    },
+    {
+      "personaggio": "kaiba",
+      "supporto": 1272,
+      "copie": 0,
+      "partite": 250,
+      "vittoriePct": 34,
+      "turniMedi": 14.78,
+      "nonFinite": 0,
+      "dioVistoPct": 6.8,
+      "supportoVistoPct": 0
+    },
+    {
+      "personaggio": "kaiba",
+      "supporto": 1272,
+      "copie": 1,
+      "partite": 250,
+      "vittoriePct": 34.8,
+      "turniMedi": 14.76,
+      "nonFinite": 0,
+      "dioVistoPct": 2.8,
+      "supportoVistoPct": 2.8
+    },
+    {
+      "personaggio": "kaiba",
+      "supporto": 1272,
+      "copie": 2,
+      "partite": 250,
+      "vittoriePct": 34.8,
+      "turniMedi": 14.76,
+      "nonFinite": 0,
+      "dioVistoPct": 2.8,
+      "supportoVistoPct": 3.6
+    },
+    {
+      "personaggio": "kaiba",
+      "supporto": 1272,
+      "copie": 3,
+      "partite": 250,
+      "vittoriePct": 38,
+      "turniMedi": 14.96,
+      "nonFinite": 0,
+      "dioVistoPct": 3.6,
+      "supportoVistoPct": 6
+    },
+    {
+      "personaggio": "marik",
+      "supporto": 1273,
+      "copie": 0,
+      "partite": 250,
+      "vittoriePct": 57.2,
+      "turniMedi": 17.12,
+      "nonFinite": 0,
+      "dioVistoPct": 7.6,
+      "supportoVistoPct": 0
+    },
+    {
+      "personaggio": "marik",
+      "supporto": 1273,
+      "copie": 1,
+      "partite": 250,
+      "vittoriePct": 55.6,
+      "turniMedi": 16.86,
+      "nonFinite": 0,
+      "dioVistoPct": 10.4,
+      "supportoVistoPct": 30.8
+    },
+    {
+      "personaggio": "marik",
+      "supporto": 1273,
+      "copie": 2,
+      "partite": 250,
+      "vittoriePct": 55.6,
+      "turniMedi": 16.22,
+      "nonFinite": 0,
+      "dioVistoPct": 12.4,
+      "supportoVistoPct": 48
+    },
+    {
+      "personaggio": "marik",
+      "supporto": 1273,
+      "copie": 3,
+      "partite": 250,
+      "vittoriePct": 54.4,
+      "turniMedi": 16.15,
+      "nonFinite": 0,
+      "dioVistoPct": 11.6,
+      "supportoVistoPct": 62
+    }
+  ]
+}

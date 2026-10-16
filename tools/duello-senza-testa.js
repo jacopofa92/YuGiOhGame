@@ -196,7 +196,11 @@ function creaContesto(opz) {
     // oggetti. `document` NON esiste.
     vm.runInContext('var window = globalThis;', contesto);
     // L'avversario e il livello, come li passerebbe la pagina del duello.
-    vm.runInContext(`window.DuelSession = { opponent: { id: ${JSON.stringify(opz.avversario)}, name: ${JSON.stringify(opz.avversario)} }, aiDifficultyKey: ${JSON.stringify(opz.livello)} };`, contesto);
+    // Negli audit fattoriali il deck puo' avere un livello diverso dall'IA.
+    // Lo comunichiamo PRIMA di resetGameState: sostituire e rimescolare il
+    // mazzo dopo il reset consumerebbe altri numeri casuali e renderebbe i
+    // semi non confrontabili con una partita naturale dello stesso livello.
+    vm.runInContext(`window.DuelSession = { opponent: { id: ${JSON.stringify(opz.avversario)}, name: ${JSON.stringify(opz.avversario)} }, aiDifficultyKey: ${JSON.stringify(opz.livelloDeckAvversario || opz.livello)} };`, contesto);
     SCRIPT.forEach((f) => {
         const codice = fs.readFileSync(path.join(RADICE, f), 'utf8');
         vm.runInContext(codice, contesto, { filename: f });
@@ -271,6 +275,24 @@ async function giocaPartita(opz, n) {
     const esegui = (codice) => vm.runInContext(codice, contesto);
     if (opz.diagnosi) esegui(DIAGNOSI);
     const LIMITE_TURNI = opz.turni || 60;
+    if (opz.mazzoAvversario) {
+        // Variante di audit iniettata prima del reset: viene costruita e
+        // mescolata una volta sola nello stesso punto del deck reale. Una
+        // sostituzione dopo resetGameState consumerebbe RNG aggiuntivo e
+        // invaliderebbe il confronto a parita' di seme.
+        esegui(`
+            (function () {
+                const getCharacterDeckOriginale = getCharacterDeck;
+                window.__getCharacterDeckOriginaleAudit = getCharacterDeckOriginale;
+                const personaggioAudit = ${JSON.stringify(opz.avversario)};
+                const specificaAudit = ${JSON.stringify(opz.mazzoAvversario)};
+                getCharacterDeck = function (characterId, difficulty) {
+                    if (characterId === personaggioAudit) return specificaAudit;
+                    return getCharacterDeckOriginale(characterId, difficulty);
+                };
+            })();
+        `);
+    }
     esegui('resetGameState();');
     const livelloGiocatore = opz.livelloGiocatore || opz.livello;
     // L'IA su entrambi i posti, ciascuna col suo livello. Il mazzo del
@@ -287,20 +309,11 @@ async function giocaPartita(opz, n) {
         ${(opz.mazzoGiocatore || opz.giocatore) ? `(function () {
             const spec = ${opz.mazzoGiocatore
                 ? JSON.stringify(opz.mazzoGiocatore)
-                : `getCharacterDeck(${JSON.stringify(opz.giocatore)}, ${JSON.stringify(livelloGiocatore)})`};
+                : `(window.__getCharacterDeckOriginaleAudit || getCharacterDeck)(${JSON.stringify(opz.giocatore)}, ${JSON.stringify(livelloGiocatore)})`};
             if (!spec) throw new Error('Nessun mazzo per il personaggio ' + ${JSON.stringify(opz.giocatore)});
             gameState.playerDeck = buildDeckFromSpec(spec);
             gameState.playerDeckCount = gameState.playerDeck.length;
             gameState.playerExtraDeck = buildExtraDeckFromSpec(spec);
-        })();` : ''}
-        ${opz.livelloDeckAvversario ? `(function () {
-            // Audit fattoriale: il livello dell'IA passato a parte resta
-            // indipendente dalla versione del deck che le affidiamo.
-            const specBot = getCharacterDeck(${JSON.stringify(opz.avversario)}, ${JSON.stringify(opz.livelloDeckAvversario)});
-            if (!specBot) throw new Error('Nessun mazzo ' + ${JSON.stringify(opz.livelloDeckAvversario)} + ' per ' + ${JSON.stringify(opz.avversario)});
-            gameState.botDeck = buildDeckFromSpec(specBot);
-            gameState.botDeckCount = gameState.botDeck.length;
-            gameState.botExtraDeck = buildExtraDeckFromSpec(specBot);
         })();` : ''}
         window.__deckBotIniziale = (gameState.botDeck || []).map((c) => c.id).sort((a, b) => a - b).join(',');
     `);
@@ -308,14 +321,48 @@ async function giocaPartita(opz, n) {
     // del posto 'player', come farebbe initGame in una pagina.
     esegui(`
         for (let i = 0; i < 5; i++) { drawCardsToHand('player', 1, { silent: true }); drawCardsToHand('bot', 1, { silent: true }); }
+        window.__manoBotIniziale = gameState.botHand.map((c) => Number(c.id));
         gameState.turn = 1; gameState.currentPlayer = 'player';
         turnoIA('player');
     `);
     let passi = 0;
+    // Gli audit di identita' possono chiedere se specifiche carte siano
+    // davvero comparse nelle zone del solo avversario. Leggere le zone evita
+    // il falso positivo dei log quando anche il deck campione usa la stessa
+    // carta (per esempio Slifer o Mago Nero).
+    const osservaBotIds = new Set((opz.osservaBotIds || []).map(Number));
+    const osservatiBot = new Set();
+    const evocatiBot = new Set();
+    const primaEvocazioneBot = {};
+    const osservaPlayerIds = new Set((opz.osservaPlayerIds || []).map(Number));
+    const osservatiPlayer = new Set();
     const LIMITE_PASSI = 200000;
     while (passi < LIMITE_PASSI) {
         passi++;
         const stato = esegui('({ fine: !!gameState.gameOver || __esitoDuello !== null, turno: gameState.turn, lp: [gameState.playerLP, gameState.botLP] })');
+        if (osservaBotIds.size) {
+            const mostriPresenti = esegui(`gameState.botMonsterField.filter(Boolean).map((x) => Number(x.card.id))`);
+            mostriPresenti.forEach((id) => {
+                if (!osservaBotIds.has(id)) return;
+                evocatiBot.add(id);
+                if (!primaEvocazioneBot[id]) {
+                    primaEvocazioneBot[id] = esegui(`({
+                        turno: gameState.turn,
+                        mano: gameState.botHand.length,
+                        lp: gameState.botLP,
+                        posizione: (gameState.botMonsterField.find((s) => s && Number(s.card.id) === ${id}) || {}).position || null
+                    })`);
+                }
+            });
+            const presenti = esegui(`gameState.botMonsterField.concat(gameState.botSTField, [gameState.botFieldSpell], gameState.botGraveyard, gameState.botBanished)
+                .filter(Boolean).map((x) => Number((x.card || x).id))`);
+            presenti.forEach((id) => { if (osservaBotIds.has(id)) osservatiBot.add(id); });
+        }
+        if (osservaPlayerIds.size) {
+            const presenti = esegui(`gameState.playerMonsterField.concat(gameState.playerSTField, [gameState.playerFieldSpell], gameState.playerGraveyard, gameState.playerBanished)
+                .filter(Boolean).map((x) => Number((x.card || x).id))`);
+            presenti.forEach((id) => { if (osservaPlayerIds.has(id)) osservatiPlayer.add(id); });
+        }
         // Invariante: i Life Points restano numeri. Un NaN non fa fallire
         // nulla da solo (il duello continua, "LP NaN" a schermo), quindi
         // qui diventa un errore con il contesto di dove è nato.
@@ -356,7 +403,9 @@ async function giocaPartita(opz, n) {
         catena: DuelEngine.isChainActive(), finestra: DuelEngine.isPriorityWindowOpen && DuelEngine.isPriorityWindowOpen(),
         campoG: gameState.playerMonsterField.map((s) => s && (s.card.name + (s.hasAttacked ? '*' : ''))),
         campoB: gameState.botMonsterField.map((s) => s && s.card.name),
-        deckBotIniziale: __deckBotIniziale
+        deckBotIniziale: __deckBotIniziale,
+        manoBotInizialeIds: (__manoBotIniziale || []).slice(),
+        manoBotFinaleIds: gameState.botHand.map((c) => Number(c.id))
     })`);
     // Una partita che arriva al limite di turni non è ferma: è lunga. Si
     // distingue dallo stallo vero (coda vuota senza vincitore).
@@ -376,7 +425,14 @@ async function giocaPartita(opz, n) {
         testo,
         esegui(`__logDuello.filter((r) => r.includes(${JSON.stringify(testo)})).length`)
     ]));
-    return { seme, passi, oraVirtualeMs: orologio.ora, alLimite, invarianti, trovate, trovatePerTesto, erroriCarte: erroriCarte.slice(), ...fine };
+    // Solo per diagnosi puntuali: i report di massa conservano la coda breve
+    // per non gonfiare migliaia di risultati. Il registro completo va chiesto
+    // esplicitamente dal chiamante quando confronta pochi semi anomali.
+    const registroCompleto = opz.registroCompleto ? esegui('__logDuello.slice()') : undefined;
+    return { seme, passi, oraVirtualeMs: orologio.ora, alLimite, invarianti, trovate, trovatePerTesto,
+        osservatiBotIds: Array.from(osservatiBot), osservatiPlayerIds: Array.from(osservatiPlayer),
+        evocatiBotIds: Array.from(evocatiBot), primaEvocazioneBot,
+        erroriCarte: erroriCarte.slice(), registroCompleto, ...fine };
 }
 
 async function main() {

@@ -1,0 +1,128 @@
+{
+  "generatoIl": "2026-10-15T17:04:31.676Z",
+  "metodo": "Joey Hard; stessi semi; 5 avversari ufficiali e Custom separato; nucleo anime e azzardo preservato",
+  "opzioni": {
+    "partite": 50,
+    "turni": 80,
+    "seme": 211000
+  },
+  "custom": {
+    "name": "Custom",
+    "impronta": "e1909a556263c979"
+  },
+  "varianti": {
+    "metalloSingolo": {
+      "aggiunteMain": [
+        1253
+      ],
+      "tagliMain": [
+        256
+      ]
+    },
+    "pietraSpirito": {
+      "aggiunteMain": [
+        1250,
+        1252
+      ],
+      "tagliMain": [
+        256,
+        101
+      ]
+    }
+  },
+  "risultati": [
+    {
+      "variante": "pubblicato",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 91,
+        "vittoriePct": 36.4,
+        "turniMedi": 15.08,
+        "nonFinite": 0,
+        "vistePct": {
+          "12": 24,
+          "17": 21.6,
+          "1250": 0,
+          "1252": 0,
+          "1253": 0
+        }
+      },
+      "controCustom": {
+        "partite": 50,
+        "vittorie": 8,
+        "vittoriePct": 16,
+        "turniMedi": 13.96,
+        "nonFinite": 0,
+        "vistePct": {
+          "12": 14,
+          "17": 22,
+          "1250": 0,
+          "1252": 0,
+          "1253": 0
+        }
+      }
+    },
+    {
+      "variante": "metalloSingolo",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 111,
+        "vittoriePct": 44.4,
+        "turniMedi": 15.42,
+        "nonFinite": 0,
+        "vistePct": {
+          "12": 27.6,
+          "17": 24,
+          "1250": 0,
+          "1252": 0,
+          "1253": 24
+        }
+      },
+      "controCustom": {
+        "partite": 50,
+        "vittorie": 10,
+        "vittoriePct": 20,
+        "turniMedi": 14.12,
+        "nonFinite": 0,
+        "vistePct": {
+          "12": 24,
+          "17": 20,
+          "1250": 0,
+          "1252": 0,
+          "1253": 20
+        }
+      }
+    },
+    {
+      "variante": "pietraSpirito",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 88,
+        "vittoriePct": 35.2,
+        "turniMedi": 15.52,
+        "nonFinite": 0,
+        "vistePct": {
+          "12": 26.4,
+          "17": 22.8,
+          "1250": 32,
+          "1252": 32.4,
+          "1253": 0
+        }
+      },
+      "controCustom": {
+        "partite": 50,
+        "vittorie": 13,
+        "vittoriePct": 26,
+        "turniMedi": 13.12,
+        "nonFinite": 0,
+        "vistePct": {
+          "12": 18,
+          "17": 14,
+          "1250": 26,
+          "1252": 28,
+          "1253": 0
+        }
+      }
+    }
+  ]
+}

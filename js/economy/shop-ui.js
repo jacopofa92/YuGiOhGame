@@ -361,7 +361,11 @@
             // domani con la rotazione nuova (ShopCatalog.carteDelGiorno la
             // marca `acquistataOggi` leggendo lo stesso dayKey della
             // rotazione, vedi shop-catalog.js).
-            const disponibili = carte.filter((voce) => !voce.acquistataOggi && SaveManager.getOwnedCount(voce.cardId) < 3);
+            const disponibili = carte.filter((voce) => {
+                const cap = window.CardAcquisition && CardAcquisition.copyCapFor
+                    ? CardAcquisition.copyCapFor(voce.cardId) : 3;
+                return !voce.acquistataOggi && SaveManager.getOwnedCount(voce.cardId) < cap;
+            });
             if (disponibili.length === 0) {
                 secCarte.grid.appendChild(el('div', 'shop-empty-note',
                     'Hai già comprato tutte le carte di oggi. Torna a mezzanotte per una rotazione nuova.'));

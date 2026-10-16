@@ -49,7 +49,10 @@
     const LEGENDARY_IDS = new Set([
         1, 2, 12, 17, 29, 102, 123, 167, 188, 207, 409,
         291, 382, 656, 886,
-        1133  // Golem di Lava — carta firma/boss di Marik
+        1133, // Golem di Lava — carta firma/boss di Marik
+        // Boss e mosse firma dei pacchetti moderni classici. Restano
+        // comunque fuori dai pool finché la prima copia non viene meritata.
+        1260, 1262, 1265, 1270, 1271, 1272, 1273, 1274, 1275, 1276
     ]);
 
     /**
@@ -70,7 +73,8 @@
         886,  // Metamorfosi — trasforma un mostro in uno dall'Extra Deck
         130,  // Controllo Mentale — ruba un mostro, in modo permanente
         874,  // Confisca — guarda la mano avversaria e ne scarta una carta
-        1155  // Ryu Senshi — Fusione con doppia negazione
+        1155, // Ryu Senshi — Fusione con doppia negazione
+        1251, 1255, 1256, 1257, 1258, 1263, 1264, 1266, 1267, 1269
     ]);
 
     const SUPER_IDS = new Set([
@@ -78,7 +82,8 @@
         1131, // Esiliatore della Luce — floodgate globale
         1137, // Giara Trasformante #2 — reset simultaneo dei Terreni
         1139, // Parassita Paracida — carta firma di Weevil
-        1153  // Mietitore dell'Incubo — Fusione con protezione/scarto
+        1153, // Mietitore dell'Incubo — Fusione con protezione/scarto
+        1250, 1252, 1253, 1254, 1259, 1261, 1268
     ]);
 
     /**

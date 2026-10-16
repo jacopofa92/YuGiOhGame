@@ -28,6 +28,28 @@
 const TRIBUTE_SACRIFICE_ANIM_MS = 700;
 
 /**
+ * Un effetto come Canto Antico concede una Evocazione TRIBUTO aggiuntiva,
+ * non una seconda Evocazione Normale libera. Il permesso e' per posto e
+ * viene consumato prima della quota ordinaria: cosi' e' legale sia
+ * Evocare Tributo prima e poi un Livello basso, sia fare l'ordine inverso.
+ */
+function canUseNormalSummonQuota(posto, card) {
+    if (!gameState.hasNormalSummoned) return true;
+    return getTributesRequired(card) > 0
+        && !!(gameState.additionalTributeSummonFor && gameState.additionalTributeSummonFor[posto]);
+}
+
+function consumeNormalSummonQuota(posto, card) {
+    if (getTributesRequired(card) > 0
+        && gameState.additionalTributeSummonFor && gameState.additionalTributeSummonFor[posto]) {
+        gameState.additionalTributeSummonFor[posto] = false;
+        return 'additional-tribute';
+    }
+    gameState.hasNormalSummoned = true;
+    return 'normal';
+}
+
+/**
  * Esegue il sacrificio scelto dalla persona (i mostri selezionati con i
  * click, gameState.pendingTributeSummon) e poi apre la scelta di casella e
  * Posizione del mostro da Evocare. La mossa vera è il comando 'tributa'
@@ -98,6 +120,18 @@ function eseguiTributo(posto, c, extra) {
             perCarta._tributedCardIds = indices
                 .map((idx) => campo[idx] && campo[idx].card.id)
                 .filter((id) => id !== undefined && id !== null);
+            // Canto Antico e future carte chiedono la somma delle
+            // statistiche ORIGINALI dei Tributi. Si legge l'anagrafica,
+            // non la carta sul campo (che puo' avere bonus o malus).
+            perCarta._tributedOriginalStats = indices.map((idx) => {
+                const sacrificed = campo[idx] && campo[idx].card;
+                const original = sacrificed && cardDatabase.find((entry) => entry.id === sacrificed.id);
+                return sacrificed ? {
+                    id: sacrificed.id,
+                    attack: original ? (original.attack || 0) : (sacrificed.attack || 0),
+                    defense: original ? (original.defense || 0) : (sacrificed.defense || 0)
+                } : null;
+            }).filter(Boolean);
             // Il numero reale di Tributi non si può ricostruire dal Livello:
             // alcune carte distinguono proprio "3 Tributi".
             perCarta._tributeCountForSummon = indices.length;
@@ -220,7 +254,7 @@ function eseguiEvocazioneNormale(posto, c, extra) {
     // della persona l'ha già fermata prima (attemptMonsterSummon), e un
     // comando remoto arriva solo da un client che l'ha già controllato.
     const chiudi = () => { if (dellaPersona) clearSelection(); else updateUI(); };
-    if (gameState.hasNormalSummoned) {
+    if (!canUseNormalSummonQuota(posto, card)) {
         addToLog(perChi(posto, '❌ Hai già effettuato un\'Evocazione Normale in questo turno.', '❌ L\'avversario ha già effettuato un\'Evocazione Normale in questo turno.'));
         fine();
         return;
@@ -278,7 +312,7 @@ function eseguiEvocazioneNormale(posto, c, extra) {
         if (indiceOra !== -1) manoOra.splice(indiceOra, 1);
         Tavolo.mostri(posto)[slotIndex] = { card: card, position: position, isFaceDown: isFaceDown, hasAttacked: false, canChangePosition: false, summonedOnTurn: gameState.turn };
         if (!isFaceDown && window.DuelDialogues) DuelDialogues.summon(posto, card);
-        gameState.hasNormalSummoned = true;
+        consumeNormalSummonQuota(posto, card);
         addToLog(position === 'attack'
             ? `${usedTribute ? '🔺 Evocazione Tributo: ' : ''}${perChi(posto, 'Hai Evocato', 'L\'avversario ha Evocato')} ${card.name}!`
             : `${usedTribute ? '🔺 Evocazione Tributo: ' : ''}${perChi(posto, 'Hai Posizionato un mostro.', 'L\'avversario ha Posizionato un mostro.')}`);

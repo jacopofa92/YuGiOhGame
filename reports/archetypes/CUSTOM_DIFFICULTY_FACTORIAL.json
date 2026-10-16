@@ -1,0 +1,1029 @@
+{
+  "generatoIl": "2026-10-15T12:58:30.941Z",
+  "metodo": "matrice fattoriale IA medium/hard x deck medium/hard; stessi semi; Custom informativo",
+  "opzioni": {
+    "duellanti": [
+      "kaiba",
+      "pegasus"
+    ],
+    "partite": 50,
+    "turni": 80,
+    "seme": 231000,
+    "salvataggio": "save_yugioh.json",
+    "deckCustom": null
+  },
+  "custom": {
+    "name": "Custom",
+    "impronta": "e1909a556263c979"
+  },
+  "risultati": [
+    {
+      "duellante": "kaiba",
+      "livelloDeck": "medium",
+      "livelloIA": "medium",
+      "partite": 50,
+      "customVittorie": 38,
+      "customVittoriePct": 76,
+      "turniMedi": 12.66,
+      "nonFinite": 0,
+      "carte": {
+        "1": {
+          "manoInizialePct": 34,
+          "usataPct": 16,
+          "inManoAllaSconfittaPct": 73.7
+        },
+        "30": {
+          "manoInizialePct": 0,
+          "usataPct": 0,
+          "inManoAllaSconfittaPct": 0
+        },
+        "40": {
+          "manoInizialePct": 0,
+          "usataPct": 0,
+          "inManoAllaSconfittaPct": 0
+        },
+        "298": {
+          "manoInizialePct": 14,
+          "usataPct": 22,
+          "inManoAllaSconfittaPct": 10.5
+        },
+        "317": {
+          "manoInizialePct": 14,
+          "usataPct": 16,
+          "inManoAllaSconfittaPct": 18.4
+        },
+        "353": {
+          "manoInizialePct": 34,
+          "usataPct": 32,
+          "inManoAllaSconfittaPct": 21.1
+        },
+        "389": {
+          "manoInizialePct": 14,
+          "usataPct": 28,
+          "inManoAllaSconfittaPct": 5.3
+        },
+        "398": {
+          "manoInizialePct": 0,
+          "usataPct": 0,
+          "inManoAllaSconfittaPct": 0
+        },
+        "506": {
+          "manoInizialePct": 0,
+          "usataPct": 0,
+          "inManoAllaSconfittaPct": 0
+        },
+        "578": {
+          "manoInizialePct": 20,
+          "usataPct": 2,
+          "inManoAllaSconfittaPct": 50
+        },
+        "793": {
+          "manoInizialePct": 0,
+          "usataPct": 0,
+          "inManoAllaSconfittaPct": 0
+        }
+      },
+      "semiVintiDaCustom": [
+        231000,
+        231001,
+        231002,
+        231003,
+        231004,
+        231006,
+        231007,
+        231008,
+        231012,
+        231013,
+        231014,
+        231015,
+        231016,
+        231019,
+        231020,
+        231021,
+        231022,
+        231023,
+        231024,
+        231025,
+        231026,
+        231027,
+        231028,
+        231029,
+        231030,
+        231031,
+        231032,
+        231033,
+        231035,
+        231036,
+        231037,
+        231040,
+        231041,
+        231042,
+        231043,
+        231044,
+        231046,
+        231048
+      ],
+      "semiVintiDaAvversario": [
+        231005,
+        231009,
+        231010,
+        231011,
+        231017,
+        231018,
+        231034,
+        231038,
+        231039,
+        231045,
+        231047,
+        231049
+      ]
+    },
+    {
+      "duellante": "kaiba",
+      "livelloDeck": "medium",
+      "livelloIA": "hard",
+      "partite": 50,
+      "customVittorie": 39,
+      "customVittoriePct": 78,
+      "turniMedi": 12.64,
+      "nonFinite": 0,
+      "carte": {
+        "1": {
+          "manoInizialePct": 34,
+          "usataPct": 18,
+          "inManoAllaSconfittaPct": 74.4
+        },
+        "30": {
+          "manoInizialePct": 0,
+          "usataPct": 0,
+          "inManoAllaSconfittaPct": 0
+        },
+        "40": {
+          "manoInizialePct": 0,
+          "usataPct": 0,
+          "inManoAllaSconfittaPct": 0
+        },
+        "298": {
+          "manoInizialePct": 14,
+          "usataPct": 20,
+          "inManoAllaSconfittaPct": 10.3
+        },
+        "317": {
+          "manoInizialePct": 14,
+          "usataPct": 12,
+          "inManoAllaSconfittaPct": 15.4
+        },
+        "353": {
+          "manoInizialePct": 34,
+          "usataPct": 40,
+          "inManoAllaSconfittaPct": 17.9
+        },
+        "389": {
+          "manoInizialePct": 14,
+          "usataPct": 28,
+          "inManoAllaSconfittaPct": 2.6
+        },
+        "398": {
+          "manoInizialePct": 0,
+          "usataPct": 0,
+          "inManoAllaSconfittaPct": 0
+        },
+        "506": {
+          "manoInizialePct": 0,
+          "usataPct": 0,
+          "inManoAllaSconfittaPct": 0
+        },
+        "578": {
+          "manoInizialePct": 20,
+          "usataPct": 8,
+          "inManoAllaSconfittaPct": 51.3
+        },
+        "793": {
+          "manoInizialePct": 0,
+          "usataPct": 0,
+          "inManoAllaSconfittaPct": 0
+        }
+      },
+      "semiVintiDaCustom": [
+        231000,
+        231001,
+        231002,
+        231003,
+        231004,
+        231006,
+        231007,
+        231008,
+        231012,
+        231013,
+        231014,
+        231015,
+        231016,
+        231019,
+        231020,
+        231021,
+        231022,
+        231023,
+        231024,
+        231025,
+        231026,
+        231027,
+        231028,
+        231029,
+        231030,
+        231031,
+        231032,
+        231033,
+        231035,
+        231036,
+        231037,
+        231038,
+        231040,
+        231041,
+        231042,
+        231043,
+        231044,
+        231046,
+        231048
+      ],
+      "semiVintiDaAvversario": [
+        231005,
+        231009,
+        231010,
+        231011,
+        231017,
+        231018,
+        231034,
+        231039,
+        231045,
+        231047,
+        231049
+      ]
+    },
+    {
+      "duellante": "kaiba",
+      "livelloDeck": "hard",
+      "livelloIA": "medium",
+      "partite": 50,
+      "customVittorie": 40,
+      "customVittoriePct": 80,
+      "turniMedi": 13.96,
+      "nonFinite": 0,
+      "carte": {
+        "1": {
+          "manoInizialePct": 34,
+          "usataPct": 22,
+          "inManoAllaSconfittaPct": 70
+        },
+        "30": {
+          "manoInizialePct": 18,
+          "usataPct": 2,
+          "inManoAllaSconfittaPct": 35
+        },
+        "40": {
+          "manoInizialePct": 6,
+          "usataPct": 30,
+          "inManoAllaSconfittaPct": 0
+        },
+        "298": {
+          "manoInizialePct": 0,
+          "usataPct": 0,
+          "inManoAllaSconfittaPct": 0
+        },
+        "317": {
+          "manoInizialePct": 0,
+          "usataPct": 0,
+          "inManoAllaSconfittaPct": 0
+        },
+        "353": {
+          "manoInizialePct": 16,
+          "usataPct": 28,
+          "inManoAllaSconfittaPct": 2.5
+        },
+        "389": {
+          "manoInizialePct": 0,
+          "usataPct": 0,
+          "inManoAllaSconfittaPct": 0
+        },
+        "398": {
+          "manoInizialePct": 8,
+          "usataPct": 12,
+          "inManoAllaSconfittaPct": 22.5
+        },
+        "506": {
+          "manoInizialePct": 10,
+          "usataPct": 10,
+          "inManoAllaSconfittaPct": 12.5
+        },
+        "578": {
+          "manoInizialePct": 16,
+          "usataPct": 4,
+          "inManoAllaSconfittaPct": 37.5
+        },
+        "793": {
+          "manoInizialePct": 10,
+          "usataPct": 46,
+          "inManoAllaSconfittaPct": 0
+        }
+      },
+      "semiVintiDaCustom": [
+        231000,
+        231001,
+        231002,
+        231003,
+        231004,
+        231005,
+        231007,
+        231009,
+        231010,
+        231012,
+        231013,
+        231014,
+        231015,
+        231016,
+        231017,
+        231018,
+        231019,
+        231020,
+        231021,
+        231022,
+        231023,
+        231024,
+        231025,
+        231026,
+        231028,
+        231029,
+        231031,
+        231032,
+        231033,
+        231035,
+        231036,
+        231037,
+        231038,
+        231039,
+        231040,
+        231041,
+        231043,
+        231044,
+        231046,
+        231049
+      ],
+      "semiVintiDaAvversario": [
+        231006,
+        231008,
+        231011,
+        231027,
+        231030,
+        231034,
+        231042,
+        231045,
+        231047,
+        231048
+      ]
+    },
+    {
+      "duellante": "kaiba",
+      "livelloDeck": "hard",
+      "livelloIA": "hard",
+      "partite": 50,
+      "customVittorie": 44,
+      "customVittoriePct": 88,
+      "turniMedi": 13.68,
+      "nonFinite": 0,
+      "carte": {
+        "1": {
+          "manoInizialePct": 34,
+          "usataPct": 18,
+          "inManoAllaSconfittaPct": 70.5
+        },
+        "30": {
+          "manoInizialePct": 18,
+          "usataPct": 2,
+          "inManoAllaSconfittaPct": 31.8
+        },
+        "40": {
+          "manoInizialePct": 6,
+          "usataPct": 30,
+          "inManoAllaSconfittaPct": 0
+        },
+        "298": {
+          "manoInizialePct": 0,
+          "usataPct": 0,
+          "inManoAllaSconfittaPct": 0
+        },
+        "317": {
+          "manoInizialePct": 0,
+          "usataPct": 0,
+          "inManoAllaSconfittaPct": 0
+        },
+        "353": {
+          "manoInizialePct": 16,
+          "usataPct": 30,
+          "inManoAllaSconfittaPct": 6.8
+        },
+        "389": {
+          "manoInizialePct": 0,
+          "usataPct": 0,
+          "inManoAllaSconfittaPct": 0
+        },
+        "398": {
+          "manoInizialePct": 8,
+          "usataPct": 10,
+          "inManoAllaSconfittaPct": 22.7
+        },
+        "506": {
+          "manoInizialePct": 10,
+          "usataPct": 8,
+          "inManoAllaSconfittaPct": 15.9
+        },
+        "578": {
+          "manoInizialePct": 16,
+          "usataPct": 4,
+          "inManoAllaSconfittaPct": 31.8
+        },
+        "793": {
+          "manoInizialePct": 10,
+          "usataPct": 44,
+          "inManoAllaSconfittaPct": 0
+        }
+      },
+      "semiVintiDaCustom": [
+        231000,
+        231001,
+        231002,
+        231003,
+        231004,
+        231005,
+        231007,
+        231008,
+        231009,
+        231010,
+        231011,
+        231012,
+        231013,
+        231014,
+        231015,
+        231016,
+        231017,
+        231018,
+        231019,
+        231020,
+        231021,
+        231022,
+        231023,
+        231024,
+        231025,
+        231026,
+        231027,
+        231028,
+        231029,
+        231031,
+        231032,
+        231033,
+        231035,
+        231036,
+        231037,
+        231038,
+        231039,
+        231040,
+        231041,
+        231043,
+        231044,
+        231046,
+        231048,
+        231049
+      ],
+      "semiVintiDaAvversario": [
+        231006,
+        231030,
+        231034,
+        231042,
+        231045,
+        231047
+      ]
+    },
+    {
+      "duellante": "pegasus",
+      "livelloDeck": "medium",
+      "livelloIA": "medium",
+      "partite": 50,
+      "customVittorie": 38,
+      "customVittoriePct": 76,
+      "turniMedi": 17.72,
+      "nonFinite": 0,
+      "carte": {
+        "38": {
+          "manoInizialePct": 10,
+          "usataPct": 6,
+          "inManoAllaSconfittaPct": 28.9
+        },
+        "40": {
+          "manoInizialePct": 10,
+          "usataPct": 50,
+          "inManoAllaSconfittaPct": 0
+        },
+        "123": {
+          "manoInizialePct": 18,
+          "usataPct": 46,
+          "inManoAllaSconfittaPct": 34.2
+        },
+        "202": {
+          "manoInizialePct": 10,
+          "usataPct": 48,
+          "inManoAllaSconfittaPct": 0
+        },
+        "382": {
+          "manoInizialePct": 0,
+          "usataPct": 0,
+          "inManoAllaSconfittaPct": 0
+        },
+        "400": {
+          "manoInizialePct": 16,
+          "usataPct": 32,
+          "inManoAllaSconfittaPct": 15.8
+        },
+        "416": {
+          "manoInizialePct": 18,
+          "usataPct": 24,
+          "inManoAllaSconfittaPct": 23.7
+        },
+        "434": {
+          "manoInizialePct": 6,
+          "usataPct": 40,
+          "inManoAllaSconfittaPct": 0
+        },
+        "466": {
+          "manoInizialePct": 0,
+          "usataPct": 0,
+          "inManoAllaSconfittaPct": 0
+        },
+        "475": {
+          "manoInizialePct": 14,
+          "usataPct": 48,
+          "inManoAllaSconfittaPct": 0
+        },
+        "485": {
+          "manoInizialePct": 10,
+          "usataPct": 18,
+          "inManoAllaSconfittaPct": 21.1
+        },
+        "793": {
+          "manoInizialePct": 12,
+          "usataPct": 30,
+          "inManoAllaSconfittaPct": 0
+        },
+        "820": {
+          "manoInizialePct": 6,
+          "usataPct": 42,
+          "inManoAllaSconfittaPct": 0
+        }
+      },
+      "semiVintiDaCustom": [
+        231000,
+        231001,
+        231004,
+        231005,
+        231006,
+        231007,
+        231008,
+        231009,
+        231011,
+        231012,
+        231013,
+        231014,
+        231015,
+        231016,
+        231018,
+        231020,
+        231022,
+        231023,
+        231024,
+        231026,
+        231027,
+        231028,
+        231029,
+        231032,
+        231033,
+        231035,
+        231036,
+        231037,
+        231038,
+        231039,
+        231040,
+        231041,
+        231042,
+        231043,
+        231044,
+        231045,
+        231047,
+        231048
+      ],
+      "semiVintiDaAvversario": [
+        231002,
+        231003,
+        231010,
+        231017,
+        231019,
+        231021,
+        231025,
+        231030,
+        231031,
+        231034,
+        231046,
+        231049
+      ]
+    },
+    {
+      "duellante": "pegasus",
+      "livelloDeck": "medium",
+      "livelloIA": "hard",
+      "partite": 50,
+      "customVittorie": 40,
+      "customVittoriePct": 80,
+      "turniMedi": 17.08,
+      "nonFinite": 0,
+      "carte": {
+        "38": {
+          "manoInizialePct": 10,
+          "usataPct": 4,
+          "inManoAllaSconfittaPct": 30
+        },
+        "40": {
+          "manoInizialePct": 10,
+          "usataPct": 46,
+          "inManoAllaSconfittaPct": 0
+        },
+        "123": {
+          "manoInizialePct": 18,
+          "usataPct": 42,
+          "inManoAllaSconfittaPct": 35
+        },
+        "202": {
+          "manoInizialePct": 10,
+          "usataPct": 44,
+          "inManoAllaSconfittaPct": 2.5
+        },
+        "382": {
+          "manoInizialePct": 0,
+          "usataPct": 0,
+          "inManoAllaSconfittaPct": 0
+        },
+        "400": {
+          "manoInizialePct": 16,
+          "usataPct": 32,
+          "inManoAllaSconfittaPct": 15
+        },
+        "416": {
+          "manoInizialePct": 18,
+          "usataPct": 26,
+          "inManoAllaSconfittaPct": 25
+        },
+        "434": {
+          "manoInizialePct": 6,
+          "usataPct": 42,
+          "inManoAllaSconfittaPct": 0
+        },
+        "466": {
+          "manoInizialePct": 0,
+          "usataPct": 0,
+          "inManoAllaSconfittaPct": 0
+        },
+        "475": {
+          "manoInizialePct": 14,
+          "usataPct": 44,
+          "inManoAllaSconfittaPct": 0
+        },
+        "485": {
+          "manoInizialePct": 10,
+          "usataPct": 18,
+          "inManoAllaSconfittaPct": 20
+        },
+        "793": {
+          "manoInizialePct": 12,
+          "usataPct": 28,
+          "inManoAllaSconfittaPct": 0
+        },
+        "820": {
+          "manoInizialePct": 6,
+          "usataPct": 38,
+          "inManoAllaSconfittaPct": 0
+        }
+      },
+      "semiVintiDaCustom": [
+        231000,
+        231001,
+        231003,
+        231004,
+        231005,
+        231006,
+        231007,
+        231008,
+        231009,
+        231011,
+        231012,
+        231013,
+        231014,
+        231015,
+        231016,
+        231017,
+        231018,
+        231020,
+        231022,
+        231023,
+        231024,
+        231026,
+        231027,
+        231028,
+        231029,
+        231032,
+        231033,
+        231035,
+        231036,
+        231037,
+        231038,
+        231039,
+        231040,
+        231041,
+        231043,
+        231044,
+        231045,
+        231047,
+        231048,
+        231049
+      ],
+      "semiVintiDaAvversario": [
+        231002,
+        231010,
+        231019,
+        231021,
+        231025,
+        231030,
+        231031,
+        231034,
+        231042,
+        231046
+      ]
+    },
+    {
+      "duellante": "pegasus",
+      "livelloDeck": "hard",
+      "livelloIA": "medium",
+      "partite": 50,
+      "customVittorie": 44,
+      "customVittoriePct": 88,
+      "turniMedi": 14.66,
+      "nonFinite": 0,
+      "carte": {
+        "38": {
+          "manoInizialePct": 16,
+          "usataPct": 8,
+          "inManoAllaSconfittaPct": 56.8
+        },
+        "40": {
+          "manoInizialePct": 0,
+          "usataPct": 0,
+          "inManoAllaSconfittaPct": 0
+        },
+        "123": {
+          "manoInizialePct": 18,
+          "usataPct": 34,
+          "inManoAllaSconfittaPct": 31.8
+        },
+        "202": {
+          "manoInizialePct": 0,
+          "usataPct": 0,
+          "inManoAllaSconfittaPct": 0
+        },
+        "382": {
+          "manoInizialePct": 10,
+          "usataPct": 30,
+          "inManoAllaSconfittaPct": 0
+        },
+        "400": {
+          "manoInizialePct": 0,
+          "usataPct": 0,
+          "inManoAllaSconfittaPct": 0
+        },
+        "416": {
+          "manoInizialePct": 20,
+          "usataPct": 28,
+          "inManoAllaSconfittaPct": 34.1
+        },
+        "434": {
+          "manoInizialePct": 0,
+          "usataPct": 0,
+          "inManoAllaSconfittaPct": 0
+        },
+        "466": {
+          "manoInizialePct": 8,
+          "usataPct": 34,
+          "inManoAllaSconfittaPct": 0
+        },
+        "475": {
+          "manoInizialePct": 30,
+          "usataPct": 66,
+          "inManoAllaSconfittaPct": 6.8
+        },
+        "485": {
+          "manoInizialePct": 20,
+          "usataPct": 32,
+          "inManoAllaSconfittaPct": 25
+        },
+        "793": {
+          "manoInizialePct": 0,
+          "usataPct": 0,
+          "inManoAllaSconfittaPct": 0
+        },
+        "820": {
+          "manoInizialePct": 0,
+          "usataPct": 0,
+          "inManoAllaSconfittaPct": 0
+        }
+      },
+      "semiVintiDaCustom": [
+        231000,
+        231001,
+        231002,
+        231003,
+        231004,
+        231005,
+        231006,
+        231007,
+        231008,
+        231010,
+        231011,
+        231012,
+        231013,
+        231014,
+        231015,
+        231016,
+        231017,
+        231018,
+        231020,
+        231021,
+        231022,
+        231024,
+        231025,
+        231026,
+        231027,
+        231028,
+        231029,
+        231031,
+        231032,
+        231033,
+        231034,
+        231035,
+        231036,
+        231037,
+        231038,
+        231039,
+        231040,
+        231041,
+        231042,
+        231043,
+        231045,
+        231046,
+        231048,
+        231049
+      ],
+      "semiVintiDaAvversario": [
+        231009,
+        231019,
+        231023,
+        231030,
+        231044,
+        231047
+      ]
+    },
+    {
+      "duellante": "pegasus",
+      "livelloDeck": "hard",
+      "livelloIA": "hard",
+      "partite": 50,
+      "customVittorie": 44,
+      "customVittoriePct": 88,
+      "turniMedi": 15.34,
+      "nonFinite": 0,
+      "carte": {
+        "38": {
+          "manoInizialePct": 16,
+          "usataPct": 8,
+          "inManoAllaSconfittaPct": 54.5
+        },
+        "40": {
+          "manoInizialePct": 0,
+          "usataPct": 0,
+          "inManoAllaSconfittaPct": 0
+        },
+        "123": {
+          "manoInizialePct": 18,
+          "usataPct": 32,
+          "inManoAllaSconfittaPct": 27.3
+        },
+        "202": {
+          "manoInizialePct": 0,
+          "usataPct": 0,
+          "inManoAllaSconfittaPct": 0
+        },
+        "382": {
+          "manoInizialePct": 10,
+          "usataPct": 32,
+          "inManoAllaSconfittaPct": 0
+        },
+        "400": {
+          "manoInizialePct": 0,
+          "usataPct": 0,
+          "inManoAllaSconfittaPct": 0
+        },
+        "416": {
+          "manoInizialePct": 20,
+          "usataPct": 26,
+          "inManoAllaSconfittaPct": 36.4
+        },
+        "434": {
+          "manoInizialePct": 0,
+          "usataPct": 0,
+          "inManoAllaSconfittaPct": 0
+        },
+        "466": {
+          "manoInizialePct": 8,
+          "usataPct": 32,
+          "inManoAllaSconfittaPct": 0
+        },
+        "475": {
+          "manoInizialePct": 30,
+          "usataPct": 66,
+          "inManoAllaSconfittaPct": 6.8
+        },
+        "485": {
+          "manoInizialePct": 20,
+          "usataPct": 36,
+          "inManoAllaSconfittaPct": 25
+        },
+        "793": {
+          "manoInizialePct": 0,
+          "usataPct": 0,
+          "inManoAllaSconfittaPct": 0
+        },
+        "820": {
+          "manoInizialePct": 0,
+          "usataPct": 0,
+          "inManoAllaSconfittaPct": 0
+        }
+      },
+      "semiVintiDaCustom": [
+        231000,
+        231001,
+        231002,
+        231003,
+        231004,
+        231005,
+        231006,
+        231007,
+        231008,
+        231010,
+        231011,
+        231012,
+        231013,
+        231014,
+        231015,
+        231016,
+        231017,
+        231018,
+        231020,
+        231021,
+        231022,
+        231024,
+        231025,
+        231026,
+        231027,
+        231028,
+        231029,
+        231031,
+        231033,
+        231034,
+        231035,
+        231036,
+        231037,
+        231038,
+        231039,
+        231040,
+        231041,
+        231042,
+        231043,
+        231044,
+        231045,
+        231046,
+        231048,
+        231049
+      ],
+      "semiVintiDaAvversario": [
+        231009,
+        231019,
+        231023,
+        231030,
+        231032,
+        231047
+      ]
+    }
+  ]
+}

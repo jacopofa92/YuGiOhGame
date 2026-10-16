@@ -4167,16 +4167,23 @@
         const nomeCampo = campoRichiesto ? campoRichiesto.split('/').pop() : null;
         window.DUEL_ARENA_CUSTOM_FIELD = nomeCampo ? (CAMPI_RITIRATI[nomeCampo] || nomeCampo) : null;
         const customMusic = urlParams.get('music');
-        // Il tema di un avversario marcato `duelTrackSempre` (oggi i due Yugi,
-        // vedi characters-db.js) vince su qualunque ?music=, ma SOLO in
-        // Torneo e Storia. In Duello Libero no: lì la musica la sceglie il
-        // giocatore nel menu e deve sentire quella (richiesta esplicita
-        // dell'utente).
+        // `duelTrackSempre` resta la regola storica dei due Yugi: prevale
+        // soltanto in Torneo e Storia. `duelTrackAutomatico` vale invece in
+        // ogni modo privo di scelta musicale. Libero, Sandbox e Multiplayer
+        // rispettano sempre il brano scelto dall'utente. Una tappa narrativa
+        // puo' essere esclusa esplicitamente (il Pegasus del videonastro).
         const modalitaDelDuello = (urlParams.get('mode') || '').toLowerCase();
-        const temaFissoAmmesso = modalitaDelDuello === 'tournament' || modalitaDelDuello === 'story';
-        const avversarioDelDuello = (temaFissoAmmesso && typeof characterDatabase !== 'undefined')
+        const modalitaConSceltaMusicale = ['free', 'sandbox', 'multiplayer'].includes(modalitaDelDuello);
+        const avversarioDelDuello = (!modalitaConSceltaMusicale && typeof characterDatabase !== 'undefined')
             ? characterDatabase.find((c) => c.id === urlParams.get('character')) : null;
-        const temaFisso = avversarioDelDuello && avversarioDelDuello.duelTrackSempre ? avversarioDelDuello.duelTrack : null;
+        const tappaDelDuello = urlParams.get('tappa');
+        const tappaEsclusa = avversarioDelDuello && Array.isArray(avversarioDelDuello.duelTrackEscludiTappe)
+            && avversarioDelDuello.duelTrackEscludiTappe.includes(tappaDelDuello);
+        const temaStoricoAmmesso = modalitaDelDuello === 'tournament' || modalitaDelDuello === 'story';
+        const usaTemaAvversario = avversarioDelDuello && !tappaEsclusa
+            && (avversarioDelDuello.duelTrackAutomatico
+                || (temaStoricoAmmesso && avversarioDelDuello.duelTrackSempre));
+        const temaFisso = usaTemaAvversario ? avversarioDelDuello.duelTrack : null;
         const finalTrack = temaFisso
             ? `audio/soundtracks/${temaFisso}`
             : (customMusic

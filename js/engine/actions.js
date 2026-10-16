@@ -661,7 +661,7 @@ function attemptMonsterSummon(card, handIndex, slotIndex, fromRect) {
         clearSelection();
         return;
     }
-    if (gameState.hasNormalSummoned) {
+    if (!canUseNormalSummonQuota('player', card)) {
         addToLog('❌ Hai già effettuato un\'Evocazione Normale in questo turno.');
         clearSelection();
         return;
@@ -697,6 +697,19 @@ function attemptMonsterSummon(card, handIndex, slotIndex, fromRect) {
     // id 423). Stesso controllo lato IA in AI_SHARED.canNormalSummonNow
     // (js/ai/ai-shared.js), PRIMA di provare a Evocarla.
     const summonDef = window.DuelEngine && DuelEngine.getDefinition(card.id);
+    // Procedure di Evocazione Normale non rappresentabili dal flusso
+    // standard "scegli N mostri sul TUO Terreno" (es. Ra - Modalità
+    // Sfera, che sacrifica tre mostri da uno dei due lati e compare su
+    // quel lato). La definizione possiede l'intera procedura, mentre qui
+    // restano i guardrail comuni già eseguiti sopra.
+    if (summonDef && typeof summonDef.beginCustomNormalSummon === 'function') {
+        summonDef.beginCustomNormalSummon(DuelEngine.makeContext('player', {
+            card: card,
+            handIndex: handIndex,
+            fromRect: fromRect
+        }));
+        return;
+    }
     if (summonDef && summonDef.requiresFieldPresenceId) {
         const requiredCard = cardDatabase.find((c) => c.id === summonDef.requiresFieldPresenceId);
         // La carta richiesta può essere sia un mostro (zona Mostro) sia
@@ -1199,7 +1212,7 @@ function closeQuickPopover() {
 }
 
 function openSummonModal(card, slotIndex, handIndex, fromRect) {
-    if (card.type === 'monster' && gameState.hasNormalSummoned) {
+    if (card.type === 'monster' && !canUseNormalSummonQuota('player', card)) {
         addToLog('❌ Hai già effettuato un\'Evocazione Normale in questo turno.');
         return;
     }
@@ -1613,6 +1626,50 @@ function offerSpecialSummonTributeChoice(card, handIndex, filters) {
 }
 
 /**
+ * Costo di Special Summon composto da mostri presi sia dalla mano sia dal
+ * Terreno, con una soglia complessiva invece di un numero fisso (il primo
+ * caso e' Soldato dell'Oscuro Desiderio Toon: Livelli totali almeno 8).
+ * La scelta viene conclusa prima del comando, cosi' viaggia nel Multiplayer
+ * come gli altri costi e paySpecialSummonCost resta sincrono.
+ */
+function offerSpecialSummonMixedTributeChoice(card, handIndex, candidates, minimumLevel) {
+    if (!Array.isArray(candidates) || candidates.length === 0) return false;
+    const ctx = DuelEngine.makeContext('player', { card: card, handIndex: handIndex });
+    const def = DuelEngine.getDefinition(card.id);
+    const total = candidates.reduce((sum, entry) => sum + (entry.card.level || 0), 0);
+    if (total < minimumLevel) return false;
+
+    const chosen = [];
+    const selectionIsValid = () => {
+        const levels = chosen.reduce((sum, entry) => sum + (entry.card.level || 0), 0);
+        if (levels < minimumLevel) return false;
+        return !def || typeof def.isSpecialSummonMixedTributeSelectionValid !== 'function'
+            || def.isSpecialSummonMixedTributeSelectionValid(ctx, chosen.slice());
+    };
+    const pickNext = () => {
+        if (selectionIsValid()) {
+            gameState.pendingSpecialSummonMixedTributeUids = chosen.map((entry) => entry.card.uid);
+            finishSpecialSummonFromHand(card, handIndex);
+            return;
+        }
+        const used = new Set(chosen.map((entry) => entry.card.uid));
+        const remaining = candidates.filter((entry) => !used.has(entry.card.uid));
+        if (remaining.length === 0) return;
+        window.DuelEngineUI.openCardListPicker(remaining.map((entry) => entry.card), {
+            title: `✨ ${card.name}`,
+            text: `Scegli i mostri da offrire come Tributo (Livelli: ${chosen.reduce((sum, entry) => sum + (entry.card.level || 0), 0)}/${minimumLevel}).`,
+            onSelect: (chosenCard) => {
+                const entry = remaining.find((candidate) => candidate.card.uid === chosenCard.uid);
+                if (entry) chosen.push(entry);
+                pickNext();
+            }
+        });
+    };
+    pickNext();
+    return true;
+}
+
+/**
  * Punto unico da cui OGNI ramo di promptHandMonsterSpecialSummon qui sotto
  * conclude una Special Summon dalla mano — chiede la Posizione (Attacco/
  * Difesa) PRIMA di chiamare DuelEngine.trySpecialSummonFromHand, per lo
@@ -1709,6 +1766,11 @@ function promptHandMonsterSpecialSummon(card, handIndex) {
         if (typeof def.getSpecialSummonBanishFilters === 'function' && window.DuelEngineUI) {
             const ctx = DuelEngine.makeContext('player', { card: card, handIndex: handIndex });
             if (offerSpecialSummonBanishChoice(card, handIndex, def.getSpecialSummonBanishFilters(ctx))) return;
+        }
+        if (typeof def.getSpecialSummonMixedTributeCandidates === 'function' && window.DuelEngineUI) {
+            const ctx = DuelEngine.makeContext('player', { card: card, handIndex: handIndex });
+            const candidates = def.getSpecialSummonMixedTributeCandidates(ctx);
+            if (offerSpecialSummonMixedTributeChoice(card, handIndex, candidates, def.specialSummonMixedTributeMinLevel || 0)) return;
         }
         if (typeof def.getSpecialSummonTributeFilters === 'function' && window.DuelEngineUI) {
             const ctx = DuelEngine.makeContext('player', { card: card, handIndex: handIndex });

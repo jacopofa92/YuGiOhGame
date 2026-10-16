@@ -1,0 +1,309 @@
+{
+  "generatoIl": "2026-10-14T10:22:11.936Z",
+  "metodo": "campione ufficiale primario; Custom separato e soltanto informativo; stessi semi ai tre livelli",
+  "opzioni": {
+    "duellanti": [
+      "joey",
+      "yamiYugi",
+      "kaiba",
+      "pegasus",
+      "strings",
+      "marik"
+    ],
+    "partite": 50,
+    "turni": 80,
+    "seme": 141000,
+    "salvataggio": null,
+    "deckCustom": null,
+    "output": "reports/archetypes/CLASSIC_ARCHETYPES_BASELINE.json"
+  },
+  "campioni": [
+    "yamiYugi",
+    "joey",
+    "pegasus",
+    "mako",
+    "bakura"
+  ],
+  "custom": null,
+  "risultati": [
+    {
+      "duellante": "joey",
+      "livello": "easy",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 53,
+        "vittoriePct": 21.2,
+        "turniMedi": 17.07,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {
+        "Drago Nero Occhi Rossi": 49.6
+      },
+      "custom": null
+    },
+    {
+      "duellante": "joey",
+      "livello": "medium",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 120,
+        "vittoriePct": 48,
+        "turniMedi": 17.1,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {
+        "Drago Nero Occhi Rossi": 32.8
+      },
+      "custom": null
+    },
+    {
+      "duellante": "joey",
+      "livello": "hard",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 124,
+        "vittoriePct": 49.6,
+        "turniMedi": 15.77,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {
+        "Drago Nero Occhi Rossi": 26
+      },
+      "custom": null
+    },
+    {
+      "duellante": "yamiYugi",
+      "livello": "easy",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 61,
+        "vittoriePct": 24.4,
+        "turniMedi": 32.4,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {
+        "Mago Nero": 57.6,
+        "Slifer": 0
+      },
+      "custom": null
+    },
+    {
+      "duellante": "yamiYugi",
+      "livello": "medium",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 108,
+        "vittoriePct": 43.2,
+        "turniMedi": 18.57,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {
+        "Mago Nero": 34,
+        "Slifer": 0.8
+      },
+      "custom": null
+    },
+    {
+      "duellante": "yamiYugi",
+      "livello": "hard",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 119,
+        "vittoriePct": 47.6,
+        "turniMedi": 18.19,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {
+        "Mago Nero": 32.8,
+        "Slifer": 20.4
+      },
+      "custom": null
+    },
+    {
+      "duellante": "kaiba",
+      "livello": "easy",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 65,
+        "vittoriePct": 26,
+        "turniMedi": 17.93,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {
+        "Drago Bianco Occhi Blu": 48.8
+      },
+      "custom": null
+    },
+    {
+      "duellante": "kaiba",
+      "livello": "medium",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 117,
+        "vittoriePct": 46.8,
+        "turniMedi": 14.78,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {
+        "Drago Bianco Occhi Blu": 27.2
+      },
+      "custom": null
+    },
+    {
+      "duellante": "kaiba",
+      "livello": "hard",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 127,
+        "vittoriePct": 50.8,
+        "turniMedi": 14.27,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {
+        "Drago Bianco Occhi Blu": 23.6
+      },
+      "custom": null
+    },
+    {
+      "duellante": "pegasus",
+      "livello": "easy",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 86,
+        "vittoriePct": 34.4,
+        "turniMedi": 22.85,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {
+        "Mondo dei Toon": 61.2,
+        "Abbandonato": 0,
+        "Restrizione dai Mille Occhi": 0
+      },
+      "custom": null
+    },
+    {
+      "duellante": "pegasus",
+      "livello": "medium",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 125,
+        "vittoriePct": 50,
+        "turniMedi": 19.24,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {
+        "Mondo dei Toon": 74.4,
+        "Abbandonato": 18,
+        "Restrizione dai Mille Occhi": 1.6
+      },
+      "custom": null
+    },
+    {
+      "duellante": "pegasus",
+      "livello": "hard",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 126,
+        "vittoriePct": 50.4,
+        "turniMedi": 19.19,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {
+        "Mondo dei Toon": 79.6,
+        "Abbandonato": 38,
+        "Restrizione dai Mille Occhi": 8
+      },
+      "custom": null
+    },
+    {
+      "duellante": "strings",
+      "livello": "easy",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 17,
+        "vittoriePct": 6.8,
+        "turniMedi": 23.04,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {
+        "Slifer": 0
+      },
+      "custom": null
+    },
+    {
+      "duellante": "strings",
+      "livello": "medium",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 23,
+        "vittoriePct": 9.2,
+        "turniMedi": 22.18,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {
+        "Slifer": 0
+      },
+      "custom": null
+    },
+    {
+      "duellante": "strings",
+      "livello": "hard",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 50,
+        "vittoriePct": 20,
+        "turniMedi": 21.96,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {
+        "Slifer": 39.2
+      },
+      "custom": null
+    },
+    {
+      "duellante": "marik",
+      "livello": "easy",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 67,
+        "vittoriePct": 26.8,
+        "turniMedi": 21.86,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {
+        "Drago Alato di Ra": 0
+      },
+      "custom": null
+    },
+    {
+      "duellante": "marik",
+      "livello": "medium",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 138,
+        "vittoriePct": 55.2,
+        "turniMedi": 18.87,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {
+        "Drago Alato di Ra": 0
+      },
+      "custom": null
+    },
+    {
+      "duellante": "marik",
+      "livello": "hard",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 145,
+        "vittoriePct": 58,
+        "turniMedi": 16.68,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {
+        "Drago Alato di Ra": 11.6
+      },
+      "custom": null
+    }
+  ]
+}

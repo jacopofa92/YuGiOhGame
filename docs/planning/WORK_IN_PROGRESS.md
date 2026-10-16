@@ -4,13 +4,29 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
 
 ## Supporti moderni agli archetipi classici
 
-- [ ] Piano da valutare in `docs/planning/CLASSIC_ARCHETYPES_ROADMAP.md`:
+- [ ] Piano in esecuzione in `docs/planning/CLASSIC_ARCHETYPES_ROADMAP.md`:
       prima copia tramite impresa/Sfida tematica, copie successive molto rare
       e limite 1/2/3 stabilito con audit. I deck avversari restano inizialmente
       invariati; eventuali inserimenti partono dal Difficile e soltanto dopo
       confronto riproducibile con la baseline. Il deck personale `Custom`
       entra nei report come benchmark aggiuntivo separato, senza guidare per
       ora le decisioni di bilanciamento.
+      Primitive, Occhi Rossi, Mago Nero e Drago Bianco completati nei relativi
+      audit. Toon: entrambi i pacchetti e l'audit conclusivo 1/2/3 sono
+      completati; nessun deck avversario modificato in assenza del benchmark
+      `Custom`. Supporti alle Divinita': primitive e tre carte del primo
+      pacchetto, verifica Multiplayer e audit 1/2/3 completati in
+      `docs/audits/EGYPTIAN_GODS_SUPPORT_AUDIT.md`. Limite proposto 1 copia;
+      benchmark `Custom` completato su 5.400 duelli e documentato in
+      `docs/audits/CLASSIC_ARCHETYPES_CUSTOM_BENCHMARK.md`; restano gli audit
+      audit fattoriale Kaiba/Pegasus completato: i deck Hard, non l'IA Hard,
+      causavano il calo contro Custom. Varianti controllate promosse dopo
+      1.500 duelli: Kaiba conserva la resa generale e Pegasus la migliora,
+      mentre entrambi riducono le vittorie di Custom da 88% a 78%. Resta
+      l'audit Strings.
+      Economia dei 24 supporti completata: prima copia tramite missioni
+      tematiche, copie successive rarissime e limiti 1/2 applicati a deck e
+      acquisizione. Matrice in `docs/economy/MODERN_SUPPORTS_ACQUISITION.md`.
 
 ## Economia e acquisizione carte
 
@@ -114,6 +130,11 @@ sempre coerenti con il personaggio. Toon/Pegasus si affronta per ultimo.
       Difficile mantiene 40 carte ma prepara con più continuità Mille Occhi;
       il controllo del registro misura Mondo 74,5%, Abbandonato 18,5% e
       Restrizione 4%. Dettagli in `docs/audits/PEGASUS_OPPONENT_AUDIT.md`.
+- [x] Rafforzati a Difficile Yugi Muto, Bakura, Gozaburo e Noah senza
+      modificare Starter/Structure. Heishin e Nitemare sono ora due superboss
+      distinti: DarkNite resta il penultimo duello, Nitemare ha identita' e
+      lista proprie ed e' il picco assoluto. Audit su 1.800 duelli finali e
+      baseline in `docs/audits/BOSS_HARD_BALANCE.md`.
 
 ## Audio multipagina
 

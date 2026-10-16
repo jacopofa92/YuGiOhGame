@@ -1,0 +1,136 @@
+{
+  "generatoIl": "2026-10-15T16:56:50.128Z",
+  "metodo": "Pegasus Hard; stessi semi; 5 avversari ufficiali e Custom separato; linea Abbandonato/Mille Occhi preservata",
+  "opzioni": {
+    "partite": 50,
+    "turni": 80,
+    "seme": 201000
+  },
+  "custom": {
+    "name": "Custom",
+    "impronta": "e1909a556263c979"
+  },
+  "varianti": {
+    "regnoSingolo": {
+      "aggiunteMain": [
+        1266
+      ],
+      "tagliMain": [
+        190
+      ]
+    },
+    "toonLeggero": {
+      "aggiunteMain": [
+        1266,
+        1267,
+        1268
+      ],
+      "tagliMain": [
+        190,
+        190,
+        190
+      ]
+    }
+  },
+  "risultati": [
+    {
+      "variante": "pubblicato",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 97,
+        "vittoriePct": 38.8,
+        "turniMedi": 18.27,
+        "nonFinite": 0,
+        "vistePct": {
+          "416": 15.2,
+          "476": 2.8,
+          "487": 76.4,
+          "1266": 0,
+          "1267": 0,
+          "1268": 0
+        }
+      },
+      "controCustom": {
+        "partite": 50,
+        "vittorie": 6,
+        "vittoriePct": 12,
+        "turniMedi": 16.76,
+        "nonFinite": 0,
+        "vistePct": {
+          "416": 10,
+          "476": 0,
+          "487": 66,
+          "1266": 0,
+          "1267": 0,
+          "1268": 0
+        }
+      }
+    },
+    {
+      "variante": "regnoSingolo",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 115,
+        "vittoriePct": 46,
+        "turniMedi": 16.44,
+        "nonFinite": 0,
+        "vistePct": {
+          "416": 22.4,
+          "476": 2,
+          "487": 77.6,
+          "1266": 34.4,
+          "1267": 0,
+          "1268": 0
+        }
+      },
+      "controCustom": {
+        "partite": 50,
+        "vittorie": 13,
+        "vittoriePct": 26,
+        "turniMedi": 17.8,
+        "nonFinite": 0,
+        "vistePct": {
+          "416": 26,
+          "476": 2,
+          "487": 78,
+          "1266": 36,
+          "1267": 0,
+          "1268": 0
+        }
+      }
+    },
+    {
+      "variante": "toonLeggero",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 132,
+        "vittoriePct": 52.8,
+        "turniMedi": 16.64,
+        "nonFinite": 0,
+        "vistePct": {
+          "416": 25.2,
+          "476": 2.4,
+          "487": 80.8,
+          "1266": 58.8,
+          "1267": 45.2,
+          "1268": 49.2
+        }
+      },
+      "controCustom": {
+        "partite": 50,
+        "vittorie": 10,
+        "vittoriePct": 20,
+        "turniMedi": 16.6,
+        "nonFinite": 0,
+        "vistePct": {
+          "416": 26,
+          "476": 0,
+          "487": 80,
+          "1266": 42,
+          "1267": 40,
+          "1268": 42
+        }
+      }
+    }
+  ]
+}

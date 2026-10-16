@@ -18,7 +18,7 @@ const fs = require('fs');
 const path = require('path');
 
 const RADICE = path.resolve(__dirname, '..', '..');
-const FORME = /\.declareTarget\(|\.declareTargetWaiting\(|\.destroyTargetedMonster\(|\bdichiara:\s*true\b|\bequipToChosenTarget\(|\battachUnionMonster\(/;
+const FORME = /\.declareTarget\(|\.declareTargetWaiting\(|\.destroyTargetedMonster\(|\bdichiara:\s*true\b|\bequipToChosenTarget\(|\battachUnionMonster\(|\bchooseFieldTargetsInSequence\(/;
 
 // Ogni motivo è una categoria: aggiungere un id a una categoria sbagliata
 // per far passare il test è esattamente ciò che questo file deve impedire.
@@ -29,9 +29,9 @@ const MOTIVI = {
     magiaTrappola: 'bersaglia una Magia/Trappola: il checkpoint copre solo i mostri'
 };
 const ECCEZIONI = {
-    cimitero: [136, 523, 621, 633, 656, 669, 704, 725, 818, 823, 837, 848, 853, 891, 899, 1080],
+    cimitero: [136, 523, 621, 633, 656, 669, 704, 725, 818, 823, 837, 848, 853, 891, 899, 1080, 1250, 1252],
     attacco: [322, 425, 469, 606, 664, 679, 713, 714, 760],
-    reazione: [235, 353, 423, 636, 652, 689, 738, 851, 865, 1039, 1129, 1130],
+    reazione: [235, 353, 423, 636, 652, 689, 738, 851, 865, 1039, 1129, 1130, 1257, 1263, 1266],
     magiaTrappola: [647]
 };
 

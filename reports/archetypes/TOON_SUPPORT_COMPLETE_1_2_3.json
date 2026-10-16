@@ -1,0 +1,325 @@
+{
+  "generatoIl": "2026-10-14T22:20:27.901Z",
+  "metodo": "Pegasus Hard IA contro cinque deck Hard; stessi semi; secondo pacchetto Toon isolato e poi combinato col primo, sostituendo carte periferiche e preservando Toon e Abbandonato/Mille Occhi",
+  "gamesPerOpponent": 50,
+  "seed": 149000,
+  "opponents": [
+    "yamiYugi",
+    "joey",
+    "kaiba",
+    "mako",
+    "bakura"
+  ],
+  "supportIds": [
+    1266,
+    1267,
+    1268,
+    1269,
+    1270
+  ],
+  "observedIdentityIds": [
+    487,
+    416,
+    476,
+    1266,
+    1267,
+    1268,
+    1269,
+    1270
+  ],
+  "results": [
+    {
+      "variante": "baseline",
+      "copie": 0,
+      "carteAggiunte": [],
+      "partite": 250,
+      "vittoriePct": 38.4,
+      "turniMedi": 16.63,
+      "nonFinite": 0,
+      "vistePct": {
+        "416": 24.8,
+        "476": 6.4,
+        "487": 69.2,
+        "1266": 0,
+        "1267": 0,
+        "1268": 0,
+        "1269": 0,
+        "1270": 0
+      }
+    },
+    {
+      "variante": "1269x1",
+      "copie": 1,
+      "carteAggiunte": [
+        1269
+      ],
+      "partite": 250,
+      "vittoriePct": 42.8,
+      "turniMedi": 15.51,
+      "nonFinite": 0,
+      "vistePct": {
+        "416": 22,
+        "476": 3.2,
+        "487": 70.8,
+        "1266": 0,
+        "1267": 0,
+        "1268": 0,
+        "1269": 26,
+        "1270": 0
+      }
+    },
+    {
+      "variante": "1269x2",
+      "copie": 2,
+      "carteAggiunte": [
+        1269,
+        1269
+      ],
+      "partite": 250,
+      "vittoriePct": 45.6,
+      "turniMedi": 15.41,
+      "nonFinite": 0,
+      "vistePct": {
+        "416": 25.6,
+        "476": 6.8,
+        "487": 73.6,
+        "1266": 0,
+        "1267": 0,
+        "1268": 0,
+        "1269": 38,
+        "1270": 0
+      }
+    },
+    {
+      "variante": "1269x3",
+      "copie": 3,
+      "carteAggiunte": [
+        1269,
+        1269,
+        1269
+      ],
+      "partite": 250,
+      "vittoriePct": 45.6,
+      "turniMedi": 14.7,
+      "nonFinite": 0,
+      "vistePct": {
+        "416": 20,
+        "476": 3.2,
+        "487": 69.2,
+        "1266": 0,
+        "1267": 0,
+        "1268": 0,
+        "1269": 41.6,
+        "1270": 0
+      }
+    },
+    {
+      "variante": "1270x1",
+      "copie": 1,
+      "carteAggiunte": [
+        1270
+      ],
+      "partite": 250,
+      "vittoriePct": 38.4,
+      "turniMedi": 16.56,
+      "nonFinite": 0,
+      "vistePct": {
+        "416": 23.2,
+        "476": 4,
+        "487": 71.2,
+        "1266": 0,
+        "1267": 0,
+        "1268": 0,
+        "1269": 0,
+        "1270": 9.2
+      }
+    },
+    {
+      "variante": "1270x2",
+      "copie": 2,
+      "carteAggiunte": [
+        1270,
+        1270
+      ],
+      "partite": 250,
+      "vittoriePct": 34.8,
+      "turniMedi": 16.58,
+      "nonFinite": 0,
+      "vistePct": {
+        "416": 26,
+        "476": 7.2,
+        "487": 73.2,
+        "1266": 0,
+        "1267": 0,
+        "1268": 0,
+        "1269": 0,
+        "1270": 13.6
+      }
+    },
+    {
+      "variante": "1270x3",
+      "copie": 3,
+      "carteAggiunte": [
+        1270,
+        1270,
+        1270
+      ],
+      "partite": 250,
+      "vittoriePct": 29.2,
+      "turniMedi": 14.96,
+      "nonFinite": 0,
+      "vistePct": {
+        "416": 22,
+        "476": 2.8,
+        "487": 69.2,
+        "1266": 0,
+        "1267": 0,
+        "1268": 0,
+        "1269": 0,
+        "1270": 14.8
+      }
+    },
+    {
+      "variante": "secondo-leggero",
+      "copie": null,
+      "carteAggiunte": [
+        1269,
+        1270
+      ],
+      "partite": 250,
+      "vittoriePct": 40,
+      "turniMedi": 15.87,
+      "nonFinite": 0,
+      "vistePct": {
+        "416": 24.8,
+        "476": 7.6,
+        "487": 73.6,
+        "1266": 0,
+        "1267": 0,
+        "1268": 0,
+        "1269": 24.8,
+        "1270": 10.4
+      }
+    },
+    {
+      "variante": "secondo-doppio",
+      "copie": null,
+      "carteAggiunte": [
+        1269,
+        1269,
+        1270,
+        1270
+      ],
+      "partite": 250,
+      "vittoriePct": 46,
+      "turniMedi": 14.92,
+      "nonFinite": 0,
+      "vistePct": {
+        "416": 23.2,
+        "476": 3.2,
+        "487": 73.6,
+        "1266": 0,
+        "1267": 0,
+        "1268": 0,
+        "1269": 38.8,
+        "1270": 21.2
+      }
+    },
+    {
+      "variante": "primo-leggero-controllo",
+      "copie": null,
+      "carteAggiunte": [
+        1266,
+        1267,
+        1268
+      ],
+      "partite": 250,
+      "vittoriePct": 57.2,
+      "turniMedi": 16.44,
+      "nonFinite": 0,
+      "vistePct": {
+        "416": 38.4,
+        "476": 4.8,
+        "487": 78.8,
+        "1266": 53.2,
+        "1267": 42.8,
+        "1268": 48,
+        "1269": 0,
+        "1270": 0
+      }
+    },
+    {
+      "variante": "primo-piu-girapagina",
+      "copie": null,
+      "carteAggiunte": [
+        1266,
+        1267,
+        1268,
+        1269
+      ],
+      "partite": 250,
+      "vittoriePct": 63.2,
+      "turniMedi": 15.86,
+      "nonFinite": 0,
+      "vistePct": {
+        "416": 34.8,
+        "476": 7.2,
+        "487": 82.8,
+        "1266": 52.4,
+        "1267": 41.2,
+        "1268": 52.8,
+        "1269": 41.2,
+        "1270": 0
+      }
+    },
+    {
+      "variante": "primo-piu-soldato",
+      "copie": null,
+      "carteAggiunte": [
+        1266,
+        1267,
+        1268,
+        1270
+      ],
+      "partite": 250,
+      "vittoriePct": 53.2,
+      "turniMedi": 16.55,
+      "nonFinite": 0,
+      "vistePct": {
+        "416": 38.4,
+        "476": 6.8,
+        "487": 83.2,
+        "1266": 51.2,
+        "1267": 42,
+        "1268": 53.6,
+        "1269": 0,
+        "1270": 14.8
+      }
+    },
+    {
+      "variante": "completo-leggero",
+      "copie": null,
+      "carteAggiunte": [
+        1266,
+        1267,
+        1268,
+        1269,
+        1270
+      ],
+      "partite": 250,
+      "vittoriePct": 62.4,
+      "turniMedi": 15.79,
+      "nonFinite": 0,
+      "vistePct": {
+        "416": 36,
+        "476": 5.2,
+        "487": 78.8,
+        "1266": 55.6,
+        "1267": 43.2,
+        "1268": 51.2,
+        "1269": 43.6,
+        "1270": 18.4
+      }
+    }
+  ]
+}

@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const { destroyTargetingSpellIfItStays, attendiScelta, chooseOption, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldMonsterTarget, chooseFieldCardTarget, collectFieldTargets, chooseCardFromList, offerHandDiscardChoice, resolveSpecialSummonBanishCost, maxRitualTributeLevel, performRitualTribute, returnSpellTrapToHand, chooseUpToNFromList } = window.CardEffectsShared;
+    const { destroyTargetingSpellIfItStays, attendiScelta, chooseOption, searchDeckWithChoice, searchGraveyardWithChoice, chooseFieldMonsterTarget, chooseFieldCardTarget, chooseFieldTargetsInSequence, collectFieldTargets, chooseCardFromHand, chooseCardFromList, offerHandDiscardChoice, resolveSpecialSummonBanishCost, maxRitualTributeLevel, performRitualTribute, returnSpellTrapToHand, chooseUpToNFromList, equipToChosenTarget, equippedTarget, cardHasArchetype, cardHasEffectiveName, cardMentionsName } = window.CardEffectsShared;
 
     // ================================================================
     // 1001-1008 — Il ciclo di Mostri Spirito di Legacy of Darkness (LOD),
@@ -3673,6 +3673,1572 @@
     // può riferirsi anche a una di quelle) — non tocca né sovrascrive MAI
     // una carta già registrata sopra.
     // ================================================================
+    // Supporti moderni Occhi Rossi. Restano fuori dai deck avversari finche'
+    // l'audit del pacchetto non dimostra dove siano davvero necessari.
+    const isRedEyesMonster = (card) => card && card.type === 'monster' && cardHasArchetype(card, 'red-eyes');
+    const isRedEyesCard = (card) => card && cardHasArchetype(card, 'red-eyes');
+    const blackStoneKey = (owner) => `black-stone-of-legend:${owner}`;
+
+    CardEffects.register(1250, {
+        archetypes: ['red-eyes'],
+        canActivate(ctx) {
+            const deck = Tavolo.mazzo(ctx.owner);
+            return ctx.zone === 'monster' && !ctx.hasUsedOncePerTurn(blackStoneKey(ctx.owner))
+                && Array.isArray(deck) && deck.some((c) => isRedEyesMonster(c) && (c.level || 0) <= 7 && c.id !== 1250);
+        },
+        activate(ctx) {
+            const slot = ctx.field(ctx.owner)[ctx.index];
+            if (!slot || slot.card.uid !== ctx.card.uid) return;
+            const deck = Tavolo.mazzo(ctx.owner);
+            if (!Array.isArray(deck) || !deck.some((c) => isRedEyesMonster(c) && (c.level || 0) <= 7 && c.id !== 1250)) return;
+            ctx.field(ctx.owner)[ctx.index] = null;
+            ctx.graveyard(ctx.owner).push(ctx.card);
+            DuelEngine.notifySacrificedForTribute(ctx.owner, ctx.card);
+            ctx.markUsedOncePerTurn(blackStoneKey(ctx.owner));
+            searchDeckWithChoice(ctx, (c) => isRedEyesMonster(c) && (c.level || 0) <= 7 && c.id !== 1250, {
+                title: 'La Pietra Nera della Leggenda',
+                text: 'Scegli quale mostro Occhi Rossi Evocare Specialmente dal Deck.',
+                pickForBot: (cards) => cards.reduce((best, c) => !best || c.attack > best.attack ? c : best, null)
+            }, (chosen) => {
+                const free = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (free === -1) { ctx.graveyard(ctx.owner).push(chosen); return; }
+                ctx.specialSummon(ctx.owner, chosen, free, 'attack', 'deck');
+                ctx.log(`${ctx.card.name} Evoca Specialmente ${chosen.name} dal Deck!`);
+            });
+        },
+        canActivateFromGraveyardMainPhase(ctx) {
+            return !ctx.hasUsedOncePerTurn(blackStoneKey(ctx.owner))
+                && ctx.graveyard(ctx.owner).some((c) => c.uid !== ctx.card.uid && isRedEyesMonster(c) && (c.level || 0) <= 7 && c.id !== 1250);
+        },
+        activateFromGraveyardMainPhase(ctx) {
+            const opened = searchGraveyardWithChoice(ctx, ctx.owner,
+                (c) => c.uid !== ctx.card.uid && isRedEyesMonster(c) && (c.level || 0) <= 7 && c.id !== 1250,
+                { title: 'La Pietra Nera della Leggenda', text: 'Scegli quale mostro Occhi Rossi mischiare nel Deck.' },
+                (chosen) => {
+                    const grave = ctx.graveyard(ctx.owner);
+                    const selfIndex = grave.findIndex((c) => c.uid === ctx.card.uid);
+                    if (selfIndex === -1 || ctx.graveyardMoveNegated(ctx.owner)
+                        || !ctx.shuffleIntoDeck(ctx.owner, [chosen])) { grave.push(chosen); return; }
+                    const [stone] = grave.splice(selfIndex, 1);
+                    ctx.hand(ctx.owner).push(stone);
+                    ctx.log(`${chosen.name} torna nel Deck e ${stone.name} torna in mano!`);
+                });
+            if (opened) ctx.markUsedOncePerTurn(blackStoneKey(ctx.owner));
+        }
+    });
+
+    CardEffects.register(1251, {
+        archetypes: ['red-eyes'],
+        canActivate(ctx) {
+            const deck = Tavolo.mazzo(ctx.owner);
+            if (ctx.hasUsedOncePerTurn(`red-eyes-insight:${ctx.owner}`) || !Array.isArray(deck)) return false;
+            const hasCost = ctx.hand(ctx.owner).some((c) => c.uid !== ctx.card.uid && isRedEyesMonster(c)) || deck.some(isRedEyesMonster);
+            return hasCost && deck.some((c) => c.id !== 1251 && (c.type === 'spell' || c.type === 'trap') && isRedEyesCard(c));
+        },
+        activate(ctx) {
+            const deck = Tavolo.mazzo(ctx.owner);
+            const inHand = ctx.hand(ctx.owner).some((c) => c.uid !== ctx.card.uid && isRedEyesMonster(c));
+            const inDeck = Array.isArray(deck) && deck.some(isRedEyesMonster);
+            const afterCost = (sent) => {
+                if (!sent) return;
+                ctx.markUsedOncePerTurn(`red-eyes-insight:${ctx.owner}`);
+                searchDeckWithChoice(ctx, (c) => c.id !== 1251 && (c.type === 'spell' || c.type === 'trap') && isRedEyesCard(c), {
+                    title: 'Intuito Occhi Rossi', text: 'Scegli quale Magia/Trappola Occhi Rossi aggiungere alla mano.'
+                }, (chosen) => {
+                    ctx.hand(ctx.owner).push(chosen);
+                    ctx.log(`${sent.name} va al Cimitero: ${chosen.name} viene aggiunta alla mano!`);
+                });
+            };
+            const send = (zone) => {
+                if (zone === 'hand') {
+                    chooseCardFromHand(ctx, {
+                        filter: (c) => c.uid !== ctx.card.uid && isRedEyesMonster(c),
+                        title: 'Intuito Occhi Rossi', text: 'Scegli quale mostro Occhi Rossi mandare dalla mano al Cimitero.'
+                    }, (card, index) => afterCost(ctx.sendChosenFromHandToGraveyard(ctx.owner, index)));
+                    return;
+                }
+                searchDeckWithChoice(ctx, isRedEyesMonster, {
+                    title: 'Intuito Occhi Rossi', text: 'Scegli quale mostro Occhi Rossi mandare dal Deck al Cimitero.'
+                }, (card) => {
+                    ctx.graveyard(ctx.owner).push(card);
+                    DuelEngine.notifyOwnMonsterSentToGraveyard(ctx.owner, card);
+                    afterCost(card);
+                });
+            };
+            if (inHand && inDeck) {
+                chooseOption(ctx, {
+                    title: 'Intuito Occhi Rossi', text: 'Da dove vuoi mandare il mostro al Cimitero?',
+                    options: [{ value: 'deck', label: 'Dal Deck' }, { value: 'hand', label: 'Dalla mano' }],
+                    pickForBot: () => 'deck'
+                }, send);
+            } else send(inHand ? 'hand' : 'deck');
+        }
+    });
+
+    CardEffects.register(1252, {
+        archetypes: ['red-eyes'],
+        canActivate(ctx) { return ctx.findEmptyMonsterSlot(ctx.owner) !== -1 && ctx.graveyard(ctx.owner).some(isRedEyesMonster); },
+        activate(ctx) {
+            searchGraveyardWithChoice(ctx, ctx.owner, isRedEyesMonster, {
+                title: 'Spirito Occhi Rossi', text: 'Scegli quale mostro Occhi Rossi Evocare Specialmente.'
+            }, (chosen) => {
+                const free = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (free === -1) { ctx.graveyard(ctx.owner).push(chosen); return; }
+                ctx.specialSummon(ctx.owner, chosen, free, 'attack', 'graveyard');
+                ctx.log(`${chosen.name} ritorna dal Cimitero!`);
+            });
+        }
+    });
+
+    const searchBlackMetal = (ctx) => searchDeckWithChoice(ctx, (c) => c.id !== 1253 && isRedEyesCard(c), {
+        title: 'Drago Metallo Nero', text: 'Scegli quale carta Occhi Rossi aggiungere alla mano.'
+    }, (chosen) => {
+        ctx.hand(ctx.owner).push(chosen);
+        ctx.log(`${ctx.card.name} cerca ${chosen.name} dal Deck!`);
+    });
+    CardEffects.register(1253, {
+        archetypes: ['red-eyes'],
+        continuous: true,
+        isEquip: true,
+        canActivate(ctx) {
+            if (ctx.zone !== 'hand' && ctx.zone !== 'monster') return false;
+            if (ctx.zone === 'monster' && DuelEngine.findFreeSTSlot(ctx.owner) === -1) return false;
+            return ctx.field(ctx.owner).some((s) => s && !s.isFaceDown && s.card.uid !== ctx.card.uid && isRedEyesMonster(s.card));
+        },
+        activate(ctx) {
+            if (ctx.zone === 'monster') {
+                const slot = ctx.field(ctx.owner)[ctx.index];
+                const free = DuelEngine.findFreeSTSlot(ctx.owner);
+                if (!slot || slot.card.uid !== ctx.card.uid || free === -1) return;
+                ctx.field(ctx.owner)[ctx.index] = null;
+                ctx.stField(ctx.owner)[free] = { card: ctx.card, isFaceDown: false, setOnTurn: gameState.turn };
+                ctx.index = free;
+            }
+            equipToChosenTarget(ctx, isRedEyesMonster);
+        },
+        static(ctx) {
+            if (!ctx.card.equippedToOwner) return;
+            const target = equippedTarget(ctx);
+            const bonus = gameState.atkDefBonus[target.uid] || { atk: 0, def: 0 };
+            gameState.atkDefBonus[target.uid] = { atk: bonus.atk + 600, def: bonus.def };
+        },
+        onDestroy: searchBlackMetal,
+        onSacrificedForTribute: searchBlackMetal,
+        onSentToGraveyardFromField: searchBlackMetal
+    });
+
+    // ================================================================
+    // Supporti moderni Mago Nero — primo pacchetto. Nessuna di queste
+    // carte entra ancora nei deck avversari: prima vengono validate in
+    // isolamento e poi misurate a 1/2/3 copie, come per Occhi Rossi.
+    // ================================================================
+    const isDarkMagician = (card) => card && card.type === 'monster'
+        && cardHasEffectiveName(card, 'Mago Nero');
+    const mentionsDarkMagician = (card) => card && cardMentionsName(card, 'Mago Nero');
+
+    CardEffects.register(1254, {
+        archetypes: ['dark-magician'],
+        onSummon(ctx) {
+            if (ctx.summonedVia !== 'normal' || ctx.hasUsedOncePerTurn(`magicians-rod-search:${ctx.owner}`)) return;
+            ctx.markUsedOncePerTurn(`magicians-rod-search:${ctx.owner}`);
+            searchDeckWithChoice(ctx,
+                (c) => (c.type === 'spell' || c.type === 'trap') && mentionsDarkMagician(c),
+                { title: 'Bastone del Mago', text: 'Scegli una Magia/Trappola che cita Mago Nero da aggiungere alla mano.' },
+                (chosen) => {
+                    ctx.hand(ctx.owner).push(chosen);
+                    ctx.log(`${ctx.card.name} aggiunge ${chosen.name} alla mano!`);
+                });
+        },
+        canActivateOnCardActivatedWhileInGraveyard(ctx) {
+            const key = `magicians-rod-grave:${ctx.owner}`;
+            return gameState.currentPlayer === ctx.opponent
+                && ctx.activatedOwner === ctx.owner
+                && ctx.activatedCard && (ctx.activatedCard.type === 'spell' || ctx.activatedCard.type === 'trap')
+                && !ctx.hasUsedOncePerTurn(key)
+                && ctx.field(ctx.owner).some((s) => s && !s.isFaceDown && s.card.race === 'Incantatore');
+        },
+        onCardActivatedWhileInGraveyard(ctx) {
+            const candidates = collectFieldTargets(ctx, {
+                owner: 'self', zone: 'monster',
+                filter: (card, owner, slot) => !slot.isFaceDown && card.race === 'Incantatore'
+            });
+            chooseFieldCardTarget(ctx, candidates, {
+                title: 'Bastone del Mago',
+                text: 'Offri come Tributo 1 Incantatore per riprendere Bastone del Mago.',
+                dichiara: false
+            }, (chosen) => {
+                const slot = ctx.field(chosen.owner)[chosen.index];
+                const grave = ctx.graveyard(ctx.owner);
+                const rodIndex = grave.findIndex((c) => c.uid === ctx.card.uid);
+                if (!slot || rodIndex === -1) return;
+                if (ctx.graveyardMoveNegated(ctx.owner)) return;
+                const tribute = slot.card;
+                ctx.field(chosen.owner)[chosen.index] = null;
+                ctx.graveyard(chosen.owner).push(tribute);
+                DuelEngine.notifySacrificedForTribute(chosen.owner, tribute);
+                const [rod] = grave.splice(rodIndex, 1);
+                ctx.hand(ctx.owner).push(rod);
+                ctx.markUsedOncePerTurn(`magicians-rod-grave:${ctx.owner}`);
+                ctx.log(`${tribute.name} viene offerto: ${rod.name} torna in mano!`);
+            });
+        }
+    });
+
+    const darkCircleKey = (owner, effect) => `dark-magical-circle:${effect}:${owner}`;
+    const banishCircleTarget = (ctx) => {
+        if (ctx.hasUsedOncePerTurn(darkCircleKey(ctx.owner, 'banish'))) return;
+        const candidates = collectFieldTargets(ctx, { owner: 'opponent', zone: 'both', includiCoperte: true });
+        if (candidates.length === 0) return;
+        chooseFieldCardTarget(ctx, candidates, {
+            title: 'Cerchio Magico Oscuro', text: 'Scegli 1 carta controllata dall’avversario da bandire.', dichiara: true
+        }, (chosen) => {
+            const zone = chosen.zone === 'monster' ? ctx.field(chosen.owner) : ctx.stField(chosen.owner);
+            const slot = zone[chosen.index];
+            if (!slot) return;
+            zone[chosen.index] = null;
+            ctx.banish(chosen.owner, slot.card);
+            ctx.markUsedOncePerTurn(darkCircleKey(ctx.owner, 'banish'));
+            ctx.log(`${ctx.card.name} bandisce ${slot.card.name}!`);
+        });
+    };
+    CardEffects.register(1255, {
+        archetypes: ['dark-magician'],
+        continuous: true,
+        canActivate(ctx) { return !ctx.hasUsedOncePerTurn(darkCircleKey(ctx.owner, 'look')); },
+        activate(ctx) {
+            const deck = Tavolo.mazzo(ctx.owner);
+            if (!Array.isArray(deck) || deck.length === 0) return;
+            ctx.markUsedOncePerTurn(darkCircleKey(ctx.owner, 'look'));
+            const seen = deck.splice(Math.max(0, deck.length - 3));
+            const eligible = seen.filter((c) => isDarkMagician(c)
+                || ((c.type === 'spell' || c.type === 'trap') && mentionsDarkMagician(c)));
+            const finish = (chosen) => {
+                if (chosen) {
+                    const i = seen.indexOf(chosen);
+                    if (i !== -1) seen.splice(i, 1);
+                    ctx.hand(ctx.owner).push(chosen);
+                    ctx.log(`${ctx.card.name} rivela e aggiunge ${chosen.name} alla mano!`);
+                } else ctx.log(`${ctx.card.name} guarda le prime carte del Deck senza trovarne una idonea.`);
+                // In assenza di un ordinatore dedicato, le carte non prese
+                // tornano in cima nello stesso ordine relativo: nessuna
+                // informazione viene persa e il comportamento è stabile in
+                // Multiplayer.
+                deck.push(...seen);
+                gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = deck.length;
+            };
+            if (eligible.length === 0) finish(null);
+            else chooseCardFromList(ctx, eligible, {
+                title: 'Cerchio Magico Oscuro', text: 'Scegli Mago Nero o una carta che lo cita.'
+            }, finish);
+        },
+        onAnyNormalOrFlipSummon(ctx) {
+            if (ctx.summonedVia !== 'normal' || !isDarkMagician(ctx.summonedCard)) return;
+            if (!ctx.field(ctx.owner).some((s) => s && s.card.uid === ctx.summonedCard.uid)) return;
+            banishCircleTarget(ctx);
+        },
+        onAnySpecialSummon(ctx) {
+            if (!isDarkMagician(ctx.summonedCard)) return;
+            if (!ctx.field(ctx.owner).some((s) => s && s.card.uid === ctx.summonedCard.uid)) return;
+            banishCircleTarget(ctx);
+        }
+    });
+
+    const eternalSoulLeave = (ctx) => {
+        if (ctx.card._eternalSoulLeaveResolved) return;
+        ctx.card._eternalSoulLeaveResolved = true;
+        ctx.destroyAllMonsters(ctx.owner);
+        ctx.log(`${ctx.card.name} lascia il Terreno: tutti i tuoi mostri vengono distrutti!`);
+    };
+    CardEffects.register(1256, {
+        archetypes: ['dark-magician'],
+        continuous: true,
+        canActivate(ctx) {
+            if (ctx.hasUsedOncePerTurn(`eternal-soul:${ctx.owner}`)) return false;
+            const deck = Tavolo.mazzo(ctx.owner) || [];
+            return (ctx.findEmptyMonsterSlot(ctx.owner) !== -1
+                    && (ctx.hand(ctx.owner).some(isDarkMagician) || ctx.graveyard(ctx.owner).some(isDarkMagician)))
+                || deck.some((c) => c.id === 474 || c.id === 748);
+        },
+        activate(ctx) {
+            ctx.card._eternalSoulLeaveResolved = false;
+            const deck = Tavolo.mazzo(ctx.owner) || [];
+            const canSummon = ctx.findEmptyMonsterSlot(ctx.owner) !== -1
+                && (ctx.hand(ctx.owner).some(isDarkMagician) || ctx.graveyard(ctx.owner).some(isDarkMagician));
+            const canSearch = deck.some((c) => c.id === 474 || c.id === 748);
+            const resolve = (choice) => {
+                ctx.markUsedOncePerTurn(`eternal-soul:${ctx.owner}`);
+                if (choice === 'search') {
+                    searchDeckWithChoice(ctx, (c) => c.id === 474 || c.id === 748, {
+                        title: 'Anima Eterna', text: 'Scegli Attacco Magico Oscuro o Mille Coltelli.'
+                    }, (chosen) => { ctx.hand(ctx.owner).push(chosen); });
+                    return;
+                }
+                const pool = ctx.hand(ctx.owner).filter(isDarkMagician)
+                    .concat(ctx.graveyard(ctx.owner).filter(isDarkMagician));
+                chooseCardFromList(ctx, pool, {
+                    title: 'Anima Eterna', text: 'Scegli un Mago Nero da Evocare Specialmente.'
+                }, (chosen) => {
+                    let i = ctx.hand(ctx.owner).indexOf(chosen);
+                    let from = 'hand';
+                    if (i !== -1) ctx.hand(ctx.owner).splice(i, 1);
+                    else {
+                        from = 'graveyard';
+                        i = ctx.graveyard(ctx.owner).indexOf(chosen);
+                        if (i === -1) return;
+                        ctx.graveyard(ctx.owner).splice(i, 1);
+                    }
+                    const free = ctx.findEmptyMonsterSlot(ctx.owner);
+                    if (free === -1) { (from === 'hand' ? ctx.hand(ctx.owner) : ctx.graveyard(ctx.owner)).push(chosen); return; }
+                    ctx.specialSummon(ctx.owner, chosen, free, 'attack', from);
+                });
+            };
+            if (canSummon && canSearch) chooseOption(ctx, {
+                title: 'Anima Eterna', text: 'Scegli quale effetto applicare.',
+                options: [{ value: 'summon', label: 'Evoca Mago Nero' }, { value: 'search', label: 'Cerca una Magia' }],
+                pickForBot: () => 'summon'
+            }, resolve);
+            else resolve(canSummon ? 'summon' : 'search');
+        },
+        static(ctx) {
+            ctx.field(ctx.owner).forEach((slot) => {
+                if (slot && !slot.isFaceDown && isDarkMagician(slot.card)) {
+                    gameState.unaffectedByOpponentCardEffectsUids[slot.card.uid] = ctx.owner;
+                }
+            });
+        },
+        onSentToGraveyardFromField: eternalSoulLeave,
+        onBanished: eternalSoulLeave,
+        onReturnedToHandSelf: eternalSoulLeave
+    });
+
+    const isDarkMagicianGirl = (card) => card && card.type === 'monster'
+        && (card.id === 188 || cardHasEffectiveName(card, 'Maga Oscura'));
+    const isDarkMagicianPair = (card) => isDarkMagician(card) || isDarkMagicianGirl(card);
+
+    CardEffects.register(1257, {
+        archetypes: ['dark-magician'],
+        mentionsNames: ['Mago Nero', 'Maga Oscura'],
+        continuous: true,
+        canActivate(ctx) { return !ctx.hasUsedOncePerTurn(`magicians-salvation-activate:${ctx.owner}`); },
+        activate(ctx) {
+            ctx.markUsedOncePerTurn(`magicians-salvation-activate:${ctx.owner}`);
+            const free = DuelEngine.findFreeSTSlot(ctx.owner);
+            if (free === -1) return;
+            searchDeckWithChoice(ctx, (c) => c.id === 1256, {
+                title: 'Salvezza del Mago', text: 'Posiziona Anima Eterna direttamente dal Deck.'
+            }, (chosen) => {
+                ctx.stField(ctx.owner)[free] = { card: chosen, isFaceDown: true, setOnTurn: gameState.turn };
+                ctx.log(`${chosen.name} viene Posizionata direttamente dal Deck!`);
+            });
+        },
+        onAnyNormalOrFlipSummon(ctx) {
+            if (ctx.summonedVia !== 'normal') return;
+            this.reviveCounterpart(ctx);
+        },
+        onAnySpecialSummon(ctx) { this.reviveCounterpart(ctx); },
+        reviveCounterpart(ctx) {
+            if (!isDarkMagicianPair(ctx.summonedCard)
+                || !ctx.field(ctx.owner).some((s) => s && s.card.uid === ctx.summonedCard.uid)
+                || ctx.hasUsedOncePerTurn(`magicians-salvation-revive:${ctx.owner}`)
+                || ctx.findEmptyMonsterSlot(ctx.owner) === -1) return;
+            const needsGirl = isDarkMagician(ctx.summonedCard);
+            const match = needsGirl ? isDarkMagicianGirl : isDarkMagician;
+            if (!ctx.graveyard(ctx.owner).some(match)) return;
+            searchGraveyardWithChoice(ctx, ctx.owner, match, {
+                title: 'Salvezza del Mago',
+                text: `Evoca dal Cimitero ${needsGirl ? 'Maga Oscura' : 'Mago Nero'}.`
+            }, (chosen) => {
+                const free = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (free === -1) { ctx.graveyard(ctx.owner).push(chosen); return; }
+                ctx.markUsedOncePerTurn(`magicians-salvation-revive:${ctx.owner}`);
+                ctx.specialSummon(ctx.owner, chosen, free, 'attack', 'graveyard');
+            });
+        }
+    });
+
+    const soulServantEligible = (card) => card && card.id !== 1258
+        && (isDarkMagician(card) || cardMentionsName(card, 'Mago Nero') || cardMentionsName(card, 'Maga Oscura'));
+    CardEffects.register(1258, {
+        archetypes: ['dark-magician'],
+        mentionsNames: ['Mago Nero', 'Maga Oscura'],
+        canActivate(ctx) {
+            const deck = Tavolo.mazzo(ctx.owner) || [];
+            return ctx.hand(ctx.owner).some((c) => c.uid !== ctx.card.uid && soulServantEligible(c))
+                || deck.some(soulServantEligible)
+                || ctx.graveyard(ctx.owner).some((c) => c.uid !== ctx.card.uid && soulServantEligible(c));
+        },
+        activate(ctx) {
+            const deck = Tavolo.mazzo(ctx.owner) || [];
+            const candidates = ctx.hand(ctx.owner).filter((c) => c.uid !== ctx.card.uid && soulServantEligible(c))
+                .concat(deck.filter(soulServantEligible))
+                .concat(ctx.graveyard(ctx.owner).filter((c) => c.uid !== ctx.card.uid && soulServantEligible(c)));
+            chooseCardFromList(ctx, candidates, {
+                title: "Servitore dell'Anima", text: 'Scegli quale carta collocare in cima al Deck.'
+            }, (chosen) => {
+                const zones = [ctx.hand(ctx.owner), deck, ctx.graveyard(ctx.owner)];
+                const source = zones.find((zone) => zone.includes(chosen));
+                if (!source) return;
+                source.splice(source.indexOf(chosen), 1);
+                deck.push(chosen);
+                gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = deck.length;
+                ctx.log(`${chosen.name} viene collocata in cima al Deck.`);
+            });
+        },
+        canActivateFromGraveyardMainPhase(ctx) {
+            if (ctx.hasUsedOncePerTurn(`soul-servant-grave:${ctx.owner}`)) return false;
+            const zones = Tavolo.ordine().flatMap((owner) => ctx.field(owner).filter(Boolean).map((s) => s.card)
+                .concat(ctx.graveyard(owner)));
+            return zones.some((c) => isDarkMagicianPair(c) || /^Oracolo Palladio/i.test(c.name || ''));
+        },
+        activateFromGraveyardMainPhase(ctx) {
+            const grave = ctx.graveyard(ctx.owner);
+            const selfIndex = grave.findIndex((c) => c.uid === ctx.card.uid);
+            if (selfIndex === -1) return;
+            if (ctx.graveyardMoveNegated(ctx.owner)) return;
+            const names = new Set();
+            Tavolo.ordine().forEach((owner) => {
+                ctx.field(owner).forEach((slot) => {
+                    if (slot && (isDarkMagicianPair(slot.card) || /^Oracolo Palladio/i.test(slot.card.name || ''))) names.add(slot.card.name);
+                });
+                ctx.graveyard(owner).forEach((card) => {
+                    if (isDarkMagicianPair(card) || /^Oracolo Palladio/i.test(card.name || '')) names.add(card.name);
+                });
+            });
+            if (names.size === 0) return;
+            const [self] = grave.splice(selfIndex, 1);
+            ctx.banish(ctx.owner, self);
+            ctx.markUsedOncePerTurn(`soul-servant-grave:${ctx.owner}`);
+            ctx.drawCards(ctx.owner, names.size);
+            ctx.log(`${ctx.card.name} viene bandito: peschi ${names.size} cart${names.size === 1 ? 'a' : 'e'}!`);
+        }
+    });
+
+    function ritualPlansForSecrets(ctx) {
+        const hand = ctx.hand(ctx.owner);
+        const field = ctx.field(ctx.owner);
+        const rituals = hand.filter((c) => c.type === 'monster' && c.category === 'ritual');
+        const plans = [];
+        rituals.forEach((ritual) => {
+            const pool = hand.map((card, index) => card === ritual ? null : { card, zone: 'hand', index })
+                .filter(Boolean)
+                .concat(field.map((slot, index) => slot && !slot.isFaceDown ? { card: slot.card, zone: 'monster', index } : null).filter(Boolean));
+            let best = null;
+            const maxMask = 1 << pool.length;
+            for (let mask = 1; mask < maxMask; mask++) {
+                const chosen = pool.filter((entry, i) => mask & (1 << i));
+                const total = chosen.reduce((sum, entry) => sum + (entry.card.level || 0), 0);
+                if (total < ritual.level || !chosen.some((entry) => isDarkMagicianPair(entry.card))) continue;
+                if (ctx.findEmptyMonsterSlot(ctx.owner) === -1 && !chosen.some((entry) => entry.zone === 'monster')) continue;
+                const score = chosen.length * 100 + (total - ritual.level);
+                if (!best || score < best.score) best = { ritual, materials: chosen, score };
+            }
+            if (best) plans.push(best);
+        });
+        return plans;
+    }
+
+    CardEffects.register(1259, {
+        archetypes: ['dark-magician'],
+        mentionsNames: ['Mago Nero', 'Maga Oscura'],
+        canActivate(ctx) {
+            const fusions = DuelEngine.getFusableExtraDeckMonsters(ctx.owner).filter((entry) => entry.materialLocations.some((loc) => {
+                const card = loc.zone === 'hand' ? ctx.hand(ctx.owner)[loc.index] : ctx.field(ctx.owner)[loc.index]?.card;
+                return isDarkMagicianPair(card);
+            }));
+            return fusions.length > 0 || ritualPlansForSecrets(ctx).length > 0;
+        },
+        activate(ctx) {
+            const fusions = DuelEngine.getFusableExtraDeckMonsters(ctx.owner).filter((entry) => entry.materialLocations.some((loc) => {
+                const card = loc.zone === 'hand' ? ctx.hand(ctx.owner)[loc.index] : ctx.field(ctx.owner)[loc.index]?.card;
+                return isDarkMagicianPair(card);
+            }));
+            const rituals = ritualPlansForSecrets(ctx);
+            const doFusion = () => chooseCardFromList(ctx, fusions.map((entry) => entry.card), {
+                title: 'Segreti della Magia Oscura', text: 'Scegli il Mostro Fusione da Evocare.'
+            }, (chosen) => {
+                const plan = fusions.find((entry) => entry.card.uid === chosen.uid);
+                if (plan) ctx.fusionSummon(ctx.owner, plan.extraDeckIndex, plan.materialLocations);
+            });
+            const doRitual = () => chooseCardFromList(ctx, rituals.map((entry) => entry.ritual), {
+                title: 'Segreti della Magia Oscura', text: 'Scegli il Mostro Rituale da Evocare.'
+            }, (chosen) => {
+                const plan = rituals.find((entry) => entry.ritual.uid === chosen.uid);
+                if (!plan) return;
+                const materialCards = plan.materials.map((entry) => entry.card);
+                ctx._pendingRitualVisual = { materials: materialCards };
+                plan.materials.filter((e) => e.zone === 'monster').forEach((entry) => {
+                    ctx.field(ctx.owner)[entry.index] = null;
+                    ctx.graveyard(ctx.owner).push(entry.card);
+                });
+                plan.materials.filter((e) => e.zone === 'hand').sort((a, b) => b.index - a.index).forEach((entry) => {
+                    const i = ctx.hand(ctx.owner).indexOf(entry.card);
+                    if (i !== -1) ctx.graveyard(ctx.owner).push(ctx.hand(ctx.owner).splice(i, 1)[0]);
+                });
+                const ritualIndex = ctx.hand(ctx.owner).indexOf(chosen);
+                if (ritualIndex === -1) return;
+                ctx.hand(ctx.owner).splice(ritualIndex, 1);
+                const free = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (free === -1) { ctx.graveyard(ctx.owner).push(chosen); return; }
+                ctx.specialSummon(ctx.owner, chosen, free, 'attack', 'hand');
+            });
+            if (fusions.length && rituals.length) chooseOption(ctx, {
+                title: 'Segreti della Magia Oscura', text: 'Quale Evocazione vuoi effettuare?',
+                options: [{ value: 'fusion', label: 'Evocazione Fusione' }, { value: 'ritual', label: 'Evocazione Rituale' }],
+                pickForBot: () => 'fusion'
+            }, (choice) => choice === 'fusion' ? doFusion() : doRitual());
+            else if (fusions.length) doFusion();
+            else if (rituals.length) doRitual();
+        }
+    });
+
+    CardEffects.register(1260, {
+        archetypes: ['dark-magician'],
+        mentionsNames: ['Mago Nero', 'Maga Oscura'],
+        fusionMaterialMatchers: [isDarkMagicianPair, (card) => card && card.type === 'monster' && card.race === 'Incantatore'],
+        canActivateOnCardActivated(ctx) {
+            return !ctx.hasUsedOncePerTurn(`the-dark-magicians-draw:${ctx.card.uid}`);
+        },
+        onCardActivated(ctx) {
+            ctx.markUsedOncePerTurn(`the-dark-magicians-draw:${ctx.card.uid}`);
+            const before = ctx.hand(ctx.owner).length;
+            ctx.drawCards(ctx.owner, 1);
+            const drawn = ctx.hand(ctx.owner)[ctx.hand(ctx.owner).length - 1];
+            if (!drawn || ctx.hand(ctx.owner).length === before || (drawn.type !== 'spell' && drawn.type !== 'trap')) return;
+            const free = DuelEngine.findFreeSTSlot(ctx.owner);
+            if (free === -1) return;
+            const setCard = () => {
+                const index = ctx.hand(ctx.owner).indexOf(drawn);
+                if (index === -1) return;
+                ctx.hand(ctx.owner).splice(index, 1);
+                const immediatelyUsable = drawn.type === 'trap' || drawn.subtype === 'quick-play';
+                ctx.stField(ctx.owner)[free] = {
+                    card: drawn, isFaceDown: true,
+                    setOnTurn: immediatelyUsable ? gameState.turn - 1 : gameState.turn
+                };
+                ctx.log(`${drawn.name} viene Posizionata dall'effetto di ${ctx.card.name}!`);
+            };
+            chooseOption(ctx, {
+                title: 'I Maghi Neri', text: `Vuoi Posizionare ${drawn.name}?`,
+                options: [{ value: 'set', label: 'Posiziona' }, { value: 'keep', label: 'Tieni in mano' }],
+                pickForBot: () => 'set'
+            }, (choice) => { if (choice === 'set') setCard(); });
+        },
+        onDestroy(ctx) {
+            const find = (match) => {
+                const zones = [ctx.graveyard(ctx.owner), ctx.hand(ctx.owner), Tavolo.mazzo(ctx.owner) || []];
+                for (const zone of zones) {
+                    const card = zone.find(match);
+                    if (card) return { card, zone };
+                }
+                return null;
+            };
+            const dm = find(isDarkMagician);
+            const girl = find(isDarkMagicianGirl);
+            const freeSlots = ctx.field(ctx.owner).map((slot, index) => slot ? -1 : index).filter((index) => index !== -1);
+            if (!dm || !girl || dm.card.uid === girl.card.uid || freeSlots.length < 2) return;
+            [dm, girl].forEach((entry, i) => {
+                entry.zone.splice(entry.zone.indexOf(entry.card), 1);
+                ctx.specialSummon(ctx.owner, entry.card, freeSlots[i], 'attack', entry.zone === ctx.hand(ctx.owner) ? 'hand' : entry.zone === ctx.graveyard(ctx.owner) ? 'graveyard' : 'deck');
+            });
+            gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = (Tavolo.mazzo(ctx.owner) || []).length;
+            ctx.log(`${ctx.card.name} richiama Mago Nero e Maga Oscura!`);
+        }
+    });
+
+    // ================================================================
+    // Supporti moderni Drago Bianco — primo pacchetto.
+    // ================================================================
+    const melodyDragon = (card) => card && card.type === 'monster' && card.race === 'Drago'
+        && (card.attack || 0) >= 3000 && (card.defense || 0) <= 2500;
+    CardEffects.register(1261, {
+        archetypes: ['blue-eyes'],
+        canActivate(ctx) {
+            const deck = Tavolo.mazzo(ctx.owner);
+            return ctx.hand(ctx.owner).some((c) => c.uid !== ctx.card.uid)
+                && Array.isArray(deck) && deck.some(melodyDragon);
+        },
+        activate(ctx) {
+            chooseCardFromHand(ctx, {
+                filter: (c) => c.uid !== ctx.card.uid,
+                title: 'La Melodia del Drago che si Risveglia',
+                text: 'Scegli la carta da scartare come costo.'
+            }, (discarded, index) => {
+                const paid = ctx.discardChosenFromHand(ctx.owner, index);
+                if (!paid) return;
+                const deck = Tavolo.mazzo(ctx.owner) || [];
+                const candidates = deck.filter(melodyDragon);
+                chooseUpToNFromList(ctx, candidates, 2, {
+                    min: 1,
+                    title: 'La Melodia del Drago che si Risveglia',
+                    text: 'Scegli fino a 2 Draghi da aggiungere alla mano.',
+                    pickForBot: (cards, max) => cards.slice().sort((a, b) => (b.attack || 0) - (a.attack || 0)).slice(0, max)
+                }, (chosen) => {
+                    chosen.forEach((card) => {
+                        const i = deck.indexOf(card);
+                        if (i !== -1) ctx.hand(ctx.owner).push(deck.splice(i, 1)[0]);
+                    });
+                    gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = deck.length;
+                    ctx.log(`${paid.name} viene scartata: aggiunte ${chosen.length} carte Drago alla mano!`);
+                });
+            });
+        }
+    });
+
+    CardEffects.register(1262, {
+        archetypes: ['blue-eyes'],
+        treatedAsNamesByZone: {
+            monster: ['Drago Bianco Occhi Blu'],
+            graveyard: ['Drago Bianco Occhi Blu']
+        },
+        cannotNormalSummon: true,
+        canSpecialSummonFromHand(ctx) {
+            return !ctx.hasUsedOncePerTurn(`alternative-special:${ctx.owner}`)
+                && ctx.hand(ctx.owner).some((c) => c.uid !== ctx.card.uid && c.id === 1);
+        },
+        paySpecialSummonCost(ctx) {
+            if (!ctx.hand(ctx.owner).some((c) => c.uid !== ctx.card.uid && c.id === 1)) return false;
+            ctx.markUsedOncePerTurn(`alternative-special:${ctx.owner}`);
+            ctx.log('🐉 Drago Bianco Occhi Blu viene rivelato dalla mano!');
+            return true;
+        },
+        canActivate(ctx) {
+            return ctx.zone === 'monster'
+                && !ctx.hasUsedOncePerTurn(`alternative-destroy:${ctx.card.uid}`)
+                && ctx.field(ctx.opponent).some(Boolean);
+        },
+        activate(ctx) {
+            const targets = collectFieldTargets(ctx, { owner: 'opponent', zone: 'monster', includiCoperte: true });
+            chooseFieldCardTarget(ctx, targets, {
+                title: 'Drago Bianco Alternativo Occhi Blu',
+                text: 'Scegli il mostro avversario da distruggere.', dichiara: true
+            }, (chosen) => {
+                ctx.markUsedOncePerTurn(`alternative-destroy:${ctx.card.uid}`);
+                ctx.card._alternativeNoAttackTurn = gameState.turn;
+                ctx.destroyMonster(chosen.owner, chosen.index);
+            });
+        },
+        static(ctx) {
+            if (ctx.card._alternativeNoAttackTurn === gameState.turn) {
+                gameState.cannotAttackUids[ctx.card.uid] = true;
+            }
+        }
+    });
+
+    const isBlueEyesWhiteDragonHere = (card, zone) => cardHasEffectiveName(card, 'Drago Bianco Occhi Blu', zone);
+    const trueLightLeave = (ctx) => {
+        if (ctx.wasFaceDown || ctx.card._trueLightLeaveResolved) return;
+        ctx.card._trueLightLeaveResolved = true;
+        ctx.destroyAllMonsters(ctx.owner);
+        ctx.log(`${ctx.card.name} viene mandata al Cimitero: tutti i tuoi mostri vengono distrutti!`);
+    };
+    CardEffects.register(1263, {
+        archetypes: ['blue-eyes'],
+        mentionsNames: ['Drago Bianco Occhi Blu'],
+        continuous: true,
+        repeatableWhileContinuous: true,
+        canActivate(ctx) {
+            if (ctx.hasUsedOncePerTurn(`true-light:${ctx.owner}`)) return false;
+            const deck = Tavolo.mazzo(ctx.owner) || [];
+            const canSummon = ctx.findEmptyMonsterSlot(ctx.owner) !== -1
+                && (ctx.hand(ctx.owner).some((c) => isBlueEyesWhiteDragonHere(c, 'hand'))
+                    || ctx.graveyard(ctx.owner).some((c) => isBlueEyesWhiteDragonHere(c, 'graveyard')));
+            const occupiedNames = new Set(ctx.stField(ctx.owner).filter(Boolean).map((s) => s.card.name)
+                .concat(ctx.graveyard(ctx.owner).map((c) => c.name)));
+            const canSet = DuelEngine.findFreeSTSlot(ctx.owner) !== -1
+                && deck.some((c) => (c.type === 'spell' || c.type === 'trap')
+                    && cardMentionsName(c, 'Drago Bianco Occhi Blu') && !occupiedNames.has(c.name));
+            return canSummon || canSet;
+        },
+        activate(ctx) {
+            ctx.card._trueLightLeaveResolved = false;
+            const deck = Tavolo.mazzo(ctx.owner) || [];
+            const canSummon = ctx.findEmptyMonsterSlot(ctx.owner) !== -1
+                && (ctx.hand(ctx.owner).some((c) => isBlueEyesWhiteDragonHere(c, 'hand'))
+                    || ctx.graveyard(ctx.owner).some((c) => isBlueEyesWhiteDragonHere(c, 'graveyard')));
+            const occupiedNames = new Set(ctx.stField(ctx.owner).filter(Boolean).map((s) => s.card.name)
+                .concat(ctx.graveyard(ctx.owner).map((c) => c.name)));
+            const setCandidates = deck.filter((c) => (c.type === 'spell' || c.type === 'trap')
+                && cardMentionsName(c, 'Drago Bianco Occhi Blu') && !occupiedNames.has(c.name));
+            const canSet = DuelEngine.findFreeSTSlot(ctx.owner) !== -1 && setCandidates.length > 0;
+            const resolve = (choice) => {
+                ctx.markUsedOncePerTurn(`true-light:${ctx.owner}`);
+                if (choice === 'set') {
+                    searchDeckWithChoice(ctx, (c) => setCandidates.includes(c), {
+                        title: 'Luce Autentica', text: 'Scegli la Magia/Trappola da Posizionare.'
+                    }, (chosen) => {
+                        const free = DuelEngine.findFreeSTSlot(ctx.owner);
+                        if (free === -1) { deck.push(chosen); return; }
+                        ctx.stField(ctx.owner)[free] = { card: chosen, isFaceDown: true, setOnTurn: gameState.turn };
+                    });
+                    return;
+                }
+                const pool = ctx.hand(ctx.owner).filter((c) => isBlueEyesWhiteDragonHere(c, 'hand'))
+                    .concat(ctx.graveyard(ctx.owner).filter((c) => isBlueEyesWhiteDragonHere(c, 'graveyard')));
+                chooseCardFromList(ctx, pool, {
+                    title: 'Luce Autentica', text: 'Scegli il Drago Bianco da Evocare Specialmente.'
+                }, (chosen) => {
+                    let from = 'hand';
+                    let i = ctx.hand(ctx.owner).indexOf(chosen);
+                    if (i !== -1) ctx.hand(ctx.owner).splice(i, 1);
+                    else {
+                        from = 'graveyard';
+                        i = ctx.graveyard(ctx.owner).indexOf(chosen);
+                        if (i === -1) return;
+                        ctx.graveyard(ctx.owner).splice(i, 1);
+                    }
+                    const free = ctx.findEmptyMonsterSlot(ctx.owner);
+                    if (free === -1) { (from === 'hand' ? ctx.hand(ctx.owner) : ctx.graveyard(ctx.owner)).push(chosen); return; }
+                    ctx.specialSummon(ctx.owner, chosen, free, 'attack', from);
+                });
+            };
+            if (canSummon && canSet) chooseOption(ctx, {
+                title: 'Luce Autentica', text: 'Scegli quale effetto applicare.',
+                options: [{ value: 'summon', label: 'Evoca un Drago Bianco' }, { value: 'set', label: 'Posiziona dal Deck' }],
+                pickForBot: () => 'summon'
+            }, resolve);
+            else resolve(canSummon ? 'summon' : 'set');
+        },
+        static(ctx) {
+            ctx.field(ctx.owner).forEach((slot) => {
+                if (slot && !slot.isFaceDown && isBlueEyesWhiteDragonHere(slot.card, 'monster')) {
+                    gameState.cannotBeTargetedByOpponentEffectsUids[slot.card.uid] = ctx.owner;
+                }
+            });
+        },
+        onSentToGraveyardFromField: trueLightLeave
+    });
+
+    // ================================================================
+    // Supporti moderni Drago Bianco — secondo pacchetto.
+    // ================================================================
+    const blueEyesFusionMaterial = (card, zone) => cardHasEffectiveName(card, 'Drago Bianco Occhi Blu', zone);
+
+    function ultimateFusionPlans(ctx) {
+        if (gameState.phase !== 'main1' && gameState.phase !== 'main2') return [];
+        const hand = ctx.hand(ctx.owner);
+        const field = ctx.field(ctx.owner);
+        const grave = ctx.graveyard(ctx.owner);
+        const extra = Tavolo.extraDeck(ctx.owner) || [];
+        const pool = grave.map((card, index) => ({ card, zone: 'graveyard', index }))
+            .concat(hand.map((card, index) => ({ card, zone: 'hand', index })))
+            .concat(field.map((slot, index) => slot && !slot.isFaceDown
+                ? { card: slot.card, zone: 'monster', index }
+                : null).filter(Boolean));
+        const fieldFull = ctx.findEmptyMonsterSlot(ctx.owner) === -1;
+        const plans = [];
+        extra.forEach((fusion, extraDeckIndex) => {
+            const def = DuelEngine.getDefinition(fusion.id);
+            if (!def) return;
+            const fixed = Array.isArray(def.fusionMaterials) ? def.fusionMaterials : [];
+            const flexible = Array.isArray(def.fusionMaterialMatchers) ? def.fusionMaterialMatchers : [];
+            if (fixed.length === 0 && flexible.length === 0) return;
+            // Fusione Definitiva accetta soltanto Fusioni che nominano uno
+            // dei due boss classici come materiale. Nel dataset le Fusioni
+            // ammesse espongono materialNames per non dipendere dal testo
+            // tradotto mostrato a video.
+            const materialNames = Array.isArray(def.fusionMaterialNames) ? def.fusionMaterialNames : [];
+            if (!materialNames.some((name) => name === 'Drago Bianco Occhi Blu' || name === 'Drago Bianco Definitivo')) return;
+            const requirements = fixed.map((id) => (card, zone) => id === 1
+                ? blueEyesFusionMaterial(card, zone)
+                : card.id === id).concat(flexible);
+            const used = new Set();
+            const materials = [];
+            const take = (matcher) => {
+                const entry = pool.find((candidate) => !used.has(candidate.card.uid)
+                    && matcher(candidate.card, candidate.zone));
+                if (!entry) return false;
+                used.add(entry.card.uid);
+                materials.push(entry);
+                return true;
+            };
+            if (!requirements.every(take)) return;
+            if (!materials.some((entry) => blueEyesFusionMaterial(entry.card, entry.zone)
+                || entry.card.id === 29)) return;
+            if (fieldFull && !materials.some((entry) => entry.zone === 'monster')) return;
+            plans.push({ fusion, extraDeckIndex, materials });
+        });
+        return plans;
+    }
+
+    function resolveUltimateFusion(ctx, plan) {
+        const hand = ctx.hand(ctx.owner);
+        const field = ctx.field(ctx.owner);
+        const grave = ctx.graveyard(ctx.owner);
+        const extra = Tavolo.extraDeck(ctx.owner) || [];
+        const freeBefore = ctx.findEmptyMonsterSlot(ctx.owner);
+        const fieldMaterialSlots = plan.materials.filter((entry) => entry.zone === 'monster').map((entry) => entry.index);
+        const destination = freeBefore !== -1 ? freeBefore : fieldMaterialSlots[0];
+        if (destination === undefined || destination === -1 || extra[plan.extraDeckIndex]?.uid !== plan.fusion.uid) return false;
+        if (plan.materials.some((entry) => entry.zone === 'graveyard') && ctx.graveyardMoveNegated(ctx.owner)) return false;
+        const materialCards = plan.materials.map((entry) => entry.card);
+        const fieldBlueEyesCount = plan.materials.filter((entry) => entry.zone === 'monster'
+            && (blueEyesFusionMaterial(entry.card, 'monster') || entry.card.id === 29)).length;
+        const usedAlternative = materialCards.some((card) => card.id === 1262);
+        plan.materials.filter((entry) => entry.zone === 'hand').sort((a, b) => b.index - a.index).forEach((entry) => {
+            const index = hand.findIndex((card) => card.uid === entry.card.uid);
+            if (index !== -1) hand.splice(index, 1);
+        });
+        plan.materials.filter((entry) => entry.zone === 'graveyard').sort((a, b) => b.index - a.index).forEach((entry) => {
+            const index = grave.findIndex((card) => card.uid === entry.card.uid);
+            if (index !== -1) grave.splice(index, 1);
+        });
+        plan.materials.filter((entry) => entry.zone === 'monster').forEach((entry) => {
+            if (field[entry.index] && field[entry.index].card.uid === entry.card.uid) field[entry.index] = null;
+        });
+        extra.splice(plan.extraDeckIndex, 1);
+        const deck = Tavolo.mazzo(ctx.owner) || [];
+        deck.push(...materialCards);
+        Casuale.mescola(deck);
+        gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = deck.length;
+        plan.fusion._fusionSummonedWithAlternative = usedAlternative;
+        if (typeof updateUI === 'function') updateUI();
+        const finish = () => {
+            ctx.specialSummon(ctx.owner, plan.fusion, destination, 'attack', 'extra');
+            if (fieldBlueEyesCount <= 0) return;
+            const targets = ctx.field(ctx.opponent).map((slot, index) => slot && !slot.isFaceDown
+                ? { card: slot.card, zone: 'monster', index }
+                : null).filter(Boolean).concat(ctx.stField(ctx.opponent).map((slot, index) => slot && !slot.isFaceDown
+                ? { card: slot.card, zone: 'st', index }
+                : null).filter(Boolean));
+            chooseUpToNFromList(ctx, targets.map((entry) => entry.card), fieldBlueEyesCount, {
+                min: 0, title: 'Fusione Definitiva',
+                text: 'Scegli le carte scoperte avversarie da distruggere.',
+                pickForBot: (cards, max) => cards.slice(0, max)
+            }, (chosen) => chosen.forEach((card) => {
+                const entry = targets.find((target) => target.card.uid === card.uid);
+                if (!entry) return;
+                if (entry.zone === 'monster') ctx.destroyTargetedMonster(ctx.opponent, entry.index);
+                else ctx.destroySpellTrap(ctx.opponent, entry.index);
+            }));
+        };
+        if (window.FX && typeof FX.playFusionMaterialEffect === 'function') {
+            FX.playFusionMaterialEffect(materialCards, plan.fusion, ctx.owner, finish);
+        } else finish();
+        return true;
+    }
+
+    CardEffects.register(1264, {
+        archetypes: ['blue-eyes'],
+        mentionsNames: ['Drago Bianco Occhi Blu', 'Drago Bianco Definitivo'],
+        canActivate(ctx) {
+            return !ctx.hasUsedOncePerTurn(`ultimate-fusion:${ctx.owner}`)
+                && ultimateFusionPlans(ctx).length > 0;
+        },
+        activate(ctx) {
+            const plans = ultimateFusionPlans(ctx);
+            if (plans.length === 0) return;
+            chooseCardFromList(ctx, plans.map((plan) => plan.fusion), {
+                title: 'Fusione Definitiva', text: 'Scegli il Mostro Fusione da Evocare.'
+            }, (chosen) => {
+                const plan = plans.find((entry) => entry.fusion.uid === chosen.uid);
+                if (!plan) return;
+                ctx.markUsedOncePerTurn(`ultimate-fusion:${ctx.owner}`);
+                resolveUltimateFusion(ctx, plan);
+            });
+        }
+    });
+
+    CardEffects.register(1265, {
+        archetypes: ['blue-eyes'],
+        fusionMaterialNames: ['Drago Bianco Occhi Blu'],
+        fusionMaterialMatchers: [blueEyesFusionMaterial, blueEyesFusionMaterial, blueEyesFusionMaterial],
+        cannotBeDestroyedByOpponentCardEffect: true,
+        canActivate(ctx) {
+            return ctx.zone === 'monster'
+                && !ctx.hasUsedOncePerTurn(`alternative-ultimate-destroy:${ctx.card.uid}`)
+                && (ctx.field(ctx.opponent).some(Boolean) || ctx.stField(ctx.opponent).some(Boolean));
+        },
+        activate(ctx) {
+            const maximum = ctx.card._fusionSummonedWithAlternative ? 3 : 1;
+            const targets = ctx.field(ctx.opponent).map((slot, index) => slot
+                ? { card: slot.card, zone: 'monster', index }
+                : null).filter(Boolean).concat(ctx.stField(ctx.opponent).map((slot, index) => slot
+                ? { card: slot.card, zone: 'st', index }
+                : null).filter(Boolean));
+            chooseUpToNFromList(ctx, targets.map((entry) => entry.card), maximum, {
+                min: 1, title: 'Drago Bianco Alternativo Definitivo',
+                text: `Scegli fino a ${maximum} cart${maximum === 1 ? 'a' : 'e'} da distruggere.`,
+                pickForBot: (cards, max) => cards.slice(0, max)
+            }, (chosen) => {
+                if (!chosen.length) return;
+                ctx.markUsedOncePerTurn(`alternative-ultimate-destroy:${ctx.card.uid}`);
+                ctx.card._alternativeUltimateNoAttackTurn = gameState.turn;
+                chosen.forEach((card) => {
+                    const entry = targets.find((target) => target.card.uid === card.uid);
+                    if (!entry) return;
+                    if (entry.zone === 'monster') ctx.destroyTargetedMonster(ctx.opponent, entry.index);
+                    else ctx.destroySpellTrap(ctx.opponent, entry.index);
+                });
+            });
+        },
+        static(ctx) {
+            gameState.cannotBeTargetedByOpponentEffectsUids[ctx.card.uid] = ctx.owner;
+            if (ctx.card._alternativeUltimateNoAttackTurn === gameState.turn) {
+                gameState.cannotAttackUids[ctx.card.uid] = true;
+            }
+        }
+    });
+
+    // ================================================================
+    // Supporti moderni Toon — primo pacchetto. Conservano la mediazione
+    // anime del progetto: con un Mondo attivo i Toon attaccano subito.
+    // ================================================================
+    CardEffects.register(1266, {
+        archetypes: ['toon'],
+        treatedAsNames: ['Mondo dei Toon'],
+        canActivate(ctx) {
+            const deck = Tavolo.mazzo(ctx.owner);
+            return Array.isArray(deck) && deck.length >= 3;
+        },
+        activate(ctx) {
+            const deck = Tavolo.mazzo(ctx.owner) || [];
+            const banished = [];
+            for (let i = 0; i < 3 && deck.length; i++) banished.push(deck.pop());
+            banished.forEach((card) => ctx.banish(ctx.owner, card));
+            gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = deck.length;
+            ctx.log('🏰 Regno Toon bandisce le prime 3 carte del Deck e apre le porte del regno!');
+        },
+        static(ctx) {
+            ctx.field(ctx.owner).forEach((slot) => {
+                if (!slot || slot.isFaceDown || !cardHasArchetype(slot.card, 'toon')) return;
+                gameState.directAttackAllowedUids[slot.card.uid] = true;
+                gameState.cannotBeTargetedByOpponentEffectsUids[slot.card.uid] = ctx.owner;
+            });
+        }
+    });
+
+    const bookmarkCandidate = (card) => card && card.id !== 1267
+        && (card.id === 487 || card.id === 1266 || cardMentionsName(card, 'Mondo dei Toon'));
+    CardEffects.register(1267, {
+        archetypes: ['toon'],
+        mentionsNames: ['Mondo dei Toon'],
+        canActivate(ctx) {
+            return !ctx.hasUsedOncePerTurn(`toon-bookmark:${ctx.owner}`)
+                && (Tavolo.mazzo(ctx.owner) || []).some(bookmarkCandidate);
+        },
+        activate(ctx) {
+            ctx.markUsedOncePerTurn(`toon-bookmark:${ctx.owner}`);
+            searchDeckWithChoice(ctx, bookmarkCandidate, {
+                title: 'Segnalibro Toon', text: 'Scegli Mondo dei Toon o una carta che lo cita.',
+                pickForBot: (cards) => cards.find((card) => card.id === 1266)
+                    || cards.find((card) => card.id === 487) || cards[0]
+            }, (chosen) => ctx.hand(ctx.owner).push(chosen));
+        }
+    });
+
+    CardEffects.register(1268, {
+        archetypes: ['toon', 'harpie'],
+        isToon: true,
+        mentionsNames: ['Mondo dei Toon'],
+        canSpecialSummonFromHand(ctx) {
+            return DuelEngine.hasActiveToonWorld(ctx.owner)
+                && !ctx.hasUsedOncePerTurn(`toon-harpie-summon:${ctx.owner}`);
+        },
+        paySpecialSummonCost(ctx) {
+            ctx.markUsedOncePerTurn(`toon-harpie-summon:${ctx.owner}`);
+            return true;
+        },
+        onSpecialSummon(ctx) {
+            const hasOtherToon = ctx.field(ctx.owner).some((slot) => slot && slot.card.uid !== ctx.card.uid
+                && cardHasArchetype(slot.card, 'toon'));
+            const targets = ctx.stField(ctx.opponent).map((slot, index) => slot ? { card: slot.card, index } : null).filter(Boolean);
+            if (!hasOtherToon || targets.length === 0) return;
+            chooseCardFromList(ctx, targets.map((entry) => entry.card), {
+                title: 'Signora Arpia Toon', text: 'Scegli la Magia/Trappola avversaria da distruggere.',
+                pickForBot: (cards) => cards[0]
+            }, (chosen) => {
+                const entry = targets.find((target) => target.card.uid === chosen.uid);
+                if (entry && ctx.stField(ctx.opponent)[entry.index]) ctx.destroySpellTrap(ctx.opponent, entry.index);
+            });
+        },
+        mustTargetFilterIfPresent(card, owner) {
+            return DuelEngine.hasActiveToonWorld(owner) && cardHasArchetype(card, 'toon');
+        }
+    });
+
+    // ================================================================
+    // Supporti moderni Toon — secondo pacchetto. Gira-Pagina estende la
+    // consistenza senza scegliere il risultato; il Soldato usa il costo
+    // reale misto mano/Terreno, ma conserva la mediazione anime del gioco
+    // sull'attacco immediato e diretto con un Mondo attivo.
+    // ================================================================
+    CardEffects.register(1269, {
+        archetypes: ['toon'],
+        mentionsNames: ['Mondo dei Toon'],
+        canActivate(ctx) {
+            if (!DuelEngine.hasActiveToonWorld(ctx.owner)
+                || ctx.hasUsedOncePerTurn(`toon-page-flip:${ctx.owner}`)
+                || ctx.findEmptyMonsterSlot(ctx.owner) === -1) return false;
+            const names = new Set((Tavolo.mazzo(ctx.owner) || [])
+                .filter((card) => card.type === 'monster' && cardHasArchetype(card, 'toon'))
+                .map((card) => card.name));
+            return names.size >= 3;
+        },
+        activate(ctx) {
+            const deck = Tavolo.mazzo(ctx.owner) || [];
+            const byName = new Map();
+            deck.forEach((card) => {
+                if (card.type === 'monster' && cardHasArchetype(card, 'toon') && !byName.has(card.name)) {
+                    byName.set(card.name, card);
+                }
+            });
+            const candidates = Array.from(byName.values());
+            if (candidates.length < 3 || ctx.findEmptyMonsterSlot(ctx.owner) === -1) return;
+            ctx.markUsedOncePerTurn(`toon-page-flip:${ctx.owner}`);
+            chooseUpToNFromList(ctx, candidates, 3, {
+                min: 3,
+                title: 'Gira-Pagina Toon',
+                text: 'Rivela 3 mostri Toon con nomi diversi.',
+                pickForBot: (cards) => cards.slice().sort((a, b) => (b.attack || 0) - (a.attack || 0)).slice(0, 3)
+            }, (revealed) => {
+                if (revealed.length !== 3) return;
+                const picked = revealed[Math.floor(ctx.random() * revealed.length)];
+                const index = deck.findIndex((card) => card.uid === picked.uid);
+                const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+                if (index === -1 || slotIndex === -1) return;
+                const [summoned] = deck.splice(index, 1);
+                Casuale.mescola(deck);
+                gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = deck.length;
+                ctx.specialSummon(ctx.owner, summoned, slotIndex, 'attack', 'deck');
+                ctx.log(`Gira-Pagina Toon rivela ${revealed.map((card) => card.name).join(', ')}: ${summoned.name} viene scelto ed Evocato!`);
+            });
+        }
+    });
+
+    const toonBlsCandidates = (ctx) => {
+        const out = [];
+        ctx.hand(ctx.owner).forEach((card, index) => {
+            if (card.uid !== ctx.card.uid && card.type === 'monster' && cardHasArchetype(card, 'toon')) {
+                out.push({ card, zone: 'hand', index });
+            }
+        });
+        ctx.field(ctx.owner).forEach((slot, index) => {
+            if (slot && slot.card.type === 'monster' && cardHasArchetype(slot.card, 'toon')) {
+                out.push({ card: slot.card, zone: 'monster', index });
+            }
+        });
+        return out;
+    };
+    const toonBlsSelectionValid = (ctx, entries) => {
+        const enoughLevels = entries.reduce((sum, entry) => sum + (entry.card.level || 0), 0) >= 8;
+        const hasSpace = ctx.findEmptyMonsterSlot(ctx.owner) !== -1 || entries.some((entry) => entry.zone === 'monster');
+        return enoughLevels && hasSpace;
+    };
+    const toonBlsAutomaticPlan = (ctx, candidates) => {
+        let best = null;
+        const combinations = 1 << candidates.length;
+        for (let mask = 1; mask < combinations; mask++) {
+            const entries = candidates.filter((entry, index) => (mask & (1 << index)) !== 0);
+            if (!toonBlsSelectionValid(ctx, entries)) continue;
+            const total = entries.reduce((sum, entry) => sum + (entry.card.level || 0), 0);
+            // Prima conserva il maggior numero di risorse, poi evita di
+            // offrire Livelli inutili; a parita' preferisce la mano.
+            const fieldCount = entries.filter((entry) => entry.zone === 'monster').length;
+            const score = entries.length * 10000 + (total - 8) * 100 + fieldCount;
+            if (!best || score < best.score) best = { entries, score };
+        }
+        return best ? best.entries : [];
+    };
+
+    CardEffects.register(1270, {
+        archetypes: ['toon'],
+        isToon: true,
+        mentionsNames: ['Mondo dei Toon'],
+        cannotNormalSummon: true,
+        cannotBeSet: true,
+        specialSummonReleasesOwnMonsterZone: true,
+        specialSummonMixedTributeMinLevel: 8,
+        getSpecialSummonMixedTributeCandidates(ctx) { return toonBlsCandidates(ctx); },
+        isSpecialSummonMixedTributeSelectionValid(ctx, entries) { return toonBlsSelectionValid(ctx, entries); },
+        canSpecialSummonFromHand(ctx) {
+            return toonBlsAutomaticPlan(ctx, toonBlsCandidates(ctx)).length > 0;
+        },
+        paySpecialSummonCost(ctx) {
+            const candidates = toonBlsCandidates(ctx);
+            const pending = gameState.pendingSpecialSummonMixedTributeUids;
+            gameState.pendingSpecialSummonMixedTributeUids = null;
+            let selected = Array.isArray(pending)
+                ? pending.map((uid) => candidates.find((entry) => entry.card.uid === uid)).filter(Boolean)
+                : [];
+            if (!toonBlsSelectionValid(ctx, selected)) selected = toonBlsAutomaticPlan(ctx, candidates);
+            if (!toonBlsSelectionValid(ctx, selected)) return false;
+            selected.forEach((entry) => {
+                if (entry.zone === 'hand') {
+                    const index = ctx.hand(ctx.owner).findIndex((card) => card.uid === entry.card.uid);
+                    if (index !== -1) ctx.hand(ctx.owner).splice(index, 1);
+                } else {
+                    const index = ctx.field(ctx.owner).findIndex((slot) => slot && slot.card.uid === entry.card.uid);
+                    if (index !== -1) ctx.field(ctx.owner)[index] = null;
+                }
+                ctx.graveyard(ctx.owner).push(entry.card);
+                DuelEngine.notifySacrificedForTribute(ctx.owner, entry.card, ctx.card);
+            });
+            ctx.log(`${ctx.card.name}: mostri Toon di Livello totale ${selected.reduce((sum, entry) => sum + (entry.card.level || 0), 0)} vengono offerti come Tributo!`);
+            return true;
+        },
+        canActivate(ctx) {
+            if (!DuelEngine.hasActiveToonWorld(ctx.owner)
+                || ctx.hasUsedOncePerTurn(`toon-bls-banish:${ctx.card.uid}`)) return false;
+            return collectFieldTargets(ctx, { owner: 'both', zone: 'both', includiCoperte: true }).length > 0
+                || Tavolo.ordine().some((owner) => !!gameState[Tavolo.chiave(owner, 'FieldSpell')]);
+        },
+        activate(ctx) {
+            const candidates = collectFieldTargets(ctx, { owner: 'both', zone: 'both', includiCoperte: true });
+            Tavolo.ordine().forEach((owner) => {
+                const slot = gameState[Tavolo.chiave(owner, 'FieldSpell')];
+                if (slot && slot.card.uid !== ctx.card.uid) candidates.push({ owner, index: -1, zone: 'fieldSpell', card: slot.card, slot });
+            });
+            chooseFieldCardTarget(ctx, candidates, {
+                title: ctx.card.name,
+                text: 'Scegli 1 carta sul Terreno da bandire.',
+                dichiara: true
+            }, (chosen) => {
+                let slot = null;
+                if (chosen.zone === 'monster') {
+                    slot = ctx.field(chosen.owner)[chosen.index];
+                    if (slot) ctx.field(chosen.owner)[chosen.index] = null;
+                } else if (chosen.zone === 'st') {
+                    slot = ctx.stField(chosen.owner)[chosen.index];
+                    if (slot) ctx.stField(chosen.owner)[chosen.index] = null;
+                } else {
+                    const key = Tavolo.chiave(chosen.owner, 'FieldSpell');
+                    slot = gameState[key];
+                    if (slot) gameState[key] = null;
+                }
+                if (!slot) return;
+                ctx.banish(chosen.owner, slot.card);
+                ctx.card._toonBlsNoAttackTurn = gameState.turn;
+                ctx.markUsedOncePerTurn(`toon-bls-banish:${ctx.card.uid}`);
+                ctx.log(`${ctx.card.name} bandisce ${slot.card.name} e rinuncia ad attaccare in questo turno!`);
+            });
+        },
+        static(ctx) {
+            if (ctx.card._toonBlsNoAttackTurn === gameState.turn) gameState.cannotAttackUids[ctx.card.uid] = true;
+        },
+        mustTargetFilterIfPresent(card, owner) {
+            return DuelEngine.hasActiveToonWorld(owner) && cardHasArchetype(card, 'toon');
+        }
+    });
+
+    const controlsOriginalNamedGod = (ctx, name) => ctx.field(ctx.owner).some((slot) => slot
+        && !slot.isFaceDown && cardHasEffectiveName(slot.card, name, 'monster'));
+    const isOwnMainPhase = (ctx) => gameState.currentPlayer === ctx.owner
+        && (gameState.phase === 'main1' || gameState.phase === 'main2');
+
+    // Attacco Forza del Tuono — supporto moderno di Slifer.
+    CardEffects.register(1271, {
+        activationAndEffectCannotBeNegated: true,
+        mentionsNames: ['Slifer il Drago del Cielo'],
+        canActivate(ctx) {
+            return controlsOriginalNamedGod(ctx, 'Slifer il Drago del Cielo')
+                && !ctx.hasUsedOncePerTurn(`thunderforce-attack:${ctx.owner}`)
+                && ctx.field(ctx.opponent).some((slot) => slot && !slot.isFaceDown);
+        },
+        activate(ctx) {
+            ctx.markUsedOncePerTurn(`thunderforce-attack:${ctx.owner}`);
+            const bersagli = ctx.field(ctx.opponent)
+                .map((slot) => slot && !slot.isFaceDown ? slot.card.uid : null)
+                .filter(Boolean);
+            for (let i = ctx.field(ctx.opponent).length - 1; i >= 0; i--) {
+                const slot = ctx.field(ctx.opponent)[i];
+                if (slot && !slot.isFaceDown) ctx.destroyMonster(ctx.opponent, i);
+            }
+            const distruttiNelCimitero = bersagli.filter((uid) => ctx.graveyard(ctx.opponent).some((card) => card.uid === uid)).length;
+            if (!isOwnMainPhase(ctx) || distruttiNelCimitero === 0) return;
+
+            const fine = attendiScelta(ctx);
+            chooseOption(ctx, {
+                title: ctx.card.name,
+                text: `Pescare ${distruttiNelCimitero} ${distruttiNelCimitero === 1 ? 'carta' : 'carte'}? In questo turno potrai attaccare con un solo mostro.`,
+                options: [{ value: 'draw', label: `Pesca ${distruttiNelCimitero}` }],
+                optional: true,
+                optionalLabel: 'Non pescare',
+                pickForBot: () => 'draw'
+            }, (choice) => {
+                try {
+                    if (choice === 'draw') {
+                        ctx.drawCards(ctx.owner, distruttiNelCimitero);
+                        gameState.onlyOneAttackingMonsterFor = gameState.onlyOneAttackingMonsterFor || {};
+                        gameState.onlyOneAttackingMonsterFor[ctx.owner] = true;
+                        ctx.log(`${ctx.card.name}: ${distruttiNelCimitero} ${distruttiNelCimitero === 1 ? 'carta pescata' : 'carte pescate'}; un solo mostro potrà attaccare in questo turno.`);
+                    }
+                } finally { fine(); }
+            });
+        }
+    });
+
+    // Pugno del Fato — supporto moderno di Obelisk.
+    CardEffects.register(1272, {
+        activationAndEffectCannotBeNegated: true,
+        mentionsNames: ['Obelisk il Tormentatore'],
+        canActivate(ctx) {
+            return controlsOriginalNamedGod(ctx, 'Obelisk il Tormentatore')
+                && !ctx.hasUsedOncePerTurn(`fist-of-fate:${ctx.owner}`)
+                && ctx.field(ctx.opponent).some((slot) => slot && !slot.isFaceDown && !slot.card.vanilla);
+        },
+        activate(ctx) {
+            ctx.markUsedOncePerTurn(`fist-of-fate:${ctx.owner}`);
+            const candidati = collectFieldTargets(ctx, {
+                owner: 'opponent',
+                zone: 'monster',
+                filter: (card, owner, slot) => !slot.isFaceDown && !card.vanilla
+            });
+            const fine = attendiScelta(ctx);
+            const offriDistruzioneRetroguardia = () => {
+                if (!isOwnMainPhase(ctx)) { fine(); return; }
+                chooseOption(ctx, {
+                    title: ctx.card.name,
+                    text: 'Distruggere tutte le Magie e Trappole controllate dall’avversario?',
+                    options: [{ value: 'destroy', label: 'Distruggi tutte' }],
+                    optional: true,
+                    optionalLabel: 'Non applicare',
+                    pickForBot: () => 'destroy'
+                }, (choice) => {
+                    try {
+                        if (choice !== 'destroy') return;
+                        for (let i = ctx.stField(ctx.opponent).length - 1; i >= 0; i--) {
+                            if (ctx.stField(ctx.opponent)[i]) ctx.destroySpellTrap(ctx.opponent, i);
+                        }
+                        if (gameState[Tavolo.chiave(ctx.opponent, 'FieldSpell')]) ctx.destroyFieldSpell(ctx.opponent);
+                    } finally { fine(); }
+                });
+            };
+            const apri = () => chooseFieldMonsterTarget(ctx, candidati, {
+                title: ctx.card.name,
+                text: 'Scegli 1 Mostro con Effetto scoperto dell’avversario.',
+                dichiara: true,
+                onCancel: apri,
+                onNegato: offriDistruzioneRetroguardia
+            }, (chosen) => {
+                const slot = ctx.field(chosen.owner)[chosen.index];
+                if (slot && slot.card.uid === chosen.card.uid) {
+                    gameState.monsterEffectNamesNegatedThisTurn = gameState.monsterEffectNamesNegatedThisTurn || new Set();
+                    gameState.monsterEffectNamesNegatedThisTurn.add(slot.card.name);
+                    ctx.destroyMonster(chosen.owner, chosen.index);
+                }
+                offriDistruzioneRetroguardia();
+            });
+            apri();
+        }
+    });
+
+    // Canto Antico — supporto moderno del Drago Alato di Ra.
+    CardEffects.register(1273, {
+        mentionsNames: ['Il Drago Alato di Ra'],
+        canActivate(ctx) {
+            if (ctx.hasUsedOncePerTurn(`ancient-chant-search:${ctx.owner}`)) return false;
+            return Tavolo.mazzo(ctx.owner).some((card) => card.id === 472)
+                || ctx.graveyard(ctx.owner).some((card) => card.id === 472);
+        },
+        activate(ctx) {
+            const deck = Tavolo.mazzo(ctx.owner);
+            const grave = ctx.graveyard(ctx.owner);
+            const candidates = deck.filter((card) => card.id === 472).concat(grave.filter((card) => card.id === 472));
+            const fine = attendiScelta(ctx);
+            chooseCardFromList(ctx, candidates, {
+                title: ctx.card.name,
+                text: 'Scegli Il Drago Alato di Ra da aggiungere alla mano.',
+                pickForBot: (cards) => cards[0]
+            }, (chosen) => {
+                try {
+                    const source = deck.includes(chosen) ? deck : grave;
+                    const index = source.indexOf(chosen);
+                    if (index === -1) return;
+                    source.splice(index, 1);
+                    ctx.hand(ctx.owner).push(chosen);
+                    gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = deck.length;
+                    gameState.additionalTributeSummonFor = gameState.additionalTributeSummonFor || { player: false, bot: false };
+                    gameState.additionalTributeSummonFor[ctx.owner] = true;
+                    ctx.markUsedOncePerTurn(`ancient-chant-search:${ctx.owner}`);
+                    ctx.log(`${ctx.card.name} aggiunge ${chosen.name} alla mano e concede un’Evocazione Tributo aggiuntiva!`);
+                } finally { fine(); }
+            });
+        },
+        canActivateFromGraveyardMainPhase(ctx) {
+            return !ctx.hasUsedOncePerTurn(`ancient-chant-grave:${ctx.owner}`)
+                && ctx.hand(ctx.owner).some((card) => card.id === 472);
+        },
+        activateFromGraveyardMainPhase(ctx) {
+            const grave = ctx.graveyard(ctx.owner);
+            const index = grave.findIndex((card) => card.uid === ctx.card.uid);
+            if (index === -1) return;
+            if (ctx.graveyardMoveNegated(ctx.owner)) return;
+            const [chant] = grave.splice(index, 1);
+            ctx.banish(ctx.owner, chant);
+            ctx.markUsedOncePerTurn(`ancient-chant-grave:${ctx.owner}`);
+            gameState.ancientChantRaBoostTurnFor = gameState.ancientChantRaBoostTurnFor || { player: null, bot: null };
+            gameState.ancientChantRaBoostTurnFor[ctx.owner] = gameState.turn;
+            ctx.log(`${ctx.card.name} viene bandito: Ra riceverà la forza originale dei suoi Tributi in questo turno!`);
+        }
+    });
+
+    const isDivineBeast = (card) => card && (card.id === 30 || card.id === 31 || card.id === 472
+        || card.race === 'Essere Divino');
+
+    const tributableFieldTargets = (ctx, side) => collectFieldTargets(ctx, {
+        owner: side,
+        zone: 'monster',
+        includiCoperte: true,
+        filter: (card, owner, slot) => {
+            const def = DuelEngine.getDefinition(card.id);
+            return !(!slot.isFaceDown && def && def.cannotBeTributed)
+                && !(gameState.cannotBeTributedUids && gameState.cannotBeTributedUids.has(card.uid));
+        }
+    });
+
+    /** Risolve una Evocazione Tributo prodotta da un effetto/procedura speciale. */
+    const resolveCrossFieldTributeSummon = (ctx, card, chosen, destinationOwner, options) => {
+        const hand = ctx.hand(ctx.owner);
+        const handIndex = hand.findIndex((entry) => entry.uid === card.uid);
+        if (handIndex === -1 || chosen.length !== 3) return false;
+        const destinationField = ctx.field(destinationOwner);
+        const willFreeDestinationSlot = chosen.some((entry) => entry.owner === destinationOwner);
+        if (destinationField.every(Boolean) && !willFreeDestinationSlot) return false;
+
+        card._tributedCardIds = chosen.map((entry) => entry.card.id);
+        card._tributedOriginalStats = chosen.map((entry) => {
+            const original = cardDatabase.find((candidate) => candidate.id === entry.card.id) || entry.card;
+            return { id: entry.card.id, attack: original.attack || 0, defense: original.defense || 0 };
+        });
+        card._tributeCountForSummon = chosen.length;
+
+        // Indici decrescenti per lato: nessuno splice, ma evita che futuri
+        // campi compatti possano invalidare una seconda scelta.
+        chosen.slice().sort((a, b) => b.index - a.index).forEach((entry) => {
+            const field = ctx.field(entry.owner);
+            const slot = field[entry.index];
+            if (!slot || slot.card.uid !== entry.card.uid) return;
+            const graveOwner = slot.originalOwner || entry.owner;
+            field[entry.index] = null;
+            ctx.graveyard(graveOwner).push(slot.card);
+            DuelEngine.notifyOwnMonsterSentToGraveyard(graveOwner, slot.card);
+            DuelEngine.notifySacrificedForTribute(graveOwner, slot.card, card);
+        });
+
+        const slotIndex = ctx.findEmptyMonsterSlot(destinationOwner);
+        if (slotIndex === -1) return false;
+        hand.splice(handIndex, 1);
+        const slot = {
+            card: card,
+            position: 'attack',
+            isFaceDown: false,
+            hasAttacked: false,
+            canChangePosition: false,
+            summonedOnTurn: gameState.turn
+        };
+        if (destinationOwner !== ctx.owner) slot.originalOwner = ctx.owner;
+        destinationField[slotIndex] = slot;
+        if (options && options.returnAtNextEndPhase) card._sphereReturnAfterTurn = gameState.turn + 1;
+        consumeNormalSummonQuota(ctx.owner, card);
+        ctx.log(`🔺 Evocazione Tributo: ${card.name} entra sul Terreno ${destinationOwner === ctx.owner ? 'del suo proprietario' : 'avversario'}!`);
+        const summonCtx = DuelEngine.makeContext(destinationOwner, {
+            summonedCard: card,
+            summonedSlotIndex: slotIndex,
+            summonedPosition: 'attack',
+            summonedByOwner: ctx.owner
+        });
+        DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_NORMAL_SUMMON, summonCtx, () => updateUI());
+        return true;
+    };
+
+    // Incrocio di Anime — selezione esplicita del Dio e dei tre Tributi,
+    // anche dal Terreno avversario. Il vincolo sulle attivazioni nasce
+    // soltanto se almeno un mostro avversario viene davvero usato.
+    CardEffects.register(1274, {
+        canActivate(ctx) {
+            if (gameState.phase !== 'main1' && gameState.phase !== 'main2') return false;
+            if (gameState.currentPlayer !== ctx.owner || gameState.tributesBlocked) return false;
+            if (ctx.hasUsedOncePerTurn(`soul-crossing:${ctx.owner}`)) return false;
+            if (!canUseNormalSummonQuota(ctx.owner, { type: 'monster', level: 10 })) return false;
+            const gods = ctx.hand(ctx.owner).filter(isDivineBeast);
+            return gods.length > 0
+                && tributableFieldTargets(ctx, 'both').length >= 3
+                && (ctx.findEmptyMonsterSlot(ctx.owner) !== -1 || tributableFieldTargets(ctx, 'self').length > 0);
+        },
+        activate(ctx) {
+            const gods = ctx.hand(ctx.owner).filter(isDivineBeast);
+            const fine = attendiScelta(ctx);
+            chooseCardFromList(ctx, gods, {
+                title: ctx.card.name,
+                text: 'Scegli la Divinità-Bestia da Evocare tramite Tributo.',
+                pickForBot: (cards) => cards.slice().sort((a, b) => (b.attack || 0) - (a.attack || 0))[0]
+            }, (god) => {
+                const candidates = (selected) => {
+                    const all = tributableFieldTargets(ctx, 'both');
+                    // Con il proprio Terreno pieno almeno un Tributo deve
+                    // provenire da lì, altrimenti non esisterebbe una zona
+                    // in cui far entrare la Divinità dopo la risoluzione.
+                    if (ctx.findEmptyMonsterSlot(ctx.owner) === -1 && selected.length === 2
+                        && !selected.some((entry) => entry.owner === ctx.owner)) {
+                        return all.filter((entry) => entry.owner === ctx.owner);
+                    }
+                    return all.sort((a, b) => {
+                        if (a.owner !== b.owner) return a.owner === ctx.opponent ? -1 : 1;
+                        return a.owner === ctx.opponent
+                            ? DuelEngine.getEffectiveAtk(b.card) - DuelEngine.getEffectiveAtk(a.card)
+                            : DuelEngine.getEffectiveAtk(a.card) - DuelEngine.getEffectiveAtk(b.card);
+                    });
+                };
+                const steps = [1, 2, 3].map((number) => ({
+                    candidati: candidates,
+                    title: ctx.card.name,
+                    text: `Scegli il Tributo ${number}/3.`,
+                    dichiara: false
+                }));
+                chooseFieldTargetsInSequence(ctx, steps, (chosen) => {
+                    try {
+                        if (chosen.length !== 3) return;
+                        const usedOpponent = chosen.some((entry) => entry.owner === ctx.opponent);
+                        if (!resolveCrossFieldTributeSummon(ctx, god, chosen, ctx.owner)) return;
+                        ctx.markUsedOncePerTurn(`soul-crossing:${ctx.owner}`);
+                        if (usedOpponent) {
+                            gameState.soulCrossingActivationLimitFor = gameState.soulCrossingActivationLimitFor || {};
+                            gameState.soulCrossingActivationLimitFor[ctx.owner] = {
+                                expiresAfterTurn: gameState.turn + 1,
+                                // L'attivazione di Incrocio stessa è già
+                                // l'unica attivazione concessa in questo turno.
+                                usedOnTurn: gameState.turn
+                            };
+                        }
+                    } finally { fine(); }
+                });
+            });
+        }
+    });
+
+    CardEffects.register(1275, {
+        cannotSpecialSummon: true,
+        cannotBeSet: true,
+        beginCustomNormalSummon(ctx) {
+            if (gameState.tributesBlocked) {
+                ctx.log(`❌ Maschera della Restrizione impedisce di Evocare ${ctx.card.name}.`);
+                return;
+            }
+            if (!canUseNormalSummonQuota(ctx.owner, ctx.card)) return;
+            const own = tributableFieldTargets(ctx, 'self');
+            const enemy = tributableFieldTargets(ctx, 'opponent');
+            const sides = [];
+            if (own.length >= 3) sides.push({ value: ctx.owner, label: 'Il tuo Terreno' });
+            if (enemy.length >= 3) sides.push({ value: ctx.opponent, label: 'Terreno avversario' });
+            if (!sides.length) { ctx.log('❌ Modalità Sfera richiede tre Tributi sullo stesso Terreno.'); return; }
+            const chooseSide = (side) => {
+                const candidates = () => tributableFieldTargets(ctx, side === ctx.owner ? 'self' : 'opponent')
+                    .sort((a, b) => side === ctx.opponent
+                        ? DuelEngine.getEffectiveAtk(b.card) - DuelEngine.getEffectiveAtk(a.card)
+                        : DuelEngine.getEffectiveAtk(a.card) - DuelEngine.getEffectiveAtk(b.card));
+                const steps = [1, 2, 3].map((number) => ({
+                    candidati: candidates,
+                    title: ctx.card.name,
+                    text: `Scegli il Tributo ${number}/3.`,
+                    dichiara: false
+                }));
+                chooseFieldTargetsInSequence(ctx, steps, (chosen) => {
+                    if (chosen.length === 3) resolveCrossFieldTributeSummon(ctx, ctx.card, chosen, side, { returnAtNextEndPhase: side !== ctx.owner });
+                });
+            };
+            if (sides.length === 1) chooseSide(sides[0].value);
+            else chooseOption(ctx, {
+                title: ctx.card.name,
+                text: 'Da quale Terreno vuoi offrire i tre Tributi?',
+                options: sides,
+                pickForBot: () => ctx.opponent
+            }, chooseSide);
+        },
+        static(ctx) {
+            gameState.cannotAttackUids[ctx.card.uid] = true;
+            gameState.cannotBeAttackTargetUids[ctx.card.uid] = true;
+            gameState.cannotBeTargetedByOpponentEffectsUids[ctx.card.uid] = ctx.owner;
+        },
+        canActivate(ctx) {
+            return (ctx.hand(ctx.owner).some((card) => card.id === 472) || Tavolo.mazzo(ctx.owner).some((card) => card.id === 472))
+                && ctx.findEmptyMonsterSlot(ctx.owner) !== -1;
+        },
+        activate(ctx) {
+            const ownIndex = ctx.field(ctx.owner).findIndex((slot) => slot && slot.card.uid === ctx.card.uid);
+            if (ownIndex === -1) return;
+            const hand = ctx.hand(ctx.owner);
+            const deck = Tavolo.mazzo(ctx.owner);
+            let source = hand;
+            let index = hand.findIndex((card) => card.id === 472);
+            if (index === -1) { source = deck; index = deck.findIndex((card) => card.id === 472); }
+            if (index === -1) return;
+            ctx.sendMonsterToGraveyard(ctx.owner, ownIndex);
+            const [ra] = source.splice(index, 1);
+            gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = deck.length;
+            ra.attack = 4000;
+            ra.defense = 4000;
+            ctx.specialSummon(ctx.owner, ra, ctx.findEmptyMonsterSlot(ctx.owner), 'attack', source === deck ? 'deck' : 'hand', { ignoreSummoningConditions: true });
+        },
+        onEndPhase(ctx) {
+            if (!ctx.card._sphereReturnAfterTurn || gameState.turn < ctx.card._sphereReturnAfterTurn) return;
+            const originalOwner = ctx.slot && ctx.slot.originalOwner;
+            if (!originalOwner || originalOwner === ctx.owner) { delete ctx.card._sphereReturnAfterTurn; return; }
+            if (ctx.takeControl(originalOwner, ctx.owner, ctx.slotIndex, true)) {
+                delete ctx.card._sphereReturnAfterTurn;
+                ctx.log(`☀️ ${ctx.card.name} torna sotto il controllo del suo proprietario.`);
+            }
+        }
+    });
+
+    CardEffects.register(1276, {
+        cannotNormalSummon: true,
+        cannotSpecialSummon: true,
+        unaffectedByOtherCardEffects: true,
+        graveyardTriggerCannotBeRespondedTo: true,
+        onOwnMonsterSentToGraveyardWhileInGraveyard(ctx) {
+            if (!ctx.sentCard || ctx.sentCard.id !== 472) return;
+            const grave = ctx.graveyard(ctx.owner);
+            const index = grave.findIndex((card) => card.uid === ctx.card.uid);
+            const slotIndex = ctx.findEmptyMonsterSlot(ctx.owner);
+            if (index === -1 || slotIndex === -1) return;
+            const [phoenix] = grave.splice(index, 1);
+            ctx.specialSummon(ctx.owner, phoenix, slotIndex, 'attack', 'graveyard', { ignoreSummoningConditions: true });
+            ctx.log(`🔥 ${phoenix.name} risorge dal Cimitero senza possibilità di risposta!`);
+        },
+        canActivate(ctx) {
+            return Tavolo.lp(ctx.owner) > 1000
+                && collectFieldTargets(ctx, { owner: 'both', zone: 'monster', includiCoperte: true })
+                    .some((entry) => entry.card.uid !== ctx.card.uid);
+        },
+        activate(ctx) {
+            const candidates = collectFieldTargets(ctx, { owner: 'both', zone: 'monster', includiCoperte: true })
+                .filter((entry) => entry.card.uid !== ctx.card.uid)
+                .sort((a, b) => DuelEngine.getEffectiveAtk(b.card) - DuelEngine.getEffectiveAtk(a.card));
+            const fine = attendiScelta(ctx);
+            chooseFieldCardTarget(ctx, candidates, {
+                title: ctx.card.name,
+                text: 'Paga 1000 LP e scegli 1 mostro da mandare al Cimitero.',
+                dichiara: false,
+                onCancel: () => fine()
+            }, (chosen) => {
+                try {
+                    if (Tavolo.lp(ctx.owner) <= 1000) return;
+                    ctx.dealDamage(ctx.owner, 1000);
+                    ctx.sendMonsterToGraveyard(chosen.owner, chosen.index);
+                } finally { fine(); }
+            });
+        },
+        onEndPhase(ctx) {
+            const ownIndex = ctx.field(ctx.owner).findIndex((slot) => slot && slot.card.uid === ctx.card.uid);
+            if (ownIndex === -1) return;
+            const zones = [ctx.hand(ctx.owner), Tavolo.mazzo(ctx.owner), ctx.graveyard(ctx.owner)];
+            let source = null;
+            let sphereIndex = -1;
+            for (const zone of zones) {
+                sphereIndex = zone.findIndex((card) => card.id === 1275);
+                if (sphereIndex !== -1) { source = zone; break; }
+            }
+            if (!source) return;
+            ctx.sendMonsterToGraveyard(ctx.owner, ownIndex);
+            const [sphere] = source.splice(sphereIndex, 1);
+            gameState[Tavolo.chiave(ctx.owner, 'DeckCount')] = Tavolo.mazzo(ctx.owner).length;
+            ctx.specialSummon(ctx.owner, sphere, ctx.findEmptyMonsterSlot(ctx.owner), 'attack',
+                source === ctx.graveyard(ctx.owner) ? 'graveyard' : (source === Tavolo.mazzo(ctx.owner) ? 'deck' : 'hand'),
+                { ignoreSummoningConditions: true });
+            ctx.log(`☀️ ${ctx.card.name} ritorna alla ${sphere.name}.`);
+        }
+    });
+
     (function registerLibraryEffects() {
         if (typeof cardDatabase === 'undefined' || !Array.isArray(cardDatabase)) return;
 

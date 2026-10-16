@@ -2228,7 +2228,7 @@
     CardEffects.register(481, {
         isToon: true,
         mustTargetFilterIfPresent(card, owner) {
-            const hasWorld = Tavolo.magieTrappole(owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 487);
+            const hasWorld = DuelEngine.hasActiveToonWorld(owner);
             return hasWorld && card.type === 'monster' && ((DuelEngine.getDefinition(card.id)?.isToon) || /Toon/i.test(card.name || ''));
         }
     });
@@ -2248,9 +2248,7 @@
             // Mondo dei Toon è una Magia Continua nella normale zona M/T,
             // non una Magia Terreno. Cercarlo in `magiaTerreno` rendeva
             // Maschera Toon impossibile da attivare anche con Mondo scoperto.
-            const toonWorld = ctx.stField(ctx.owner)
-                .find((slot) => slot && !slot.isFaceDown && slot.card.id === 487);
-            if (!toonWorld) return false;
+            if (!DuelEngine.hasActiveToonWorld(ctx.owner)) return false;
             return ctx.field(ctx.opponent).some((slot) => slot && !slot.isFaceDown);
         },
         activate(ctx) {
@@ -2727,6 +2725,17 @@
             // — mascherato nei test perché costruivano un ctx "a mano" con
             // {card: ra}, bypassando fireTrigger.
             if (ctx.summonedVia !== 'normal') return;
+            if (gameState.ancientChantRaBoostTurnFor
+                && gameState.ancientChantRaBoostTurnFor[ctx.owner] === gameState.turn
+                && Array.isArray(ctx.summonedCard._tributedOriginalStats)) {
+                const totals = ctx.summonedCard._tributedOriginalStats.reduce((sum, stats) => ({
+                    attack: sum.attack + (stats.attack || 0),
+                    defense: sum.defense + (stats.defense || 0)
+                }), { attack: 0, defense: 0 });
+                ctx.summonedCard.ancientChantOriginalStats = totals;
+                gameState.ancientChantRaBoostTurnFor[ctx.owner] = null;
+                ctx.log(`☀️ Canto Antico conferisce a Ra ${totals.attack} ATK e ${totals.defense} DEF originali!`);
+            }
             // "Puoi pagare..." — non automatico: card._raPayLp arriva dalla
             // scelta del giocatore (maybeAskRaLpChoice, actions.js) o
             // dall'euristica del bot (botSummonMonster, bot.js). Se manca
@@ -2744,7 +2753,8 @@
         },
         static(ctx) {
             const bonus = ctx.card.raPaidLp || 0;
-            gameState.atkDefBonus[ctx.card.uid] = { atk: bonus, def: bonus };
+            const chant = ctx.card.ancientChantOriginalStats || { attack: 0, defense: 0 };
+            gameState.atkDefBonus[ctx.card.uid] = { atk: bonus + chant.attack, def: bonus + chant.defense };
         },
         canActivate(ctx) {
             const lpKey = Tavolo.chiave(ctx.owner, 'LP');
@@ -2808,11 +2818,11 @@
     CardEffects.register(484, {
         isToon: true,
         mustTargetFilterIfPresent(card, owner) {
-            const hasWorld = Tavolo.magieTrappole(owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 487);
+            const hasWorld = DuelEngine.hasActiveToonWorld(owner);
             return hasWorld && card.type === 'monster' && ((DuelEngine.getDefinition(card.id)?.isToon) || /Toon/i.test(card.name || ''));
         },
         canSpecialSummonFromHand(ctx) {
-            const hasWorld = ctx.stField(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 487);
+            const hasWorld = DuelEngine.hasActiveToonWorld(ctx.owner);
             return hasWorld && ctx.field(ctx.owner).every((slot) => !slot);
         }
     });
@@ -2834,11 +2844,11 @@
     CardEffects.register(486, {
         isToon: true,
         mustTargetFilterIfPresent(card, owner) {
-            const hasWorld = Tavolo.magieTrappole(owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 487);
+            const hasWorld = DuelEngine.hasActiveToonWorld(owner);
             return hasWorld && card.type === 'monster' && ((DuelEngine.getDefinition(card.id)?.isToon) || /Toon/i.test(card.name || ''));
         },
         canSpecialSummonFromHand(ctx) {
-            const hasToonWorld = ctx.stField(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 487);
+            const hasToonWorld = DuelEngine.hasActiveToonWorld(ctx.owner);
             const hasSacrifice = ctx.field(ctx.owner).some((slot) => slot && ((DuelEngine.getDefinition(slot.card.id)?.isToon) || /Toon/i.test(slot.card.name || '')));
             return hasToonWorld && hasSacrifice;
         },

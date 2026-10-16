@@ -74,7 +74,7 @@
     ];
 
     // Le musiche da duello selezionabili: le tracce di audio/soundtracks/
-    // numerate da 30 a 43, più la 57 (scelta dell'utente). `nome` è ciò che
+    // numerate da 30 a 43, più le 57-59 (scelta dell'utente). `nome` è ciò che
     // il giocatore legge nei menu; finché è vuoto si mostra il nome del
     // file senza estensione (vedi nomeVisibile qui sotto). Per dare un nome
     // a una traccia basta scriverlo qui: compare in ogni menu che la offre.
@@ -94,7 +94,9 @@
         { file: '41. Seto Kaiba Duel (3D Tournament Final).mp3', nome: '' },
         { file: '42. Egyptian Duel (3D).mp3', nome: '' },
         { file: '43. Darknite-Nitemare (3D).mp3', nome: '' },
-        { file: '57. King of Games - Yugi\'s Final Duel.mp3', nome: '' }
+        { file: '57. Duel of Shadows – The Millennium Mind.mp3', nome: '' },
+        { file: '58. Yugi vs. Marik – Wrath of the Shadow Realm.mp3', nome: '' },
+        { file: '59. King of Games - Yugi\'s Final Duel.mp3', nome: '' }
     ];
 
     /** Il nome da mostrare: quello scritto nel catalogo, o il nome del file senza estensione. */

@@ -2321,11 +2321,11 @@
     CardEffects.register(123, {
         isToon: true,
         mustTargetFilterIfPresent(card, owner) {
-            const hasWorld = Tavolo.magieTrappole(owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 487);
+            const hasWorld = DuelEngine.hasActiveToonWorld(owner);
             return hasWorld && card.type === 'monster' && ((DuelEngine.getDefinition(card.id)?.isToon) || /Toon/i.test(card.name || ''));
         },
         canSpecialSummonFromHand(ctx) {
-            const hasToonWorld = ctx.stField(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 487);
+            const hasToonWorld = DuelEngine.hasActiveToonWorld(ctx.owner);
             const hasToon = ctx.field(ctx.owner).some((slot) => slot && ((DuelEngine.getDefinition(slot.card.id)?.isToon) || /Toon/i.test(slot.card.name || '')));
             return hasToonWorld && hasToon;
         },
@@ -2344,7 +2344,7 @@
     CardEffects.register(606, {
         isToon: true,
         canSpecialSummonFromHand(ctx) {
-            const hasToonWorld = ctx.stField(ctx.owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 487);
+            const hasToonWorld = DuelEngine.hasActiveToonWorld(ctx.owner);
             const tributes = ctx.field(ctx.owner).filter((slot) => slot).length;
             return hasToonWorld && tributes >= 2;
         },

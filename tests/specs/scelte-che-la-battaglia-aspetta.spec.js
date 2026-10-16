@@ -8,6 +8,10 @@
 // il difetto (Fuoco di Copertura, 4 secondi). Durante l'attesa si controlla
 // che la battaglia sia ancora ferma.
 const ATTESA_MS = 4000;
+// Sotto la suite completa Chromium può restare occupato alcuni secondi sui
+// test di simulazione precedenti: il limite misura un vero stallo, non il
+// normale ritardo del runner sotto carico.
+const TIMEOUT_ASINCRONO_MS = 25000;
 
 module.exports = {
     name: 'Scelte che la battaglia aspetta (100, 883, 885, 889, 895, 1120)',
@@ -37,14 +41,14 @@ module.exports = {
             DuelEngine.recomputeStaticEffects();
         });
         const mostro = (uid, atk, def) => ({ uid, atk, def });
-        const aspettaPopover = () => t.page.waitForFunction(() => !!document.getElementById('quickPopover'), null, { timeout: 15000 });
+        const aspettaPopover = () => t.page.waitForFunction(() => !!document.getElementById('quickPopover'), null, { timeout: TIMEOUT_ASINCRONO_MS });
         const cliccaOpzione = (testo) => t.evaluate((testo) => {
             const btn = [...document.querySelectorAll('#quickPopover [data-option]')].find((b) => b.textContent.includes(testo));
             if (!btn) return false;
             btn.click();
             return true;
         }, testo);
-        const fineBattaglia = () => t.page.waitForFunction(() => window.__battleDone === true, null, { timeout: 12000 });
+        const fineBattaglia = () => t.page.waitForFunction(() => window.__battleDone === true, null, { timeout: TIMEOUT_ASINCRONO_MS });
 
         // --- 889 Iniezione della Fata Giglio: paga 2000 LP, +3000 ATK ---
         await prepara();
@@ -89,7 +93,7 @@ module.exports = {
             DuelEngine.recomputeStaticEffects();
             resolveAttack('player', 0, 1, () => { window.__battleDone = true; });
         });
-        await t.page.waitForFunction(() => document.getElementById('cardListPickerModal') && document.getElementById('cardListPickerModal').classList.contains('open'), null, { timeout: 15000 });
+        await t.page.waitForFunction(() => document.getElementById('cardListPickerModal') && document.getElementById('cardListPickerModal').classList.contains('open'), null, { timeout: TIMEOUT_ASINCRONO_MS });
         await t.page.waitForTimeout(ATTESA_MS);
         const ferma895 = await t.evaluate(() => ({ done: window.__battleDone, lpBot: gameState.botLP }));
         t.assert(!ferma895.done && ferma895.lpBot === 8000, `895: la dichiarazione aspetta la scelta (${JSON.stringify(ferma895)})`);
@@ -115,14 +119,14 @@ module.exports = {
             gameState.playerSTField[0] = { card: { ...cardDatabase.find((c) => c.id === 100), uid: 'armatura' }, isFaceDown: true, setOnTurn: gameState.turn - 1 };
             resolveAttack('bot', 0, 0, () => { window.__battleDone = true; });
         });
-        await t.page.waitForFunction(() => document.getElementById('activateModal') && document.getElementById('activateModal').classList.contains('open'), null, { timeout: 10000 });
+        await t.page.waitForFunction(() => document.getElementById('activateModal') && document.getElementById('activateModal').classList.contains('open'), null, { timeout: TIMEOUT_ASINCRONO_MS });
         await t.page.click('#activateConfirmBtn');
         await aspettaPopover();
         await t.page.waitForTimeout(ATTESA_MS);
         const ferma100 = await t.evaluate(() => ({ done: window.__battleDone, lpPlayer: gameState.playerLP, bersaglio: !!gameState.playerMonsterField[0] }));
         t.assert(!ferma100.done && ferma100.lpPlayer === 8000 && ferma100.bersaglio, `100: la battaglia aspetta la scelta fra le due clausole (${JSON.stringify(ferma100)})`);
         t.assert(await cliccaOpzione('Sposta'), '100: c\'è l\'opzione "Sposta l\'attacco"');
-        await t.page.waitForFunction(() => document.getElementById('cardListPickerModal').classList.contains('open'), null, { timeout: 5000 });
+        await t.page.waitForFunction(() => document.getElementById('cardListPickerModal').classList.contains('open'), null, { timeout: TIMEOUT_ASINCRONO_MS });
         const nomiCandidati = await t.evaluate(() => document.querySelectorAll('#cardListPickerModal .card-list-item').length);
         t.assert(nomiCandidati === 2, `100: candidati = ogni mostro tranne attaccante e bersaglio attuale (${nomiCandidati})`);
         await t.page.waitForTimeout(ATTESA_MS);
@@ -147,9 +151,9 @@ module.exports = {
             gameState.playerSTField[0] = { card: { ...cardDatabase.find((c) => c.id === 852), uid: 'fuoco' }, isFaceDown: true, setOnTurn: gameState.turn - 1 };
             resolveAttack('bot', 0, 0, () => { window.__battleDone = true; });
         });
-        await t.page.waitForFunction(() => document.getElementById('activateModal') && document.getElementById('activateModal').classList.contains('open'), null, { timeout: 10000 });
+        await t.page.waitForFunction(() => document.getElementById('activateModal') && document.getElementById('activateModal').classList.contains('open'), null, { timeout: TIMEOUT_ASINCRONO_MS });
         await t.page.click('#activateConfirmBtn');
-        await t.page.waitForFunction(() => document.getElementById('cardListPickerModal').classList.contains('open'), null, { timeout: 15000 });
+        await t.page.waitForFunction(() => document.getElementById('cardListPickerModal').classList.contains('open'), null, { timeout: TIMEOUT_ASINCRONO_MS });
         await t.page.waitForTimeout(ATTESA_MS);
         const ferma852 = await t.evaluate(() => ({ done: window.__battleDone, lpPlayer: gameState.playerLP }));
         t.assert(!ferma852.done && ferma852.lpPlayer === 8000, `852: la battaglia aspetta la scelta (${JSON.stringify(ferma852)})`);
@@ -176,7 +180,7 @@ module.exports = {
         await aspettaPopover();
         await t.page.waitForTimeout(1000);
         t.assert(await cliccaOpzione('Magia'), '885: c\'è l\'opzione "Magia"');
-        await t.page.waitForFunction(() => !DuelEngine.isChainActive(), null, { timeout: 12000 });
+        await t.page.waitForFunction(() => !DuelEngine.isChainActive(), null, { timeout: TIMEOUT_ASINCRONO_MS });
         const esito885 = await t.evaluate(() => ({ lpPlayer: gameState.playerLP, lpBot: gameState.botLP }));
         t.assert(esito885.lpPlayer === 7000 && esito885.lpBot === 1000, `885: indovinato "Magia", i Life Points si scambiano (${JSON.stringify(esito885)})`);
 

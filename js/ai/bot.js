@@ -52,7 +52,7 @@ function turnoIA(io = 'bot') {
                 // Phase — altrimenti il bot entrerebbe in battaglia dopo un
                 // timer fisso anche se quel modale è ancora aperto in attesa di
                 // una decisione, lasciando l'avversario "scavalcato".
-                return (!gameState.hasNormalSummoned && Tavolo.mano(io).length > 0) ? attemptBotSummon(io) : Promise.resolve();
+                return (Tavolo.mano(io).some((card) => canUseNormalSummonQuota(io, card))) ? attemptBotSummon(io) : Promise.resolve();
             });
             summonPromise
                 // Se l'Evocazione ha fatto partire un filmato o la
@@ -81,7 +81,7 @@ function turnoIA(io = 'bot') {
                 // Offerta Suprema e future carte equivalenti possono aver
                 // riaperto l'Evocazione Normale: sfruttala nello stesso
                 // turno, senza concedere una seconda mossa gratuitamente.
-                .then(() => (!gameState.hasNormalSummoned && Tavolo.mano(io).length > 0)
+                .then(() => (Tavolo.mano(io).some((card) => canUseNormalSummonQuota(io, card)))
                     ? attemptBotSummon(io) : Promise.resolve())
                 .then(waitForSummonCinematics)
                 // Una Magia Terreno del GIOCATORE che "il giocatore di turno"
@@ -382,6 +382,18 @@ function evocaSeConviene(io) {
  */
 function botSummonMonster(card, tributeIndices, emptySlotHint, position, faceDown, io = 'bot') {
     position = position === 'defense' ? 'defense' : 'attack';
+    const customDef = window.DuelEngine && DuelEngine.getDefinition(card.id);
+    if (customDef && typeof customDef.beginCustomNormalSummon === 'function') {
+        return new Promise((resolve) => {
+            customDef.beginCustomNormalSummon(DuelEngine.makeContext(io, {
+                card,
+                handIndex: Tavolo.mano(io).indexOf(card)
+            }));
+            // Le scelte dell'IA sono sincrone; la finestra di risposta
+            // dell'Evocazione continua poi nel normale passo comune.
+            resolve();
+        });
+    }
     // Capro Espiatorio (id 434): in quel turno si può solo Settare; "puoi
     // controllarne solo 1 scoperto" (id 899) con una copia già scoperta:
     // idem. L'IA ripiega sul Set invece di far rifiutare la mossa.

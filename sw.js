@@ -475,7 +475,9 @@
 // v257: versione 1.3.18, distruzione dei mostri coperti sempre in Difesa.
 // v258: versione 1.3.19, cornice antracite più fedele delle carte.
 // v260: versione 1.3.21, nuove lezioni guidate e nuovi puzzle.
-const CACHE_NAME = 'ygo-duel-arena-v260';
+// v261: nuove tracce 57-58 e King of Games rinumerata 59; temi automatici
+// per Pegasus, Heishin, Marik, DarkNite e Nitemare nei modi senza selezione.
+const CACHE_NAME = 'ygo-duel-arena-v261';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -511,7 +513,6 @@ const APP_SHELL = [
     'images/icons/icon-512.png',
     'images/icons/icon-180.png',
     'images/icons/icon-32.png',
-    'images/cards/backCard.jpg',
     // js/ organizzata per contesto (vedi docs/architecture/GUIDA_RIUTILIZZO.md): motore di
     // gioco in engine/, dati carte/mazzi in data/, IA in ai/, audio in
     // audio/, presentazione in ui/, multiplayer in multiplayer/, sync

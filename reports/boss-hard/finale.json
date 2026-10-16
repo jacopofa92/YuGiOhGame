@@ -1,0 +1,312 @@
+{
+  "generatoIl": "2026-10-15T22:01:31.476Z",
+  "metodo": "campione ufficiale primario; Custom separato e soltanto informativo; stessi semi ai tre livelli",
+  "opzioni": {
+    "duellanti": [
+      "yugiMuto",
+      "bakura",
+      "gozaburo",
+      "noah",
+      "heishin",
+      "nitemare"
+    ],
+    "livelli": [
+      "hard"
+    ],
+    "partite": 50,
+    "turni": 100,
+    "seme": 141000,
+    "salvataggio": "save_yugioh.json",
+    "deckCustom": null,
+    "output": "reports/boss-hard/finale.json"
+  },
+  "campioni": [
+    "yamiYugi",
+    "joey",
+    "pegasus",
+    "mako",
+    "bakura"
+  ],
+  "custom": {
+    "name": "Custom",
+    "main": [
+      {
+        "id": 1,
+        "qty": 3
+      },
+      {
+        "id": 31,
+        "qty": 1
+      },
+      {
+        "id": 513,
+        "qty": 2
+      },
+      {
+        "id": 515,
+        "qty": 2
+      },
+      {
+        "id": 597,
+        "qty": 3
+      },
+      {
+        "id": 596,
+        "qty": 1
+      },
+      {
+        "id": 628,
+        "qty": 3
+      },
+      {
+        "id": 639,
+        "qty": 3
+      },
+      {
+        "id": 644,
+        "qty": 2
+      },
+      {
+        "id": 38,
+        "qty": 2
+      },
+      {
+        "id": 510,
+        "qty": 2
+      },
+      {
+        "id": 8,
+        "qty": 1
+      },
+      {
+        "id": 10,
+        "qty": 2
+      },
+      {
+        "id": 409,
+        "qty": 2
+      },
+      {
+        "id": 35,
+        "qty": 1
+      },
+      {
+        "id": 671,
+        "qty": 1
+      },
+      {
+        "id": 291,
+        "qty": 1
+      },
+      {
+        "id": 382,
+        "qty": 3
+      },
+      {
+        "id": 147,
+        "qty": 1
+      },
+      {
+        "id": 36,
+        "qty": 1
+      },
+      {
+        "id": 607,
+        "qty": 1
+      },
+      {
+        "id": 646,
+        "qty": 1
+      },
+      {
+        "id": 645,
+        "qty": 1
+      }
+    ],
+    "extra": [
+      {
+        "id": 29,
+        "qty": 1
+      },
+      {
+        "id": 512,
+        "qty": 1
+      },
+      {
+        "id": 511,
+        "qty": 1
+      }
+    ],
+    "impronta": "e1909a556263c979"
+  },
+  "risultati": [
+    {
+      "duellante": "yugiMuto",
+      "livello": "hard",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 108,
+        "vittoriePct": 43.2,
+        "turniMedi": 17.29,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {},
+      "custom": {
+        "deckVittorie": {
+          "partite": 50,
+          "vittorie": 36,
+          "vittoriePct": 72,
+          "turniMedi": 17,
+          "nonFinite": 0
+        },
+        "avversarioVittorie": {
+          "partite": 50,
+          "vittorie": 14,
+          "vittoriePct": 28,
+          "turniMedi": 17,
+          "nonFinite": 0
+        }
+      }
+    },
+    {
+      "duellante": "bakura",
+      "livello": "hard",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 131,
+        "vittoriePct": 52.4,
+        "turniMedi": 15.82,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {},
+      "custom": {
+        "deckVittorie": {
+          "partite": 50,
+          "vittorie": 35,
+          "vittoriePct": 70,
+          "turniMedi": 16.04,
+          "nonFinite": 0
+        },
+        "avversarioVittorie": {
+          "partite": 50,
+          "vittorie": 15,
+          "vittoriePct": 30,
+          "turniMedi": 16.04,
+          "nonFinite": 0
+        }
+      }
+    },
+    {
+      "duellante": "gozaburo",
+      "livello": "hard",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 118,
+        "vittoriePct": 47.2,
+        "turniMedi": 24.25,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {},
+      "custom": {
+        "deckVittorie": {
+          "partite": 50,
+          "vittorie": 38,
+          "vittoriePct": 76,
+          "turniMedi": 23.58,
+          "nonFinite": 0
+        },
+        "avversarioVittorie": {
+          "partite": 50,
+          "vittorie": 12,
+          "vittoriePct": 24,
+          "turniMedi": 23.58,
+          "nonFinite": 0
+        }
+      }
+    },
+    {
+      "duellante": "noah",
+      "livello": "hard",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 110,
+        "vittoriePct": 44,
+        "turniMedi": 21.75,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {},
+      "custom": {
+        "deckVittorie": {
+          "partite": 50,
+          "vittorie": 31,
+          "vittoriePct": 62,
+          "turniMedi": 21.9,
+          "nonFinite": 0
+        },
+        "avversarioVittorie": {
+          "partite": 50,
+          "vittorie": 19,
+          "vittoriePct": 38,
+          "turniMedi": 21.9,
+          "nonFinite": 0
+        }
+      }
+    },
+    {
+      "duellante": "heishin",
+      "livello": "hard",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 208,
+        "vittoriePct": 83.2,
+        "turniMedi": 14.81,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {},
+      "custom": {
+        "deckVittorie": {
+          "partite": 50,
+          "vittorie": 17,
+          "vittoriePct": 34,
+          "turniMedi": 16.84,
+          "nonFinite": 0
+        },
+        "avversarioVittorie": {
+          "partite": 50,
+          "vittorie": 33,
+          "vittoriePct": 66,
+          "turniMedi": 16.84,
+          "nonFinite": 0
+        }
+      }
+    },
+    {
+      "duellante": "nitemare",
+      "livello": "hard",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 227,
+        "vittoriePct": 90.8,
+        "turniMedi": 14.97,
+        "nonFinite": 0
+      },
+      "firmaPartitePct": {},
+      "custom": {
+        "deckVittorie": {
+          "partite": 50,
+          "vittorie": 5,
+          "vittoriePct": 10,
+          "turniMedi": 16.82,
+          "nonFinite": 0
+        },
+        "avversarioVittorie": {
+          "partite": 50,
+          "vittorie": 45,
+          "vittoriePct": 90,
+          "turniMedi": 16.82,
+          "nonFinite": 0
+        }
+      }
+    }
+  ]
+}

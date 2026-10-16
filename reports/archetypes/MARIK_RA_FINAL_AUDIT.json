@@ -1,0 +1,155 @@
+{
+  "generatoIl": "2026-10-15T17:11:11.634Z",
+  "metodo": "Marik Hard; stessi semi; 5 avversari ufficiali e Custom separato; Ra sempre a una copia",
+  "opzioni": {
+    "partite": 50,
+    "turni": 80,
+    "seme": 221000
+  },
+  "custom": {
+    "name": "Custom",
+    "impronta": "e1909a556263c979"
+  },
+  "varianti": {
+    "cantoSingolo": [
+      1273
+    ],
+    "cicloRa": [
+      1273,
+      1275,
+      1276
+    ],
+    "cicloCompleto": [
+      1273,
+      1274,
+      1275,
+      1276
+    ]
+  },
+  "risultati": [
+    {
+      "variante": "pubblicato",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 123,
+        "vittoriePct": 49.2,
+        "turniMedi": 18.52,
+        "nonFinite": 0,
+        "vistePct": {
+          "472": 6,
+          "1273": 0,
+          "1274": 0,
+          "1275": 0,
+          "1276": 0
+        }
+      },
+      "controCustom": {
+        "partite": 50,
+        "vittorie": 10,
+        "vittoriePct": 20,
+        "turniMedi": 18.08,
+        "nonFinite": 0,
+        "vistePct": {
+          "472": 4,
+          "1273": 0,
+          "1274": 0,
+          "1275": 0,
+          "1276": 0
+        }
+      }
+    },
+    {
+      "variante": "cantoSingolo",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 130,
+        "vittoriePct": 52,
+        "turniMedi": 18.21,
+        "nonFinite": 0,
+        "vistePct": {
+          "472": 15.6,
+          "1273": 32,
+          "1274": 0,
+          "1275": 0,
+          "1276": 0
+        }
+      },
+      "controCustom": {
+        "partite": 50,
+        "vittorie": 13,
+        "vittoriePct": 26,
+        "turniMedi": 20.06,
+        "nonFinite": 0,
+        "vistePct": {
+          "472": 4,
+          "1273": 28,
+          "1274": 0,
+          "1275": 0,
+          "1276": 0
+        }
+      }
+    },
+    {
+      "variante": "cicloRa",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 117,
+        "vittoriePct": 46.8,
+        "turniMedi": 17.94,
+        "nonFinite": 0,
+        "vistePct": {
+          "472": 7.2,
+          "1273": 29.6,
+          "1274": 0,
+          "1275": 16.8,
+          "1276": 1.2
+        }
+      },
+      "controCustom": {
+        "partite": 50,
+        "vittorie": 16,
+        "vittoriePct": 32,
+        "turniMedi": 18.84,
+        "nonFinite": 0,
+        "vistePct": {
+          "472": 4,
+          "1273": 34,
+          "1274": 0,
+          "1275": 16,
+          "1276": 0
+        }
+      }
+    },
+    {
+      "variante": "cicloCompleto",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 134,
+        "vittoriePct": 53.6,
+        "turniMedi": 16.38,
+        "nonFinite": 0,
+        "vistePct": {
+          "472": 11.6,
+          "1273": 30.8,
+          "1274": 16,
+          "1275": 19.6,
+          "1276": 8
+        }
+      },
+      "controCustom": {
+        "partite": 50,
+        "vittorie": 6,
+        "vittoriePct": 12,
+        "turniMedi": 18.24,
+        "nonFinite": 0,
+        "vistePct": {
+          "472": 6,
+          "1273": 36,
+          "1274": 8,
+          "1275": 12,
+          "1276": 0
+        }
+      }
+    }
+  ]
+}

@@ -1,12 +1,16 @@
 Colonne sonore del gioco.
 
 Le tracce hanno un NUMERO progressivo nel nome ("56. Battle for the Millennium.mp3"):
-una traccia nuova prende il numero successivo all'ultimo (oggi 57).
+una traccia nuova prende il numero successivo all'ultimo (oggi 59).
 
 Tracce importanti, usate direttamente dal codice:
 - 56. Battle for the Millennium.mp3  — colonna sonora del menu principale, in loop
   (js/audio/audio-manager.js, index.html e le altre pagine menu).
-- 57. King of Games - Yugi's Final Duel.mp3 — tema fisso dei duelli di Torneo e Storia
+- 57. Duel of Shadows – The Millennium Mind.mp3 — tema di Pegasus e Heishin
+  nei modi senza selezione musicale (eccetto il duello di Pegasus nel videonastro).
+- 58. Yugi vs. Marik – Wrath of the Shadow Realm.mp3 — tema di Marik,
+  DarkNite e Nitemare nei modi senza selezione musicale.
+- 59. King of Games - Yugi's Final Duel.mp3 — tema fisso dei duelli di Torneo e Storia
   contro Yugi Muto e Yami Yugi (js/data/characters-db.js, `duelTrackSempre`).
 
 Se si rinomina una traccia, aggiornare TUTTI i punti che la nominano: cercare il nome

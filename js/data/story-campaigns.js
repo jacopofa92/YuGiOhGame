@@ -914,7 +914,7 @@ const storyCampaignsDatabase = [
                                 label: 'Maximillion Pegasus', x: 905, y: 165,
                                 characterId: 'pegasus',
                                 field: 'images/fields/mobile/arenaCastelloPegasus.jpg',
-                                music: "57. King of Games - Yugi's Final Duel.mp3",
+                                music: "57. Duel of Shadows – The Millennium Mind.mp3",
                                 dialogo: [
                                     { chi: 'pegasus', testo: 'Il mio Occhio del Millennio vede ogni carta nella tua mente, Yugi-boy. Toon World farà il resto.' },
                                     { io: true, testo: 'Non duello da solo. Alterneremo le nostre menti e combatteremo insieme per liberare nonno, Mokuba e Kaiba.' }
@@ -1558,7 +1558,7 @@ const storyCampaignsDatabase = [
                                 label: 'Marik Ishtar', x: 790, y: 220,
                                 characterId: 'marik',
                                 field: 'images/fields/mobile/torreDeiDuelliShadow.jpg',
-                                music: "57. King of Games - Yugi's Final Duel.mp3",
+                                music: "58. Yugi vs. Marik – Wrath of the Shadow Realm.mp3",
                                 dialogo: [
                                     { chi: 'marik', testo: 'Ra diventerà una Fenice immortale e consumerà ogni ricordo del Faraone. La mia parte debole sparirà insieme a lui.' },
                                     { io: true, testo: 'Combatterò per Joey, Mai e per il vero Marik che hai imprigionato. I tre Dei porranno fine al tuo Gioco delle Ombre.' }
@@ -2856,12 +2856,12 @@ const storyCampaignsDatabase = [
                     {
                         id: 'fm-7-finale-duello', kind: 'duel', icona: '👑',
                         label: 'Nitemare', x: 2560, y: 200,
-                        characterId: 'darkNite',
+                        characterId: 'nitemare',
                         field: 'images/fields/mobile/anticoEgittoNotte_3.jpg'
 ,
                         dialogo: [
-                            { chi: 'darkNite', nome: 'Nitemare', testo: 'Nessuno mi aveva mai costretto a mostrare questa forma. Nessuno.' },
-                            { chi: 'darkNite', nome: 'Nitemare', testo: 'Quando avro\' finito con te non resterai nemmeno nei racconti, principe. Sara\' come se il tuo nome non fosse mai esistito.' },
+                            { chi: 'nitemare', testo: 'Nessuno mi aveva mai costretto a mostrare questa forma. Nessuno.' },
+                            { chi: 'nitemare', testo: 'Quando avro\' finito con te non resterai nemmeno nei racconti, principe. Sara\' come se il tuo nome non fosse mai esistito.' },
                             { io: true, testo: 'Il mio regno ha aspettato cinquemila anni che tornassi. Non lo lascerò a te.' }
                         ]
                     },

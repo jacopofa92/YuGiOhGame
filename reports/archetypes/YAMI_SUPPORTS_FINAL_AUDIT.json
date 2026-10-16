@@ -1,0 +1,98 @@
+{
+  "generatoIl": "2026-10-15T14:27:56.991Z",
+  "metodo": "Yami Yugi Hard; stessi semi; 5 avversari ufficiali e Custom separato",
+  "opzioni": {
+    "partite": 50,
+    "turni": 80,
+    "seme": 181000
+  },
+  "custom": {
+    "name": "Custom",
+    "impronta": "e1909a556263c979"
+  },
+  "candidato": {
+    "aggiunteMain": [
+      1254,
+      1254,
+      1255,
+      1256
+    ],
+    "tagliMain": [
+      261,
+      712,
+      109,
+      194
+    ],
+    "aggiunteExtra": [
+      1260
+    ]
+  },
+  "risultati": [
+    {
+      "variante": "pubblicato",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 113,
+        "vittoriePct": 45.2,
+        "turniMedi": 17.8,
+        "nonFinite": 0,
+        "vistePct": {
+          "2": 29.6,
+          "31": 20,
+          "1254": 0,
+          "1255": 0,
+          "1256": 0,
+          "1260": 0
+        }
+      },
+      "controCustom": {
+        "partite": 50,
+        "vittorie": 10,
+        "vittoriePct": 20,
+        "turniMedi": 16.66,
+        "nonFinite": 0,
+        "vistePct": {
+          "2": 20,
+          "31": 4,
+          "1254": 0,
+          "1255": 0,
+          "1256": 0,
+          "1260": 0
+        }
+      }
+    },
+    {
+      "variante": "prudente",
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 96,
+        "vittoriePct": 38.4,
+        "turniMedi": 16.02,
+        "nonFinite": 0,
+        "vistePct": {
+          "2": 22.8,
+          "31": 11.2,
+          "1254": 55.2,
+          "1255": 42.4,
+          "1256": 48.8,
+          "1260": 5.6
+        }
+      },
+      "controCustom": {
+        "partite": 50,
+        "vittorie": 9,
+        "vittoriePct": 18,
+        "turniMedi": 14.7,
+        "nonFinite": 0,
+        "vistePct": {
+          "2": 20,
+          "31": 10,
+          "1254": 62,
+          "1255": 46,
+          "1256": 54,
+          "1260": 12
+        }
+      }
+    }
+  ]
+}

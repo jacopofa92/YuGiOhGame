@@ -547,7 +547,7 @@ function getTributesRequired(card) {
     // 2" ma per un motivo diverso dagli Dei Egizi — non è un floodgate di
     // potenza, è testo letterale della carta ("Puoi Sacrificare 3 mostri
     // per Evocare Tributo... questa carta"), verificato su YGOPRODeck.
-    if (card.id === 30 || card.id === 31 || card.id === 472 || card.id === 267) return 3;
+    if (card.id === 30 || card.id === 31 || card.id === 472 || card.id === 1275 || card.id === 267) return 3;
     const level = getEffectiveLevel(card);
     if (level >= 7) return 2;
     if (level >= 5) return 1;

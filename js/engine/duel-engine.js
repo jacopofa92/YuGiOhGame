@@ -698,12 +698,26 @@
     // ============================================================
     function unaffectedBySourceCard(ctx, slot) {
         if (!slot || !slot.card || slot.card.type !== 'monster') return false;
-        if (![867, 868, 869, 870].includes(slot.card.id)) return false;
         const source = ctx && ctx.card;
         // Una regola senza carta sorgente (battaglia, costo, pulizia di
         // stato) non è un "effetto di un'altra carta" e non va fermata.
         if (!source) return false;
-        return source.id !== 866 && source.uid !== slot.card.uid;
+        // Immunità completa dagli effetti delle ALTRE carte (es. Ra -
+        // Fenice della Divinità Egizia). La propria abilità deve invece
+        // poter muovere la carta, perciò si confrontano gli uid.
+        if (getDefinition(slot.card.id)?.unaffectedByOtherCardEffects
+            && source.uid !== slot.card.uid) return true;
+        if ([867, 868, 869, 870].includes(slot.card.id)) {
+            return source.id !== 866 && source.uid !== slot.card.uid;
+        }
+        // Immunità condizionata dagli effetti dell'AVVERSARIO (Eternal
+        // Soul e future carte custom). La mappa conserva il controllore
+        // protetto: un proprio effetto continua quindi a poter influenzare
+        // il mostro, mentre un effetto avversario viene fermato in tutti
+        // gli helper condivisi che passano da questo checkpoint.
+        const protectedFor = gameState.unaffectedByOpponentCardEffectsUids
+            && gameState.unaffectedByOpponentCardEffectsUids[slot.card.uid];
+        return !!protectedFor && !!ctx.owner && ctx.owner !== protectedFor;
     }
 
     /**
@@ -712,17 +726,52 @@
      * perché deve coprire allo stesso modo distruzione da effetto e da
      * battaglia; le carte custom possono aderire con `isToon: true`.
      */
+    function activeToonWorldSlot(owner) {
+        const fieldSpell = fieldSpellOf(owner);
+        if (fieldSpell && !fieldSpell.isFaceDown && fieldSpell.card.id === 1266) return fieldSpell;
+        return stFieldOf(owner).find((slot) => slot && !slot.isFaceDown && slot.card.id === 487) || null;
+    }
+
+    function hasActiveToonWorld(owner) {
+        return !!activeToonWorldSlot(owner);
+    }
+
+    function tryProtectToonWorldWithBookmark(owner, worldCard) {
+        if (!worldCard || (worldCard.id !== 487 && worldCard.id !== 1266)) return false;
+        const grave = graveyardOf(owner);
+        const index = grave.findIndex((card) => card.id === 1267);
+        if (index === -1) return false;
+        const [bookmark] = grave.splice(index, 1);
+        ACTIONS.banish(owner, bookmark);
+        addToLog(`🔖 Segnalibro Toon viene bandito e protegge ${worldCard.name}!`);
+        return true;
+    }
+
     function tryProtectToonWithWorld(owner, card) {
         if (!card) return false;
         const def = getDefinition(card.id);
         const isToon = !!(def && def.isToon) || /Toon/i.test(card.name || '');
         if (!isToon) return false;
-        const world = stFieldOf(owner).find((slot) => slot && !slot.isFaceDown && slot.card.id === 487);
+        const world = activeToonWorldSlot(owner);
         const lpKey = Tavolo.chiave(owner, 'LP');
         const key = `toon-world-protection:${owner}`;
         const worldBlocked = world && ((gameState.blockedCardUids && gameState.blockedCardUids.has(world.card.uid))
             || (gameState.blockedCardUidsThisTurn && gameState.blockedCardUidsThisTurn.has(world.card.uid)));
-        if (!world || worldBlocked || areSpellsNegatedFor(owner) || gameState[lpKey] < 500
+        if (!world || worldBlocked || areSpellsNegatedFor(owner)) return false;
+        // Regno Toon conserva la propria protezione ufficiale: per ogni
+        // distruzione bandisce la prima carta del Deck. La carta bandita e'
+        // pubblica nel modello corrente (il motore non possiede una zona
+        // bandita coperta), ma costo e frequenza restano fedeli.
+        if (world.card.id === 1266) {
+            const deck = Tavolo.mazzo(owner);
+            if (!Array.isArray(deck) || deck.length === 0) return false;
+            const protectedWith = deck.pop();
+            ACTIONS.banish(owner, protectedWith);
+            gameState[Tavolo.chiave(owner, 'DeckCount')] = deck.length;
+            addToLog(`🏰 Regno Toon protegge ${card.name} bandendo la prima carta del Deck!`);
+            return true;
+        }
+        if (gameState[lpKey] < 500
             || (gameState.usedOncePerTurnEffect && gameState.usedOncePerTurnEffect[key])) return false;
         gameState.usedOncePerTurnEffect = gameState.usedOncePerTurnEffect || {};
         gameState.usedOncePerTurnEffect[key] = true;
@@ -739,6 +788,33 @@
          * sotto controllo temporaneo (vedi ACTIONS.takeControl più sotto),
          * altrimenti di owner stesso come sempre.
          */
+        /**
+         * Manda un mostro dal Terreno al Cimitero senza distruggerlo.
+         * Serve agli effetti che usano espressamente "manda" (non
+         * "distruggi") e mantiene proprietario, animazione e notifiche.
+         */
+        sendMonsterToGraveyard(owner, index) {
+            const field = fieldOf(owner);
+            const slot = field[index];
+            if (!slot) return null;
+            if (unaffectedBySourceCard(this, slot)) {
+                addToLog(`🛡️ ${slot.card.name} non è influenzata dall'effetto di ${this.card ? this.card.name : 'un’altra carta'}!`);
+                return null;
+            }
+            const card = slot.card;
+            const proprietario = slot.originalOwner || owner;
+            if (window.FX && typeof FX.playCardToGraveyard === 'function') {
+                FX.playCardToGraveyard(card, owner, index, proprietario);
+            }
+            field[index] = null;
+            graveyardOf(proprietario).push(card);
+            redirectToBanishIfFlagged(proprietario, card);
+            if (graveyardOf(proprietario).includes(card)) {
+                notifyOwnMonsterSentToGraveyard(proprietario, card);
+            }
+            return card;
+        },
+
         destroyMonster(owner, index) {
             const field = fieldOf(owner);
             const slot = field[index];
@@ -777,6 +853,14 @@
             // coprono l'intero testo reale.
             if (getDefinition(slot.card.id)?.cannotBeDestroyedByCardEffect) {
                 addToLog(`🛡️ ${slot.card.name} non può essere distrutta da un effetto Carta!`);
+                return;
+            }
+            // Variante fedele limitata agli effetti dell'avversario. Non si
+            // riusa cannotBeDestroyedByCardEffect: una propria carta deve
+            // poter continuare a distruggerla quando il testo lo consente.
+            if (getDefinition(slot.card.id)?.cannotBeDestroyedByOpponentCardEffect
+                && destroyerOwner && destroyerOwner !== owner) {
+                addToLog(`🛡️ ${slot.card.name} non può essere distrutta dagli effetti dell'avversario!`);
                 return;
             }
             // Stessa protezione qui sopra, ma per-ISTANZA (uid) invece che
@@ -917,6 +1001,7 @@
             const slot = field[index];
             if (!slot) return;
             const destroyerOwner = (this && this.owner) || null;
+            if (this && this.card && tryProtectToonWorldWithBookmark(owner, slot.card)) return;
             // Effetto SOSTITUTIVO (es. Trappola Fasulla, id 600): "quando
             // l'AVVERSARIO attiverebbe un effetto che distruggerebbe 1+
             // Trappole che controlli: distruggi questa carta al loro
@@ -1076,6 +1161,7 @@
             const slot = gameState[key];
             if (!slot) return false;
             const card = slot.card;
+            if (this && this.card && tryProtectToonWorldWithBookmark(owner, card)) return false;
             // def.indestructibleByEffectOncePerTurn (Il Sigillo di Orichalcos
             // id 469: "una volta per turno, questa carta non può essere
             // distrutta da effetti carta"): la prima distruzione del turno
@@ -1504,6 +1590,11 @@
             if (chain.links.length === 0) return false;
             const target = chain.links[chain.links.length - 1];
             if (target.negated) return false;
+            // Le mosse firma delle Divinita' e future carte equivalenti
+            // dichiarano che attivazione ed effetto non possono essere
+            // annullati. Il controllo vive qui, punto unico usato da ogni
+            // carta di negazione, non nelle singole risposte.
+            if (target.def && target.def.activationAndEffectCannotBeNegated) return false;
             target.negated = true;
             return true;
         },
@@ -1619,7 +1710,7 @@
             // Cimitero invece di lasciarla nel nulla" del controllo qui
             // sopra, per lo stesso motivo (nessun chiamante controlla il
             // valore di ritorno).
-            if (getDefinition(card.id)?.cannotSpecialSummon) {
+            if (getDefinition(card.id)?.cannotSpecialSummon && !(visualOptions && visualOptions.ignoreSummoningConditions)) {
                 addToLog(`🚫 ${card.name} non può essere Special Summonata.`);
                 graveyardOf(owner).push(card);
                 return false;
@@ -2241,6 +2332,17 @@
             if (def && typeof def.onSentToGraveyardFromHand === 'function') {
                 safeCallCardHandler(card, 'onSentToGraveyardFromHand', () => def.onSentToGraveyardFromHand(makeContext(owner, { card: card, discardedByOwner: discardedByOwner })));
             }
+            notifyOwnMonsterSentToGraveyard(owner, card);
+            return card;
+        },
+
+        /** Manda dalla mano al Cimitero senza considerare la carta scartata. */
+        sendChosenFromHandToGraveyard(owner, handIndex) {
+            const hand = handOf(owner);
+            if (handIndex < 0 || handIndex >= hand.length) return null;
+            animaTransizioneCarta(hand[handIndex], { kind: 'hand', owner: owner }, { kind: 'graveyard', owner: owner }, 'discard');
+            const [card] = hand.splice(handIndex, 1);
+            graveyardOf(owner).push(card);
             notifyOwnMonsterSentToGraveyard(owner, card);
             return card;
         },
@@ -2928,7 +3030,7 @@
         const def = getDefinition(card.id);
         if (!def || typeof def.canSpecialSummonFromHand !== 'function') return false;
         const destinationOwner = def.specialSummonToOpponentField ? Tavolo.avversario(owner) : owner;
-        if (!def.specialSummonTributeFromOpponent
+        if (!def.specialSummonTributeFromOpponent && !def.specialSummonReleasesOwnMonsterZone
             && fieldOf(destinationOwner).findIndex((slot) => slot === null) === -1) return false;
         return !!def.canSpecialSummonFromHand(makeContext(owner, { card: card, handIndex: handIndex, summonDestinationOwner: destinationOwner }));
     }
@@ -2947,7 +3049,7 @@
         const def = getDefinition(card.id);
         const destinationOwner = def.specialSummonToOpponentField ? Tavolo.avversario(owner) : owner;
         let slotIndex = fieldOf(destinationOwner).findIndex((slot) => slot === null);
-        if (slotIndex === -1 && !def.specialSummonTributeFromOpponent) {
+        if (slotIndex === -1 && !def.specialSummonTributeFromOpponent && !def.specialSummonReleasesOwnMonsterZone) {
             addToLog('❌ Il Terreno è pieno: impossibile Special Summonare.');
             return false;
         }
@@ -2960,7 +3062,12 @@
         // soltanto dopo il pagamento è quindi necessario.
         slotIndex = fieldOf(destinationOwner).findIndex((slot) => slot === null);
         if (slotIndex === -1) return false;
-        hand.splice(handIndex, 1);
+        // Il costo puo' aver rimosso altre carte dalla stessa mano. Cercare
+        // nuovamente per uid evita di togliere la carta ormai presente al
+        // vecchio indice (o di lasciare in mano il mostro appena evocato).
+        const currentHandIndex = hand.findIndex((entry) => entry.uid === card.uid);
+        if (currentHandIndex === -1) return false;
+        hand.splice(currentHandIndex, 1);
         // Per regolamento reale, se una carta Special Summona un mostro
         // senza specificarne la Posizione, sceglie chi CONTROLLA quella
         // Summon — bug reale segnalato dall'utente ("alcune carte che
@@ -3561,6 +3668,28 @@
                     if (window.FX) FX.playCardActivateCenterScreen(slot.card);
                     safeCallCardHandler(slot.card, 'onCardActivated', () => def.onCardActivated(reactCtx));
                 });
+                // Alcune carte dichiarano espressamente di reagire dal
+                // Cimitero (es. Magician's Rod). È un hook separato e
+                // opt-in: non rende implicitamente attivi dal Cimitero gli
+                // oltre mille onCardActivated pensati per il Terreno.
+                const graveResponder = graveyardOf(fieldOwner).find((card) => {
+                    const def = getDefinition(card.id);
+                    if (!def || typeof def.onCardActivatedWhileInGraveyard !== 'function') return false;
+                    const reactCtx = makeContext(fieldOwner, {
+                        card: card, zone: 'graveyard',
+                        activatedCard: ctx.card, activatedOwner: ctx.owner
+                    });
+                    return typeof def.canActivateOnCardActivatedWhileInGraveyard !== 'function'
+                        || def.canActivateOnCardActivatedWhileInGraveyard(reactCtx);
+                });
+                if (graveResponder) {
+                    const def = getDefinition(graveResponder.id);
+                    const reactCtx = makeContext(fieldOwner, {
+                        card: graveResponder, zone: 'graveyard',
+                        activatedCard: ctx.card, activatedOwner: ctx.owner
+                    });
+                    safeCallCardHandler(graveResponder, 'onCardActivatedWhileInGraveyard', () => def.onCardActivatedWhileInGraveyard(reactCtx));
+                }
             });
             finish();
             return;
@@ -3929,14 +4058,42 @@
             addToLog(`🚫 ${raceCheckSlot.card.name} non può essere scelta come bersaglio da un effetto Carta!`);
             return { allowed: false, targetOwner: currentOwner, targetIndex: currentIndex };
         }
+        if (raceCheckSlot && !raceCheckSlot.isFaceDown
+            && getDefinition(raceCheckSlot.card.id)?.unaffectedByOtherCardEffects
+            && sourceCtx.card && sourceCtx.card.uid !== raceCheckSlot.card.uid) {
+            addToLog(`🛡️ ${raceCheckSlot.card.name} è immune agli effetti delle altre carte!`);
+            return { allowed: false, targetOwner: currentOwner, targetIndex: currentIndex };
+        }
 
         // 1.55) Come sopra, ma PER-ISTANZA invece che per-definizione (es. la
         // Spirit Message Special Summonata da Santuario Oscuro, id 867-870
         // via id 192/866): gameState.immuneToCardEffectsExceptDestinyBoardUids,
         // per uid, ricalcolato ad ogni render dentro static() — vedi il
         // commento sul campo in recomputeStaticEffects.
-        if (raceCheckSlot && !raceCheckSlot.isFaceDown && gameState.immuneToCardEffectsExceptDestinyBoardUids[raceCheckSlot.card.uid]) {
+        if (raceCheckSlot && !raceCheckSlot.isFaceDown && gameState.immuneToCardEffectsExceptDestinyBoardUids
+            && gameState.immuneToCardEffectsExceptDestinyBoardUids[raceCheckSlot.card.uid]) {
             addToLog(`🚫 ${raceCheckSlot.card.name} non è influenzata dagli effetti di altre carte!`);
+            return { allowed: false, targetOwner: currentOwner, targetIndex: currentIndex };
+        }
+
+        // Eternal Soul-style: il mostro resta influenzabile dalle carte
+        // del proprio controllore, ma non da quelle dell'avversario.
+        const immuneOwner = raceCheckSlot && gameState.unaffectedByOpponentCardEffectsUids
+            ? gameState.unaffectedByOpponentCardEffectsUids[raceCheckSlot.card.uid]
+            : null;
+        if (raceCheckSlot && !raceCheckSlot.isFaceDown && immuneOwner && sourceCtx.owner !== immuneOwner) {
+            addToLog(`🚫 ${raceCheckSlot.card.name} non è influenzata dagli effetti dell'avversario!`);
+            return { allowed: false, targetOwner: currentOwner, targetIndex: currentIndex };
+        }
+
+        // Protezione più stretta: non impedisce gli effetti non mirati, ma
+        // soltanto che l'avversario scelga questa istanza come bersaglio
+        // (True Light). Il valore conserva il controllore protetto.
+        const untargetableOwner = raceCheckSlot && gameState.cannotBeTargetedByOpponentEffectsUids
+            ? gameState.cannotBeTargetedByOpponentEffectsUids[raceCheckSlot.card.uid]
+            : null;
+        if (raceCheckSlot && !raceCheckSlot.isFaceDown && untargetableOwner && sourceCtx.owner !== untargetableOwner) {
+            addToLog(`🚫 ${raceCheckSlot.card.name} non può essere scelta come bersaglio dagli effetti dell'avversario!`);
             return { allowed: false, targetOwner: currentOwner, targetIndex: currentIndex };
         }
 
@@ -5004,6 +5161,12 @@
         // condiviso, non ogni possibile effetto di massa non mirato — nessun
         // checkpoint del genere esiste in questo motore.
         gameState.immuneToCardEffectsExceptDestinyBoardUids = {};
+        // Immunità per istanza limitata agli effetti dell'avversario. Il
+        // valore è il controllore protetto, non un semplice booleano: serve
+        // a distinguere gli effetti propri da quelli avversari senza
+        // codificare i due posti nel singolo effetto carta.
+        gameState.unaffectedByOpponentCardEffectsUids = {};
+        gameState.cannotBeTargetedByOpponentEffectsUids = {};
         // Come def.cannotBeTargetedBySpells (fisso per DEFINIZIONE, es.
         // Guardiano Kay'est id 285) ma per-ISTANZA — nata per Il Pescatore
         // Leggendario (id 879): "finché 'Umi' è sul Terreno, non è
@@ -5302,6 +5465,20 @@
                     safeCallCardHandler(slot.card, 'onAnySpecialSummon', () => def.onAnySpecialSummon(makeContext(owner, { card: slot.card, slotIndex: index, summonedCard: summonedCard })));
                 }
             });
+            stFieldOf(owner).forEach((slot, index) => {
+                if (!slot || slot.isFaceDown) return;
+                const def = getDefinition(slot.card.id);
+                if (def && typeof def.onAnySpecialSummon === 'function') {
+                    safeCallCardHandler(slot.card, 'onAnySpecialSummon', () => def.onAnySpecialSummon(makeContext(owner, { card: slot.card, index: index, zone: 'st', summonedCard: summonedCard })));
+                }
+            });
+            const fs = fieldSpellOf(owner);
+            if (fs && !fs.isFaceDown) {
+                const fsDef = getDefinition(fs.card.id);
+                if (fsDef && typeof fsDef.onAnySpecialSummon === 'function') {
+                    safeCallCardHandler(fs.card, 'onAnySpecialSummon', () => fsDef.onAnySpecialSummon(makeContext(owner, { card: fs.card, zone: 'fieldSpell', summonedCard: summonedCard })));
+                }
+            }
         });
     }
 
@@ -5377,6 +5554,22 @@
             const sdef = getDefinition(slot.card.id);
             if (sdef && typeof sdef.onOwnMonsterDestroyedPassive === 'function') {
                 safeCallCardHandler(slot.card, 'onOwnMonsterDestroyedPassive', () => sdef.onOwnMonsterDestroyedPassive(makeContext(owner, { card: slot.card, slotIndex: index, destroyedCard: sentCard, destroyedInBattle: !!viaBattleCard, destroyedByCard: viaBattleCard || null })));
+            }
+        });
+        // Trigger che deve essere già nel Cimitero quando un altro mostro
+        // vi arriva (Ra - Fenice della Divinità Egizia). Copia difensiva:
+        // l'handler può rimuovere se stesso dal Cimitero evocandosi.
+        graveyardOf(owner).slice().forEach((card) => {
+            if (card === sentCard) return;
+            const def = getDefinition(card.id);
+            if (def && typeof def.onOwnMonsterSentToGraveyardWhileInGraveyard === 'function') {
+                safeCallCardHandler(card, 'onOwnMonsterSentToGraveyardWhileInGraveyard', () => {
+                    def.onOwnMonsterSentToGraveyardWhileInGraveyard(makeContext(owner, {
+                        card: card,
+                        sentCard: sentCard,
+                        unrespondable: !!def.graveyardTriggerCannotBeRespondedTo
+                    }));
+                });
             }
         });
     }
@@ -5729,7 +5922,9 @@
         const results = [];
         extraDeck.forEach((extraCard, extraDeckIndex) => {
             const def = getDefinition(extraCard.id);
-            if (!def || !Array.isArray(def.fusionMaterials) || def.fusionMaterials.length === 0) return;
+            const fixedMaterials = def && Array.isArray(def.fusionMaterials) ? def.fusionMaterials : [];
+            const flexibleMatchers = def && Array.isArray(def.fusionMaterialMatchers) ? def.fusionMaterialMatchers : [];
+            if (!def || (fixedMaterials.length === 0 && flexibleMatchers.length === 0)) return;
             const usedHandIdx = new Set();
             const usedFieldIdx = new Set();
             const materialLocations = [];
@@ -5742,28 +5937,28 @@
             // del tutto generica sulla zona/indice: non serve toccarla,
             // solo estendere qui la ricerca del materiale.
             let versagoUsed = false;
-            const ok = def.fusionMaterials.every((materialId) => {
+            const takeMatchingMaterial = (matches, allowVersago) => {
                 if (fieldIsFull) {
-                    const fieldIdx = field.findIndex((s, i) => s && !s.isFaceDown && s.card.id === materialId && !usedFieldIdx.has(i));
+                    const fieldIdx = field.findIndex((s, i) => s && !s.isFaceDown && matches(s.card, 'monster') && !usedFieldIdx.has(i));
                     if (fieldIdx !== -1) {
                         usedFieldIdx.add(fieldIdx);
                         materialLocations.push({ zone: 'monster', index: fieldIdx });
                         return true;
                     }
                 }
-                const handIdx = hand.findIndex((c, i) => c.id === materialId && !usedHandIdx.has(i));
+                const handIdx = hand.findIndex((c, i) => matches(c, 'hand') && !usedHandIdx.has(i));
                 if (handIdx !== -1) {
                     usedHandIdx.add(handIdx);
                     materialLocations.push({ zone: 'hand', index: handIdx });
                     return true;
                 }
-                const fieldIdx = field.findIndex((s, i) => s && !s.isFaceDown && s.card.id === materialId && !usedFieldIdx.has(i));
+                const fieldIdx = field.findIndex((s, i) => s && !s.isFaceDown && matches(s.card, 'monster') && !usedFieldIdx.has(i));
                 if (fieldIdx !== -1) {
                     usedFieldIdx.add(fieldIdx);
                     materialLocations.push({ zone: 'monster', index: fieldIdx });
                     return true;
                 }
-                if (!versagoUsed) {
+                if (allowVersago && !versagoUsed) {
                     const versagoHandIdx = hand.findIndex((c, i) => c.id === 500 && !usedHandIdx.has(i));
                     if (versagoHandIdx !== -1) {
                         usedHandIdx.add(versagoHandIdx);
@@ -5780,7 +5975,13 @@
                     }
                 }
                 return false;
-            });
+            };
+            // Le Fusioni storiche continuano a usare gli id nominati. Le
+            // Fusioni moderne possono invece dichiarare predicati (es.
+            // "Mago Nero o Maga Oscura" + "1 Incantatore") senza
+            // moltiplicare artificialmente la stessa carta nell'Extra Deck.
+            const ok = fixedMaterials.every((materialId) => takeMatchingMaterial((card) => card.id === materialId, true))
+                && flexibleMatchers.every((matcher) => takeMatchingMaterial(matcher, false));
             // Non proporre neppure la Fusione se, a Terreno pieno, la
             // combinazione trovata usa solo la mano: l'attivazione deve
             // essere illegale prima di consumare carte o avviare FX.
@@ -5854,8 +6055,23 @@
      * per l'elenco completo), al posto della sola areMonsterEffectsNegatedFor.
      */
     function isMonsterCardEffectsNegated(owner, uid) {
-        return areMonsterEffectsNegatedFor(owner)
-            || !!(gameState.monsterEffectsNegatedUidsFor && gameState.monsterEffectsNegatedUidsFor[owner] && gameState.monsterEffectsNegatedUidsFor[owner].has(uid));
+        if (areMonsterEffectsNegatedFor(owner)
+            || !!(gameState.monsterEffectsNegatedUidsFor && gameState.monsterEffectsNegatedUidsFor[owner] && gameState.monsterEffectsNegatedUidsFor[owner].has(uid))) return true;
+        const nomiNegati = gameState.monsterEffectNamesNegatedThisTurn;
+        if (!nomiNegati || nomiNegati.size === 0) return false;
+        const zone = [fieldOf(owner), handOf(owner), graveyardOf(owner), Tavolo.mazzo(owner), banishedOf(owner)];
+        for (const cards of zone) {
+            if (!Array.isArray(cards)) continue;
+            const trovato = cards.find((entry) => {
+                const card = entry && entry.card ? entry.card : entry;
+                return card && card.uid === uid;
+            });
+            if (trovato) {
+                const card = trovato.card || trovato;
+                return nomiNegati.has(card.name);
+            }
+        }
+        return false;
     }
 
     /** Vero se i mostri di Tipo `race` di `owner` infliggono danno perforante grazie a un effetto continuo (es. Furia del Drago, id 212). */
@@ -5889,6 +6105,15 @@
             : zone === 'fieldSpell' ? (fieldSpellOf(owner) && fieldSpellOf(owner).card)
             : stFieldOf(owner)[index] && stFieldOf(owner)[index].card;
         if (!card) return false;
+        // Incrocio di Anime: fino alla fine del turno successivo il suo
+        // controllore può attivare una sola carta/effetto per turno; gli
+        // effetti dei mostri Divinità-Bestia non contano.
+        const soulLimit = gameState.soulCrossingActivationLimitFor
+            && gameState.soulCrossingActivationLimitFor[owner];
+        const isDivineBeastEffect = zone === 'monster'
+            && (card.race === 'Essere Divino' || card.id === 30 || card.id === 31 || card.id === 472 || card.id === 1275 || card.id === 1276);
+        if (soulLimit && gameState.turn <= soulLimit.expiresAfterTurn
+            && soulLimit.usedOnTurn === gameState.turn && !isDivineBeastEffect) return false;
         // Xing Zhen Hu (id 708): blocca l'attivazione di CARTE SPECIFICHE
         // (per uid), non di un'intera zona/proprietario come gli altri
         // divieti qui sotto — controllo per uid invece che per owner/tipo.
@@ -5994,6 +6219,13 @@
             : zone === 'fieldSpell' ? fieldSpellOf(owner).card
             : stFieldOf(owner)[index].card;
         const def = getDefinition(card.id);
+        const soulLimit = gameState.soulCrossingActivationLimitFor
+            && gameState.soulCrossingActivationLimitFor[owner];
+        const isDivineBeastEffect = zone === 'monster'
+            && (card.race === 'Essere Divino' || card.id === 30 || card.id === 31 || card.id === 472 || card.id === 1275 || card.id === 1276);
+        if (soulLimit && gameState.turn <= soulLimit.expiresAfterTurn && !isDivineBeastEffect) {
+            soulLimit.usedOnTurn = gameState.turn;
+        }
         if (window.DuelDialogues) DuelDialogues.say(owner, 'activate');
 
         addToLog(`✨ ${owner === 'player' ? 'Hai' : 'Il bot ha'} attivato ${zone === 'monster' ? `l'effetto di ${card.name}` : card.name}!`);
@@ -6169,6 +6401,7 @@
         redirectToBanishIfFlagged: redirectToBanishIfFlagged,
         tryRedirectUnionDestroy: tryRedirectUnionDestroy,
         tryProtectToonWithWorld: tryProtectToonWithWorld,
+        hasActiveToonWorld: hasActiveToonWorld,
         hasUnionProtector: hasUnionProtector,
         getDamageStepBonus: getDamageStepBonus,
         runBeforeDamageCalculation: runBeforeDamageCalculation,

@@ -272,6 +272,22 @@ function resetGameState() {
         // che invece si ricalcola sempre da zero ad ogni render.
         revealedSwordsLanded: {},
         hasNormalSummoned: false,
+        // Permesso per una Evocazione Tributo aggiuntiva (Canto Antico).
+        // Non sostituisce hasNormalSummoned e non autorizza un normale Set.
+        additionalTributeSummonFor: { player: false, bot: false },
+        // Attacco Forza del Tuono: dopo la pescata, per il resto del turno
+        // può dichiarare attacchi un solo mostro del giocatore indicato.
+        // Il Set degli uid che hanno già attaccato permette allo stesso
+        // mostro di usare eventuali attacchi aggiuntivi senza aprire la
+        // restrizione a un secondo attaccante.
+        onlyOneAttackingMonsterFor: { player: false, bot: false },
+        // Pugno del Fato: nomi originali i cui effetti Mostro sono negati
+        // fino alla fine del turno, oltre al singolo bersaglio iniziale.
+        monsterEffectNamesNegatedThisTurn: new Set(),
+        // Canto Antico bandito dal Cimitero: il prossimo Ra Evocato tramite
+        // Tributo in questo turno riceve le statistiche originali dei suoi
+        // Tributi. Il numero del turno evita ogni possibile trascinamento.
+        ancientChantRaBoostTurnFor: { player: null, bot: null },
         // Effetti Ignition dei mostri (es. Soldato Cannone): chiave = uid
         // della carta -> true se già attivato in questo turno. Resettato
         // ad ogni cambio turno in changeTurn() qui sotto.
@@ -480,6 +496,9 @@ function changeTurn() {
     // ATTACCANTI che hanno dichiarato un attacco contro un vero mostro
     // (non diretto) in questo turno, popolato in resolveAttack (actions.js).
     gameState.attackedMonsterUidsThisTurn = new Set();
+    gameState.onlyOneAttackingMonsterFor = { player: false, bot: false };
+    gameState.monsterEffectNamesNegatedThisTurn = new Set();
+    gameState.ancientChantRaBoostTurnFor = { player: null, bot: null };
     // Guardiana delle Fate (id 1069): "Magia mandata al TUO Cimitero da
     // un effetto dell'AVVERSARIO durante QUESTO turno" — stesso schema,
     // popolato in ACTIONS.destroySpellTrap (duel-engine.js).
@@ -614,6 +633,7 @@ function changeTurn() {
         EventiDuello.emetti('annuncio-turno', 'TURNO', wordRight, `Turno ${gameState.turn}`);
     }
     gameState.hasNormalSummoned = false;
+    gameState.additionalTributeSummonFor = { player: false, bot: false };
     gameState.usedIgnitionThisTurn = {};
     gameState.usedOncePerTurnEffect = {};
     gameState.directAttackAllowedFor = {};

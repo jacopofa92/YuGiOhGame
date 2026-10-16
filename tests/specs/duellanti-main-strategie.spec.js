@@ -27,6 +27,16 @@ module.exports = {
             gameState.botHand = [copia(31, 'slifer-attesa'), copia(1123, 'tributo-alternativo'), copia(96, 'corpo')];
             const preparaSlifer = AI_HARD.chooseSummon(gameState, 'bot');
 
+            // Dopo l'Evocazione, svuotare la mano abbasserebbe direttamente
+            // l'ATK/DEF di Slifer: Strings deve conservare Waboku, ma può
+            // ancora usare una pescata a vantaggio netto.
+            gameState.botMonsterField = [slot(copia(31, 'slifer-campo')), null, null, null, null];
+            gameState.botSTField = [null, null, null, null, null];
+            gameState.botHand = [copia(503, 'waboku-mano')];
+            const conservaManoSlifer = AI_HARD.chooseNextSpellTrapAction(gameState, {}, 'bot');
+            gameState.botHand = [copia(36, 'vaso-mano')];
+            const pescaConSlifer = AI_HARD.chooseNextSpellTrapAction(gameState, {}, 'bot');
+
             resetGameState();
             Tavolo.imposta({ player: 'ia', bot: 'ia' });
             gameState.personaggioPerPosto = { player: 'yamiYugi', bot: 'gozaburo' };
@@ -56,6 +66,8 @@ module.exports = {
             return {
                 evocaSlifer: evocaSlifer && evocaSlifer.card.id,
                 preparaSlifer: preparaSlifer && preparaSlifer.card.id,
+                conservaManoSlifer: conservaManoSlifer && conservaManoSlifer.action,
+                pescaConSlifer: pescaConSlifer && pescaConSlifer.card.id,
                 cimitero: gozaburoCimitero,
                 deck: gozaburoDeck,
                 setOdion: [primaTrappola && primaTrappola.action, secondaTrappola && secondaTrappola.action],
@@ -69,6 +81,10 @@ module.exports = {
             `Strings deve scegliere Slifer con tre Tributi (scelto ${risultato.evocaSlifer})`);
         t.assert(risultato.preparaSlifer === 96,
             `Strings deve aggiungere un corpo senza consumare i due presenti (scelto ${risultato.preparaSlifer})`);
+        t.assert(risultato.conservaManoSlifer === null,
+            'Strings non deve ridurre Slifer Settando l’ultima carta della mano');
+        t.assert(risultato.pescaConSlifer === 36,
+            'Strings può ancora attivare una pescata a vantaggio netto con Slifer scoperto');
         t.assert(risultato.cimitero.includes(41),
             `Gozaburo deve mandare un pezzo di Exodia al Cimitero (${risultato.cimitero})`);
         t.assert(risultato.deck.includes(54),

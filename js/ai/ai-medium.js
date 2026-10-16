@@ -34,6 +34,7 @@
             : (card) => card.attack || 0;
         const candidates = [...Tavolo.mano(io, gameState)]
             .filter((card) => card.type === 'monster'
+                && (typeof canUseNormalSummonQuota !== 'function' || canUseNormalSummonQuota(io, card))
                 && (!window.AI_SHARED || AI_SHARED.canNormalSummonNow(card, gameState, io))
                 && !(window.AI_SHARED && AI_SHARED.shouldHoldForExodia(card))
                 && (typeof options.allowCandidate !== 'function' || options.allowCandidate(card)))
@@ -44,6 +45,19 @@
             const posture = typeof options.decidePosture === 'function'
                 ? options.decidePosture(card)
                 : (window.AI_SHARED && AI_SHARED.decideMonsterPosture(card, gameState, io)) || { position: 'attack', faceDown: false };
+            // Ra - Modalità Sfera usa una procedura propria: tre Tributi
+            // tutti sullo stesso Terreno e comparsa su quel lato. Se il
+            // campo avversario offre tre mostri, è la scelta tattica
+            // preferita; in mancanza può usare il proprio campo.
+            if (card.id === 1275) {
+                const opponent = Tavolo.avversario(io);
+                const enemyCount = Tavolo.mostri(opponent, gameState).filter(Boolean).length;
+                const ownCount = Tavolo.mostri(io, gameState).filter(Boolean).length;
+                if (enemyCount >= 3 || ownCount >= 3) {
+                    return { card, tributeIndices: [], emptySlotHint: -1, position: 'attack', faceDown: false, customNormalSummon: true };
+                }
+                continue;
+            }
             if (tributesNeeded === 0) {
                 const emptySlot = Tavolo.mostri(io, gameState).findIndex((slot) => slot === null);
                 if (emptySlot !== -1) return { card: card, tributeIndices: [], emptySlotHint: emptySlot, position: posture.position, faceDown: posture.faceDown };

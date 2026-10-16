@@ -1780,7 +1780,7 @@
     CardEffects.register(483, {
         isToon: true,
         mustTargetFilterIfPresent(card, owner) {
-            const hasWorld = Tavolo.magieTrappole(owner).some((slot) => slot && !slot.isFaceDown && slot.card.id === 487);
+            const hasWorld = DuelEngine.hasActiveToonWorld(owner);
             return hasWorld && card.type === 'monster' && ((DuelEngine.getDefinition(card.id)?.isToon) || /Toon/i.test(card.name || ''));
         },
         onDealsBattleDamage(ctx) {

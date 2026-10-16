@@ -1,0 +1,8 @@
+{
+  "name": "Custom",
+  "main": [
+    { "id": 4, "qty": 20 },
+    { "id": 24, "qty": 20 }
+  ],
+  "extra": []
+}

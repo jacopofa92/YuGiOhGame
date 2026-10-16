@@ -1,0 +1,109 @@
+{
+  "generatoIl": "2026-10-15T14:01:12.369Z",
+  "metodo": "IA hard; stessi semi; cinque deck ufficiali piu Custom; Slifer contato solo quando entra nella zona Mostri",
+  "opzioni": {
+    "partite": 50,
+    "turni": 80,
+    "seme": 173000
+  },
+  "custom": {
+    "name": "Custom",
+    "impronta": "e1909a556263c979"
+  },
+  "varianti": {
+    "waboku": "-1 Cavaliere Oscuro, +1 Waboku",
+    "protezioneTributi": "-1 Cavaliere Oscuro, -1 Carte Infinite, -1 Carta del Ritorno Sicuro, +2 Waboku, +1 Gabbia d’Acciaio dell’Incubo"
+  },
+  "risultati": [
+    {
+      "variante": "pubblicato",
+      "carteMain": 40,
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 58,
+        "vittoriePct": 23.2,
+        "sliferVistoPct": 42.4,
+        "sliferEvocato": 90,
+        "sliferEvocatoPct": 36,
+        "vittorieConSliferEvocatoPct": 40,
+        "turnoMedioEvocazione": 14.56,
+        "manoMediaAllEvocazione": 2.53,
+        "turniMedi": 21.47,
+        "nonFinite": 0
+      },
+      "custom": {
+        "partite": 50,
+        "vittorie": 49,
+        "vittoriePct": 98,
+        "sliferVistoPct": 22,
+        "sliferEvocato": 8,
+        "sliferEvocatoPct": 16,
+        "vittorieConSliferEvocatoPct": 100,
+        "turnoMedioEvocazione": 17.25,
+        "manoMediaAllEvocazione": 1.63,
+        "turniMedi": 19.78,
+        "nonFinite": 0
+      }
+    },
+    {
+      "variante": "waboku",
+      "carteMain": 40,
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 58,
+        "vittoriePct": 23.2,
+        "sliferVistoPct": 42.4,
+        "sliferEvocato": 92,
+        "sliferEvocatoPct": 36.8,
+        "vittorieConSliferEvocatoPct": 38,
+        "turnoMedioEvocazione": 14.89,
+        "manoMediaAllEvocazione": 2.26,
+        "turniMedi": 21.32,
+        "nonFinite": 0
+      },
+      "custom": {
+        "partite": 50,
+        "vittorie": 49,
+        "vittoriePct": 98,
+        "sliferVistoPct": 24,
+        "sliferEvocato": 9,
+        "sliferEvocatoPct": 18,
+        "vittorieConSliferEvocatoPct": 88.9,
+        "turnoMedioEvocazione": 13.56,
+        "manoMediaAllEvocazione": 2.11,
+        "turniMedi": 20.86,
+        "nonFinite": 0
+      }
+    },
+    {
+      "variante": "protezioneTributi",
+      "carteMain": 40,
+      "ufficiale": {
+        "partite": 250,
+        "vittorie": 55,
+        "vittoriePct": 22,
+        "sliferVistoPct": 46.4,
+        "sliferEvocato": 102,
+        "sliferEvocatoPct": 40.8,
+        "vittorieConSliferEvocatoPct": 31.4,
+        "turnoMedioEvocazione": 15.63,
+        "manoMediaAllEvocazione": 2.29,
+        "turniMedi": 22.32,
+        "nonFinite": 0
+      },
+      "custom": {
+        "partite": 50,
+        "vittorie": 49,
+        "vittoriePct": 98,
+        "sliferVistoPct": 30,
+        "sliferEvocato": 12,
+        "sliferEvocatoPct": 24,
+        "vittorieConSliferEvocatoPct": 91.7,
+        "turnoMedioEvocazione": 15.17,
+        "manoMediaAllEvocazione": 2.25,
+        "turniMedi": 22.06,
+        "nonFinite": 0
+      }
+    }
+  ]
+}
