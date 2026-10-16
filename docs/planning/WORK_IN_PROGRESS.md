@@ -87,6 +87,19 @@ Vincolo: non modificare Starter/Structure. Sono il metro fisso; l'oggetto
 del bilanciamento sono IA e deck Facile/Medio/Difficile degli avversari,
 sempre coerenti con il personaggio. Toon/Pegasus si affronta per ultimo.
 
+- [ ] Audit futuro sulla dimensione dei deck avversari. Il regolamento
+      permette Main Deck da 40 a 60 carte, mentre le liste avversarie sono
+      attualmente uniformate a 40. Verificare con simulazioni riproducibili
+      se questa scelta massimizza correttamente la consistenza o appiattisce
+      identita' e difficolta' dei personaggi. Confrontare almeno 40/45/50
+      carte senza aggiungere riempitivi generici: ogni estensione deve essere
+      coerente con la lore e va valutata separatamente per Facile, Medio e
+      Difficile. Controllare frequenza delle combo firma, mani inutilizzabili,
+      percentuale di vittorie, durata e sconfitte per esaurimento del Deck.
+      Non assumere che un deck piu' lungo sia automaticamente piu' forte:
+      oltre 40 carte riduce normalmente la probabilita' di pescare le carte
+      chiave e ha senso solo se migliora davvero identita' o bilanciamento.
+
 - [x] Simulatore riproducibile deck × difficoltà sul percorso anime
       (`tools/simula-storia-deck.js`), con tentativi, turni e tempi.
 - [x] Eseguita la matrice isolata (16 deck × 3 difficoltà, IA giocatore
