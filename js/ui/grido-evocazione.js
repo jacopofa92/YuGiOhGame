@@ -20,7 +20,7 @@
  * aspetta comunque grazie al contatore delle cinematiche (FX.begin/
  * endSummonCinematic, lo stesso dei filmati di Evocazione).
  *
- * LA SCENA (2,2 secondi): velo e raggi del colore dell'Attributo, la
+ * LA SCENA (3 secondi): velo e raggi del colore dell'Attributo, la
  * sagoma trasparente del duellante che entra dal suo lato spinta dal
  * vento (strisce e pulviscolo che attraversano lo schermo), la frase e il
  * nome della carta. Un tocco la salta. Si chiude da sola anche se si apre
@@ -31,7 +31,7 @@
 (function () {
     'use strict';
 
-    const DURATA_MS = 2200;
+    const DURATA_MS = 3000;
     const DURATA_RIDOTTA_MS = 1500;
     const USCITA_MS = 300;
     const ATTESA_IMMAGINE_MS = 900;

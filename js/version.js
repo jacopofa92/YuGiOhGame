@@ -32,6 +32,8 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.3.31 — Il grido di Evocazione dura 3 secondi invece di 2,2.
+ *
  * 1.3.30 — La sessione di accesso dura 48 ore, poi si rifà il login (prima di
  *   uscire il progresso viene salvato sul cloud).
  *
@@ -747,4 +749,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.3.30';
+window.GAME_VERSION = '1.3.31';

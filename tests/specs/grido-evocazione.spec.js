@@ -52,7 +52,7 @@ module.exports = {
                 const durante = { scena: !!document.getElementById('gridoEvocazione'), inCampo: !!gameState.playerMonsterField[0], inMano: gameState.playerHand.includes(kuriboh) };
                 // Si vede il personaggio giusto col suo grido.
                 durante.testo = (document.querySelector('#gridoEvocazione .ge-grido') || {}).textContent;
-                await new Promise((r) => setTimeout(r, 1900));
+                await new Promise((r) => setTimeout(r, 2800));
                 return { durante, dopo: { scena: !!document.getElementById('gridoEvocazione'), inCampo: !!gameState.playerMonsterField[0] } };
             });
             assert(normale.durante.scena, 'durante l\'Evocazione Normale la scena del grido deve essere a schermo');
