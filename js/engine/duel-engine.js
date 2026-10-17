@@ -1813,11 +1813,18 @@
                         ? Math.max(0, visualOptions.delayMs)
                         : 30;
                     setTimeout(() => {
-                        EventiDuello.emetti('impatto-campo', owner, slotIndex, 'monster');
-                        EventiDuello.emetti('cambio-posizione', owner, slotIndex, position);
-                        const cardEl = PortaUI.query(`#${owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard'} .field-slot[data-type="monster"][data-index="${slotIndex}"] .card`);
-                        if (cardEl && window.FX) FX.playMonsterSummonEffect(card, cardEl);
-                        if ((card.level || 0) < 7 && !(window.AudioLibrary && AudioLibrary.tryPlayCardSound(card, 'evocazioni')) && window.SFX) SFX.summon(position);
+                        const mostraEvocazione = () => {
+                            EventiDuello.emetti('impatto-campo', owner, slotIndex, 'monster');
+                            EventiDuello.emetti('cambio-posizione', owner, slotIndex, position);
+                            const cardEl = PortaUI.query(`#${owner === 'player' ? 'playerFieldBoard' : 'botFieldBoard'} .field-slot[data-type="monster"][data-index="${slotIndex}"] .card`);
+                            if (cardEl && window.FX) FX.playMonsterSummonEffect(card, cardEl);
+                            if ((card.level || 0) < 7 && !(window.AudioLibrary && AudioLibrary.tryPlayCardSound(card, 'evocazioni')) && window.SFX) SFX.summon(position);
+                        };
+                        // Il grido del duellante per la sua carta simbolo precede
+                        // la parte VISIVA dell'Evocazione (lo stato è già
+                        // cambiato: la Special Summon è sincrona, vedi
+                        // js/ui/grido-evocazione.js). Senza grido parte subito.
+                        EventiDuello.attendi('grido-evocazione', { posto: owner, carta: card, speciale: true }, mostraEvocazione);
                     }, visualDelay);
                 }
             );

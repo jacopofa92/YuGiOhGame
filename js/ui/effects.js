@@ -2731,6 +2731,9 @@
         //   duello. Restano deliberatamente fuori finche' non serviranno.
         /** true finche' un filmato di Evocazione o una convergenza di Livello 7+ e' a schermo — vedi il commento su summonCinematicCount. */
         isCinematicPlaying: isCinematicPlaying,
+        /** Per chi mostra una scena di Evocazione propria (js/ui/grido-evocazione.js): il bot aspetta finché il contatore non torna a zero. */
+        beginSummonCinematic,
+        endSummonCinematic,
         playSummonCircle,
         playElementalConvergence: runElementalConvergence,
         playVideoOverlay,

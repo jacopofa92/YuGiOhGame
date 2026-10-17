@@ -1,0 +1,162 @@
+/* ============================================================
+   Grido di Evocazione — vedi js/ui/grido-evocazione.js.
+   Una scena a tutto schermo di 2,2 secondi: il duellante entra
+   spinto dal vento, annuncia la carta, la scena cede il passo.
+   Sta sotto i modali (z-index 100000) e sopra annunci e FX.
+   Il colore dell'Attributo arriva in --ge-colore.
+   ============================================================ */
+.ge {
+    --ge-dir: 1;
+    position: fixed; inset: 0; z-index: 10075;
+    overflow: hidden; opacity: 0;
+    font-family: inherit;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+.ge--play { animation: geEntra .2s ease-out forwards; }
+.ge--esce { animation: geEsci .3s ease-in forwards !important; }
+@keyframes geEntra { from { opacity: 0 } to { opacity: 1 } }
+@keyframes geEsci { from { opacity: 1 } to { opacity: 0 } }
+
+.ge-velo {
+    position: absolute; inset: 0;
+    background:
+        radial-gradient(ellipse at 50% 58%, color-mix(in srgb, var(--ge-colore) 26%, transparent) 0, transparent 62%),
+        linear-gradient(180deg, rgba(3, 5, 12, .9), rgba(6, 8, 18, .8) 55%, rgba(3, 5, 12, .92));
+}
+.ge-raggi {
+    position: absolute; left: 50%; top: 56%;
+    width: 250vmax; height: 250vmax; margin: -125vmax 0 0 -125vmax;
+    background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--ge-colore) 22%, transparent) 0 5deg, transparent 5deg 15deg);
+    -webkit-mask: radial-gradient(circle, #000 0, transparent 42%);
+            mask: radial-gradient(circle, #000 0, transparent 42%);
+    opacity: .55;
+}
+.ge--play .ge-raggi { animation: geRuota 9s linear infinite; }
+@keyframes geRuota { to { transform: rotate(360deg) } }
+
+/* --- Vento: strisce e pulviscolo che attraversano lo schermo ---
+   Il contenitore è specchiato per il duellante di destra (scaleX(-1)):
+   le animazioni sono scritte una volta sola, da sinistra a destra. */
+.ge-vento { position: absolute; inset: 0; pointer-events: none; transform: scaleX(var(--ge-dir)); }
+.ge-vento i {
+    position: absolute; left: 0; height: 2px; border-radius: 2px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .95) 55%, color-mix(in srgb, var(--ge-colore) 70%, #fff) 85%, transparent);
+    transform: translateX(-60vw); opacity: 0;
+}
+.ge--play .ge-vento i { animation-name: geStriscia; animation-timing-function: cubic-bezier(.2, .6, .3, 1); animation-fill-mode: forwards; }
+@keyframes geStriscia {
+    0% { transform: translateX(-60vw); opacity: 0 }
+    20% { opacity: 1 }
+    100% { transform: translateX(125vw); opacity: 0 }
+}
+.ge-vento b {
+    position: absolute; left: 0; width: var(--ge-s); height: var(--ge-s); border-radius: 50%;
+    background: color-mix(in srgb, var(--ge-colore) 55%, #fff); box-shadow: 0 0 6px var(--ge-colore);
+    transform: translateX(-10vw); opacity: 0;
+}
+.ge--play .ge-vento b { animation-name: geGranello; animation-timing-function: ease-in-out; animation-fill-mode: forwards; }
+@keyframes geGranello {
+    0% { transform: translate(-10vw, 0); opacity: 0 }
+    15% { opacity: .9 }
+    50% { transform: translate(52vw, var(--ge-dy)) }
+    100% { transform: translate(115vw, calc(var(--ge-dy) * -.6)); opacity: 0 }
+}
+
+/* Onda d'urto del vento nel punto in cui il duellante si pianta. */
+.ge-onda {
+    position: absolute; bottom: 22%; width: 26vmin; height: 26vmin; margin-bottom: -13vmin;
+    border-radius: 50%; border: 2px solid color-mix(in srgb, var(--ge-colore) 65%, #fff);
+    box-shadow: 0 0 22px var(--ge-colore), inset 0 0 22px var(--ge-colore);
+    opacity: 0; transform: scale(.2);
+}
+.ge--sinistra .ge-onda { left: 14%; }
+.ge--destra .ge-onda { right: 14%; }
+.ge--play .ge-onda { animation: geOnda .7s .3s cubic-bezier(.2, .7, .3, 1) forwards; }
+@keyframes geOnda { 0% { opacity: .9; transform: scale(.2) } 100% { opacity: 0; transform: scale(2.6) } }
+
+/* --- Il duellante: sagoma trasparente, a figura intera --- */
+.ge-figura {
+    position: absolute; bottom: 0; height: min(68vh, 680px); width: auto; max-width: 58vw;
+    object-fit: contain; object-position: bottom;
+    transform-origin: 50% 100%;
+    filter: drop-shadow(0 0 22px color-mix(in srgb, var(--ge-colore) 60%, transparent)) drop-shadow(0 12px 20px rgba(0, 0, 0, .75));
+    opacity: 0; pointer-events: none; user-select: none;
+}
+.ge--sinistra .ge-figura { left: 2vw; }
+.ge--destra .ge-figura { right: 2vw; }
+.ge--play .ge-figura {
+    /* `translate`/`scale` portano l'entrata, `rotate` il lieve dondolio del
+       vento: sono proprietà indipendenti, quindi le due animazioni non si
+       sovrascrivono. Nessun rimbalzo: la figura si ferma e basta. */
+    animation: geFiguraEntra .72s cubic-bezier(.16, .84, .3, 1) forwards, geFiguraVento 1.7s .6s ease-in-out infinite alternate;
+}
+@keyframes geFiguraEntra {
+    0% { opacity: 0; translate: calc(-42vw * var(--ge-dir)) 0; scale: 1.08; filter: blur(14px) brightness(2.2) drop-shadow(0 0 22px var(--ge-colore)) }
+    45% { opacity: 1 }
+    100% { opacity: 1; translate: 0 0; scale: 1; filter: blur(0) brightness(1) drop-shadow(0 0 22px color-mix(in srgb, var(--ge-colore) 60%, transparent)) drop-shadow(0 12px 20px rgba(0, 0, 0, .75)) }
+}
+@keyframes geFiguraVento { from { rotate: -.7deg } to { rotate: .7deg } }
+
+/* --- Testo --- */
+.ge-testo {
+    position: absolute; top: 50%; translate: 0 -50%;
+    width: min(48vw, 680px);
+    display: flex; flex-direction: column; gap: clamp(6px, 1.2vh, 14px);
+    pointer-events: none;
+}
+.ge--sinistra .ge-testo { right: 4vw; text-align: left; }
+.ge--destra .ge-testo { left: 4vw; text-align: right; }
+.ge-testo > * { opacity: 0; }
+.ge-kicker {
+    font-size: clamp(.68rem, 1.5vw, .95rem); letter-spacing: .3em; text-transform: uppercase; font-weight: 800;
+    color: color-mix(in srgb, var(--ge-colore) 70%, #fff);
+    text-shadow: 0 0 10px var(--ge-colore);
+}
+.ge-grido {
+    font-size: clamp(1.25rem, 3.5vw, 2.6rem); font-weight: 900; font-style: italic; line-height: 1.12;
+    text-wrap: balance;
+    background: linear-gradient(180deg, #fff 10%, color-mix(in srgb, var(--ge-colore) 55%, #fff) 80%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 2px 0 rgba(0, 0, 0, .6)) drop-shadow(0 0 14px color-mix(in srgb, var(--ge-colore) 55%, transparent));
+}
+.ge-carta {
+    font-style: normal; font-weight: 800; letter-spacing: .06em;
+    font-size: clamp(1rem, 2.3vw, 1.55rem); color: #f7d774;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, .85), 0 0 14px rgba(247, 215, 116, .45);
+}
+.ge--play .ge-kicker { animation: geTesto .45s .36s cubic-bezier(.16, .84, .3, 1) forwards; }
+.ge--play .ge-grido { animation: geTesto .5s .46s cubic-bezier(.16, .84, .3, 1) forwards; }
+.ge--play .ge-carta { animation: geTesto .45s .82s cubic-bezier(.16, .84, .3, 1) forwards; }
+@keyframes geTesto {
+    /* Il testo esce dal lato del duellante: a sinistra parte da -30px, a destra da +30px. */
+    from { opacity: 0; translate: calc(-30px * var(--ge-dir)) 0; letter-spacing: .1em }
+    to { opacity: 1; translate: 0 0 }
+}
+.ge-salta {
+    position: absolute; left: 0; right: 0; bottom: max(1.2vh, env(safe-area-inset-bottom)); text-align: center;
+    font-size: .72rem; letter-spacing: .2em; text-transform: uppercase; color: rgba(255, 255, 255, .5);
+    opacity: 0; pointer-events: none;
+}
+.ge--play .ge-salta { animation: geTesto 0s 1s forwards; }
+
+/* --- Schermo stretto / verticale: figura in basso al centro, testo sopra --- */
+@media (orientation: portrait), (max-width: 700px) {
+    .ge-figura { height: 48vh; max-width: 86vw; left: 0 !important; right: 0 !important; margin-inline: auto; }
+    .ge-onda { left: 0 !important; right: 0 !important; margin-inline: auto; bottom: 14%; }
+    .ge-testo { top: 14vh; translate: 0 0; left: 6vw !important; right: 6vw !important; width: auto; text-align: center !important; }
+    .ge-grido { font-size: clamp(1.15rem, 6vw, 1.9rem); }
+    .ge-carta { font-size: clamp(.95rem, 4.4vw, 1.3rem); }
+    .ge-kicker { font-size: .66rem; letter-spacing: .22em; }
+}
+/* Telefono in orizzontale: poca altezza, la figura sta più bassa e piccola. */
+@media (max-height: 460px) and (orientation: landscape) {
+    .ge-figura { height: 78vh; }
+    .ge-testo { width: min(52vw, 560px); }
+    .ge-grido { font-size: clamp(1rem, 3.2vw, 1.7rem); }
+}
+
+/* Movimento ridotto: stessa informazione, solo una dissolvenza. */
+.ge--ridotto .ge-figura { animation: geFiguraSolo .35s ease-out forwards !important; }
+@keyframes geFiguraSolo { from { opacity: 0 } to { opacity: 1 } }
+.ge--ridotto .ge-raggi, .ge--ridotto .ge-onda { display: none; }

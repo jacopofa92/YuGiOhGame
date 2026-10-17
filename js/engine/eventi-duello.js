@@ -78,7 +78,8 @@
         'decisione': '(richiesta, rispondi) una scelta per la persona davanti allo schermo (js/engine/decisioni.js); rispondi(candidato | null)',
         // --- attese (attendi) ---
         'vittoria-istantanea': '(tipo, playerWon, fatto) cinematica di una vittoria istantanea (exodiawin, destinyboard, flyingelephant)',
-        'volo-carta': '({ carta, partenza, casella, daNascondere?, coperta?, posizione? }, fatto) una carta vola dalla mano alla casella',
+        'grido-evocazione': '({ posto, carta, speciale? }, fatto) il duellante annuncia la sua carta simbolo PRIMA dell\'Evocazione (js/ui/grido-evocazione.js); senza grido per quella carta parte subito',
+        'volo-carta':'({ carta, partenza, casella, daNascondere?, coperta?, posizione? }, fatto) una carta vola dalla mano alla casella',
         'scarto-fine-turno': '(eccesso, fatto) il giocatore sceglie cosa scartare a fine turno',
         // --- domande (chiedi) ---
         'interfaccia-occupata': '() → true se a schermo c\'è una scelta o una cinematica che il duello deve aspettare',

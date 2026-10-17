@@ -303,7 +303,11 @@ function eseguiEvocazioneNormale(posto, c, extra) {
     // pila del Deck... cioè da nessun elemento, e l'animazione si salta.
     const handEl = dellaPersona ? (PortaUI.queryAll('#playerHand .card')[handIndex] || null) : null;
     const slotEl = PortaUI.query(`.field-slot[data-owner="${posto}"][data-type="monster"][data-index="${slotIndex}"]`);
-    EventiDuello.attendi('volo-carta', { carta: card, partenza: fromRect || handEl, casella: slotEl, daNascondere: handEl, coperta: isFaceDown, posizione: position }, () => {
+    // Prima del volo, il grido del duellante per la sua carta simbolo (Kaiba e
+    // il Drago Bianco Occhi Blu...): senza grido o senza interfaccia parte
+    // subito. Mai per un Set: una carta coperta non si annuncia.
+    const prima = (avvia) => (isFaceDown ? avvia() : EventiDuello.attendi('grido-evocazione', { posto, carta: card }, avvia));
+    prima(() => EventiDuello.attendi('volo-carta', { carta: card, partenza: fromRect || handEl, casella: slotEl, daNascondere: handEl, coperta: isFaceDown, posizione: position }, () => {
         const usedTribute = getTributesRequired(card) > 0;
         // La carta si ritrova per uid: durante il volo la mano può essere
         // cambiata (una pescata, uno scarto) e l'indice di prima non vale più.
@@ -341,7 +345,7 @@ function eseguiEvocazioneNormale(posto, c, extra) {
         // callback lo riflette subito a schermo.
         const summonCtx = DuelEngine.makeContext(posto, { summonedCard: card, summonedSlotIndex: slotIndex, summonedPosition: position });
         DuelEngine.fireTrigger(DuelEngine.TRIGGER.ON_NORMAL_SUMMON, summonCtx, () => { updateUI(); fine(); });
-    });
+    }));
 }
 
 /** Il cambio di Posizione deciso dalla persona: diventa il comando 'posizione'. */

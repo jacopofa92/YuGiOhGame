@@ -64,6 +64,9 @@
          impostazione "Dettagli video: Alti" degli strati ambientali qui
          sopra — vedi js/ui/monster-hologram.js. -->
     <link rel="stylesheet" href="js/ui/monster-hologram.css">
+<!-- Grido di Evocazione: il duellante annuncia la sua carta simbolo
+     prima che venga Evocata — js/ui/grido-evocazione.js. -->
+<link rel="stylesheet" href="js/ui/grido-evocazione.css">
 <!-- I riscontri dei momenti del duello (ATK/DEF che cambiano, bando,
      annullamento, cambio di Posizione, Token, Life Point critici): vedi
      js/ui/duel-feedback.js. -->
@@ -5274,6 +5277,10 @@
 <script src="js/engine/game-flow.js"></script>
 <script src="js/engine/actions.js"></script>
 <!-- /gruppo-script:partita -->
+<!-- Grido di Evocazione: ascolta un evento, quindi DOPO eventi-duello.js
+     (che sta nel gruppo qui sopra); fuori dal gruppo apposta, è solo interfaccia. -->
+<script src="js/data/gridi-evocazione.js"></script>
+<script src="js/ui/grido-evocazione.js"></script>
 <!-- IA multilivello (facile/media/difficile): i tre moduli di livello
      PRIMA del controller (che li seleziona in base a gameState.botDifficulty),
      entrambi PRIMA di bot.js (l'esecutore, che chiama solo BotAI.*). -->

@@ -4441,3 +4441,22 @@ Subito dopo, controllando su 12 schermi e sul telefono vero (adb):
   anche sui telefoni e restava attivo dopo il tocco. Ora solo con
   `(hover: hover) and (pointer: fine)`.
 Spec `pile-allineate-alle-carte` (verificato al contrario). Cache `v270`.
+
+Grido di Evocazione (2026-10-17, richiesta dell'utente): prima dell'Evocazione
+di una carta simbolo il duellante appare a figura intera (sagoma trasparente da
+`images/characters/avatarTrasparenza`, pedina da 320px su schermi stretti),
+spinto dal vento, e la annuncia: 2,2 secondi, un tocco la salta. I dati sono
+SOLO in `js/data/gridi-evocazione.js` (duellante riconosciuto dal nome file
+dell'immagine, non dall'id: vale per ogni suo aspetto e per i protagonisti
+della Storia); la scena in `js/ui/grido-evocazione.js/.css`. Il motore emette
+solo l'attesa `grido-evocazione` in DUE punti: Evocazione Normale
+(`evocazioni.js`, prima del volo, mai per un Set) e Special Summon
+(`duel-engine.js`, prima dell'effetto visivo: lì la regola è sincrona, quindi la
+carta è già in campo sotto il velo e si ritarda solo il disegno). Un grido per
+carta e per duellante in tutto il duello; rispetta l'impostazione "filmati di
+Evocazione" e il movimento ridotto; si chiude da sola se si apre una scelta.
+Insidie prese: la scena NON deve controllare `isBlockingModalOpen()` (risponde
+sì anche per la propria cinematica e si chiuderebbe subito); i due script
+vanno caricati DOPO `eventi-duello.js`. Nei test serve
+`window.GRIDO_EVOCAZIONE_FORZA = true`, perché con `DUEL_FAST_OPENING` la scena
+è spenta. Spec `grido-evocazione`; cache `v285`.
