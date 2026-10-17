@@ -1173,7 +1173,11 @@
                 const batchToken = {};
                 ctx.stField(ctx.opponent).forEach((slot, index) => {
                     if (slot) {
-                        ctx.destroySpellTrap(ctx.opponent, index, batchToken, { skipVisual: true });
+                        // Senza skipVisual: il vento di piume apre la scena, ma le
+                        // carte colpite devono anche sbriciolarsi una per una
+                        // (frattura olografica generica), altrimenti sparivano
+                        // di colpo.
+                        ctx.destroySpellTrap(ctx.opponent, index, batchToken);
                         count++;
                     }
                 });
