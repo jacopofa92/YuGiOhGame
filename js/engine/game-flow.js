@@ -397,7 +397,7 @@ function animateEffectDraw(owner, pending) {
     dealCardsWithStagger(uids ? cards.filter((el) => uids.has(el.dataset.uid)) : cards.slice(-count));
 }
 
-function initGame() {
+function initGame(opzioniAvvio) {
     // Il nome vero del giocatore (e il suo ritratto) sono già scritti nel
     // box LP da DuelSession.start() -> applyPlayerIdentity() PRIMA che
     // initGame() giri — vedi js/duel-session.js.
@@ -447,7 +447,7 @@ function initGame() {
         return;
     }
     preparaManiIniziali();
-    avviaDuelloPreparato();
+    return avviaDuelloPreparato(opzioniAvvio);
 }
 
 /** Arresto leggibile prima dell'avvio, senza lasciare un campo muto. */
@@ -494,7 +494,7 @@ function preparaManiIniziali() {
 }
 
 /** Mani già in mano e primo giocatore deciso: timer, telecamera, primo turno. */
-function avviaDuelloPreparato() {
+function avviaDuelloPreparato(opzioniAvvio) {
     startDuelTimer();
     updateUI();
     // Ogni carta della mano appena renderizzata resta invisibile (vedi
@@ -503,7 +503,7 @@ function avviaDuelloPreparato() {
     // rivela una alla volta, non tutte insieme.
     markHandCardsPending();
 
-    playCameraIntro(() => {
+    const avviaIngresso = () => playCameraIntro(() => {
         // L'avanzamento di fase parte SOLO dopo che l'ultima carta della
         // mano ha finito di comparire, mai in sovrapposizione col dealing.
         dealHandWithStagger(() => {
@@ -531,6 +531,9 @@ function avviaDuelloPreparato() {
             }
         });
     });
+    if (opzioniAvvio && opzioniAvvio.deferCameraIntro) return avviaIngresso;
+    avviaIngresso();
+    return null;
 }
 
 /**
@@ -540,7 +543,13 @@ function avviaDuelloPreparato() {
  */
 function playCameraIntro(onDone) {
     const container = document.querySelector('.game-container');
-    if (!container) { onDone(); return; }
+    const completa = () => {
+        if (window.FieldAmbience && typeof FieldAmbience.riprendi === 'function') {
+            FieldAmbience.riprendi('apertura-duello');
+        }
+        if (typeof onDone === 'function') onDone();
+    };
+    if (!container) { completa(); return; }
     // `window.DUEL_FAST_OPENING` salta l'intro: lo imposta SOLO la suite
     // di test (tests/helpers/harness.js), mai un utente vero — stesso
     // meccanismo di opt-out già usato per il gate di accesso
@@ -551,12 +560,12 @@ function playCameraIntro(onDone) {
     // harness.js), e fra intro e distribuzione della mano sono ~3,5
     // secondi MOLTIPLICATI per ogni spec della suite. Il gioco vero non
     // cambia di una virgola.
-    if (window.DUEL_FAST_OPENING) { onDone(); return; }
+    if (window.DUEL_FAST_OPENING) { completa(); return; }
     const DURATION = 1700;
     container.classList.add('camera-intro');
     setTimeout(() => {
         container.classList.remove('camera-intro');
-        if (typeof onDone === 'function') onDone();
+        completa();
     }, DURATION);
 }
 

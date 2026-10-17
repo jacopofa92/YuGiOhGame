@@ -623,7 +623,8 @@
         // duello-sandbox.html e lo applica direttamente. Niente
         // cinematica d'apertura nemmeno: è uno strumento di prova
         // rapida, non una vera partita.
-        const beginMatch = () => {
+        const beginMatch = (opzioniAvvio) => {
+            let ingressoDifferito = null;
             if (mode === 'sandbox') {
                 if (typeof initSandboxGame === 'function') initSandboxGame();
             } else if (mode === 'tutorial' && window.TutorialDuel) {
@@ -633,12 +634,13 @@
             } else if (ModalitaExtra.avvia()) {
                 // EXTRA modalità: la modalità ha preparato e avviato il duello.
             } else if (typeof initGame === 'function') {
-                initGame();
+                ingressoDifferito = initGame(opzioniAvvio);
             }
             if (typeof setupPhaseStepper === 'function') setupPhaseStepper();
             if (mode !== 'sandbox' && mode !== 'tutorial' && !ModalitaExtra.senzaDialoghi() && window.DuelDialogues) {
                 setTimeout(() => DuelDialogues.battleStart(), 900);
             }
+            return ingressoDifferito;
         };
 
         // Morra cinese per decidere chi gioca per primo (js/ui/duel-rps.js):
@@ -678,7 +680,14 @@
             }
             return DuelRPS.play(session.opponent).then((starter) => {
                 window.DUEL_STARTING_ROLE = starter;
-                beginMatch();
+                // Dopo la morra il campo viene costruito mentre il sipario
+                // VS e' ancora opaco, ma la sua animazione 3D parte soltanto
+                // quando il layer fullscreen della morra e' stato realmente
+                // rimosso. Su Android/WebView creare e trasformare entrambi
+                // i layer nello stesso frame produceva lampi e tasselli non
+                // ridisegnati. La funzione restituita viene avviata dalla
+                // cinematica dopo due frame di assestamento.
+                return beginMatch({ deferCameraIntro: true });
             });
         };
 

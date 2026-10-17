@@ -376,6 +376,15 @@
                `position: relative` e non è toccato affatto. */
             will-change: transform;
         }
+        /* Un layer permanente grande quanto tutto il duello aiuta il PC ma
+           su WebView consuma una texture importante per l'intera partita.
+           Dopo diversi duelli la pressione sulla memoria del compositore
+           causava espulsioni e lampi. Su touch il layer viene promosso solo
+           quando una classe/GSAP lo anima davvero. */
+        @media (pointer: coarse) {
+            .game-container { will-change: auto; }
+            .game-container.camera-intro { will-change: transform, opacity, filter; }
+        }
         /* ============================================================
            Intro camera: all'avvio del duello il campo "arriva" con una
            zoomata 3D dall'alto verso l'inquadratura definitiva (dall'alto,

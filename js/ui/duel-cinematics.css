@@ -149,6 +149,13 @@
     pointer-events: none;
 }
 
+/* Su touch l'apertura usa gia' la camera 3D del campo. Scalare anche un
+   overlay fullscreen sopra di essa crea una seconda enorme superficie GPU;
+   la dissolvenza da sola conserva il sipario senza gli artefatti WebView. */
+@media (pointer: coarse) {
+    #duelIntroOverlay.is-out { transform: none; }
+}
+
 /* BUG REALE segnalato dall'utente ("i raggi a volte non toccano il
    bordo schermo"): un inset in percentuale scala con lo stesso rapporto
    d'aspetto del contenitore — su uno schermo molto stretto/alto
@@ -422,14 +429,6 @@
     animation: diSkipFade 900ms ease 700ms forwards;
 }
 @keyframes diSkipFade { to { opacity: 1; } }
-
-/* L'arena "entra in scena" mentre il sipario si apre. */
-.duel-arena-enter { animation: duelArenaEnter 900ms cubic-bezier(0.16, 0.84, 0.44, 1); }
-@keyframes duelArenaEnter {
-    0% { opacity: 0; transform: scale(1.09); filter: brightness(1.8) saturate(0.6); }
-    45% { opacity: 1; }
-    100% { opacity: 1; transform: scale(1); filter: none; }
-}
 
 /* =====================================================================
    FINE DUELLO — Vittoria / Sconfitta
@@ -916,9 +915,4 @@
 @media (prefers-reduced-motion: reduce) {
     #duelIntroOverlay *,
     #duelOutcomeOverlay *,
-    .duel-arena-enter {
-        animation-duration: 1ms !important;
-        animation-delay: 0ms !important;
-        transition-duration: 1ms !important;
-    }
 }

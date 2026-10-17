@@ -40,6 +40,18 @@
 .rps-overlay.is-in { opacity: 1; }
 .rps-overlay.is-out { opacity: 0; }
 
+/* Android WebView e alcuni browser mobile ricompongono male il layer
+   fullscreen con backdrop-filter quando viene rimosso nello stesso passaggio
+   in cui nasce il campo 3D. Il velo e' gia' abbastanza coprente da mantenere
+   la stessa resa senza campionare e sfocare ogni frame sottostante. */
+@media (pointer: coarse) {
+    .rps-overlay {
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+        background: radial-gradient(ellipse at 50% 42%, rgba(18, 12, 28, .88), rgba(3, 4, 8, .97));
+    }
+}
+
 .rps-panel {
     --rps-oro: #f7d774;
     --rps-tu: #5aa8ff;

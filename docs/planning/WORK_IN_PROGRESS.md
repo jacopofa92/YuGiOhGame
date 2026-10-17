@@ -8,6 +8,11 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
       prolungata reale, distinguendo ricostruzioni DOM, compositing degli
       effetti laminati, video e cambi di orientamento. Non considerare chiuso
       il problema solo perché lo stress test desktop resta verde.
+      Il caso riproducibile subito dopo la morra e' stato isolato e corretto:
+      niente backdrop-filter fullscreen su touch, una sola animazione del
+      campo, consegna in due frame, ambiente sospeso e layer permanente
+      rilasciato. Resta necessaria la prova prolungata su dispositivo reale
+      per stabilire se esistono altre sorgenti indipendenti.
 - [x] In verticale, riallineata la scala delle pile Deck/Extra Deck/Cimitero
       alle carte sul Terreno, con controllo dedicato anche in landscape e
       desktop.

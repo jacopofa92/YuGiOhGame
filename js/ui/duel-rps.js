@@ -182,10 +182,25 @@
                 // il controllo: subito dopo parte il lavoro pesante di
                 // inizio partita, che non deve sovrapporsi a un'animazione
                 // ancora in corso.
-                setTimeout(() => {
+                let chiuso = false;
+                const completa = () => {
+                    if (chiuso) return;
+                    chiuso = true;
                     overlay.remove();
                     resolve(starter);
-                }, 300);
+                };
+                // La durata CSS puo' cambiare per responsive o accessibilita':
+                // transitionend garantisce che il layer blur/opacity sia
+                // davvero finito prima di costruire l'arena. Il timeout e'
+                // soltanto una rete di sicurezza per browser che non emettono
+                // l'evento quando una transizione viene soppressa.
+                const aTransizioneFinita = (evento) => {
+                    if (evento.target !== overlay || evento.propertyName !== 'opacity') return;
+                    overlay.removeEventListener('transitionend', aTransizioneFinita);
+                    completa();
+                };
+                overlay.addEventListener('transitionend', aTransizioneFinita);
+                setTimeout(completa, prefersReducedMotion() ? 40 : 380);
             }
 
             function resetForNewRound() {

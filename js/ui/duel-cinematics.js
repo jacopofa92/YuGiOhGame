@@ -68,6 +68,14 @@
         const existing = document.getElementById('duelIntroOverlay');
         if (existing) existing.remove();
 
+        // Gli effetti del field non devono animarsi dietro due overlay
+        // fullscreen durante presentazione e morra. Oltre al lavoro GPU
+        // sprecato, su WebView mobile questo promuoveva/espelleva superfici
+        // proprio durante il passaggio all'arena, causando artefatti.
+        if (window.FieldAmbience && typeof FieldAmbience.sospendi === 'function') {
+            FieldAmbience.sospendi('apertura-duello');
+        }
+
         const overlay = document.createElement('div');
         overlay.id = 'duelIntroOverlay';
 
@@ -169,19 +177,23 @@
             // con lo schermo fermo, esattamente come nel caso sincrono.
             const pending = (typeof onCurtainUp === 'function') ? onCurtainUp() : null;
             if (pending && typeof pending.then === 'function') {
-                pending.then(finishRaise, finishRaise);
+                pending.then(finishRaise, () => finishRaise(null));
             } else {
-                finishRaise();
+                finishRaise(pending);
             }
         }
 
-        function finishRaise() {
+        function finishRaise(avviaIngresso) {
             overlay.classList.add('is-out');
 
-            const arena = document.querySelector('.game-container');
-            if (arena) {
-                arena.classList.add('duel-arena-enter');
-                setTimeout(() => arena.classList.remove('duel-arena-enter'), 950);
+            // Una sola animazione trasforma il campo: camera-intro. La
+            // vecchia duel-arena-enter interveniva sullo stesso transform,
+            // opacity e filter; per specificita' perdeva quasi sempre, ma
+            // costringeva comunque il compositore a preparare un secondo
+            // percorso. Due frame separano la distruzione del layer della
+            // morra dalla promozione GPU dell'arena.
+            if (typeof avviaIngresso === 'function') {
+                requestAnimationFrame(() => requestAnimationFrame(avviaIngresso));
             }
 
             setTimeout(() => overlay.remove(), CURTAIN_MS + 120);
