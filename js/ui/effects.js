@@ -513,6 +513,8 @@
         if (window.MonsterHolograms && typeof MonsterHolograms.riprendi === 'function') MonsterHolograms.riprendi();
     }
     function playVideoOverlay(path, onDone) {
+    const videoTimer = (fn, ms) => (typeof PausaDuello !== 'undefined') ? PausaDuello.dopo(fn, ms) : setTimeout(fn, ms);
+    const clearVideoTimer = (timer) => (typeof PausaDuello !== 'undefined') ? PausaDuello.annulla(timer) : clearTimeout(timer);
     const backdrop = document.createElement('div');
     backdrop.className = 'fx-video-backdrop';
     backdrop.setAttribute('role', 'dialog');
@@ -569,7 +571,7 @@
     // invisibile per sempre — dopo un'attesa breve si rivela comunque
     // (al peggio si vede l'icona nativa con un ritardo, mai uno schermo
     // nero fisso per i 12s dell'intera rete di sicurezza qui sotto).
-    const revealTimeout = setTimeout(() => {
+    const revealTimeout = videoTimer(() => {
         if (done) return;
         videoRevealed = true;
         backdrop.classList.add('show');
@@ -583,25 +585,34 @@
     // prova a ripartire; se la policy mobile lo vieta, si chiude il video
     // e si libera comunque il lock invece di immobilizzare il duello.
     const resumeAfterVisibility = () => {
-        if (document.hidden || done || !video.paused) return;
+        if (document.hidden || done || !video.paused
+            || (typeof PausaDuello !== 'undefined' && PausaDuello.inPausa())) return;
         const resumed = video.play();
         if (resumed && typeof resumed.catch === 'function') resumed.catch(cleanup);
     };
     document.addEventListener('visibilitychange', resumeAfterVisibility);
+    const smettiDiAscoltarePausa = (typeof PausaDuello !== 'undefined')
+        ? PausaDuello.ascolta((inPausa) => {
+            if (done) return;
+            if (inPausa) video.pause();
+            else resumeAfterVisibility();
+        })
+        : () => {};
 
     const cleanup = () => {
         if (done) return;
         done = true;
         document.removeEventListener('visibilitychange', resumeAfterVisibility);
-        clearTimeout(safetyTimeout);
-        clearTimeout(revealTimeout);
+        smettiDiAscoltarePausa();
+        clearVideoTimer(safetyTimeout);
+        clearVideoTimer(revealTimeout);
 
         // --- FADE-OUT ---
         backdrop.classList.remove('show');
         video.classList.remove('show');
 
         // aspetta la fine della transizione
-        setTimeout(() => {
+        videoTimer(() => {
             video.pause();
             video.removeAttribute('src');
             video.load();
@@ -629,11 +640,11 @@
     // della fine, es. video/vittorie/exodiawin.mp4 dura 18.27s). Appena
     // 'loadedmetadata' rivela la durata VERA, il tetto si ricalibra su
     // quella (+5s di margine) invece di restare indovinato a caso.
-    let safetyTimeout = setTimeout(cleanup, 12000);
+    let safetyTimeout = videoTimer(cleanup, 12000);
     video.addEventListener('loadedmetadata', () => {
         if (done || !isFinite(video.duration) || video.duration <= 0) return;
-        clearTimeout(safetyTimeout);
-        safetyTimeout = setTimeout(cleanup, video.duration * 1000 + 5000);
+        clearVideoTimer(safetyTimeout);
+        safetyTimeout = videoTimer(cleanup, video.duration * 1000 + 5000);
     });
     video.load();
 }

@@ -495,7 +495,8 @@
 // v277: stepper senza bordi, stato corrente affidato alla luce dell'icona.
 // v278: passaggio morra-arena mobile senza layer e animazioni concorrenti.
 // v279: nomi compatti e invito all'azione rendono leggibili le fasi.
-const CACHE_NAME = 'ygo-duel-arena-v279';
+// v280: pausa reale del duello offline quando l'app perde il primo piano.
+const CACHE_NAME = 'ygo-duel-arena-v280';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare
@@ -560,6 +561,7 @@ const APP_SHELL = [
     // gruppo-script:partita
     'js/engine/duel-sandbox.js',
     'js/engine/stato.js',
+    'js/engine/pausa-duello.js',
     'js/engine/canale-partita.js',
     'js/engine/comandi.js',
     'js/engine/passo-comune.js',

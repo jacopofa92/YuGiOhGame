@@ -32,6 +32,10 @@
  * questo file, quelli che possono scattare mentre il giocatore ha
  * qualunque tipo di scelta ancora aperta.
  */
+function dopoPausaDuello(fn, delay) {
+    return (typeof PausaDuello !== 'undefined') ? PausaDuello.dopo(fn, delay) : setTimeout(fn, delay);
+}
+
 function schedulePhaseTransition(fn, delay) {
     phaseTransitionTimeout = setTimeout(function retry() {
         if (isBlockingModalOpen()) {
@@ -138,7 +142,7 @@ function drawCardsToHand(owner, amount, queueEffectAnimation) {
 function schedulePendingEffectDraw() {
     if (pendingEffectDrawScheduled) return;
     pendingEffectDrawScheduled = true;
-    setTimeout(() => {
+    dopoPausaDuello(() => {
         pendingEffectDrawScheduled = false;
         const pending = gameState._pendingDrawAnimation;
         if (!pending) return;
@@ -675,15 +679,16 @@ function changeTurn() {
     // sole come per la persona, e da lì in poi arrivano i suoi comandi.
     const remotoAPassoComune = controllore === 'remoto' && typeof PassoComune !== 'undefined' && PassoComune.attivo();
     if (controllore === 'ia') {
-        setTimeout(() => turnoIA(diTurno), 3000);
+        dopoPausaDuello(() => turnoIA(diTurno), 3000);
     } else if (controllore === 'persona' || remotoAPassoComune) {
-        setTimeout(() => enterDrawPhase(true), 3000);
+        dopoPausaDuello(() => enterDrawPhase(true), 3000);
     }
 }
 
 function clearPhaseTransitionTimeout() {
     if (phaseTransitionTimeout) {
-        clearTimeout(phaseTransitionTimeout);
+        if (typeof PausaDuello !== 'undefined') PausaDuello.annulla(phaseTransitionTimeout);
+        else clearTimeout(phaseTransitionTimeout);
         phaseTransitionTimeout = null;
     }
 }

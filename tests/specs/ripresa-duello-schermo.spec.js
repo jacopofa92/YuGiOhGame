@@ -36,5 +36,51 @@ module.exports = {
         }));
         t.assert(chiusa.esito === 'passa' && !chiusa.sospesa,
             `Dopo la risposta il duello deve tornare utilizzabile: ${JSON.stringify(chiusa)}`);
+
+        // Un duello offline non deve limitarsi a ridisegnarsi: i timer di
+        // regola scaduti in background restano congelati finche' la persona
+        // non preme esplicitamente Riprendi.
+        await t.evaluate(() => {
+            window.__timerDellaPausa = 0;
+            sospendiDuelloPerLifecycle();
+            PausaDuello.dopo(() => { window.__timerDellaPausa++; }, 20);
+        });
+        await t.page.waitForTimeout(100);
+        const inPausa = await t.evaluate(() => ({
+            pausa: PausaDuello.inPausa(),
+            timer: window.__timerDellaPausa,
+            classe: document.documentElement.classList.contains('duel-paused'),
+            overlay: getComputedStyle(document.getElementById('duelPauseOverlay')).display,
+            testo: document.querySelector('.duel-pause-resume')?.textContent
+        }));
+        t.assert(inPausa.pausa && inPausa.timer === 0 && inPausa.classe
+            && inPausa.overlay === 'grid' && /Riprendi/.test(inPausa.testo || ''),
+        `Background offline deve congelare regole e mostrare la ripresa: ${JSON.stringify(inPausa)}`);
+
+        await t.page.click('.duel-pause-resume');
+        await t.page.waitForTimeout(80);
+        const ripartito = await t.evaluate(() => ({
+            pausa: PausaDuello.inPausa(),
+            timer: window.__timerDellaPausa,
+            classe: document.documentElement.classList.contains('duel-paused')
+        }));
+        t.assert(!ripartito.pausa && ripartito.timer === 1 && !ripartito.classe,
+            `Il timer deve ripartire una volta sola dopo il click: ${JSON.stringify(ripartito)}`);
+
+        // Nel Multiplayer un solo client non puo' congelare il motore a passo
+        // comune. Il lifecycle locale deve quindi lasciare tutto invariato.
+        const multiplayer = await t.evaluate(() => {
+            const attivoOriginale = PassoComune.attivo;
+            PassoComune.attivo = () => true;
+            sospendiDuelloPerLifecycle();
+            const risultato = {
+                pausa: PausaDuello.inPausa(),
+                classe: document.documentElement.classList.contains('duel-paused')
+            };
+            PassoComune.attivo = attivoOriginale;
+            return risultato;
+        });
+        t.assert(!multiplayer.pausa && !multiplayer.classe,
+            `Il Multiplayer deve rimanere invariato: ${JSON.stringify(multiplayer)}`);
     }
 };

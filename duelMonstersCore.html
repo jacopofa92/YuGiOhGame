@@ -4601,6 +4601,78 @@
                 animation: none;
             }
         }
+
+        /* Pausa automatica offline quando browser/WebView perde il primo
+           piano. Il velo resta presente al ritorno: e' il tocco su Riprendi,
+           non visibilitychange, a liberare i timer dell'IA. */
+        html.duel-paused .game-container,
+        html.duel-paused .game-container * {
+            animation-play-state: paused !important;
+        }
+        .duel-pause-overlay {
+            position: fixed;
+            inset: 0;
+            /* Sopra anche ai filmati fullscreen (effects.css usa
+               2147483000): al ritorno il video resta fermo sotto al velo. */
+            z-index: 2147483600;
+            display: none;
+            place-content: center;
+            justify-items: center;
+            gap: 10px;
+            padding: 24px;
+            box-sizing: border-box;
+            color: #f7e8bd;
+            text-align: center;
+            background:
+                radial-gradient(circle at 50% 46%, rgba(75, 56, 24, .34), transparent 32%),
+                rgba(4, 6, 11, .94);
+        }
+        html.duel-paused .duel-pause-overlay { display: grid; }
+        .duel-pause-seal {
+            display: grid;
+            place-items: center;
+            width: clamp(58px, 8vw, 82px);
+            aspect-ratio: 1;
+            border-radius: 50%;
+            color: #fff4d4;
+            font-family: Georgia, serif;
+            font-size: clamp(1.5rem, 3vw, 2.25rem);
+            letter-spacing: -.16em;
+            text-indent: -.16em;
+            background: radial-gradient(circle at 38% 30%, rgba(255,245,205,.2), rgba(87,61,18,.3) 46%, rgba(7,8,13,.72) 72%);
+            box-shadow: 0 0 28px color-mix(in srgb, var(--campo-tinta, #d6ad55) 35%, transparent), inset 0 0 0 1px rgba(247,215,116,.35);
+        }
+        .duel-pause-overlay strong {
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: clamp(1.35rem, 4vw, 2.15rem);
+            letter-spacing: .055em;
+            text-shadow: 0 2px 12px rgba(0,0,0,.8);
+        }
+        .duel-pause-overlay p {
+            max-width: 430px;
+            margin: 0 0 8px;
+            color: rgba(235,229,211,.75);
+            font-size: clamp(.78rem, 2.1vw, .96rem);
+        }
+        .duel-pause-resume {
+            min-width: min(250px, 76vw);
+            padding: 11px 24px;
+            border: 0;
+            border-radius: 9px;
+            color: #231804;
+            background: linear-gradient(180deg, #ffe39a, #e8ad35);
+            box-shadow: 0 8px 24px rgba(0,0,0,.35), 0 0 18px rgba(232,173,53,.18);
+            font: 800 clamp(.8rem, 2.2vw, 1rem)/1.1 inherit;
+            letter-spacing: .035em;
+            cursor: pointer;
+        }
+        .duel-pause-resume:hover,
+        .duel-pause-resume:focus-visible {
+            filter: brightness(1.09);
+            outline: 2px solid rgba(255,242,197,.9);
+            outline-offset: 3px;
+        }
+        .duel-pause-resume:active { transform: translateY(1px); }
     </style>
 </head>
 <body>
@@ -5192,6 +5264,7 @@
 <!-- gruppo-script:partita -->
 <script src="js/engine/duel-sandbox.js"></script>
 <script src="js/engine/stato.js"></script>
+<script src="js/engine/pausa-duello.js"></script>
 <script src="js/engine/canale-partita.js"></script>
 <script src="js/engine/comandi.js"></script>
 <script src="js/engine/passo-comune.js"></script>

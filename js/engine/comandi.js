@@ -164,6 +164,11 @@ const Comandi = (function () {
             console.error(`Comandi: tipo sconosciuto "${comando && comando.tipo}"`);
             return false;
         }
+        // La pausa automatica esiste soltanto offline. Bloccare anche qui e'
+        // la cintura di sicurezza per un timer dell'IA gia' scaduto nello
+        // stesso istante in cui Android nasconde la WebView.
+        if (typeof PausaDuello !== 'undefined' && PausaDuello.inPausa()
+            && (typeof PassoComune === 'undefined' || !PassoComune.attivo())) return false;
         // Multiplayer a passo comune (js/engine/passo-comune.js): il comando
         // di un posto locale parte per l'altro client, e la sua fine si
         // sorveglia (fino ad allora il duello non è "fermo").

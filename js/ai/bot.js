@@ -7,6 +7,11 @@
  * ogni funzione di questo file riceve ora il posto da cui gioca, e chi non
  * lo passa ottiene 'bot', come prima.
  */
+/** Timer dell'IA che non scade sotto al velo di pausa dell'app offline. */
+function timerIA(fn, ms) {
+    return (typeof PausaDuello !== 'undefined') ? PausaDuello.dopo(fn, ms) : setTimeout(fn, ms);
+}
+
 function turnoIA(io = 'bot') {
     clearPhaseTransitionTimeout();
     enterDrawPhase(false, () => {
@@ -28,7 +33,7 @@ function turnoIA(io = 'bot') {
         const dopoLaStandby = (fn) => (window.DuelEngine && typeof DuelEngine.openPriorityWindow === 'function')
             ? DuelEngine.openPriorityWindow(Tavolo.avversario(io), 'standby', fn)
             : fn();
-        dopoLaStandby(() => { phaseTransitionTimeout = setTimeout(() => {
+        dopoLaStandby(() => { phaseTransitionTimeout = timerIA(() => {
             enterMainPhase1();
             // PRIMA di Evocare: se in mano c'è una Magia come Buco Nero
             // (distrugge anche il proprio Terreno) e vale davvero la pena
@@ -187,7 +192,7 @@ function faseIA(io, verso) {
                 resolve();
                 return;
             }
-            setTimeout(prova, 150);
+            timerIA(prova, 150);
         };
         prova();
     });
@@ -205,7 +210,7 @@ function waitForPriorityWindow() {
     return new Promise((resolve) => {
         const poll = () => {
             const aperta = window.DuelEngine && typeof DuelEngine.isPriorityWindowOpen === 'function' && DuelEngine.isPriorityWindowOpen();
-            if (aperta) { setTimeout(poll, 150); return; }
+            if (aperta) { timerIA(poll, 150); return; }
             resolve();
         };
         poll();
@@ -222,7 +227,7 @@ function waitForPriorityWindow() {
  */
 function aspettaDuelloFermo(fn) {
     if (typeof PassoComune === 'undefined' || !PassoComune.attivo() || PassoComune.fermo()) { fn(); return; }
-    setTimeout(() => aspettaDuelloFermo(fn), 50);
+    timerIA(() => aspettaDuelloFermo(fn), 50);
 }
 
 /** Come aspettaDuelloFermo, per una mossa che torna una Promise: subito se si può, nello stesso giro. */
@@ -316,7 +321,7 @@ function attemptBotUseTurnPlayerFieldSpell(io) {
     // I controlli (Terreno scoperto, carta che lo concede, condizione)
     // li fa l'esecutore del comando: se torna false non è successo nulla.
     if (!Comandi.esegui(io, { tipo: 'usaTerrenoAltrui' })) return Promise.resolve();
-    return new Promise((resolve) => setTimeout(resolve, 1200)).then(waitForSummonCinematics);
+    return new Promise((resolve) => timerIA(resolve, 1200)).then(waitForSummonCinematics);
     });
 }
 
@@ -331,7 +336,7 @@ function attemptBotBanishFusion(io) {
             extraDeck: decision.extraDeckIndex,
             materiali: decision.materialFieldIndices
         });
-        return new Promise((resolve) => setTimeout(resolve, 1200));
+        return new Promise((resolve) => timerIA(resolve, 1200));
     });
 }
 
@@ -344,7 +349,7 @@ function attemptBotPositionChanges(io) {
             if (gameState.currentPlayer !== io || gameState.gameOver || posizione >= indici.length) { resolve(); return; }
             const indice = indici[posizione++];
             Comandi.esegui(io, { tipo: 'posizione', casella: indice });
-            waitForBotChainToClear(() => setTimeout(prossimo, botMs(250)));
+            waitForBotChainToClear(() => timerIA(prossimo, botMs(250)));
         });
         prossimo();
     });
@@ -593,7 +598,7 @@ async function botPerformAttacks(giro = 0, soloUids = null, io = 'bot') {
         // attacco potrebbe partire mentre il modale di risposta al primo è
         // ancora aperto, sovrascrivendone i pulsanti di conferma/annulla.
         await new Promise(resolve => {
-            setTimeout(() => {
+            timerIA(() => {
                 // Se nel frattempo il giocatore ha un modale aperto (es. ha
                 // ancora da rispondere al colpo precedente), l'attacco
                 // successivo aspetta che lo chiuda.
@@ -630,7 +635,7 @@ function botSetTrapCard(card, handIndex, io = 'bot') {
         // Lo stesso comando della persona (eseguiSetMagiaTrappola,
         // evocazioni.js), atterraggio compreso: il nome non si annuncia.
         Comandi.esegui(io, { tipo: 'settaMT', carta: card.uid, mano: handIndex, casella: slotIndex }, {
-            alTermine: () => setTimeout(resolve, 400)
+            alTermine: () => timerIA(resolve, 400)
         });
     });
 }
@@ -665,12 +670,12 @@ function waitForSummonCinematics() {
             // tetto: il giocatore ha il tempo che gli serve. Il tetto di
             // 20s vale solo per una cinematica che non finisce mai.
             if (typeof isBlockingModalOpen === 'function' && PortaUI.query('.modal-backdrop.open, #quickPopover')) {
-                setTimeout(poll, 150);
+                timerIA(poll, 150);
                 return;
             }
             const inCorso = window.FX && typeof FX.isCinematicPlaying === 'function' && FX.isCinematicPlaying();
             if (!inCorso || Date.now() - start > 20000) { resolve(); return; }
-            setTimeout(poll, 150);
+            timerIA(poll, 150);
         };
         poll();
     });
@@ -680,7 +685,7 @@ function waitForSummonCinematics() {
 function waitForNoBlockingModal() {
     return new Promise((resolve) => {
         const poll = () => {
-            if (typeof isBlockingModalOpen === 'function' && isBlockingModalOpen()) { setTimeout(poll, 150); return; }
+            if (typeof isBlockingModalOpen === 'function' && isBlockingModalOpen()) { timerIA(poll, 150); return; }
             resolve();
         };
         poll();
@@ -707,7 +712,7 @@ function waitForNoBlockingModal() {
  */
 function attendiPoi(ms) {
     return new Promise((resolve) => {
-        phaseTransitionTimeout = setTimeout(() => {
+        phaseTransitionTimeout = timerIA(() => {
             waitForSummonCinematics().then(resolve);
         }, botMs(ms));
     });
@@ -723,9 +728,9 @@ function waitForBotChainToClear(callback) {
             callback();
             return;
         }
-        setTimeout(poll, 200);
+        timerIA(poll, 200);
     };
-    setTimeout(poll, 200);
+    timerIA(poll, 200);
 }
 
 /**
@@ -755,11 +760,11 @@ function attemptBotSpellTrap(io) {
             const decision = window.BotAI ? BotAI.chooseNextSpellTrapAction(gameState, usedThisTurn, io) : null;
             if (!decision) { resolve(); return; }
             if (decision.action === 'set') {
-                botSetTrapCard(decision.card, decision.handIndex, io).then(() => setTimeout(step, botMs(300)));
+                botSetTrapCard(decision.card, decision.handIndex, io).then(() => timerIA(step, botMs(300)));
             } else {
                 const started = Comandi.esegui(io, { tipo: 'attiva', zona: 'hand', indice: decision.handIndex, carta: decision.card && decision.card.uid });
                 if (!started) { resolve(); return; } // difensivo: canActivate era già stato controllato da chi ha deciso
-                waitForBotChainToClear(() => { updateUI(); setTimeout(step, botMs(300)); });
+                waitForBotChainToClear(() => { updateUI(); timerIA(step, botMs(300)); });
             }
         };
         step();
@@ -799,7 +804,7 @@ function attemptBotActivateSetCards(io) {
             if (!decision) { resolve(); return; }
             const started = Comandi.esegui(io, { tipo: 'attiva', zona: decision.zone || 'st', indice: decision.index });
             if (!started) { resolve(); return; }
-            waitForBotChainToClear(() => { updateUI(); setTimeout(step, botMs(300)); });
+            waitForBotChainToClear(() => { updateUI(); timerIA(step, botMs(300)); });
         };
         step();
     });

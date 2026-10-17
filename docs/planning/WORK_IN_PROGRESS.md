@@ -12,6 +12,12 @@ Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
 
 ## Rendering carte su mobile — verifica richiesta il 16 ottobre 2026
 
+- [x] Sospensione dell'app resa sicura nei duelli offline: background e
+      schermo spento congelano timer di regola, IA, cronometro e media; al
+      ritorno il duello resta dietro un velo finché si preme `Riprendi`.
+      Scelte e trascinamenti vengono ripristinati. Il Multiplayer resta
+      intenzionalmente invariato: una pausa solo locale desincronizzerebbe i
+      due motori a passo comune.
 - [ ] Indagare i flicker residui durante i duelli su mobile con una sessione
       prolungata reale, distinguendo ricostruzioni DOM, compositing degli
       effetti laminati, video e cambi di orientamento. Non considerare chiuso

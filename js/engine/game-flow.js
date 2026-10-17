@@ -6,6 +6,8 @@ let isDraggingAttack = false;
 let attackDragStart = { x: 0, y: 0, attackerIndex: -1, forcedDirect: false };
 let duelStartTime = null;
 let duelTimerInterval = null;
+let duelPauseStartedAt = null;
+let lifecyclePauseActive = false;
 
 /**
  * La metà "a schermo" di isBlockingModalOpen (js/engine/canale-partita.js,
@@ -519,7 +521,7 @@ function avviaDuelloPreparato(opzioniAvvio) {
             // alla Main Phase 1, poi arrivano i suoi comandi.
             const remotoAPassoComune = controllore === 'remoto' && typeof PassoComune !== 'undefined' && PassoComune.attivo();
             if (controllore === 'persona' || remotoAPassoComune) {
-                setTimeout(enterDrawPhase, 500);
+                dopoPausaDuello(enterDrawPhase, 500);
             } else if (controllore === 'ia') {
                 // L'IA che comincia va avviata a mano: il suo turno
                 // normalmente parte da changeTurn() (vedi l'annuncio di
@@ -527,7 +529,7 @@ function avviaDuelloPreparato(opzioniAvvio) {
                 // chiamato. Senza questo, dopo una morra cinese persa la
                 // partita restava ferma per sempre — in Multiplayer no,
                 // perché lì a muovere è l'avversario remoto.
-                setTimeout(() => turnoIA(primo), 1200);
+                dopoPausaDuello(() => turnoIA(primo), 1200);
             }
         });
     });
@@ -1640,6 +1642,88 @@ function annullaTrascinamentoAttaccoSospeso() {
     document.removeEventListener('pointercancel', endAttackDrag);
 }
 
+/** Il Multiplayer deve continuare a passo comune: mai fermare un solo lato. */
+function duelloMultiplayerAttivo() {
+    return typeof PassoComune !== 'undefined' && PassoComune.attivo();
+}
+
+function assicuratiOverlayPausaDuello() {
+    let overlay = document.getElementById('duelPauseOverlay');
+    if (overlay) return overlay;
+    overlay = document.createElement('div');
+    overlay.id = 'duelPauseOverlay';
+    overlay.className = 'duel-pause-overlay';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-labelledby', 'duelPauseTitle');
+
+    const sigillo = document.createElement('span');
+    sigillo.className = 'duel-pause-seal';
+    sigillo.setAttribute('aria-hidden', 'true');
+    sigillo.textContent = 'Ⅱ';
+    const titolo = document.createElement('strong');
+    titolo.id = 'duelPauseTitle';
+    titolo.textContent = 'Duello in pausa';
+    const testo = document.createElement('p');
+    testo.textContent = 'Il duello è stato fermato mentre l’app non era attiva.';
+    const pulsante = document.createElement('button');
+    pulsante.type = 'button';
+    pulsante.className = 'duel-pause-resume';
+    pulsante.textContent = 'Riprendi il duello';
+    pulsante.addEventListener('click', riprendiDuelloDaPausa);
+    overlay.append(sigillo, titolo, testo, pulsante);
+    document.body.appendChild(overlay);
+    return overlay;
+}
+
+function sospendiMediaDuello() {
+    if (window.DuelMusic && typeof DuelMusic.sospendi === 'function') DuelMusic.sospendi();
+    if (window.FieldAmbience && typeof FieldAmbience.sospendi === 'function') FieldAmbience.sospendi('app-background');
+    document.querySelectorAll('video').forEach((video) => {
+        if (!video.paused) {
+            video.dataset.pausedByDuelLifecycle = '1';
+            video.pause();
+        }
+    });
+}
+
+function riprendiMediaDuello() {
+    if (window.DuelMusic && typeof DuelMusic.riprendi === 'function') DuelMusic.riprendi();
+    if (window.FieldAmbience && typeof FieldAmbience.riprendi === 'function') FieldAmbience.riprendi('app-background');
+    document.querySelectorAll('video[data-paused-by-duel-lifecycle="1"]').forEach((video) => {
+        delete video.dataset.pausedByDuelLifecycle;
+        const tentativo = video.play();
+        if (tentativo && typeof tentativo.catch === 'function') tentativo.catch(() => {});
+    });
+}
+
+function sospendiDuelloPerLifecycle() {
+    if (lifecyclePauseActive || duelloMultiplayerAttivo()
+        || typeof gameState === 'undefined' || gameState.gameOver
+        || typeof PausaDuello === 'undefined') return;
+    lifecyclePauseActive = true;
+    duelPauseStartedAt = Date.now();
+    PausaDuello.sospendi('app-background');
+    annullaTrascinamentoAttaccoSospeso();
+    assicuratiOverlayPausaDuello();
+    document.documentElement.classList.add('duel-paused');
+    sospendiMediaDuello();
+}
+
+function riprendiDuelloDaPausa() {
+    if (!lifecyclePauseActive || document.hidden) return;
+    lifecyclePauseActive = false;
+    if (duelPauseStartedAt !== null && duelStartTime !== null) {
+        duelStartTime += Math.max(0, Date.now() - duelPauseStartedAt);
+    }
+    duelPauseStartedAt = null;
+    document.documentElement.classList.remove('duel-paused');
+    riprendiMediaDuello();
+    ripristinaDuelloDopoSospensione();
+    PausaDuello.riprendi('app-background');
+    updateDuelTimer();
+}
+
 /**
  * Ripara lo stato puramente interattivo dopo che Android ha congelato la
  * WebView. Lo stato del duello non viene alterato: si annulla solo un drag
@@ -1655,9 +1739,30 @@ function ripristinaDuelloDopoSospensione() {
 }
 
 document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) ripristinaDuelloDopoSospensione();
+    if (document.hidden) sospendiDuelloPerLifecycle();
+    else if (lifecyclePauseActive) {
+        assicuratiOverlayPausaDuello().querySelector('.duel-pause-resume')?.focus({ preventScroll: true });
+        ripristinaDuelloDopoSospensione();
+    } else ripristinaDuelloDopoSospensione();
 });
-window.addEventListener('pageshow', ripristinaDuelloDopoSospensione);
+window.addEventListener('pagehide', sospendiDuelloPerLifecycle);
+window.addEventListener('pageshow', () => {
+    if (lifecyclePauseActive) assicuratiOverlayPausaDuello();
+    ripristinaDuelloDopoSospensione();
+});
+
+// Nella WebView Capacitor l'evento nativo è più affidabile di visibilitychange
+// su alcuni produttori Android. I due percorsi sono idempotenti e possono
+// quindi arrivare entrambi senza creare due pause.
+if (window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.App
+    && typeof Capacitor.Plugins.App.addListener === 'function') {
+    Capacitor.Plugins.App.addListener('appStateChange', (state) => {
+        if (state && state.isActive) {
+            if (lifecyclePauseActive) assicuratiOverlayPausaDuello();
+            ripristinaDuelloDopoSospensione();
+        } else sospendiDuelloPerLifecycle();
+    });
+}
 
 /**
  * Trova lo slot mostro del bot più vicino al punto (x, y) di rilascio del

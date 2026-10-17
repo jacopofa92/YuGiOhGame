@@ -65,6 +65,8 @@ module.exports = {
     partita: [
         'js/engine/duel-sandbox.js',
         'js/engine/stato.js',
+        // Congela timer e IA nei duelli offline quando l'app va in background.
+        'js/engine/pausa-duello.js',
         // addToLog/updateUI/clearSelection/isBlockingModalOpen/endDuel:
         // la parte di regola, prima di game-flow.js che le usa al boot.
         'js/engine/canale-partita.js',

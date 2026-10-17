@@ -1,6 +1,16 @@
 # Yu-Gi-Oh! Millennium Duel Arena — mappa tecnica persistente
 
-Ultimo aggiornamento verificato: 2026-10-16.
+Ultimo aggiornamento verificato: 2026-10-17.
+
+## Pausa lifecycle dei duelli offline (2026-10-17)
+
+`js/engine/pausa-duello.js` e' l'arbitro centrale dei timer sospendibili. Nei
+duelli offline, `visibilitychange`, `pagehide` e il lifecycle Capacitor
+congelano IA, transizioni, filmati, musica, ambiente e cronometro; al ritorno
+serve un tocco esplicito su `Riprendi il duello`, dopo il quale le callback
+scadute vengono liberate una sola volta. Il ripristino delle decisioni gia'
+esistente resta attivo. Il Multiplayer non entra mai in questa pausa locale,
+per non separare i due motori a passo comune.
 
 ## Nuclei Yugi: Magnetici e Cavalieri delle Figure (2026-10-16)
 

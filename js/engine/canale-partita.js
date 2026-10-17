@@ -72,6 +72,7 @@ function clearSelection() {
  * mano.
  */
 function isBlockingModalOpen() {
+    if (typeof PausaDuello !== 'undefined' && PausaDuello.inPausa()) return true;
     if (gameState.pendingTributeSummon) return true;
     if (gameState.pendingHandDiscard) return true;
     // A passo comune, anche una scelta aperta sull'altro client (o una mia
