@@ -32,6 +32,9 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.3.30 — La sessione di accesso dura 48 ore, poi si rifà il login (prima di
+ *   uscire il progresso viene salvato sul cloud).
+ *
  * 1.3.29 — Stesso account su due dispositivi: un dispositivo rimasto indietro
  *   non può più sovrascrivere i progressi dell'altro (versione del cloud
  *   ricordata per dispositivo, caricamento atomico, copia di sicurezza di ciò
@@ -744,4 +747,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.3.29';
+window.GAME_VERSION = '1.3.30';

@@ -59,10 +59,15 @@ function creaFintoCloud() {
     }
 
     /** Da chiamare su ogni contesto PRIMA di aprire pagine. */
-    async function collega(context) {
+    async function collega(context, opzioni) {
         await context.exposeFunction('__fintoCloud', (q) => JSON.stringify(rispondi(JSON.parse(q))));
-        await context.addInitScript(() => {
+        // `ricordaUscita`: signOut ricorda di essere uscito (nel localStorage del
+        // dispositivo) e getSession risponde senza sessione finché non si
+        // rifà signInWithPassword. Spento di default: gli spec nati prima
+        // contano su una sessione che torna sempre.
+        await context.addInitScript((ricordaUscita) => {
             window.AUTH_GATE_SKIP = false;
+            window.__fintoRicordaUscita = !!ricordaUscita;
             const utente = { id: 'utente-prova', email: 'admin@prova.it' };
             function query(table) {
                 const q = { table, op: 'select', filters: {}, payload: null };
@@ -83,9 +88,13 @@ function creaFintoCloud() {
                 createClient() {
                     return {
                         auth: {
-                            getSession: () => Promise.resolve({ data: { session: { user: utente, access_token: 'finto' } } }),
+                            getSession: () => {
+                                const uscito = window.__fintoRicordaUscita && localStorage.getItem('__fintoUscito') === '1';
+                                return Promise.resolve({ data: { session: uscito ? null : { user: utente, access_token: 'finto' } } });
+                            },
                             onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }),
-                            signOut: () => Promise.resolve({ error: null })
+                            signInWithPassword: () => { localStorage.removeItem('__fintoUscito'); return Promise.resolve({ data: { user: utente }, error: null }); },
+                            signOut: () => { if (window.__fintoRicordaUscita) localStorage.setItem('__fintoUscito', '1'); return Promise.resolve({ error: null }); }
                         },
                         from: query,
                         rpc: () => Promise.resolve({ data: null, error: null })
@@ -93,7 +102,7 @@ function creaFintoCloud() {
                 }
             };
             Object.defineProperty(window, 'supabase', { configurable: false, get: () => finto, set: () => { /* la libreria vera non passa */ } });
-        });
+        }, !!(opzioni && opzioni.ricordaUscita));
     }
 
     return { cloud, collega };

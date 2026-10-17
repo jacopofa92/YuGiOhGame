@@ -144,6 +144,87 @@
     // corretto per un chiamante come js/cloud/auth-gate.js di aspettare
     // lo stato VERO prima di decidere se rimandare al login — usata da
     // waitForUser() più sotto.
+    // ------------------------------------------------------------------
+    // Durata della sessione: 48 ore, poi si rifà l'accesso
+    // ------------------------------------------------------------------
+    /**
+     * Supabase mantiene la sessione per sempre (il refresh token si rinnova
+     * da sé): senza un limite nostro, un dispositivo resta collegato finché
+     * qualcuno non preme Esci. Il limite è LATO CLIENT, perché il blocco
+     * della durata massima di una sessione è un'impostazione a pagamento del
+     * progetto Supabase: serve a decidere quando ripetere il login, non è
+     * una barriera di sicurezza contro chi manipola il dispositivo (quella
+     * restano le regole RLS sul database).
+     *
+     * `ygoSessioneInizio` = { uid, at }: l'istante dell'accesso con email e
+     * password (signIn) su QUESTO dispositivo. Una sessione già attiva prima
+     * di questa regola non ha il segno: parte da adesso (e non si caccia
+     * fuori tutti al primo avvio dopo l'aggiornamento).
+     *
+     * Scaduta: si salva il salvataggio sul cloud (mai perdere ore di gioco
+     * per un limite di tempo), si esce, e il menu mostra l'avviso. Il
+     * controllo gira all'avvio, ogni 5 minuti e quando si torna in primo
+     * piano (l'APK resta aperta in sottofondo per giorni). Mai a metà di un
+     * duello: lì si aspetta la fine.
+     */
+    const SESSIONE_MAX_MS = 48 * 60 * 60 * 1000;
+    const CHIAVE_SESSIONE = 'ygoSessioneInizio';
+    const CHIAVE_AVVISO_SCADENZA = 'ygoSessioneScaduta';
+
+    function inizioSessione() {
+        try {
+            const s = JSON.parse(localStorage.getItem(CHIAVE_SESSIONE));
+            return s && cachedUser && s.uid === cachedUser.id && Number.isFinite(s.at) ? s.at : null;
+        } catch (e) { return null; }
+    }
+    function segnaInizioSessione(userId) {
+        try { localStorage.setItem(CHIAVE_SESSIONE, JSON.stringify({ uid: userId, at: Date.now() })); } catch (e) { /* senza segno la sessione non scade */ }
+    }
+    function sessioneScaduta() {
+        if (!cachedUser) return false;
+        const at = inizioSessione();
+        if (at === null) { segnaInizioSessione(cachedUser.id); return false; }
+        return Date.now() - at > SESSIONE_MAX_MS;
+    }
+    /** Dice (una volta sola) se l'ultima uscita è dovuta alla scadenza: il menu lo mostra nel gate. */
+    function consumaAvvisoScadenza() {
+        try {
+            const c = localStorage.getItem(CHIAVE_AVVISO_SCADENZA) === '1';
+            localStorage.removeItem(CHIAVE_AVVISO_SCADENZA);
+            return c;
+        } catch (e) { return false; }
+    }
+
+    /**
+     * Chiude la sessione scaduta. Prima salva sul cloud (con un tetto di
+     * tempo: senza rete si esce lo stesso, il salvataggio resta sul
+     * dispositivo e al prossimo accesso la riconciliazione lo riallinea).
+     */
+    function terminaPerScadenza() {
+        if (!cachedUser) return Promise.resolve();
+        try { localStorage.setItem(CHIAVE_AVVISO_SCADENZA, '1'); } catch (e) { /* noop */ }
+        // All'avvio SaveManager può non essere ancora caricato (stanno più
+        // in basso nella pagina): si aspetta il caricamento completo.
+        const pronta = document.readyState === 'complete'
+            ? Promise.resolve()
+            : new Promise((ok) => window.addEventListener('load', ok, { once: true }));
+        return pronta.then(() => {
+            const haSalvataggio = window.SaveManager && typeof SaveManager.hasSave === 'function' && SaveManager.hasSave();
+            if (!haSalvataggio) return null;
+            return Promise.race([pushSave().catch(() => null), new Promise((ok) => setTimeout(ok, 6000))]);
+        }).then(() => {
+            forgetAdmin();
+            forgetApproved();
+            try { localStorage.removeItem(CHIAVE_SESSIONE); } catch (e) { /* noop */ }
+            return client.auth.signOut().catch(() => null);
+        }).then(() => {
+            cachedUser = null;
+            cachedProfile = null;
+            cachedAccessToken = null;
+            notifyAuthListeners();
+        });
+    }
+
     let initialSessionPromise = Promise.resolve(null);
     // Il token di accesso in chiaro. Serve a js/cloud/server-date.js, che
     // ne legge l'`iat` (l'istante di emissione, scritto dal SERVER) come
@@ -156,6 +237,9 @@
         initialSessionPromise = client.auth.getSession().then(({ data }) => {
             cachedUser = (data && data.session && data.session.user) || null;
             cachedAccessToken = (data && data.session && data.session.access_token) || null;
+            // Sessione più vecchia di 48 ore: si salva e si esce PRIMA di
+            // dire a qualcuno che l'utente è collegato.
+            if (cachedUser && sessioneScaduta()) return terminaPerScadenza().then(() => null);
             notifyAuthListeners();
             return cachedUser;
         });
@@ -333,6 +417,9 @@
                 if (profile.is_admin) rememberAdmin(data.user.id);
                 else forgetAdmin();
                 rememberEmail(email);
+                // Da qui partono le 48 ore (vedi "Durata della sessione").
+                segnaInizioSessione(data.user.id);
+                try { localStorage.removeItem(CHIAVE_AVVISO_SCADENZA); } catch (e) { /* noop */ }
                 return data.user;
             });
         });
@@ -343,7 +430,29 @@
         // Il marcatore di amministratore è per-utente e non deve
         // sopravvivere al cambio account su questo dispositivo.
         forgetAdmin();
+        try { localStorage.removeItem(CHIAVE_SESSIONE); } catch (e) { /* noop */ }
         return client.auth.signOut().then(({ error }) => { if (error) throw error; });
+    }
+
+    /**
+     * Controlla se la sessione è scaduta e, se sì, la chiude e riporta al
+     * menu (che mostra il gate con l'avviso). Mai durante un duello.
+     */
+    let scadenzaInCorso = false;
+    function controllaScadenzaSessione() {
+        if (!available || !cachedUser || scadenzaInCorso || !sessioneScaduta()) return;
+        if (typeof window.gameState !== 'undefined' && window.gameState && !window.gameState.gameOver) return;
+        scadenzaInCorso = true;
+        terminaPerScadenza().then(() => {
+            const qui = window.location.pathname;
+            window.location.replace(qui.substring(0, qui.lastIndexOf('/') + 1) + 'index.html');
+        }).catch(() => { scadenzaInCorso = false; });
+    }
+    if (available) {
+        setInterval(controllaScadenzaSessione, 5 * 60 * 1000);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') controllaScadenzaSessione();
+        });
     }
 
     // ------------------------------------------------------------------
@@ -1030,6 +1139,12 @@
         resetAccount: resetAccount,
         confrontaSalvataggi: confrontaSalvataggi,
         riconcilia: riconcilia,
+        /** Vero se l'accesso su questo dispositivo ha più di 48 ore (vedi "Durata della sessione"). */
+        sessioneScaduta: sessioneScaduta,
+        controllaScadenzaSessione: controllaScadenzaSessione,
+        /** Vero (una volta sola) se l'ultima uscita è dovuta alla scadenza: il gate lo spiega. */
+        consumaAvvisoScadenza: consumaAvvisoScadenza,
+        SESSIONE_MAX_MS: SESSIONE_MAX_MS,
         /** Il cloud è cambiato altrove e qui c'erano modifiche: scarica il cloud e conserva la copia di qui. */
         risolviConflittoCloud: risolviConflittoCloud,
         /** La copia del salvataggio di questo dispositivo messa da parte dall'ultimo conflitto, o null. */

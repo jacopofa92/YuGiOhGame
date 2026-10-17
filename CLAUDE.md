@@ -4484,3 +4484,21 @@ due dispositivi in buona fede. Lo spec `sync-due-dispositivi-senza-sovrascrittur
 prova i quattro scenari con due dispositivi veri e il finto cloud (che ora capisce
 update condizionato e insert duplicato, più il gancio `primaDelloUpdate` per far
 cadere una scrittura altrui fra lettura e scrittura). Versione 1.3.29, cache `v294`.
+
+Sessione di accesso a 48 ore (2026-10-17, richiesta dell'utente): Supabase tiene la
+sessione per sempre (il refresh token si rinnova), quindi il limite è lato CLIENT
+(`js/cloud/cloud-sync.js`, "Durata della sessione"): il blocco di durata massima di
+Supabase è un'impostazione a pagamento, e qui serve a decidere QUANDO ripetere il
+login, non a difendersi da chi manipola il dispositivo (quello è compito delle RLS).
+`ygoSessioneInizio` = { uid, at } è scritto da `signIn`; una sessione già attiva prima
+della regola non ha il segno e parte da adesso (nessuno viene cacciato al primo
+avvio). Scaduta (`sessioneScaduta()`): `terminaPerScadenza()` fa PRIMA `pushSave` (tetto
+6s: mai perdere ore di gioco per un limite di tempo), poi esce, e `showGate` in
+index.html spiega il perché (`consumaAvvisoScadenza`). Controllo all'avvio, ogni 5
+minuti e al ritorno in primo piano (l'APK resta aperta in sottofondo per giorni); mai
+a metà di un duello (`gameState` presente e non finito). Insidia trovata scrivendolo:
+con il gate già superato nella scheda (`sessionStorage`) il menu si apriva senza
+guardare CHI fosse l'utente, quindi una sessione appena chiusa non si vedeva — ora
+`initGate` chiama sempre `waitForUser()`. Il finto cloud dei test ha l'opzione
+`collega(ctx, { ricordaUscita: true })` (signOut ricordato nel localStorage) usata da
+`sessione-48-ore.spec.js`. Versione 1.3.30, cache `v295`.

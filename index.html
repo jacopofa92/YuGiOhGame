@@ -5605,6 +5605,11 @@
         document.getElementById('gateTabRegister').onclick = () => switchGateTab('register');
 
         function showGate(blockedMessage) {
+            // Sessione chiusa perché durava da più di 48 ore (cloud-sync.js):
+            // lo si dice, invece di far sembrare un'uscita senza motivo.
+            if (!blockedMessage && window.CloudSync && CloudSync.consumaAvvisoScadenza && CloudSync.consumaAvvisoScadenza()) {
+                blockedMessage = '⏱️ La sessione è scaduta (dopo 48 ore): accedi di nuovo. I tuoi progressi sono al sicuro sul cloud.';
+            }
             document.getElementById('menuShell').style.display = 'none';
             document.getElementById('gateShell').style.display = 'flex';
             if (blockedMessage) {
@@ -5944,9 +5949,15 @@
                 const daRiguardare = cloudUsable && gatePassed
                     && CloudSync.msDallUltimaRiconciliazione() > 2 * 60 * 1000;
                 const verdetto = !cloudUsable ? Promise.resolve(null)
-                    : gatePassed ? (daRiguardare
-                        ? CloudSync.waitForUser().then(() => CloudSync.riconcilia({ attesaMassimaMs: 6000 })).then((sync) => ({ azione: 'entra', sync: sync }))
-                        : Promise.resolve(null))
+                    // Gate già superato in questa scheda: si guarda comunque CHI è
+                    // l'utente. Una sessione scaduta (48 ore, cloud-sync.js) si è
+                    // appena chiusa, e senza questo il menu si aprirebbe lo stesso.
+                    : gatePassed ? CloudSync.waitForUser().then((user) => {
+                        if (!user) return { azione: 'gate' };
+                        return daRiguardare
+                            ? CloudSync.riconcilia({ attesaMassimaMs: 6000 }).then((sync) => ({ azione: 'entra', sync: sync }))
+                            : null;
+                    })
                     : CloudSync.waitForUser().then((user) => {
                         if (!user) return { azione: 'gate' };
                         return CloudSync.ensureApprovedSession().then((approved) => {
@@ -5958,6 +5969,11 @@
                 verdetto.then((v) => hideSplashThen(() => {
                     if (!cloudUsable) { showGateUnavailable(); return; }
                     if (gatePassed) {
+                        if (v && v.azione === 'gate') {
+                            try { sessionStorage.removeItem(GATE_SESSION_KEY); } catch (e) { /* noop */ }
+                            showGate();
+                            return;
+                        }
                         showMenu();
                         annunciaAvvisoInSospeso();
                         // Solo se qualcosa è cambiato davvero: tornare al menu
