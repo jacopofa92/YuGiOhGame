@@ -32,6 +32,9 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.3.25 — Carta in dettaglio su telefono: niente inclinazione né ondeggio, ma
+ *   il giroscopio continua a muovere la luce (riflessi di rarità).
+ *
  * 1.3.24 — Accesso e registrazione da APK: la tastiera non copre più i campi
  *   (spazio in fondo pari alla tastiera, scorrimento e campo portato in vista).
  *
@@ -725,4 +728,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.3.24';
+window.GAME_VERSION = '1.3.25';
