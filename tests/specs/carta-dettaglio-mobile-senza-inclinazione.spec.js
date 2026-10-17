@@ -56,5 +56,73 @@ module.exports = {
         } finally {
             await ctx.close();
         }
+
+        // --- Opzione "Giroscopio sulle carte" SPENTA nelle Impostazioni ---
+        // La carta resta dritta e il telefono non guida più la luce: questa
+        // si muove piano da sola (solo luce, mai la carta).
+        const spento = await browser.newContext({ viewport: { width: 393, height: 852 }, isMobile: true, hasTouch: true, serviceWorkers: 'block' });
+        await spento.addInitScript(() => {
+            window.AUTH_GATE_SKIP = true;
+            try { localStorage.setItem('ygoGiroscopioCarte', 'off'); } catch (e) { /* storage non disponibile */ }
+        });
+        const pagina = await spento.newPage();
+        try {
+            await pagina.goto(url('cartoteca.html'));
+            await pagina.waitForFunction(() => window.CardDetail && window.CardRarity && typeof cardDatabase !== 'undefined'
+                && document.querySelector('.card.carta-viva'), null, { timeout: 30000 });
+            await pagina.evaluate(() => {
+                CardDetail.open(cardDatabase.find((c) => (!c.origin || c.origin === 'yu-gi-oh') && CardRarity.of(c.id) === 'ultra'));
+            });
+            await pagina.waitForTimeout(300);
+            const leggi = () => pagina.evaluate(() => {
+                const el = document.querySelector('.cd-preview .card');
+                const cs = getComputedStyle(el);
+                return { transform: cs.transform, animazione: cs.animationName, luceX: parseFloat(cs.getPropertyValue('--luce-x')), viva: el.classList.contains('cv-luce-viva') };
+            });
+            const a = await leggi();
+            assert(a.viva && a.animazione === 'cvLuceOzio', `a giroscopio spento parte l'animazione della sola luce: ${JSON.stringify(a)}`);
+            assert(a.transform === 'none', `la carta resta dritta anche col giroscopio spento: ${a.transform}`);
+            await pagina.waitForTimeout(1500);
+            const b = await leggi();
+            assert(Math.abs(b.luceX - a.luceX) > 3, `la luce si muove da sola: ${a.luceX} -> ${b.luceX}`);
+            // Il telefono inclinato non cambia nulla: il sensore è ignorato.
+            await pagina.evaluate(async () => {
+                const manda = (beta, gamma) => window.dispatchEvent(new DeviceOrientationEvent('deviceorientation', { alpha: 0, beta, gamma }));
+                manda(40, 0);
+                await new Promise((r) => requestAnimationFrame(() => r()));
+                manda(40, 25);
+                await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+            });
+            const dopoSensore = await leggi();
+            assert(dopoSensore.viva && dopoSensore.animazione === 'cvLuceOzio' && dopoSensore.transform === 'none',
+                `col giroscopio spento il sensore non guida la luce: ${JSON.stringify(dopoSensore)}`);
+        } finally {
+            await spento.close();
+        }
+
+        // --- L'interruttore nelle Impostazioni (pagina e vista del menu) ---
+        for (const [file, id, apri] of [['impostazioni.html', 'cardGyroToggleInput', null], ['index.html', 'impostazioni-cardGyroToggleInput', "showView('impostazioni')"]]) {
+            const c = await browser.newContext({ viewport: { width: 1280, height: 900 }, serviceWorkers: 'block' });
+            await c.addInitScript(() => { window.AUTH_GATE_SKIP = true; });
+            const p = await c.newPage();
+            try {
+                await p.goto(url(file));
+                await p.waitForFunction(() => window.Inclinazione && window.SaveManager, null, { timeout: 30000 });
+                if (apri) await p.evaluate(apri);
+                await p.waitForSelector('#' + id, { state: 'attached', timeout: 15000 });
+                const r = await p.evaluate(async (id) => {
+                    const el = document.getElementById(id);
+                    const inizio = el.checked;
+                    el.checked = false;
+                    el.dispatchEvent(new Event('change', { bubbles: true }));
+                    await new Promise((x) => setTimeout(x, 200));
+                    return { inizio, impostazione: SaveManager.getSetting('cardGyro'), cache: localStorage.getItem('ygoGiroscopioCarte'), attivo: Inclinazione.giroscopioCarteAttivo() };
+                }, id);
+                assert(r.inizio === true, `${file}: l'opzione parte accesa (default): ${JSON.stringify(r)}`);
+                assert(r.impostazione === false && r.cache === 'off' && r.attivo === false, `${file}: spenta, vale nel salvataggio e nella cache: ${JSON.stringify(r)}`);
+            } finally {
+                await c.close();
+            }
+        }
     }
 };

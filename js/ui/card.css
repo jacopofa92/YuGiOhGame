@@ -816,6 +816,17 @@ body[data-card-badges] .card { overflow: visible; }
 @media (pointer: coarse) {
     .cv-inclina[data-viva="grande"] { transform: none !important; will-change: auto; }
     .cv-inclina.cv-ozio { animation: none; }
+    /* Con "Giroscopio sulle carte" SPENTO (Impostazioni) la luce si muove
+       piano da sola: si animano SOLO le tre variabili della luce (registrate
+       con @property, quindi interpolabili), la carta resta dritta. Su una
+       sola carta in dettaglio il costo è trascurabile; si ferma insieme alla
+       scheda (`.cv-sospesa`) e appena il dito tocca la carta (`.cv-ozio`
+       sparisce). */
+    .cv-inclina[data-viva="grande"].cv-luce-viva.cv-ozio { animation: cvLuceOzio 6s ease-in-out infinite; }
+}
+@keyframes cvLuceOzio {
+    0%, 100% { --luce-x: 26%; --luce-y: 22%; --forza: 0.46; }
+    50% { --luce-x: 74%; --luce-y: 64%; --forza: 0.72; }
 }
 /* Movimento ridotto: nessuna inclinazione, il lucido resta a metà forza. */
 .cv-inclina.cv-ferma { --forza: 0.35; }

@@ -120,7 +120,22 @@
         window.dispatchEvent(new CustomEvent('ygo:parallasse-menu', { detail: { attiva: !!attiva } }));
     }
 
+    // "Giroscopio sulle carte": se il giroscopio muove la luce della carta in
+    // dettaglio (acceso, di default) o se la luce si muove piano da sola
+    // (spento). Stessa chiave del salvataggio (cardGyro, js/save-manager.js).
+    const CHIAVE_GIROSCOPIO_CARTE = 'ygoGiroscopioCarte';
+
+    function giroscopioCarteAttivo() {
+        try { return localStorage.getItem(CHIAVE_GIROSCOPIO_CARTE) !== 'off'; } catch (e) { return true; }
+    }
+    function impostaGiroscopioCarte(attivo) {
+        try { localStorage.setItem(CHIAVE_GIROSCOPIO_CARTE, attivo ? 'on' : 'off'); } catch (e) { /* vale per questa sessione */ }
+        if (window.SaveManager && SaveManager.setSetting) SaveManager.setSetting('cardGyro', !!attivo);
+    }
+
     window.Inclinazione = {
+        giroscopioCarteAttivo: giroscopioCarteAttivo,
+        impostaGiroscopioCarte: impostaGiroscopioCarte,
         parallasseMenuAttiva: parallasseMenuAttiva,
         impostaParallasseMenu: impostaParallasseMenu,
         ascolta: ascolta,

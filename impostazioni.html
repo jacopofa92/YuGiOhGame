@@ -364,6 +364,18 @@
 
             <div class="settings-row">
                 <div>
+                    <div class="settings-row-label">Giroscopio sulle carte</div>
+                    <div class="settings-row-sub">Sul telefono, nel dettaglio di una carta la luce (lucido, bordi, arcobaleno) segue l'inclinazione. Spento, la carta resta ferma e la luce si muove piano da sola.</div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="cardGyroToggleInput">
+                    <span class="switch-track"></span>
+                    <span class="switch-thumb"></span>
+                </label>
+            </div>
+
+            <div class="settings-row">
+                <div>
                     <div class="settings-row-label">Velocità del bot</div>
                     <div class="settings-row-sub">Con "Veloce" l'avversario controllato dal computer fa le sue mosse con pause molto più brevi. Le animazioni e i filmati non si accorciano.</div>
                 </div>
@@ -570,6 +582,18 @@
         parallaxToggle.checked = Inclinazione.parallasseMenuAttiva();
         parallaxToggle.addEventListener('change', () => {
             Inclinazione.impostaParallasseMenu(parallaxToggle.checked);
+            if (window.NativeHaptics) NativeHaptics.light();
+        });
+    }
+
+    // --- Giroscopio sulle carte -------------------------------------
+    // Acceso (default): il giroscopio muove la luce della carta in
+    // dettaglio. Spento: la luce si muove piano da sola (CartaViva).
+    const cardGyroToggle = document.getElementById('cardGyroToggleInput');
+    if (cardGyroToggle && window.Inclinazione) {
+        cardGyroToggle.checked = Inclinazione.giroscopioCarteAttivo();
+        cardGyroToggle.addEventListener('change', () => {
+            Inclinazione.impostaGiroscopioCarte(cardGyroToggle.checked);
             if (window.NativeHaptics) NativeHaptics.light();
         });
     }

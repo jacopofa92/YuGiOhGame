@@ -35,12 +35,17 @@
     const DEFAULT_SETTINGS = {
         videoDetail: 'alti', videoDetailScelto: false, summonVideos: true, hologram: true, haptics: true,
         menuParallax: true,
+        // cardGyro: sul telefono il giroscopio muove la LUCE della carta in
+        // dettaglio (js/ui/card-renderer.js, CartaViva). Spento, la luce si
+        // muove piano da sola.
+        cardGyro: true,
         musicVolume: 0.55, musicMuted: false,
         sfxVolume: 0.6, sfxMuted: false
     };
     const SETTINGS_CACHE_KEYS = {
         videoDetail: 'ygoVideoDetail', videoDetailScelto: 'ygoVideoDetailScelto',
         summonVideos: 'ygoSummonVideos', hologram: 'ygoHologram', haptics: 'ygoHapticsEnabled', menuParallax: 'ygoParallasseMenu',
+        cardGyro: 'ygoGiroscopioCarte',
         musicVolume: 'duelArenaMusicVolume', musicMuted: 'duelArenaMusicMuted',
         sfxVolume: 'duelArenaSfxVolume', sfxMuted: 'duelArenaSfxMuted'
     };
@@ -67,6 +72,8 @@
             if (summonVideos === 'on' || summonVideos === 'off') settings.summonVideos = summonVideos === 'on';
             const parallasse = localStorage.getItem(SETTINGS_CACHE_KEYS.menuParallax);
             if (parallasse === 'on' || parallasse === 'off') settings.menuParallax = parallasse === 'on';
+            const giroscopioCarte = localStorage.getItem(SETTINGS_CACHE_KEYS.cardGyro);
+            if (giroscopioCarte === 'on' || giroscopioCarte === 'off') settings.cardGyro = giroscopioCarte === 'on';
             const haptics = localStorage.getItem(SETTINGS_CACHE_KEYS.haptics);
             if (haptics === '0' || haptics === '1') settings.haptics = haptics === '1';
             ['musicVolume', 'sfxVolume'].forEach((key) => {
@@ -100,6 +107,7 @@
             if (settings.videoDetailScelto) localStorage.setItem(SETTINGS_CACHE_KEYS.videoDetailScelto, '1');
             else localStorage.removeItem(SETTINGS_CACHE_KEYS.videoDetailScelto);
             localStorage.setItem(SETTINGS_CACHE_KEYS.menuParallax, settings.menuParallax ? 'on' : 'off');
+            localStorage.setItem(SETTINGS_CACHE_KEYS.cardGyro, settings.cardGyro ? 'on' : 'off');
             localStorage.setItem(SETTINGS_CACHE_KEYS.hologram, settings.hologram ? 'on' : 'off');
             localStorage.setItem(SETTINGS_CACHE_KEYS.summonVideos, settings.summonVideos ? 'on' : 'off');
             localStorage.setItem(SETTINGS_CACHE_KEYS.haptics, settings.haptics ? '1' : '0');

@@ -703,7 +703,14 @@
                 });
                 osservatore.observe(el);
             }
-            if (window.Inclinazione) {
+            // "Giroscopio sulle carte" SPENTO nelle Impostazioni: il telefono
+            // non guida più la luce, che invece si muove piano da sola (solo
+            // la luce, mai la carta: vedi `.cv-luce-viva` in card.css, attivo
+            // solo con puntatore a tocco). Acceso (default) vale il sensore.
+            const giroscopioSpento = !!(window.Inclinazione && Inclinazione.giroscopioCarteAttivo
+                && !Inclinazione.giroscopioCarteAttivo());
+            if (giroscopioSpento) bersaglio.classList.add('cv-luce-viva');
+            if (window.Inclinazione && !giroscopioSpento) {
                 // Si smette di ascoltare da soli quando la carta non è più
                 // nella pagina (scheda chiusa, premio passato): nessuno deve
                 // ricordarsi di farlo.

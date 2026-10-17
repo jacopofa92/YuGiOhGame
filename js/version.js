@@ -32,6 +32,10 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.3.26 — Nuova opzione "Giroscopio sulle carte" (Impostazioni): spenta, nel
+ *   dettaglio carta su telefono la luce si muove piano da sola invece di
+ *   seguire il giroscopio.
+ *
  * 1.3.25 — Carta in dettaglio su telefono: niente inclinazione né ondeggio, ma
  *   il giroscopio continua a muovere la luce (riflessi di rarità).
  *
@@ -728,4 +732,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.3.25';
+window.GAME_VERSION = '1.3.26';
