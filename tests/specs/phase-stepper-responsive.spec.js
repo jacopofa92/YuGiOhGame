@@ -80,14 +80,14 @@ module.exports = {
             const leggi = (el) => {
                 const s = getComputedStyle(el);
                 const badge = getComputedStyle(el.querySelector('.step-badge'));
-                const marker = getComputedStyle(el, '::before');
-                const glint = getComputedStyle(el, '::after');
+                const aura = getComputedStyle(el.querySelector('.step-badge'), '::before');
+                const icon = getComputedStyle(el.querySelector('.step-icon'));
                 return {
                     shadow: s.boxShadow, border: s.borderColor, opacity: Number(s.opacity), background: s.backgroundImage,
                     badgeShadow: badge.boxShadow, badgeBackground: badge.backgroundImage,
-                    transform: s.transform, markerContent: marker.content,
-                    markerBackground: marker.backgroundImage || marker.backgroundColor,
-                    glintAnimation: glint.animationName
+                    transform: s.transform, auraContent: aura.content,
+                    auraOpacity: Number(aura.opacity), auraAnimation: aura.animationName,
+                    iconFilter: icon.filter, iconAnimation: icon.animationName
                 };
             };
             return {
@@ -96,11 +96,14 @@ module.exports = {
             };
         });
         t.assert(statiDesktop.railLine === 'none', 'Lo stepper non deve avere una linea orizzontale dietro i sigilli');
-        t.assert(statiDesktop.active.background !== 'none' && statiDesktop.active.shadow === 'none'
-            && statiDesktop.active.markerContent !== 'none'
-            && statiDesktop.active.glintAnimation.includes('phasePlateGlint')
+        t.assert(statiDesktop.active.background === 'none' && statiDesktop.active.shadow === 'none'
+            && /rgba\(0, 0, 0, 0\)/.test(statiDesktop.active.border)
+            && statiDesktop.active.auraContent !== 'none' && statiDesktop.active.auraOpacity > 0.5
+            && statiDesktop.active.auraAnimation.includes('phaseIconAura')
+            && statiDesktop.active.iconAnimation.includes('phaseIconGlow')
+            && statiDesktop.active.iconFilter !== 'none'
             && statiDesktop.active.transform === 'none',
-        `La fase attiva deve emergere come placca rituale, non come pulsante stock: ${JSON.stringify(statiDesktop.active)}`);
+        `La fase attiva deve illuminare solo l'icona, senza disegnare un pulsante: ${JSON.stringify(statiDesktop.active)}`);
         t.assert(statiDesktop.clickable.background === 'none' && statiDesktop.clickable.shadow === 'none'
             && statiDesktop.clickable.badgeBackground === 'none'
             && statiDesktop.clickable.transform === 'none',
@@ -112,10 +115,11 @@ module.exports = {
         const mobile = await t.evaluate(() => {
             const active = document.querySelector('.phase-step.active');
             const s = getComputedStyle(active);
-            const marker = getComputedStyle(active, '::before');
-            return { background: s.backgroundImage, marker: marker.content, transform: s.transform };
+            const icon = getComputedStyle(active.querySelector('.step-icon'));
+            const aura = getComputedStyle(active.querySelector('.step-badge'), '::before');
+            return { background: s.backgroundImage, iconFilter: icon.filter, aura: aura.content, transform: s.transform };
         });
-        t.assert(mobile.background !== 'none' && mobile.marker !== 'none' && mobile.transform === 'none',
+        t.assert(mobile.background === 'none' && mobile.iconFilter !== 'none' && mobile.aura !== 'none' && mobile.transform === 'none',
             `Su mobile la fase attiva deve restare leggibile e allineata: ${JSON.stringify(mobile)}`);
     }
 };
