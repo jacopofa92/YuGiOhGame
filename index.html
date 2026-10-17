@@ -5901,6 +5901,7 @@
             let gatePassed = false;
             try { gatePassed = sessionStorage.getItem(GATE_SESSION_KEY) === '1'; } catch (e) { /* noop */ }
             const cloudUsable = !!(window.CloudSync && CloudSync.available);
+            const MESSAGGIO_CONFLITTO = '⚠️ Avevi giocato anche su un altro dispositivo: ho caricato i progressi del cloud. Le modifiche fatte qui nel frattempo sono conservate in una copia di sicurezza.';
             /** Una data leggibile per i messaggi, o un trattino. */
             function quandoBreve(ms) {
                 if (!ms || isNaN(ms)) return '—';
@@ -5909,7 +5910,8 @@
             /** Dice cosa ha fatto la riconciliazione col cloud, solo quando c'è qualcosa da dire. */
             function annunciaRiconciliazione(sync) {
                 if (!sync) return;
-                if (sync.esito === 'scaricato') showMenuToast(`⬇️ Caricati i progressi più recenti dal cloud (${quandoBreve(sync.quandoCloud)}).`);
+                if (sync.esito === 'scaricato' && sync.divergente) showMenuToast(MESSAGGIO_CONFLITTO);
+                else if (sync.esito === 'scaricato') showMenuToast(`⬇️ Caricati i progressi più recenti dal cloud (${quandoBreve(sync.quandoCloud)}).`);
                 else if (sync.esito === 'caricato') showMenuToast('⬆️ I progressi di questo dispositivo erano i più recenti: salvati sul cloud.');
                 else if (sync.esito === 'offline') showMenuToast('📴 Cloud non raggiungibile: uso il salvataggio di questo dispositivo.');
             }
@@ -5918,6 +5920,9 @@
                 let avviso = null;
                 try { avviso = sessionStorage.getItem('ygoAvvisoSync'); sessionStorage.removeItem('ygoAvvisoSync'); } catch (e) { /* noop */ }
                 if (avviso === 'scaricato') showMenuToast('⬇️ Arrivati i progressi più recenti da un altro dispositivo.');
+                // Hai giocato su due dispositivi: vale il cloud, e ciò che era
+                // stato fatto qui nel frattempo è messo da parte in una copia.
+                if (avviso === 'conflitto') showMenuToast(MESSAGGIO_CONFLITTO);
                 // Lasciato da CloudSync quando toglie i dati di un profilo
                 // azzerato altrove (in qualunque pagina sia successo).
                 if (avviso === 'azzerato') showMenuToast('🧹 Il profilo è stato azzerato da un altro dispositivo: si riparte da zero.');

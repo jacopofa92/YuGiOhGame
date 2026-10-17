@@ -32,6 +32,11 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.3.29 — Stesso account su due dispositivi: un dispositivo rimasto indietro
+ *   non può più sovrascrivere i progressi dell'altro (versione del cloud
+ *   ricordata per dispositivo, caricamento atomico, copia di sicurezza di ciò
+ *   che si era fatto qui).
+ *
  * 1.3.28 — Scheda carta: un tocco sulla carta la mostra a tutto schermo, con le
  *   stesse proporzioni e il suo effetto; un altro tocco (o Esc) la richiude.
  *
@@ -739,4 +744,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.3.28';
+window.GAME_VERSION = '1.3.29';

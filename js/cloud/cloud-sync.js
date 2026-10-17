@@ -518,6 +518,8 @@
         if (window.CustomTaxonomy && typeof CustomTaxonomy.importAll === 'function') CustomTaxonomy.importAll({});
         // Un caricamento rimasto in sospeso (auto-sync.js) riguardava i dati appena tolti.
         try { localStorage.removeItem('ygoSyncInSospeso'); } catch (e) { /* noop */ }
+        // E la versione del cloud da cui si era partiti non vale più.
+        dimenticaBase();
     }
 
     /**
@@ -582,6 +584,111 @@
     }
 
     // ------------------------------------------------------------------
+    // Base di sincronizzazione: da quale versione del cloud siamo partiti
+    // ------------------------------------------------------------------
+    /**
+     * IL BUCO CHE CHIUDE. La regola "non sovrascrivo un cloud più recente"
+     * confrontava le date di MODIFICA (player.lastSaved). Ma ogni modifica
+     * locale aggiorna quella data PRIMA del caricamento: un dispositivo
+     * rimasto indietro (A), alla prima azione — un duello, un acquisto — si
+     * ritrovava con una data più nuova del cloud, e sovrascriveva le ore
+     * giocate su un altro dispositivo (B). Il confronto per data non può
+     * accorgersi di una divergenza, perché la data nuova è di A.
+     *
+     * Ora ogni dispositivo ricorda da QUALE VERSIONE DEL CLOUD è partito: la
+     * `updated_at` della riga che ha scaricato o scritto l'ultima volta. Se
+     * al momento di caricare la riga ha un'altra `updated_at`, qualcun altro
+     * l'ha scritta nel frattempo: questo dispositivo NON scrive (CLOUD_CAMBIATO),
+     * e si riallinea dal cloud conservando in una copia ciò che aveva di
+     * diverso (risolviConflittoCloud). Il caricamento stesso è atomico
+     * ("aggiorna la riga SOLO SE updated_at è ancora quella che ho visto"):
+     * senza, resterebbe una finestra fra la lettura e la scrittura in cui un
+     * altro dispositivo può passare.
+     *
+     * Un dispositivo senza base (mai allineato dopo questo aggiornamento)
+     * usa la vecchia regola per data, una volta, e la base la impara al
+     * primo allineamento riuscito.
+     *
+     * `inVolo`: la `updated_at` che si sta per scrivere, annotata PRIMA della
+     * richiesta. Se la risposta si perde (rete che cade) la riga sul cloud è
+     * comunque nostra: al controllo successivo coincide con `inVolo` e non
+     * viene scambiata per una scrittura altrui.
+     */
+    const CHIAVE_BASE = 'ygoCloudBase';
+    const CHIAVE_COPIA_DIVERGENTE = 'ygoSalvataggioDivergente';
+
+    function leggiBase() {
+        try {
+            const b = JSON.parse(localStorage.getItem(CHIAVE_BASE));
+            return b && cachedUser && b.uid === cachedUser.id && b.updatedAt ? b : null;
+        } catch (e) { return null; }
+    }
+    function scriviBase(campi) {
+        if (!cachedUser) return;
+        const prima = leggiBase() || {};
+        try { localStorage.setItem(CHIAVE_BASE, JSON.stringify(Object.assign({}, prima, { uid: cachedUser.id }, campi))); } catch (e) { /* senza base vale la regola per data */ }
+    }
+    function dimenticaBase() {
+        try { localStorage.removeItem(CHIAVE_BASE); } catch (e) { /* noop */ }
+    }
+    const stessoMomento = (a, b) => !!a && !!b && Date.parse(a) === Date.parse(b);
+    /** Adotta come base la versione del cloud appena vista (dopo un download, o quando sono già uguali). */
+    function adottaBase(cloud) {
+        if (!cloud) return;
+        scriviBase({ updatedAt: cloud.updatedAt, inVolo: null, lastSaved: cloud.data && cloud.data.player ? cloud.data.player.lastSaved : null });
+    }
+
+    /**
+     * Qualcun altro ha scritto la riga del cloud dopo l'ultimo allineamento
+     * di questo dispositivo? Falso se non c'è una base: non si può sapere.
+     */
+    function cloudCambiatoAltrove(cloud) {
+        const b = leggiBase();
+        if (!b || !cloud) return false;
+        if (stessoMomento(cloud.updatedAt, b.updatedAt)) return false;
+        if (stessoMomento(cloud.updatedAt, b.inVolo)) {
+            // Era una scrittura nostra di cui non abbiamo saputo l'esito.
+            scriviBase({ updatedAt: cloud.updatedAt, inVolo: null });
+            return false;
+        }
+        return true;
+    }
+
+    /** Tiene da parte una copia del salvataggio di QUESTO dispositivo, prima che il cloud lo sostituisca. */
+    function conservaCopiaDivergente(locale) {
+        try {
+            localStorage.setItem(CHIAVE_COPIA_DIVERGENTE, JSON.stringify({ conservataIl: new Date().toISOString(), data: locale }));
+        } catch (e) { /* spazio esaurito: la sostituzione avviene comunque, il cloud vince */ }
+    }
+    function copiaDivergente() {
+        try { return JSON.parse(localStorage.getItem(CHIAVE_COPIA_DIVERGENTE)); } catch (e) { return null; }
+    }
+
+    /**
+     * Il cloud è cambiato da un altro dispositivo mentre questo aveva
+     * modifiche sue: vince il cloud (è l'unica copia che tutti i dispositivi
+     * possono ritrovare), e le modifiche di qui restano in una copia di
+     * sicurezza (copiaDivergente) invece di sparire. Se qui non c'era
+     * niente di nuovo (solo una copia rimasta indietro) la copia non serve
+     * e non si crea.
+     *
+     * Torna { esito: 'scaricato', divergente } (o 'azzerato'/'nessuno').
+     */
+    function risolviConflittoCloud() {
+        return leggiCloud().then(({ cloud, azzerato }) => {
+            if (azzerato) return { esito: 'azzerato' };
+            if (!cloud) return { esito: 'nessuno' };
+            const locale = window.SaveManager && SaveManager.hasSave() ? SaveManager.load() : null;
+            const b = leggiBase();
+            const divergente = !!locale && !!locale.player
+                && (!b || !b.lastSaved || locale.player.lastSaved !== b.lastSaved);
+            if (divergente) conservaCopiaDivergente(locale);
+            return Promise.all([pullSave(), pullCustomCards().catch(() => null)])
+                .then(() => ({ esito: 'scaricato', divergente: divergente }));
+        });
+    }
+
+    // ------------------------------------------------------------------
     // Salvataggio (public.saves — una riga per utente)
     // ------------------------------------------------------------------
     /**
@@ -605,8 +712,8 @@
         if (!available) return rejectUnavailable();
         if (!cachedUser) return Promise.reject(new Error('Devi accedere prima di sincronizzare.'));
         if (!window.SaveManager || !SaveManager.hasSave()) return Promise.reject(new Error('Nessun salvataggio locale da caricare.'));
-        if (opzioni && opzioni.forza) return scriviSalvataggio(SaveManager.load());
-        return leggiCloud().then(({ cloud, azzerato }) => {
+        if (opzioni && opzioni.forza) return scriviSalvataggio(SaveManager.load(), undefined);
+        return leggiCloud().then(({ cloud, azzerato, segnoUpdatedAt }) => {
             // Il salvataggio si rilegge DOPO aver guardato il cloud: se il
             // profilo è stato azzerato altrove, leggiCloud l'ha appena tolto.
             if (azzerato || !SaveManager.hasSave()) {
@@ -615,16 +722,34 @@
                 throw e;
             }
             const base = SaveManager.load();
+            // Prima la domanda giusta: l'ha scritta qualcun altro dopo che
+            // questo dispositivo si è allineato? (vedi "Base di sincronizzazione")
+            if (cloudCambiatoAltrove(cloud)) {
+                const e = new Error('Il cloud è stato aggiornato da un altro dispositivo: non lo sovrascrivo.');
+                e.code = 'CLOUD_CAMBIATO';
+                throw e;
+            }
+            // Poi la vecchia regola per data: resta per i dispositivi senza
+            // base, e come seconda rete.
             if (cloud && dataModifica(cloud.data, cloud.updatedAt) > dataModifica(base)) {
                 const e = new Error('Sul cloud c\'è un salvataggio più recente di quello di questo dispositivo: non lo sovrascrivo.');
                 e.code = 'CLOUD_PIU_RECENTE';
                 throw e;
             }
-            return scriviSalvataggio(base);
+            // `null`: nessuna riga sul cloud (si inserisce); una stringa: la
+            // versione che si è appena vista, che deve essere ancora quella.
+            return scriviSalvataggio(base, cloud ? cloud.updatedAt : (segnoUpdatedAt || null));
         });
     }
 
-    function scriviSalvataggio(base) {
+    /**
+     * Scrive il salvataggio. `atteso`: `undefined` = sovrascrive comunque
+     * (solo `forza`, un'azione esplicita); `null` = la riga non esisteva,
+     * si inserisce; una stringa = la `updated_at` che si è letta, e la
+     * scrittura riesce SOLO SE la riga ha ancora quella (compare-and-swap
+     * lato database: nessuna finestra fra lettura e scrittura).
+     */
+    function scriviSalvataggio(base, atteso) {
         // Provenienze/Tipi Mostro/terminologia personalizzati viaggiano
         // DENTRO il salvataggio invece che in una tabella propria: non
         // richiede alcuna modifica allo schema Supabase (che l'utente
@@ -641,9 +766,44 @@
         // dispositivi sanno che questo profilo è nato dopo un azzeramento.
         const generazione = generazioneLocale(base);
         if (generazione) data.azzeratoIl = new Date(generazione).toISOString();
+        const nuovo = new Date().toISOString();
+        const lastSaved = base && base.player ? base.player.lastSaved : null;
+        const riuscita = () => { scriviBase({ updatedAt: nuovo, inVolo: null, lastSaved: lastSaved }); return data; };
+        const conflitto = () => {
+            const e = new Error('Il cloud è stato aggiornato da un altro dispositivo nel frattempo: non lo sovrascrivo.');
+            e.code = 'CLOUD_CAMBIATO';
+            return e;
+        };
+        // Annotata PRIMA della richiesta: se la risposta si perde, la riga
+        // sul cloud resta riconoscibile come nostra (vedi cloudCambiatoAltrove).
+        scriviBase({ inVolo: nuovo });
+        if (atteso === undefined) {
+            return client.from('saves')
+                .upsert({ user_id: cachedUser.id, data, updated_at: nuovo })
+                .then(({ error }) => { if (error) throw error; return riuscita(); });
+        }
+        if (atteso === null) {
+            return client.from('saves')
+                .insert({ user_id: cachedUser.id, data, updated_at: nuovo })
+                .then(({ error }) => {
+                    // La riga è comparsa mentre si scriveva (violazione di chiave
+                    // unica): un altro dispositivo è arrivato prima.
+                    if (error && (error.code === '23505' || /duplicate/i.test(error.message || ''))) throw conflitto();
+                    if (error) throw error;
+                    return riuscita();
+                });
+        }
         return client.from('saves')
-            .upsert({ user_id: cachedUser.id, data, updated_at: new Date().toISOString() })
-            .then(({ error }) => { if (error) throw error; return data; });
+            .update({ data, updated_at: nuovo })
+            .eq('user_id', cachedUser.id)
+            .eq('updated_at', atteso)
+            .select('updated_at')
+            .then(({ data: righe, error }) => {
+                if (error) throw error;
+                // Nessuna riga aggiornata: la `updated_at` non è più quella vista.
+                if (!righe || righe.length === 0) throw conflitto();
+                return riuscita();
+            });
     }
 
     /** Scarica il salvataggio cloud SENZA applicarlo — usata da profilo.html per decidere se c'è un conflitto prima di sovrascrivere il locale. Torna null se l'utente non ha ancora nessun salvataggio sul cloud. */
@@ -686,7 +846,14 @@
                     ricordaGenerazione(data.data.azzeratoIl);
                 }
                 const soloSegno = !data.data || !data.data.player;
-                return { cloud: soloSegno ? null : { data: data.data, updatedAt: data.updated_at }, azzerato: azzerato };
+                // `segnoUpdatedAt`: la riga ESISTE ma porta solo il segno di
+                // azzeramento. Chi vuole scriverci sopra deve aggiornarla (con
+                // la sua `updated_at` come condizione), non inserirne un'altra.
+                return {
+                    cloud: soloSegno ? null : { data: data.data, updatedAt: data.updated_at },
+                    azzerato: azzerato,
+                    segnoUpdatedAt: soloSegno ? data.updated_at : null
+                };
             });
     }
 
@@ -709,7 +876,10 @@
             }
             // La data di modifica resta quella del cloud (vedi dataModifica):
             // la copia di qui diventa IDENTICA a quella, non "più nuova".
-            return SaveManager.applyExternalSave(data, { mantieniData: true });
+            const applicato = SaveManager.applyExternalSave(data, { mantieniData: true });
+            // Da qui questo dispositivo è allineato a QUESTA versione del cloud.
+            adottaBase(cloud);
+            return applicato;
         });
     }
 
@@ -754,7 +924,14 @@
             if (!cloud && !haLocale) return { esito: 'nessuno' };
             const verdetto = confrontaSalvataggi(cloud);
             const base = { quandoCloud: verdetto.quandoCloud, quandoLocale: verdetto.quandoLocale };
-            if (verdetto.scelta === 'uguali') return Object.assign({ esito: 'uguale' }, base);
+            // Un altro dispositivo ha scritto dopo che questo si è allineato:
+            // vince il cloud ANCHE se la data di modifica di qui è più nuova
+            // (lo è per forza, se qui si è giocato nel frattempo: è proprio il
+            // caso da non sbagliare). Le modifiche di qui restano in una copia.
+            if (haLocale && cloud && cloudCambiatoAltrove(cloud)) {
+                return risolviConflittoCloud().then((r) => Object.assign({}, r, base));
+            }
+            if (verdetto.scelta === 'uguali') { adottaBase(cloud); return Object.assign({ esito: 'uguale' }, base); }
             if (verdetto.scelta === 'cloud') {
                 return Promise.all([pullSave(), pullCustomCards().catch(() => null)])
                     .then(() => Object.assign({ esito: 'scaricato' }, base));
@@ -853,6 +1030,10 @@
         resetAccount: resetAccount,
         confrontaSalvataggi: confrontaSalvataggi,
         riconcilia: riconcilia,
+        /** Il cloud è cambiato altrove e qui c'erano modifiche: scarica il cloud e conserva la copia di qui. */
+        risolviConflittoCloud: risolviConflittoCloud,
+        /** La copia del salvataggio di questo dispositivo messa da parte dall'ultimo conflitto, o null. */
+        copiaDivergente: copiaDivergente,
         msDallUltimaRiconciliazione: msDallUltimaRiconciliazione,
         adminListProfiles: adminListProfiles,
         adminSetProfileStatus: adminSetProfileStatus,

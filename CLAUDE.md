@@ -4460,3 +4460,27 @@ sì anche per la propria cinematica e si chiuderebbe subito); i due script
 vanno caricati DOPO `eventi-duello.js`. Nei test serve
 `window.GRIDO_EVOCAZIONE_FORZA = true`, perché con `DUEL_FAST_OPENING` la scena
 è spenta. Spec `grido-evocazione`; cache `v285`.
+
+Stesso account su due dispositivi (2026-10-17, segnalato dall'utente: "rischio di
+sovrascrittura"): il controllo "non sovrascrivo un cloud più recente" confrontava
+le date di MODIFICA, ma ogni azione locale aggiorna quella data PRIMA del
+caricamento — un dispositivo rimasto indietro, alla prima azione, risultava "più
+recente" e cancellava le ore giocate sull'altro. Ora (`js/cloud/cloud-sync.js`,
+"Base di sincronizzazione") ogni dispositivo ricorda da quale versione del cloud
+è partito (`ygoCloudBase`: la `updated_at` che ha scaricato o scritto per ultima),
+e il caricamento è atomico (`UPDATE ... WHERE updated_at = <quella vista>`, nessuna
+migrazione: usa la colonna che già c'è). Se la riga è cambiata altrove il
+caricamento NON scrive (`CLOUD_CAMBIATO`) e `risolviConflittoCloud` scarica il
+cloud: vince lui, perché è l'unica copia che tutti i dispositivi ritrovano, e le
+modifiche fatte qui nel frattempo restano in una copia di sicurezza
+(`CloudSync.copiaDivergente()`, chiave `ygoSalvataggioDivergente`), solo se ce n'erano.
+`inVolo` annota la `updated_at` che si sta per scrivere, così una risposta persa
+non fa scambiare la propria scrittura per una altrui. Un dispositivo senza base
+(mai allineato dopo questo aggiornamento) usa la vecchia regola per data finché non
+si allinea. NON è un merge: se due dispositivi giocano davvero in parallelo, uno
+dei due perde le ultime mosse (conservate nella copia). Un kick del primo
+dispositivo è stato scartato apposta: non risolve il caso offline e punisce chi usa
+due dispositivi in buona fede. Lo spec `sync-due-dispositivi-senza-sovrascrittura`
+prova i quattro scenari con due dispositivi veri e il finto cloud (che ora capisce
+update condizionato e insert duplicato, più il gancio `primaDelloUpdate` per far
+cadere una scrittura altrui fra lettura e scrittura). Versione 1.3.29, cache `v294`.

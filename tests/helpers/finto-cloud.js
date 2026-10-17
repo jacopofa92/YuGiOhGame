@@ -26,6 +26,25 @@ function creaFintoCloud() {
         if (q.table === 'saves') {
             if (q.op === 'select') return { data: cloud.saves[uid] ? JSON.parse(JSON.stringify(cloud.saves[uid])) : null, error: null };
             if (q.op === 'upsert') { cloud.saves[q.payload.user_id] = { data: q.payload.data, updated_at: q.payload.updated_at }; return { error: null }; }
+            // Come il database vero: l'inserimento di una riga che esiste già
+            // viola la chiave unica, e l'aggiornamento condizionato
+            // (`.eq('updated_at', ...)`) tocca la riga SOLO se ha ancora quella
+            // updated_at — altrimenti torna zero righe, senza errore.
+            if (q.op === 'insert') {
+                if (cloud.saves[q.payload.user_id]) return { data: null, error: { code: '23505', message: 'duplicate key value violates unique constraint' } };
+                cloud.saves[q.payload.user_id] = { data: q.payload.data, updated_at: q.payload.updated_at };
+                return { data: [{ updated_at: q.payload.updated_at }], error: null };
+            }
+            if (q.op === 'update') {
+                // Un gancio per i test: qualcosa che succede sul cloud
+                // PROPRIO fra la lettura e la scrittura di un dispositivo.
+                if (typeof cloud.primaDelloUpdate === 'function') { const f = cloud.primaDelloUpdate; cloud.primaDelloUpdate = null; f(); }
+                const riga = cloud.saves[uid];
+                if (!riga) return { data: [], error: null };
+                if (q.filters.updated_at && Date.parse(riga.updated_at) !== Date.parse(q.filters.updated_at)) return { data: [], error: null };
+                cloud.saves[uid] = { data: q.payload.data, updated_at: q.payload.updated_at };
+                return { data: [{ updated_at: q.payload.updated_at }], error: null };
+            }
             if (q.op === 'delete') { delete cloud.saves[uid]; return { error: null }; }
         }
         if (q.table === 'custom_cards') {

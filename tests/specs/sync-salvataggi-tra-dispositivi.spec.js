@@ -74,7 +74,11 @@ module.exports = {
             assert(await copie(tel) === 2, 'riaprendo il telefono vede i progressi del desktop: ' + await copie(tel));
             assert(copieNelCloud() === 2, 'il caricamento in sospeso del telefono NON ha cancellato i progressi del desktop: ' + copieNelCloud());
             const avviso = await tel.evaluate(() => document.getElementById('menuToast').textContent);
-            assert(/più recenti dal cloud/.test(avviso), 'e lo dice: ' + avviso);
+            // Due strade, stesso risultato e stessa verità: il menu riconcilia
+            // da sé ("dal cloud"), oppure il caricamento rifiutato dell'auto-sync
+            // si accorge che il cloud è cambiato altrove e ricarica la pagina
+            // ("da un altro dispositivo").
+            assert(/più recenti (dal cloud|da un altro dispositivo)/.test(avviso), 'e lo dice: ' + avviso);
 
             // --- Il desktop gioca ancora; il telefono torna in primo piano ---
             await desk.evaluate(() => { SaveManager.addOwnedCards(1, 1); });

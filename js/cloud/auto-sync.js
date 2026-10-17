@@ -105,6 +105,11 @@
                 // Stesso discorso se il profilo è stato azzerato altrove:
                 // i dati da mandare non esistono più.
                 if (e && (e.code === 'CLOUD_PIU_RECENTE' || e.code === 'PROFILO_AZZERATO')) segna(false);
+                // Un altro dispositivo ha scritto dopo l'ultimo allineamento
+                // di questo: niente da ritentare (sovrascriverebbe i suoi
+                // progressi). Si scarica il cloud, e le modifiche di qui
+                // restano in una copia di sicurezza.
+                if (e && e.code === 'CLOUD_CAMBIATO') { segna(false); riallineaDopoConflitto(); }
                 return false;
             });
         // Le carte DOPO il salvataggio, non insieme: ognuno dei due guarda
@@ -147,17 +152,32 @@
     function riguardaIlCloud() {
         if (!pronto() || typeof CloudSync.riconcilia !== 'function') return;
         if (CloudSync.msDallUltimaRiconciliazione() < INTERVALLO_RICONCILIAZIONE_MS) return;
-        CloudSync.riconcilia({ attesaMassimaMs: 8000 }).then((r) => {
-            if (!r || (r.esito !== 'scaricato' && r.esito !== 'azzerato')) return;
-            if (typeof gameState !== 'undefined') return;
-            // Profilo azzerato da un altro dispositivo: qui non c'è più un
-            // salvataggio, e una pagina qualunque non sa ripartire da zero.
-            // Si torna al menu, che chiede il nome come la prima volta (e
-            // dice perché: l'avviso l'ha lasciato CloudSync).
-            if (r.esito === 'azzerato') { location.href = 'index.html'; return; }
-            try { sessionStorage.setItem('ygoAvvisoSync', 'scaricato'); } catch (e) { /* noop */ }
-            location.reload();
-        });
+        CloudSync.riconcilia({ attesaMassimaMs: 8000 }).then(applicaEsitoRiallineamento);
+    }
+
+    /**
+     * Cosa fare dopo un riallineamento che ha cambiato i dati di qui. Mai
+     * durante un duello (vedi riguardaIlCloud): i dati sotto sono comunque
+     * già quelli nuovi.
+     */
+    function applicaEsitoRiallineamento(r) {
+        if (!r || (r.esito !== 'scaricato' && r.esito !== 'azzerato')) return;
+        if (typeof gameState !== 'undefined') return;
+        // Profilo azzerato da un altro dispositivo: qui non c'è più un
+        // salvataggio, e una pagina qualunque non sa ripartire da zero.
+        // Si torna al menu, che chiede il nome come la prima volta (e
+        // dice perché: l'avviso l'ha lasciato CloudSync).
+        if (r.esito === 'azzerato') { location.href = 'index.html'; return; }
+        // Se qui c'erano modifiche non ancora sul cloud, l'avviso lo dice:
+        // sono state messe da parte, non perse.
+        try { sessionStorage.setItem('ygoAvvisoSync', r.divergente ? 'conflitto' : 'scaricato'); } catch (e) { /* noop */ }
+        location.reload();
+    }
+
+    /** Un caricamento è stato rifiutato perché il cloud è cambiato altrove: allinea questo dispositivo. */
+    function riallineaDopoConflitto() {
+        if (!window.CloudSync || typeof CloudSync.risolviConflittoCloud !== 'function') return;
+        CloudSync.risolviConflittoCloud().then(applicaEsitoRiallineamento).catch(() => { /* si riproverà al prossimo giro */ });
     }
 
     /**
