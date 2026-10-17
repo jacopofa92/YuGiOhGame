@@ -1789,8 +1789,17 @@
     // ============================================================
     function playDamageEffect(amount, opts = {}) {
         const container = document.querySelector('.game-container') || document.body;
-        container.classList.add('fx-shake');
-        setTimeout(() => container.classList.remove('fx-shake'), 450);
+        // Su un dispositivo touch la game-container coincide praticamente con
+        // l'intera scena (field, carte, ologrammi e livelli ambientali):
+        // traslarla per ogni danno forza la GPU mobile a ricomporre milioni di
+        // pixel. Il colpo resta leggibile grazie a vignetta, flash e numero,
+        // ma la scossa dell'intero viewport rimane riservata al puntatore fine.
+        const mobileTouch = window.matchMedia
+            && window.matchMedia('(pointer: coarse)').matches;
+        if (!mobileTouch) {
+            container.classList.add('fx-shake');
+            setTimeout(() => container.classList.remove('fx-shake'), 450);
+        }
 
         spawnDomFx('fx-damage-vignette', 0, 0, undefined, undefined, 500);
 

@@ -495,8 +495,8 @@
 // v277: stepper senza bordi, stato corrente affidato alla luce dell'icona.
 // v278: passaggio morra-arena mobile senza layer e animazioni concorrenti.
 // v279: nomi compatti e invito all'azione rendono leggibili le fasi.
-// v280: pausa reale del duello offline quando l'app perde il primo piano.
-const CACHE_NAME = 'ygo-duel-arena-v280';
+// v281: impatto danno mobile localizzato, senza scossa dell'intero campo.
+const CACHE_NAME = 'ygo-duel-arena-v281';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

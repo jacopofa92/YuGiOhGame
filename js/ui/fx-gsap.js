@@ -203,13 +203,17 @@
         playDamageEffect: function (amount, opts) {
             const container = document.querySelector('.game-container') || document.body;
             const forza = Math.min(18, 6 + (Number(amount) || 0) / 260);
+            const mobileTouch = window.matchMedia
+                && window.matchMedia('(pointer: coarse)').matches;
 
-            gsap.timeline()
-                .to(container, { x: -forza, duration: 0.05, ease: 'none' })
-                .to(container, { x: forza * 0.8, duration: 0.06 })
-                .to(container, { x: -forza * 0.5, duration: 0.06 })
-                .to(container, { x: forza * 0.25, duration: 0.06 })
-                .to(container, { x: 0, duration: 0.08, ease: 'power2.out', clearProps: 'transform' });
+            if (!mobileTouch) {
+                gsap.timeline()
+                    .to(container, { x: -forza, duration: 0.05, ease: 'none' })
+                    .to(container, { x: forza * 0.8, duration: 0.06 })
+                    .to(container, { x: -forza * 0.5, duration: 0.06 })
+                    .to(container, { x: forza * 0.25, duration: 0.06 })
+                    .to(container, { x: 0, duration: 0.08, ease: 'power2.out', clearProps: 'transform' });
+            }
 
             const vignetta = fxLayer('fx-gsap-vignette', 0, 0, window.innerWidth, window.innerHeight);
             gsap.set(vignetta, { background: 'radial-gradient(circle, rgba(255,0,0,0) 45%, rgba(255,0,0,0.55) 100%)', opacity: 0 });
@@ -224,6 +228,16 @@
             // js/ui/effects.js); senza, si mette al centro dello schermo.
             const target = (opts && opts.anchorEl) || null;
             const p = target ? centerOf(target) : { x: window.innerWidth / 2, y: window.innerHeight * 0.42 };
+            if (mobileTouch) {
+                // Impulso locale: anima un piccolo livello indipendente vicino
+                // ai LP colpiti, non l'albero DOM del duello. Due soli tween di
+                // transform/opacity mantengono l'impatto anche sui telefoni
+                // meno potenti senza il calo di frame della scossa globale.
+                const impulso = fxLayer('fx-gsap-mobile-hit', p.x, p.y, 116, 116);
+                gsap.fromTo(impulso,
+                    { xPercent: -50, yPercent: -50, scale: 0.35, opacity: 0.9 },
+                    { scale: 1.28, opacity: 0, duration: 0.34, ease: 'power2.out', onComplete: () => impulso.remove() });
+            }
             const testo = fxLayer('fx-gsap-damage-number', p.x, p.y);
             testo.textContent = '-' + (Number(amount) || 0);
             gsap.set(testo, {

@@ -449,6 +449,28 @@
     background: radial-gradient(ellipse at center, transparent 55%, rgba(231, 76, 60, 0.35) 100%);
     animation: fxVignettePulse 0.5s ease-out forwards;
 }
+
+/* Colpo localizzato usato dal backend GSAP sui dispositivi touch. È un
+   livello di appena 116px: evita di traslare e ricomporre l'intero campo. */
+.fx-gsap-mobile-hit {
+    position: fixed;
+    pointer-events: none;
+    z-index: 10022;
+    border-radius: 50%;
+    background: radial-gradient(circle,
+        rgba(255, 246, 220, 0.92) 0 5%,
+        rgba(255, 91, 75, 0.52) 12%,
+        rgba(221, 38, 38, 0.18) 36%,
+        transparent 68%);
+    box-shadow: 0 0 18px rgba(255, 68, 51, 0.46);
+    will-change: transform, opacity;
+}
+
+@media (pointer: coarse) {
+    /* Protezione anche per il fallback CSS, usato prima che GSAP sia pronto. */
+    .fx-shake { animation: none !important; }
+    .fx-damage-vignette { animation-duration: 0.36s; }
+}
 @keyframes fxVignettePulse {
     0%   { opacity: 0; }
     25%  { opacity: 1; }
