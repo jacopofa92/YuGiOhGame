@@ -180,14 +180,12 @@
         scena.innerHTML = `
             <div class="ge-velo"></div>
             <div class="ge-raggi"></div>
+            <div class="ge-lampo"></div>
             <div class="ge-vento" aria-hidden="true"></div>
             <div class="ge-onda"></div>
+            <div class="ge-banda ge-banda--alta"><strong class="ge-grido"></strong></div>
+            <div class="ge-banda ge-banda--bassa"><small class="ge-kicker"></small><em class="ge-carta"></em></div>
             <img class="ge-figura" alt="" ${src ? `src="${src}"` : 'hidden'}>
-            <div class="ge-testo">
-                <small class="ge-kicker"></small>
-                <strong class="ge-grido"></strong>
-                <em class="ge-carta"></em>
-            </div>
             <span class="ge-salta">Tocca per saltare</span>`;
         // Il testo non passa da innerHTML: il nome di una carta personalizzata è libero.
         scena.querySelector('.ge-kicker').textContent = (speciale ? 'Evocazione Speciale' : 'Evocazione') + ' · ' + (chi.name || '');

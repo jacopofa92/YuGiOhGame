@@ -4445,7 +4445,7 @@ Spec `pile-allineate-alle-carte` (verificato al contrario). Cache `v270`.
 Grido di Evocazione (2026-10-17, richiesta dell'utente): prima dell'Evocazione
 di una carta simbolo il duellante appare a figura intera (sagoma trasparente da
 `images/characters/avatarTrasparenza`, pedina da 320px su schermi stretti),
-spinto dal vento, e la annuncia: 2,2 secondi, un tocco la salta. I dati sono
+spinto dal vento, e la annuncia dentro due bande oblique (skewY -3deg, come\nl'annuncio di turno: grido in quella alta, nome carta in quella bassa) che\nattraversano il centro, mentre la figura le sfonda in altezza: 2,2 secondi, un tocco la salta. I dati sono
 SOLO in `js/data/gridi-evocazione.js` (duellante riconosciuto dal nome file
 dell'immagine, non dall'id: vale per ogni suo aspetto e per i protagonisti
 della Storia); la scena in `js/ui/grido-evocazione.js/.css`. Il motore emette
