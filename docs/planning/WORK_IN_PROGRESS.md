@@ -2,6 +2,22 @@
 
 Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
 
+## Sincronizzazione tra dispositivi — appunto del 17 ottobre 2026
+
+Il rischio di sovrascrittura tra due dispositivi è chiuso (versione 1.3.29:
+base di sincronizzazione + caricamento atomico + copia di sicurezza, vedi la
+nota in CLAUDE.md). Restano da decidere, per ora SOLO segnalati dall'utente:
+
+- [ ] **Recuperare la copia di sicurezza**: oggi, dopo un conflitto, le
+      modifiche fatte su un dispositivo rimasto indietro stanno in
+      `CloudSync.copiaDivergente()` (localStorage `ygoSalvataggioDivergente`) ma
+      non c'è nessun pulsante per ripristinarle o esportarle. Idea: "Recupera le
+      modifiche" nel Profilo (sezione Backup), con anteprima di cosa contiene.
+- [ ] **"Ultimo accesso da un altro dispositivo"** nel Profilo, per rendere
+      visibile all'utente quando il cloud è stato scritto altrove.
+- [ ] Facoltativo, più grosso: un **merge** dei dati monotoni (collezione, record,
+      progressi) invece di "vince il cloud, il locale in copia". Da valutare solo
+      se i conflitti reali si rivelano frequenti.
 ## Stepper delle fasi — rifinitura del 17 ottobre 2026
 
 - [x] Mantenuti sigilli privi di riquadro e linea continua, ma resi
