@@ -14,14 +14,16 @@ const fs = require('fs');
 const path = require('path');
 
 const RADICE = path.join(__dirname, '..', '..');
-const SALTA = /(^|\/)(node_modules|\.git|android|vendor)(\/|$)|package-lock/;
+// `dist` è la copia minificata che crea `npm run pubblica` (non versionata):
+// è un'uscita di build, e dopo una correzione ai sorgenti resta vecchia
+// finché non si rilancia la pubblicazione.
+const SALTA = /(^|\/)(node_modules|\.git|android|vendor|dist)(\/|$)|package-lock/;
 
 // File che il codice nomina ma che possono non esistere: ognuno ha un
 // ripiego dichiarato accanto al punto d'uso.
 const OPZIONALI = new Set([
     'images/maps/storia_torneo_kaiba_1.jpg', 'images/maps/storia_ww1_1.jpg', 'images/maps/storia_ww2_1.jpg', // mappe delle storie ancora da disegnare
-    'images/maps/regno_dei_duellanti_castello_pegasus.jpg', // candidato di una lista: i successivi esistono
-    'images/characters/bakura.jpg', 'images/story/ww1.jpg', 'images/fields/torreKaiba.jpg', // candidati di ripiego
+    'images/story/ww1.jpg', 'images/fields/torreKaiba.jpg', // candidati di ripiego
     'images/fields/mobile/x.jpg' // esempio nel testo di CLAUDE.md
 ]);
 const SOLO_NEI_TEST = /^images\/(characters\/__non_esiste__|fields\/mobile\/(campoProva|campoSostituito|dalPulsanteSalva))\.jpg$/;

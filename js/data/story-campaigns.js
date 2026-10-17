@@ -1135,7 +1135,7 @@ const storyCampaignsDatabase = [
                                 characterId: 'bonz',
                                 music: '31. Finals.mp3',
                                 field: 'images/fields/mobile/dirigibileKaibaCorp.jpg',
-                                protagonista: { name: 'Yami Bakura', title: 'Lo spirito dell’Anello', image: 'images/characters/bakura.jpg', icon: '💍' },
+                                protagonista: { name: 'Yami Bakura', title: 'Lo spirito dell’Anello', image: 'images/characters/yamiBakura.jpg', icon: '💍' },
                                 dialogo: [
                                     { chi: 'bonz', testo: 'Abbiamo tre Carte Localizzatrici e non le cederemo a uno sconosciuto incontrato nel cimitero.' },
                                     { io: true, testo: 'Non mi servono i vostri nomi. Mi servono soltanto una Carta Localizzatrice e tre anime da spedire nel Regno delle Ombre.' }
@@ -2915,6 +2915,10 @@ const storyCampaignsDatabase = [
         // fra i candidati: altro rapporto, e i nodi di adesso ci
         // cadrebbero sopra a caso.
         sfondo: ['images/maps/storia_freedom_2.jpg', 'images/fields/mobile/anticoEgittoGiorno_1.jpg'],
+        // Prima i duelli di Freedom non dichiaravano nessuna musica e
+        // suonavano il brano di ripiego del duello (la finale di Kaiba),
+        // fuori luogo per una puntata in Egitto: ora il tema egizio.
+        musicaDuello: '33. Egyptian Duel.mp3',
         // Il conduttore in persona: la campagna è la sua puntata, e da metà
         // in poi anche il suo problema.
         protagonista: { name: 'Roberto Giacobbo', title: 'Il conduttore', image: 'images/characters/rg.jpg', icon: '🎥' },
