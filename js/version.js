@@ -32,6 +32,12 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.3.23 — Grido di Evocazione: il duellante annuncia la carta simbolo in due
+ *   bande oblique con effetto vento; annuncio di turno "TURNO + nome"; il
+ *   Piumino delle Arpie sbriciola le carte colpite; campi e musiche di Storia
+ *   e tornei corretti (ritratto di Yami Bakura, sfondo del Castello, musica
+ *   di Freedom).
+ *
  * 1.3.22 — Completati Guerrieri Magnetici e Cavalieri delle Figure di
  *   Yugi; la IA Difficile riconosce le Evocazioni Speciali dalla mano.
  *
@@ -716,4 +722,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.3.22';
+window.GAME_VERSION = '1.3.23';
