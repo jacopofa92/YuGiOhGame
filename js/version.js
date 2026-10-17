@@ -32,6 +32,10 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.3.27 — Quattro nuove lezioni nel Tutorial: Il campo di gioco, Attacco e
+ *   Difesa, L'Evocazione Speciale (Rinascita del Mostro e Cannoni senza
+ *   Polimerizzazione), Carte che restano sul campo (Continue e Terreno).
+ *
  * 1.3.26 — Nuova opzione "Giroscopio sulle carte" (Impostazioni): spenta, nel
  *   dettaglio carta su telefono la luce si muove piano da sola invece di
  *   seguire il giroscopio.
@@ -732,4 +736,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.3.26';
+window.GAME_VERSION = '1.3.27';

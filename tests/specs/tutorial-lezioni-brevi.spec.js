@@ -57,6 +57,46 @@ const LEZIONI = {
             dettaglio: { campo: gameState.playerMonsterField.filter(Boolean).map((s) => s.card.id), cimitero: gameState.playerGraveyard.map((c) => c.id) }
         })
     },
+    battaglia: {
+        // Elfi (ATK 1900) distrutti da Gaia (2300): 400 di danno; Skull Servant
+        // in Difesa distrutto dal Celtico senza altri danni; Robolady in Difesa.
+        verifica: () => ({
+            ok: gameState.botGraveyard.some((c) => c.id === 24)
+                && gameState.botGraveyard.some((c) => c.id === 526)
+                && gameState.botLP === 7600
+                && gameState.playerMonsterField.some((s) => s && s.card.id === 528 && s.position === 'defense'),
+            dettaglio: { lpNonno: gameState.botLP, nonno: gameState.botGraveyard.map((c) => c.id) }
+        })
+    },
+    continue: {
+        verifica: () => {
+            const gaia = gameState.playerMonsterField.find((s) => s && s.card.id === 14);
+            return {
+                ok: !!(gameState.playerFieldSpell && gameState.playerFieldSpell.card.id === 580)
+                    && gameState.playerSTField.some((s) => s && s.card.id === 148)
+                    && !!gaia && DuelEngine.getEffectiveAtk(gaia.card) === 2500,
+                dettaglio: { terreno: gameState.playerFieldSpell && gameState.playerFieldSpell.card.id, atk: gaia && DuelEngine.getEffectiveAtk(gaia.card) }
+            };
+        }
+    },
+    speciale: {
+        // Gaia rianimata dal Cimitero e Cannone Drago XY dall'Extra Deck: i
+        // due materiali spariti dal Terreno e NON nel Cimitero (sono banditi).
+        verifica: () => ({
+            ok: gameState.playerMonsterField.some((s) => s && s.card.id === 14)
+                && gameState.playerMonsterField.some((s) => s && s.card.id === 511)
+                && !gameState.playerMonsterField.some((s) => s && (s.card.id === 510 || s.card.id === 513))
+                && !gameState.playerGraveyard.some((c) => c.id === 510 || c.id === 513),
+            dettaglio: { campo: gameState.playerMonsterField.filter(Boolean).map((s) => s.card.id), cimitero: gameState.playerGraveyard.map((c) => c.id) }
+        })
+    },
+    campo: {
+        // Una visita guidata: non deve cambiare nulla sul campo.
+        verifica: () => ({
+            ok: gameState.playerMonsterField.filter(Boolean).length === 1 && gameState.playerLP === 8000 && gameState.botLP === 8000,
+            dettaglio: { lp: gameState.playerLP, mostri: gameState.playerMonsterField.filter(Boolean).length }
+        })
+    },
     rapida: {
         verifica: () => ({
             ok: gameState.botMonsterField.some((s) => s && s.card.id === 1 && s.isFaceDown && s.position === 'defense'),
@@ -73,15 +113,27 @@ async function seguiRiflettore(page) {
             const avanti = document.querySelector('.tut-avanti');
             const el = passo && passo.bersaglio ? passo.bersaglio() : null;
             const r = el ? el.getBoundingClientRect() : null;
+            // Un passo di attacco dichiara dove si trascina (`trascina`).
+            const dest = passo && passo.trascina ? passo.trascina() : null;
+            const d = dest ? dest.getBoundingClientRect() : null;
             return {
                 fine: !!(passo && passo.fine),
                 avanti: !!(avanti && !avanti.hidden),
                 r: r && r.width > 0 ? { x: r.left + r.width / 2, y: r.top + r.height / 2 } : null,
+                dest: d && d.width > 0 ? { x: d.left + d.width / 2, y: d.top + d.height / 2 } : null,
                 popover: !!document.getElementById('quickPopover')
             };
         });
         if (st.fine) return;
         if (st.avanti) { await page.click('.tut-avanti'); await page.waitForTimeout(300); continue; }
+        if (st.r && st.dest) {
+            await page.mouse.move(st.r.x, st.r.y);
+            await page.mouse.down();
+            for (let i = 1; i <= 12; i++) await page.mouse.move(st.r.x + (st.dest.x - st.r.x) * i / 12, st.r.y + (st.dest.y - st.r.y) * i / 12);
+            await page.mouse.up();
+            await page.waitForTimeout(2500);
+            continue;
+        }
         if (st.popover) {
             const b = await page.$('#quickPopover button');
             if (b) { await b.click(); await page.waitForTimeout(600); continue; }

@@ -517,8 +517,283 @@
         { fine: true, testo: 'Lezione completata! Le Magie Rapide premiano il tempismo, non soltanto la forza.' }
     ];
 
+    // ------------------------------------------------------------------
+    // Altre quattro lezioni brevi: combattimento, carte che restano sul
+    // Terreno, Evocazione Speciale, e una visita guidata al campo.
+    // Una cosa sola per lezione, come le altre; ogni passo che chiede un
+    // trascinamento dichiara anche `trascina` (la destinazione), che l'uso
+    // normale ignora e che serve solo agli spec per ripetere il gesto.
+    // ------------------------------------------------------------------
+    const ID2 = {
+        sogen: 580,          // Magia Terreno: Guerrieri +200 ATK/DEF
+        scudo: 148,          // Scudo Lustro Giallo, Magia Continua: +300 DEF
+        rinascita: 35,       // Rinascita del Mostro
+        testaX: 510,         // Cannone Testa X
+        testaY: 513,         // Testa di Drago Y
+        cannoneXY: 511       // Cannone Drago XY (Fusione senza Polimerizzazione)
+    };
+    const selZona = (zona) => `#playerFieldBoard .field-slot[data-owner="player"][data-zone="${zona}"]`;
+    const elZona = (zona) => document.querySelector(selZona(zona));
+    const posizioneMostro = (posto, id) => {
+        const s = (Tavolo.mostri(posto) || []).find((x) => x && x.card && x.card.id === id);
+        return s ? s.position : null;
+    };
+    /** Selettore della casella del TUO mostro con quell'id (per consentire solo quella). */
+    function selCasellaMostro(id) {
+        const i = (Tavolo.mostri('player') || []).findIndex((s) => s && s.card && s.card.id === id);
+        return i < 0 ? '#playerFieldBoard .__nessuna' : `${SEL_MOSTRI}[data-index="${i}"]`;
+    }
+    function casellaNonno(id) {
+        const i = (Tavolo.mostri('bot') || []).findIndex((s) => s && s.card && s.card.id === id);
+        return i < 0 ? null : document.querySelector(`#botFieldBoard .field-slot[data-owner="bot"][data-type="monster"][data-index="${i}"]`);
+    }
+    const nessunaCinematica = () => !(window.FX && typeof FX.isCinematicPlaying === 'function' && FX.isCinematicPlaying());
+    const turnoDelGiocatore = () => gameState.phase === 'main1' && gameState.currentPlayer === 'player';
+    const campoAttivo = (id) => { const f = gameState.playerFieldSpell; return !!(f && f.card && f.card.id === id); };
+    /** Bersaglio standard di "attiva una carta dalla mano": carta, poi popover, poi conferma. */
+    const bersaglioAttivazione = (id) => (pickerAperto() ? null : modaleAperto() ? document.getElementById('activateConfirmBtn')
+        : popoverAperto() || elCartaInMano(id));
+
+    // --- Attacco e Difesa --------------------------------------------
+    // Il giocatore ha tre mostri e il nonno due: un Elfo in Attacco e uno
+    // Skull Servant in Difesa. Si cambia Posizione a Robolady, poi due
+    // attacchi: ATK contro ATK (si perde la differenza) e ATK contro DEF
+    // (nessun danno ai Life Point). `turn = 3` perché nel primo turno del
+    // duello non si può entrare in Battle Phase.
+    function preparaBattaglia() {
+        preparaBreve({
+            manoGiocatore: [ID.servo],
+            mostriGiocatore: [mostro(ID.gaia), mostro(ID.celtico), mostro(ID.robolady)],
+            mostriNonno: [mostro(ID.elfi), mostro(ID.servo, 'defense')]
+        });
+        gameState.turn = 3;
+    }
+    const PASSI_BATTAGLIA = [
+        {
+            testo: 'Ogni mostro ha due valori: ATK, la forza quando attacca, e DEF, la forza quando si difende. In Posizione di Attacco (in piedi) conta l\'ATK; in Posizione di Difesa (di lato) conta la DEF.',
+            avanti: true,
+            pronto: () => turnoDelGiocatore(),
+            attesa: 'Un attimo, il turno si sta preparando…'
+        },
+        {
+            testo: 'Guarda il mio campo: gli Elfi Gemelli sono in Attacco con 1900 ATK, lo Skull Servant è in Difesa con 200 DEF.',
+            bersaglio: () => document.getElementById('botFieldBoard'),
+            avanti: true
+        },
+        {
+            testo: 'Il tuo Robolady ha solo 450 ATK ma 900 DEF: è più utile a difendere. Tocca il Robolady e scegli la Posizione di Difesa (lo scudo). Si può cambiare una volta per turno, nella Main Phase.',
+            bersaglio: () => popoverAperto() || document.querySelector(selCasellaMostro(ID.robolady)),
+            consenti: () => [selCasellaMostro(ID.robolady), SEL_POPOVER],
+            fatto: () => posizioneMostro('player', ID.robolady) === 'defense'
+        },
+        {
+            testo: 'Ora si combatte: tocca "Battaglia" per entrare nella Battle Phase.',
+            bersaglio: () => document.querySelector('.phase-step[data-phase="battle"]'),
+            consenti: () => ['.phase-step[data-phase="battle"]'],
+            fatto: () => gameState.phase === 'battle'
+        },
+        {
+            testo: 'Gaia ha 2300 ATK, più dei miei 1900. Trascina Gaia sugli Elfi Gemelli per attaccarli.',
+            bersaglio: () => document.querySelector(selCasellaMostro(ID.gaia)),
+            trascina: () => casellaNonno(ID.elfi),
+            consenti: () => [selCasellaMostro(ID.gaia), '#botFieldBoard', '#botInfo', SEL_POPOVER],
+            fatto: () => nelCimitero('bot', ID.elfi)
+        },
+        {
+            testo: 'Gli Elfi sono distrutti! Quando due mostri in Attacco si scontrano vince l\'ATK più alto, e chi controlla il perdente subisce la DIFFERENZA come danno: 2300 − 1900 = 400. Ora ho 7600 Life Point.',
+            bersaglio: () => document.getElementById('botInfo'),
+            avanti: true,
+            pronto: () => gameState.botLP < 8000 && catenaVuota() && nessunaCinematica()
+        },
+        {
+            testo: 'Ora il Guerriero Celtico (1400 ATK) attacca il mio Skull Servant, che è in Difesa con 200 DEF. Trascina il Celtico sullo Skull Servant.',
+            bersaglio: () => document.querySelector(selCasellaMostro(ID.celtico)),
+            trascina: () => casellaNonno(ID.servo),
+            consenti: () => [selCasellaMostro(ID.celtico), '#botFieldBoard', '#botInfo', SEL_POPOVER],
+            fatto: () => nelCimitero('bot', ID.servo)
+        },
+        {
+            testo: 'Contro un mostro in Difesa si confronta l\'ATK con la sua DEF: 1400 batte 200, il Servo è distrutto, ma io non perdo nemmeno un Life Point (ne ho ancora 7600). Se invece la DEF fosse stata più alta dell\'ATK, il mostro in Difesa sarebbe rimasto in campo e avresti perso tu la differenza.',
+            bersaglio: () => document.getElementById('botInfo'),
+            avanti: true,
+            pronto: () => catenaVuota() && nessunaCinematica()
+        },
+        { fine: true, testo: 'Lezione completata! Prima di attaccare confronta sempre ATK e DEF: un attacco sbagliato costa mostri e Life Point.' }
+    ];
+
+    // --- Magie e Trappole che restano (Continue e Terreno) ------------
+    function preparaContinue() {
+        preparaBreve({
+            manoGiocatore: [ID2.sogen, ID2.scudo],
+            mostriGiocatore: [mostro(ID.gaia), mostro(ID.celtico)],
+            mostriNonno: [mostro(ID.elfi)]
+        });
+    }
+    const PASSI_CONTINUE = [
+        {
+            testo: 'Alcune carte non spariscono dopo l\'uso: restano sul Terreno e il loro effetto dura finché restano lì. Sono le Magie e Trappole Continue e le Magie Terreno.',
+            avanti: true,
+            pronto: () => turnoDelGiocatore(),
+            attesa: 'Un attimo, il turno si sta preparando…'
+        },
+        {
+            testo: 'Cominciamo dalla Magia Terreno Sogen: i mostri Guerriero guadagnano 200 ATK e DEF. Ha una zona tutta sua. Toccala e attivala.',
+            bersaglio: () => bersaglioAttivazione(ID2.sogen),
+            consenti: () => [selCartaInMano(ID2.sogen), SEL_POPOVER, '#activateConfirmBtn', '#activateModal'],
+            fatto: () => campoAttivo(ID2.sogen)
+        },
+        {
+            testo: 'Ecco la zona Terreno, e Gaia (Guerriero) è salita a 2500 ATK. Ce n\'è una sola alla volta: se ne attivi un\'altra, prende il posto della precedente.',
+            bersaglio: () => elZona('fieldSpell'),
+            avanti: true,
+            pronto: () => catenaVuota() && nessunaCinematica()
+        },
+        {
+            testo: 'Ora una Magia Continua: Scudo Lustro Giallo dà 300 DEF a tutti i tuoi mostri. Attivala: occuperà una zona Magia/Trappola.',
+            bersaglio: () => bersaglioAttivazione(ID2.scudo),
+            consenti: () => [selCartaInMano(ID2.scudo), SEL_POPOVER, '#activateConfirmBtn', '#activateModal'],
+            fatto: () => inMagieTrappole('player', ID2.scudo)
+        },
+        {
+            testo: 'Finché Scudo Lustro Giallo resta lì, i tuoi mostri hanno più DEF. Ma una carta che resta è anche un bersaglio: se l\'avversario la distrugge, il bonus finisce. Le Trappole Continue funzionano allo stesso modo, solo che prima si mettono coperte.',
+            bersaglio: () => document.querySelector(`${SEL_MT}[data-index="${(Tavolo.magieTrappole('player') || []).findIndex((s) => s && s.card && s.card.id === ID2.scudo)}"]`),
+            avanti: true,
+            pronto: () => catenaVuota() && nessunaCinematica()
+        },
+        { fine: true, testo: 'Lezione completata! Le carte che restano danno vantaggio ogni turno, ma se vengono distrutte non servono più: scegli il momento giusto per giocarle.' }
+    ];
+
+    // --- Evocazione Speciale -----------------------------------------
+    function preparaSpeciale() {
+        preparaBreve({
+            manoGiocatore: [ID2.rinascita],
+            mostriGiocatore: [mostro(ID2.testaX), mostro(ID2.testaY)],
+            extraGiocatore: [ID2.cannoneXY]
+        });
+        gameState[Tavolo.chiave('player', 'Graveyard')] = carte([ID.gaia]);
+    }
+    const PASSI_SPECIALE = [
+        {
+            testo: 'L\'Evocazione Normale è una sola per turno. Ma molte carte ti permettono un\'Evocazione Speciale: un mostro che entra in campo per un effetto, senza usare quella Normale.',
+            avanti: true,
+            pronto: () => turnoDelGiocatore(),
+            attesa: 'Un attimo, il turno si sta preparando…'
+        },
+        {
+            testo: 'Nel tuo Cimitero c\'è Gaia il Cavaliere Feroce, distrutto in un duello passato. Il Cimitero raccoglie le carte distrutte o scartate: alcune carte le riportano in gioco.',
+            bersaglio: () => elZona('graveyard'),
+            avanti: true
+        },
+        {
+            testo: 'Rinascita del Mostro riporta un mostro dal Cimitero sul Terreno. Toccala e attivala, poi scegli Gaia dalla lista.',
+            bersaglio: () => {
+                if (pickerAperto()) {
+                    const gaia = (gameState.playerGraveyard || []).find((c) => c && c.id === ID.gaia);
+                    return elNelPicker(gaia && gaia.uid);
+                }
+                return bersaglioAttivazione(ID2.rinascita);
+            },
+            consenti: () => [selCartaInMano(ID2.rinascita), SEL_POPOVER, '#activateConfirmBtn', '#activateModal', '#cardListPickerModal'],
+            fatto: () => inCampo('player', ID.gaia)
+        },
+        {
+            testo: 'Gaia è tornata in campo con un\'Evocazione Speciale, e non hai usato l\'Evocazione Normale del turno.',
+            bersaglio: () => document.querySelector(selCasellaMostro(ID.gaia)),
+            avanti: true,
+            pronto: () => catenaVuota() && nessunaCinematica()
+        },
+        {
+            testo: 'Ora guarda il tuo Extra Deck: pulsa in viola. Hai sul Terreno Cannone Testa X e Testa di Drago Y: sono i materiali per Cannone Drago XY, che si evoca anche senza la carta Fusione.',
+            bersaglio: () => elZona('fusion'),
+            avanti: true
+        },
+        {
+            testo: 'Tocca l\'Extra Deck: le carte evocabili sono evidenziate. Scegli Cannone Drago XY. I due materiali verranno BANDITI dal gioco, non mandati al Cimitero.',
+            bersaglio: () => (pickerAperto() ? elNelPicker((Tavolo.extraDeck('player')[0] || {}).uid) : elZona('fusion')),
+            consenti: () => [SEL_EXTRA, '#cardListPickerModal', '#activateModal'],
+            fatto: () => inCampo('player', ID2.cannoneXY)
+        },
+        {
+            testo: 'Ecco Cannone Drago XY, 2200 ATK. Controlla sempre cosa richiede un mostro dell\'Extra Deck: la Fusione con Polimerizzazione usa la mano e il Terreno, questa combinazione solo i mostri scoperti sul Terreno.',
+            bersaglio: () => document.querySelector(selCasellaMostro(ID2.cannoneXY)),
+            avanti: true,
+            pronto: () => catenaVuota() && nessunaCinematica()
+        },
+        { fine: true, testo: 'Lezione completata! Le Evocazioni Speciali ti danno mostri in più senza toccare l\'Evocazione Normale: è così che si costruisce un campo forte.' }
+    ];
+
+    // --- Il campo di gioco -------------------------------------------
+    function preparaCampo() {
+        preparaBreve({
+            manoGiocatore: [ID.servo, ID.robolady, ID.celtico],
+            mostriGiocatore: [mostro(ID.celtico)],
+            mtGiocatore: [copertaPronta(ID.giudizio)],
+            extraGiocatore: [ID.gaiaCampione]
+        });
+        gameState[Tavolo.chiave('player', 'Graveyard')] = carte([ID.raigeki]);
+    }
+    const primaCasella = (tipo) => document.querySelector(`#playerFieldBoard .field-slot[data-owner="player"][data-type="${tipo}"]`);
+    const PASSI_CAMPO = [
+        {
+            testo: 'Facciamo un giro del campo, zona per zona. Non devi toccare niente: leggi e premi Avanti.',
+            avanti: true,
+            pronto: () => turnoDelGiocatore(),
+            attesa: 'Un attimo, il turno si sta preparando…'
+        },
+        {
+            testo: 'La riga dei mostri: fino a 5 mostri. In piedi sono in Attacco, di lato in Difesa, coperti se in Difesa a faccia in giù.',
+            bersaglio: () => { const c = primaCasella('monster'); return c && c.parentElement; },
+            avanti: true
+        },
+        {
+            testo: 'La riga delle Magie e Trappole: fino a 5 carte. Qui stanno le Trappole coperte, le Magie Continue e gli Equipaggiamenti.',
+            bersaglio: () => { const c = primaCasella('st'); return c && c.parentElement; },
+            avanti: true
+        },
+        {
+            testo: 'Il Terreno: la zona della Magia Terreno, una sola alla volta. Ora è vuota.',
+            bersaglio: () => elZona('fieldSpell'),
+            avanti: true
+        },
+        {
+            testo: 'Il Cimitero: le carte distrutte, usate o scartate finiscono qui, a faccia in su. Sono spesso risorse: alcune carte le riportano in gioco.',
+            bersaglio: () => elZona('graveyard'),
+            avanti: true
+        },
+        {
+            testo: 'L\'Extra Deck, o zona Fusion: i mostri Fusione stanno qui, fuori dal mazzo, e si evocano con i loro materiali. Se pulsa, puoi evocare qualcosa adesso.',
+            bersaglio: () => elZona('fusion'),
+            avanti: true
+        },
+        {
+            testo: 'Il Deck: da qui peschi una carta a ogni turno. Se devi pescare e non ce ne sono più, perdi il duello.',
+            bersaglio: () => elZona('deck'),
+            avanti: true
+        },
+        {
+            testo: 'La mano: a fine turno puoi tenere al massimo 6 carte, e se ne hai di più scarti l\'eccesso. Conviene giocare le carte, non accumularle.',
+            bersaglio: () => document.getElementById('playerHand'),
+            avanti: true
+        },
+        {
+            testo: 'Come si vince: porti a zero i Life Point dell\'avversario, oppure lui non può più pescare. Esistono anche vittorie speciali, come avere in mano tutti e 5 i pezzi di Exodia il Proibito.',
+            bersaglio: () => document.getElementById('playerInfo'),
+            avanti: true
+        },
+        {
+            testo: 'E il turno ha le sue fasi: Draw, Standby, Main 1, Battle, Main 2, End. Puoi passare a quella che vuoi con la barra qui sopra, ma l\'ordine è sempre lo stesso.',
+            bersaglio: () => document.getElementById('phaseStepper'),
+            avanti: true
+        },
+        { fine: true, testo: 'Lezione completata! Ora conosci le zone del campo: la prossima volta che una carta dice "Cimitero" o "Extra Deck" saprai dove guardare.' }
+    ];
+
     const LEZIONI = {
         nonno: { prepara: preparaLezione, passi: PASSI_NONNO },
+        battaglia: { prepara: preparaBattaglia, passi: PASSI_BATTAGLIA },
+        continue: { prepara: preparaContinue, passi: PASSI_CONTINUE },
+        speciale: { prepara: preparaSpeciale, passi: PASSI_SPECIALE },
+        campo: { prepara: preparaCampo, passi: PASSI_CAMPO },
         catena: { prepara: preparaCatena, passi: PASSI_CATENA },
         fusione: { prepara: preparaFusione, passi: PASSI_FUSIONE },
         flip: { prepara: preparaFlip, passi: PASSI_FLIP },
