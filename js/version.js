@@ -32,6 +32,9 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.3.28 — Scheda carta: un tocco sulla carta la mostra a tutto schermo, con le
+ *   stesse proporzioni e il suo effetto; un altro tocco (o Esc) la richiude.
+ *
  * 1.3.27 — Quattro nuove lezioni nel Tutorial: Il campo di gioco, Attacco e
  *   Difesa, L'Evocazione Speciale (Rinascita del Mostro e Cannoni senza
  *   Polimerizzazione), Carte che restano sul campo (Continue e Terreno).
@@ -736,4 +739,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.3.27';
+window.GAME_VERSION = '1.3.28';

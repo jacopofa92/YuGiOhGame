@@ -50,6 +50,8 @@
     // Le opzioni della scheda aperta adesso: servono ad aggiorna(), che
     // ridisegna riepilogo e pulsanti dopo un'azione senza riaprire tutto.
     let opzioniCorrenti = null;
+    // La carta mostrata adesso: serve all'ingrandimento a tutto schermo.
+    let cartaCorrente = null;
 
     function costruisci() {
         if (backdrop) return;
@@ -91,6 +93,8 @@
         window.addEventListener('keydown', (e) => {
             if (e.key !== 'Escape' || !isOpen()) return;
             e.stopPropagation();
+            // Prima la carta a tutto schermo, poi (col secondo Esc) la scheda.
+            if (schermoIntero) { chiudiSchermoIntero(); return; }
             close();
         }, true);
     }
@@ -111,12 +115,24 @@
         if (!card) return;
         costruisci();
         opzioniCorrenti = opzioni || null;
+        cartaCorrente = card;
+        chiudiSchermoIntero();
 
         preview.innerHTML = '';
         if (typeof window.createCardElement === 'function') {
             const tile = window.createCardElement(card);
             tile.onclick = null;
+            // Un tocco sulla carta la mostra a tutto schermo (vedi sopra).
+            tile.addEventListener('click', apriSchermoIntero);
+            tile.title = 'Tocca per vederla a tutto schermo';
             preview.appendChild(tile);
+            // La lente sta SULLA carta (non sul riquadro, che su un telefono
+            // è largo quanto la scheda), sull'illustrazione.
+            const indizio = document.createElement('span');
+            indizio.className = 'cd-ingrandisci';
+            indizio.setAttribute('aria-hidden', 'true');
+            indizio.textContent = '⤢';
+            tile.appendChild(indizio);
             // La carta protagonista della scheda si inclina e riflette la
             // luce secondo la sua rarità (js/ui/card-renderer.js): il mouse
             // si ascolta su tutta l'anteprima, sul telefono il giroscopio.
@@ -203,9 +219,51 @@
         }
     }
 
+    // ------------------------------------------------------------------
+    // CARTA A TUTTO SCHERMO: un tocco sulla carta della scheda la mostra
+    // grande quanto lo schermo permette, con le STESSE proporzioni (la
+    // larghezza è il minore fra quella dello schermo e quella che l'altezza
+    // permette: `--card-w` fa il resto, la carta si ridisegna da sé perché
+    // tutta la sua grafica è in unità del contenitore). Ha il suo effetto
+    // "carta viva" (riflesso, lucido, giroscopio) e un nuovo tocco la
+    // chiude — sulla carta o fuori, è lo stesso. Esc chiude solo lei.
+    // ------------------------------------------------------------------
+    let schermoIntero = null;
+
+    function apriSchermoIntero() {
+        if (schermoIntero || !cartaCorrente || typeof window.createCardElement !== 'function') return;
+        const sfondo = document.createElement('div');
+        sfondo.className = 'cd-schermo-intero';
+        sfondo.setAttribute('role', 'dialog');
+        sfondo.setAttribute('aria-label', 'Carta a tutto schermo');
+        const tile = window.createCardElement(cartaCorrente);
+        tile.onclick = null;
+        tile.title = 'Tocca per tornare indietro';
+        sfondo.appendChild(tile);
+        sfondo.addEventListener('click', chiudiSchermoIntero);
+        document.body.appendChild(sfondo);
+        schermoIntero = sfondo;
+        // Il mouse si ascolta su tutto lo schermo, il giroscopio come sempre.
+        if (window.CartaViva) CartaViva.rendi(tile, cartaCorrente, { modo: 'grande', area: sfondo });
+        // Un frame dopo, così la transizione di apertura parte davvero.
+        requestAnimationFrame(() => { if (schermoIntero === sfondo) sfondo.classList.add('cd-schermo-intero--aperto'); });
+    }
+
+    function chiudiSchermoIntero() {
+        if (!schermoIntero) return;
+        const sfondo = schermoIntero;
+        schermoIntero = null;
+        sfondo.classList.remove('cd-schermo-intero--aperto');
+        sfondo.classList.add('cd-schermo-intero--esce');
+        // Fuori subito dal flusso (un altro tocco non deve ritrovarlo), via dal DOM a fine dissolvenza.
+        setTimeout(() => sfondo.remove(), 180);
+    }
+
     function close() {
+        chiudiSchermoIntero();
         if (backdrop) backdrop.classList.remove('open');
         opzioniCorrenti = null;
+        cartaCorrente = null;
     }
 
     function isOpen() {

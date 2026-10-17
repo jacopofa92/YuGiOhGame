@@ -67,6 +67,44 @@
     touch-action: pan-y;
 }
 .cd-preview .card:hover { transform: none; }
+.cd-preview { position: relative; }
+/* Un tocco sulla carta la ingrandisce a tutto schermo: la lente lo dice. */
+.cd-preview .card { cursor: zoom-in; }
+.cd-ingrandisci {
+    position: absolute; right: 7%; bottom: 25%; z-index: 5;
+    width: 26px; height: 26px; border-radius: 50%;
+    display: grid; place-items: center;
+    font-size: 0.95rem; line-height: 1; color: #f7d774;
+    background: rgba(7, 10, 20, 0.72); border: 1px solid rgba(247, 215, 116, 0.5);
+    pointer-events: none;
+}
+
+/* ============================================================
+   Carta a tutto schermo (vedi apriSchermoIntero nel .js). La larghezza è la
+   minore fra quella dello schermo e quella che l'altezza permette per le
+   proporzioni reali della carta: mai stirata, mai tagliata. `scale` e non
+   `transform` per l'apertura: su una carta viva il transform è dell'effetto
+   di inclinazione (!important), `scale` è una proprietà a parte.
+   ============================================================ */
+.cd-schermo-intero {
+    position: fixed; inset: 0; z-index: 700;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(2, 5, 12, 0.95);
+    opacity: 0; transition: opacity 0.18s ease;
+    cursor: zoom-out;
+}
+.cd-schermo-intero--aperto { opacity: 1; }
+.cd-schermo-intero--esce { opacity: 0; pointer-events: none; }
+.cd-schermo-intero .card {
+    --card-w: min(94vw, calc(94dvh * var(--card-ratio)));
+    --card-h: calc(var(--card-w) / var(--card-ratio));
+    cursor: zoom-out;
+    touch-action: manipulation;
+    scale: 0.86;
+    transition: scale 0.22s cubic-bezier(0.22, 0.7, 0.25, 1);
+}
+.cd-schermo-intero--aperto .card { scale: 1; }
+.cd-schermo-intero .card:hover { transform: none; }
 
 .cd-info { flex: 1 1 220px; min-width: 0; }
 .cd-name {
