@@ -4,7 +4,10 @@
 <meta charset="UTF-8">
 <!-- Opt-in STATICO alla View Transitions API — deve stare qui, non iniettato via JS in ritardo (vedi js/audio/audio-manager.js per la storia completa del bug che questo risolve). -->
 <style>@view-transition { navigation: auto; }</style>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- interactive-widget=resizes-content: la tastiera di Android RIDUCE la
+     pagina invece di coprirla (supportato da Chrome e dalla WebView dell'APK);
+     dove non basta, vedi la gestione della tastiera nello script del gate. -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="images/icons/icon-192.png">
 <link rel="apple-touch-icon" href="images/icons/icon-180.png">
@@ -609,9 +612,16 @@
         flex-direction: column;
         align-items: center;
         justify-content: flex-start;
-        padding: max(16px, 12vh) 16px 16px;
+        /* In fondo, lo spazio della tastiera (--tastiera, vedi lo script
+           "tastiera" più sotto): senza, il box dell'ultimo campo finiva
+           SOTTO la tastiera di Android e non si poteva scorrere fin lì. */
+        padding: max(16px, 12vh) 16px calc(16px + var(--tastiera, 0px));
         gap: clamp(14px, 3vh, 26px);
     }
+    /* Col gate visibile la pagina deve poter scorrere (body è overflow:hidden
+       per il menu): serve a portare in vista il campo che ha il focus. */
+    body:has(#gateShell[style*="flex"]) { overflow-y: auto; overflow-x: hidden; }
+    .menu-modal-backdrop { padding-bottom: calc(20px + var(--tastiera, 0px)); }
     .gate-card {
         position: relative;
         width: min(92vw, 430px);
@@ -888,7 +898,7 @@
         .menu-item-icon { font-size: 1rem; }
         .menu-item-arrow { font-size: 1rem; }
         .menu-footer { position: static; margin-top: 10px; transform: none; }
-        .gate-shell { min-height: auto; padding: 10px 16px 18px; gap: 4px; }
+        .gate-shell { min-height: auto; padding: 10px 16px calc(18px + var(--tastiera, 0px)); gap: 4px; }
         .gate-card { gap: 8px; padding: 13px 16px; }
         .gate-copy { display: none; }
         .gate-kicker { margin-bottom: 2px; }
@@ -5590,6 +5600,59 @@
             document.getElementById('gateForgotLink').style.display = 'none';
             setGateStatus('login', '⚠️ Accesso non configurato su questo gioco (js/cloud/supabase-config.js). Contatta chi gestisce il server per attivarlo.', 'error');
         }
+
+        /**
+         * Tastiera a schermo (APK/Android): non deve coprire il campo che si
+         * sta scrivendo, nel gate di accesso e nei modali con un input.
+         * Tre strati, perché la WebView non si comporta allo stesso modo su
+         * ogni Android (da Android 15 la pagina è a tutto schermo e la
+         * tastiera può SOVRAPPORSI senza ridimensionarla):
+         *  1) il meta viewport `interactive-widget=resizes-content` fa
+         *     ridurre la pagina alla tastiera dove è supportato;
+         *  2) `--tastiera` (px) = quanto della pagina la tastiera copre, da
+         *     visualViewport; gate e modali lo usano come spazio in fondo,
+         *     così c'è sempre da scorrere fin sotto al campo;
+         *  3) se al focus non arriva NESSUN segnale (né ridimensionamento né
+         *     visualViewport più basso) su un dispositivo a tocco, si
+         *     riserva uno spazio di ripiego (45% dell'altezza): meglio un
+         *     po' di vuoto in fondo che un campo nascosto.
+         * Il campo con il focus viene poi portato al centro dello schermo.
+         */
+        (function gestioneTastiera() {
+            const radice = document.documentElement;
+            const vv = window.visualViewport;
+            const èCampo = (el) => !!el && /^(INPUT|TEXTAREA)$/.test(el.tagName);
+            let altezzaAlFocus = 0;
+            const imposta = (px) => radice.style.setProperty('--tastiera', px + 'px');
+            const aggiorna = () => {
+                if (!vv) return;
+                imposta(Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)));
+            };
+            const portaInVista = () => {
+                if (èCampo(document.activeElement)) document.activeElement.scrollIntoView({ block: 'center', behavior: 'smooth' });
+            };
+            if (vv) {
+                vv.addEventListener('resize', () => { aggiorna(); portaInVista(); });
+                vv.addEventListener('scroll', aggiorna);
+            }
+            document.addEventListener('focusin', (e) => {
+                if (!èCampo(e.target)) return;
+                altezzaAlFocus = vv ? vv.height : window.innerHeight;
+                setTimeout(portaInVista, 350);
+                setTimeout(() => {
+                    if (!èCampo(document.activeElement)) return;
+                    const altezzaOra = vv ? vv.height : window.innerHeight;
+                    const senzaSegnale = altezzaOra >= altezzaAlFocus - 80 && !radice.style.getPropertyValue('--tastiera').replace(/^0(px)?$/, '');
+                    if (senzaSegnale && window.matchMedia && matchMedia('(pointer: coarse)').matches) {
+                        imposta(Math.round(window.innerHeight * 0.45));
+                        portaInVista();
+                    }
+                }, 650);
+            });
+            document.addEventListener('focusout', () => {
+                setTimeout(() => { if (!èCampo(document.activeElement)) imposta(0); }, 120);
+            });
+        })();
 
         (function initCloudGate() {
             const cloudUsable = !!(window.CloudSync && CloudSync.available);

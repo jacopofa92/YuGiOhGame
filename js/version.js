@@ -32,6 +32,9 @@
  * in avanti si incrementa DAVVERO ad ogni sessione con cambiamenti
  * visibili, e l'elenco qui sotto tiene traccia di cosa c'è dentro.
  *
+ * 1.3.24 — Accesso e registrazione da APK: la tastiera non copre più i campi
+ *   (spazio in fondo pari alla tastiera, scorrimento e campo portato in vista).
+ *
  * 1.3.23 — Grido di Evocazione: il duellante annuncia la carta simbolo in due
  *   bande oblique con effetto vento; annuncio di turno "TURNO + nome"; il
  *   Piumino delle Arpie sbriciola le carte colpite; campi e musiche di Storia
@@ -722,4 +725,4 @@
  *   torneo paga solo la propria valuta; niente più stiramento elastico
  *   a fine scroll su nessuna pagina.
  */
-window.GAME_VERSION = '1.3.23';
+window.GAME_VERSION = '1.3.24';
