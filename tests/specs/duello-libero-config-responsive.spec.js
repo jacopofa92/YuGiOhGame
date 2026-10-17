@@ -14,6 +14,27 @@ module.exports = {
             await page.click('.cube:not(.cube--bloccato)');
             await page.waitForSelector('#diffModal.open');
 
+            const assetLeggeri = await page.evaluate(() => {
+                const ritratti = Array.from(document.querySelectorAll('.cube-portrait img'));
+                const campi = Array.from(document.querySelectorAll('.ds-field[data-preview]'));
+                const caricati = campi.filter((el) => el.dataset.previewLoaded === '1');
+                return {
+                    ritrattiMiniatura: ritratti.every((img) => /\/images\/characters\/thumbs\/[^/]+\.webp$/.test(new URL(img.src).pathname)),
+                    ritrattiEager: ritratti.filter((img) => img.loading === 'eager').length,
+                    ritrattiLazy: ritratti.filter((img) => img.loading === 'lazy').length,
+                    campiMiniatura: campi.every((el) => /images\/fields\/thumbs\/[^/]+\.webp$/.test(el.dataset.preview || '')),
+                    campiTotali: campi.length,
+                    campiCaricati: caricati.length,
+                    sfondiSoloMiniature: caricati.every((el) => (el.style.backgroundImage || '').includes('/fields/thumbs/'))
+                };
+            });
+            t.assert(assetLeggeri.ritrattiMiniatura, 'La griglia deve usare le miniature WebP dei Duellanti');
+            t.assert(assetLeggeri.ritrattiEager === 8 && assetLeggeri.ritrattiLazy > 0,
+                `Priorita ritratti errata: ${JSON.stringify(assetLeggeri)}`);
+            t.assert(assetLeggeri.campiMiniatura && assetLeggeri.campiCaricati > 0
+                && assetLeggeri.campiCaricati < assetLeggeri.campiTotali && assetLeggeri.sfondiSoloMiniature,
+            `Le anteprime Arena devono essere WebP e lazy: ${JSON.stringify(assetLeggeri)}`);
+
             for (const [width, height] of [[1280, 850], [390, 844], [844, 390]]) {
                 await page.setViewportSize({ width, height });
                 await page.waitForTimeout(120);

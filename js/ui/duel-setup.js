@@ -294,13 +294,37 @@
             el.type = 'button';
             el.className = 'ds-field';
             el.dataset.file = campo.file;
-            el.style.backgroundImage = `url('${window.ArenaOptions.imageFor(campo.file)}')`;
+            el.dataset.preview = window.ArenaOptions.previewFor
+                ? window.ArenaOptions.previewFor(campo.file)
+                : window.ArenaOptions.imageFor(campo.file);
             const nome = document.createElement('span');
             nome.className = 'ds-field-name';
             nome.textContent = campo.nome;
             el.appendChild(nome);
             stripArene.appendChild(el);
         });
+
+        // Le background-image CSS non supportano loading="lazy": prima tutte
+        // le 36 arene partivano insieme, comprese quelle molto oltre il bordo
+        // destro dello strip. L'observer carica la miniatura solo quando sta
+        // per entrare nella zona scorribile; il fallback copre browser vecchi.
+        const caricaAnteprimaCampo = (el) => {
+            if (!el || !el.dataset.preview || el.dataset.previewLoaded === '1') return;
+            el.dataset.previewLoaded = '1';
+            el.style.backgroundImage = `url('${el.dataset.preview}')`;
+        };
+        if ('IntersectionObserver' in window) {
+            const osservaArene = new IntersectionObserver((entries, observer) => {
+                entries.forEach((entry) => {
+                    if (!entry.isIntersecting) return;
+                    caricaAnteprimaCampo(entry.target);
+                    observer.unobserve(entry.target);
+                });
+            }, { root: stripArene, rootMargin: '0px 240px' });
+            stripArene.querySelectorAll('.ds-field[data-preview]').forEach((el) => osservaArene.observe(el));
+        } else {
+            stripArene.querySelectorAll('.ds-field[data-preview]').forEach(caricaAnteprimaCampo);
+        }
 
         stripArene.querySelectorAll('.ds-field').forEach((el) => {
             el.onclick = () => {

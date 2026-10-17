@@ -253,6 +253,19 @@ al primo accesso soprattutto su mobile. CSS e JavaScript lazy ora partono in
 parallelo, l'initializer restituisce la propria Promise e un tocco anticipato
 su un Duellante aspetta quella stessa Promise invece di andare in errore.
 Non e' stato allungato il loader: il difetto era nell'ordine di inizializzazione.
+
+### Miniature dei selettori (2026-10-17)
+
+La griglia dei Duellanti non decodifica piu' i ritratti originali da
+1024/1254 px dentro tessere da circa 150-190 px: usa i WebP 512x512 sotto
+`images/characters/thumbs/`, caricando con priorita' soltanto i primi otto.
+Il selettore Arena condiviso fra Duello Libero e Multiplayer usa invece
+`images/fields/thumbs/` (480x300) e assegna lo sfondo tramite
+`IntersectionObserver`, quindi i field fuori dallo strip orizzontale non
+partono tutti insieme. Gli originali restano invariati e sono ancora usati
+nel duello e nelle scene. Le due serie di asset si rigenerano con
+`npm run build-ui-thumbnails`; il guardrail e' nello spec
+`duello-libero-config-responsive`.
 Guardrail: `duello-libero-topbar-immediata`.
 
 Lo strumento `tools/simula-economia.js` misura il farming leggendo direttamente

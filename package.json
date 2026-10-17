@@ -9,6 +9,7 @@
     "hooks": "git config core.hooksPath .githooks",
     "precommit": "node scripts/pre-commit.js",
     "sync-scripts": "node scripts/sync-script-groups.js",
+    "build-ui-thumbnails": "node scripts/build-ui-thumbnails.js",
     "typecheck": "tsc -p jsconfig.json",
     "pubblica": "node scripts/pubblica.js",
     "verifica-pubblicazione": "node scripts/verifica-pubblicazione.js"

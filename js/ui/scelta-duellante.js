@@ -50,7 +50,13 @@
     const roster = () => (typeof characterDatabase !== 'undefined' ? characterDatabase : []);
     const sbloccato = (c) => !(window.CharacterUnlocks && !CharacterUnlocks.sbloccato(c.id));
 
-    function creaCarta(character, opzioni) {
+    function miniaturaRitratto(percorso) {
+        const parti = String(percorso || '').split('/');
+        const nome = (parti.pop() || '').replace(/\.[^.]+$/, '');
+        return nome ? `images/characters/thumbs/${nome}.webp` : percorso;
+    }
+
+    function creaCarta(character, opzioni, prioritaria) {
         const record = (typeof getCharacterRecord === 'function') ? getCharacterRecord(character.id) : { wins: 0, losses: 0 };
         const bloccato = !sbloccato(character);
         const cube = document.createElement('div');
@@ -87,10 +93,25 @@
 
         const img = document.createElement('img');
         img.alt = character.name;
-        img.loading = 'lazy';
+        // I primi ritratti sono gia' dentro il viewport: marcarli lazy fa
+        // comparire per un istante il fallback anche con una rete veloce.
+        // Tutti gli altri restano pigri e vengono decodificati fuori dal
+        // thread che sta costruendo la griglia.
+        img.loading = prioritaria ? 'eager' : 'lazy';
+        img.fetchPriority = prioritaria ? 'high' : 'low';
+        img.decoding = 'async';
+        img.width = 512;
+        img.height = 512;
         img.onload = () => { const f = cube.querySelector('.cube-portrait-fallback'); if (f) f.remove(); };
-        img.onerror = () => img.remove();
-        img.src = character.image;
+        img.onerror = () => {
+            // Compatibilita' con salvataggi/personaggi custom o una nuova
+            // immagine aggiunta prima di rigenerare le miniature.
+            if (img.dataset.originalFallback !== '1' && character.image) {
+                img.dataset.originalFallback = '1';
+                img.src = character.image;
+            } else img.remove();
+        };
+        img.src = miniaturaRitratto(character.image);
         cube.querySelector('.cube-portrait').insertBefore(img, cube.querySelector('.cube-name'));
 
         const scegli = () => {
@@ -161,6 +182,7 @@
 
             const griglia = el.querySelector('[data-sd="griglia"]');
             griglia.innerHTML = '';
+            let indiceRitratto = 0;
             gruppi.forEach((g) => {
                 const sezione = document.createElement('div');
                 sezione.className = 'series-section';
@@ -169,7 +191,10 @@
                 sezione.innerHTML = `<div class="series-title"><span>${esc(g.nome)}</span><span class="series-count">${liberiQui}/${g.elenco.length}</span></div>`;
                 const grid = document.createElement('div');
                 grid.className = 'cube-grid';
-                g.elenco.forEach((c) => grid.appendChild(creaCarta(c, opzioni)));
+                g.elenco.forEach((c) => {
+                    grid.appendChild(creaCarta(c, opzioni, indiceRitratto < 8));
+                    indiceRitratto++;
+                });
                 sezione.appendChild(grid);
                 griglia.appendChild(sezione);
             });

@@ -134,6 +134,10 @@
         TRACKS: TRACKS,
         RANDOM: RANDOM,
         imageFor: (file) => `images/fields/${file}`,
+        // I selettori mostrano rettangoli di circa 150x90 px: caricare qui
+        // il fondale da 1,5 megapixel spreca banda e memoria di decodifica.
+        // Il duello continua invece a usare imageFor() e quindi l'originale.
+        previewFor: (file) => `images/fields/thumbs/${String(file).replace(/\.[^.]+$/, '')}.webp`,
         audioFor: (file) => `audio/soundtracks/${file}`,
         nomeCampo: (file) => (FIELDS.find((f) => f.file === file) || {}).nome || 'Arena',
         nomeTraccia: (file) => (TRACKS.find((t) => t.file === file) || {}).nome || 'Colonna sonora',
