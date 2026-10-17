@@ -494,7 +494,8 @@
 // v276: dorso CSS alleggerito eliminando i doppi contorni interni.
 // v277: stepper senza bordi, stato corrente affidato alla luce dell'icona.
 // v278: passaggio morra-arena mobile senza layer e animazioni concorrenti.
-const CACHE_NAME = 'ygo-duel-arena-v278';
+// v279: nomi compatti e invito all'azione rendono leggibili le fasi.
+const CACHE_NAME = 'ygo-duel-arena-v279';
 
 // L'intera "app shell": tutte le pagine HTML + tutto il codice JS/CSS che
 // le fa funzionare. Leggero (pochi MB in tutto), quindi si può precaricare

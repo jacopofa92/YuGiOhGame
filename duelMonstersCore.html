@@ -4379,8 +4379,9 @@
             .card-info-content p { margin-top: 5px; margin-bottom: 14px; }
         }
 
-        /* Stepper senza pulsanti visibili: la gerarchia vive esclusivamente
-           nelle icone. Il colore deriva dal field tramite --fase-accento;
+        /* Stepper senza pulsanti visibili: icona e nome formano una fase,
+           mentre ORA/VAI chiariscono lo stato e l'azione senza ricreare le
+           vecchie pillole. Il colore deriva dal field tramite --fase-accento;
            nessuno stato modifica ingombro o posizione. */
         .phase-stepper::before,
         .phase-step::after {
@@ -4430,6 +4431,26 @@
         .phase-stepper .phase-step .step-badge::after {
             content: none;
         }
+        .phase-stepper .phase-step .step-label {
+            color: inherit;
+            transition: color .2s ease, text-shadow .2s ease, opacity .2s ease;
+        }
+        .phase-stepper .phase-step .step-label::before {
+            margin-right: .28em;
+            color: color-mix(in srgb, currentColor 82%, var(--fase-accento));
+            font-size: .72em;
+            font-weight: 900;
+            letter-spacing: .09em;
+        }
+        .phase-stepper .phase-step.active .step-label::before {
+            content: 'ORA ·';
+        }
+        .phase-stepper .phase-step.clickable:not(.active) .step-label::before {
+            content: 'VAI ·';
+        }
+        .phase-stepper .phase-step.completed .step-label::before {
+            content: '✓';
+        }
         .phase-stepper .phase-step.active {
             color: color-mix(in srgb, var(--fase-accento) 12%, #fff);
             background: transparent;
@@ -4464,6 +4485,10 @@
             box-shadow: none;
             border-color: transparent;
         }
+        .phase-stepper .phase-step.clickable:not(.active) .step-label {
+            color: color-mix(in srgb, var(--fase-accento) 34%, #fff);
+            text-shadow: 0 0 6px color-mix(in srgb, var(--fase-accento) 24%, transparent);
+        }
         .phase-stepper .phase-step.completed {
             opacity: .62;
             color: color-mix(in srgb, var(--fase-accento) 24%, #aaa69d);
@@ -4479,6 +4504,14 @@
         @keyframes phaseIconGlow {
             0%, 100% { filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 5px color-mix(in srgb, var(--fase-accento) 72%, transparent)) drop-shadow(0 0 9px color-mix(in srgb, var(--fase-accento) 38%, transparent)); }
             50% { filter: drop-shadow(0 0 3px #fff) drop-shadow(0 0 8px color-mix(in srgb, var(--fase-accento) 90%, transparent)) drop-shadow(0 0 15px color-mix(in srgb, var(--fase-accento) 58%, transparent)); }
+        }
+        @keyframes phaseReadyCue {
+            0%, 72%, 100% { opacity: .76; transform: translateX(0); }
+            84% { opacity: 1; transform: translateX(2px); }
+        }
+        .phase-stepper .phase-step.clickable:not(.active) .step-label::before {
+            display: inline-block;
+            animation: phaseReadyCue 2.1s ease-in-out infinite;
         }
         @media (hover: hover) and (pointer: fine) {
             .phase-stepper .phase-step.clickable:not(.active):hover {
@@ -4505,9 +4538,66 @@
         .phase-stepper .phase-step.clickable:not(.active):active .step-icon {
             filter: brightness(1.22) drop-shadow(0 0 7px color-mix(in srgb, var(--fase-accento) 72%, transparent));
         }
+        /* Quando il rail e' stretto i nomi non spariscono piu': diventano
+           sigle brevi dentro il sigillo. E' essenziale sul touch, dove non
+           esiste l'hover che spieghi l'icona. */
+        @container phase-rail (max-width: 570px) {
+            .phase-stepper .phase-step .step-badge {
+                align-items: flex-start;
+                padding-top: 3px;
+                box-sizing: border-box;
+            }
+            .phase-stepper .phase-step .step-icon {
+                width: 58%;
+                height: 58%;
+            }
+            .phase-stepper .phase-step .step-label {
+                display: block;
+                position: absolute;
+                z-index: 2;
+                left: 50%;
+                bottom: 1px;
+                width: max-content;
+                max-width: 100%;
+                transform: translateX(-50%);
+                overflow: visible;
+                font-size: 0;
+                line-height: 1;
+                pointer-events: none;
+            }
+            .phase-stepper .phase-step .step-label::before {
+                display: none;
+                animation: none;
+            }
+            .phase-stepper .phase-step .step-label::after {
+                content: attr(data-short);
+                font-size: clamp(5px, 1.75cqw, 7px);
+                font-weight: 900;
+                letter-spacing: .045em;
+                text-transform: uppercase;
+            }
+            .phase-stepper .phase-step.active .step-label::after {
+                content: '◆ ' attr(data-short);
+            }
+            .phase-stepper .phase-step.clickable:not(.active) .step-label::after {
+                content: '› ' attr(data-short);
+                animation: phaseReadyCue 2.1s ease-in-out infinite;
+            }
+            .phase-stepper .phase-step.completed .step-label::after {
+                content: '✓ ' attr(data-short);
+            }
+        }
+        @media (max-height: 420px) {
+            .phase-stepper .phase-step .step-badge { padding-top: 1px; }
+            .phase-stepper .phase-step .step-icon { width: 52%; height: 52%; }
+            .phase-stepper .phase-step .step-label { bottom: 0; }
+            .phase-stepper .phase-step .step-label::after { font-size: 4.5px; }
+        }
         @media (prefers-reduced-motion: reduce) {
             .phase-stepper .phase-step.active .step-badge::before,
-            .phase-stepper .phase-step.active .step-icon {
+            .phase-stepper .phase-step.active .step-icon,
+            .phase-stepper .phase-step.clickable:not(.active) .step-label::before,
+            .phase-stepper .phase-step.clickable:not(.active) .step-label::after {
                 animation: none;
             }
         }
@@ -4791,12 +4881,12 @@
                     <div class="field-board" id="botFieldBoard"></div>
                 </div>
                 <div class="phase-stepper" id="phaseStepper" aria-label="Fasi del turno">
-                    <div class="phase-step" data-phase="draw"><span class="step-badge"><span class="step-num">1</span><span class="step-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="4" width="12" height="16" rx="2"></rect><path d="M9 8h6M9 12h6M9 16h4"></path></svg></span></span><span class="step-label" data-compact="Pesca">Pesca</span></div>
-                    <div class="phase-step" data-phase="standby"><span class="step-badge"><span class="step-num">2</span><span class="step-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10M7 21h10M8 4c0 4 1.7 5.6 4 8-2.3 2.4-4 4-4 8M16 4c0 4-1.7 5.6-4 8 2.3 2.4 4 4 4 8"></path></svg></span></span><span class="step-label" data-compact="Attesa">Standby</span></div>
-                    <div class="phase-step" data-phase="main1"><span class="step-badge"><span class="step-num">3</span><span class="step-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l6 5-2.3 8H8.3L6 8z"></path><circle cx="12" cy="11" r="2.5"></circle></svg></span></span><span class="step-label" data-compact="Main 1">Main 1</span></div>
-                    <div class="phase-step" data-phase="battle"><span class="step-badge"><span class="step-num">4</span><span class="step-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4l5.5 6.5M19 4l-5.5 6.5M9 12l-5 6M15 12l5 6M4 18l2 2M20 18l-2 2"></path></svg></span></span><span class="step-label" data-compact="Lotta">Battaglia</span></div>
-                    <div class="phase-step" data-phase="main2"><span class="step-badge"><span class="step-num">5</span><span class="step-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l6 5-2.3 8H8.3L6 8z"></path><circle cx="12" cy="11" r="2.5"></circle></svg></span></span><span class="step-label" data-compact="Main 2">Main 2</span></div>
-                    <div class="phase-step" data-phase="end"><span class="step-badge"><span class="step-num">6</span><span class="step-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 21V3M8 4h10l-3 4 3 4H8"></path></svg></span></span><span class="step-label" data-compact="Fine">Fine</span></div>
+                    <div class="phase-step" data-phase="draw"><span class="step-badge"><span class="step-num">1</span><span class="step-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="4" width="12" height="16" rx="2"></rect><path d="M9 8h6M9 12h6M9 16h4"></path></svg></span></span><span class="step-label" data-compact="Pesca" data-short="PES">Pesca</span></div>
+                    <div class="phase-step" data-phase="standby"><span class="step-badge"><span class="step-num">2</span><span class="step-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10M7 21h10M8 4c0 4 1.7 5.6 4 8-2.3 2.4-4 4-4 8M16 4c0 4-1.7 5.6-4 8 2.3 2.4 4 4 4 8"></path></svg></span></span><span class="step-label" data-compact="Attesa" data-short="STB">Standby</span></div>
+                    <div class="phase-step" data-phase="main1"><span class="step-badge"><span class="step-num">3</span><span class="step-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l6 5-2.3 8H8.3L6 8z"></path><circle cx="12" cy="11" r="2.5"></circle></svg></span></span><span class="step-label" data-compact="Main 1" data-short="M1">Main 1</span></div>
+                    <div class="phase-step" data-phase="battle"><span class="step-badge"><span class="step-num">4</span><span class="step-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4l5.5 6.5M19 4l-5.5 6.5M9 12l-5 6M15 12l5 6M4 18l2 2M20 18l-2 2"></path></svg></span></span><span class="step-label" data-compact="Lotta" data-short="BAT">Battaglia</span></div>
+                    <div class="phase-step" data-phase="main2"><span class="step-badge"><span class="step-num">5</span><span class="step-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l6 5-2.3 8H8.3L6 8z"></path><circle cx="12" cy="11" r="2.5"></circle></svg></span></span><span class="step-label" data-compact="Main 2" data-short="M2">Main 2</span></div>
+                    <div class="phase-step" data-phase="end"><span class="step-badge"><span class="step-num">6</span><span class="step-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 21V3M8 4h10l-3 4 3 4H8"></path></svg></span></span><span class="step-label" data-compact="Fine" data-short="END">Fine</span></div>
                 </div>
                 <!-- Tempo/Turno, Abbandona e Difficoltà NON stanno più qui:
                      sono position:fixed e vivono fuori da .game-container,

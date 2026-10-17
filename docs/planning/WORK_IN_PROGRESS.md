@@ -2,6 +2,14 @@
 
 Elenco di lavori consigliati, in ordine di valore. Spuntare `[x]` quando fatto.
 
+## Stepper delle fasi — rifinitura del 17 ottobre 2026
+
+- [x] Mantenuti sigilli privi di riquadro e linea continua, ma resi
+      riconoscibili come fasi e comandi: nomi completi su desktop, sigle
+      PES/STB/M1/BAT/M2/END su mobile, indicazioni ORA/VAI e stato accessibile
+      per tastiera e lettori di schermo. Il segnale di fase raggiungibile e'
+      animato senza spostare i sigilli o cambiare l'ingombro del campo.
+
 ## Rendering carte su mobile — verifica richiesta il 16 ottobre 2026
 
 - [ ] Indagare i flicker residui durante i duelli su mobile con una sessione

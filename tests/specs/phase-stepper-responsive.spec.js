@@ -28,6 +28,7 @@ module.exports = {
                     rowSpread,
                     active: steps.filter((el) => el.classList.contains('active')).map((el) => el.dataset.phase),
                     labelsVisible: getComputedStyle(steps[0].querySelector('.step-label')).display !== 'none',
+                    shortLabels: steps.map((el) => getComputedStyle(el.querySelector('.step-label'), '::after').content),
                     labelsUseEllipsis: steps.some((el) => {
                         const label = el.querySelector('.step-label');
                         const style = getComputedStyle(label);
@@ -62,8 +63,8 @@ module.exports = {
                 'Stato attivo e sei icone SVG devono sopravvivere a ogni resize');
             t.assert(!m.labelsUseEllipsis,
                 `Nessuna etichetta deve usare ellissi a ${caso.w}x${caso.h}`);
-            if (caso.mobile) t.assert(!m.labelsVisible,
-                `Su mobile le etichette devono lasciare spazio ai badge a ${caso.w}x${caso.h}`);
+            if (caso.mobile) t.assert(m.labelsVisible && m.shortLabels.every((label) => label && label !== 'none'),
+                `Su mobile ogni icona deve conservare una sigla di fase leggibile a ${caso.w}x${caso.h}: ${JSON.stringify(m.shortLabels)}`);
             t.assert(m.clickableKeyboard,
                 'Gli step azionabili devono restare raggiungibili da tastiera');
         }
@@ -82,12 +83,15 @@ module.exports = {
                 const badge = getComputedStyle(el.querySelector('.step-badge'));
                 const aura = getComputedStyle(el.querySelector('.step-badge'), '::before');
                 const icon = getComputedStyle(el.querySelector('.step-icon'));
+                const labelBefore = getComputedStyle(el.querySelector('.step-label'), '::before');
                 return {
                     shadow: s.boxShadow, border: s.borderColor, opacity: Number(s.opacity), background: s.backgroundImage,
                     badgeShadow: badge.boxShadow, badgeBackground: badge.backgroundImage,
                     transform: s.transform, auraContent: aura.content,
                     auraOpacity: Number(aura.opacity), auraAnimation: aura.animationName,
-                    iconFilter: icon.filter, iconAnimation: icon.animationName
+                    iconFilter: icon.filter, iconAnimation: icon.animationName,
+                    labelCue: labelBefore.content, labelCueAnimation: labelBefore.animationName,
+                    ariaLabel: el.getAttribute('aria-label')
                 };
             };
             return {
@@ -106,7 +110,9 @@ module.exports = {
         `La fase attiva deve illuminare solo l'icona, senza disegnare un pulsante: ${JSON.stringify(statiDesktop.active)}`);
         t.assert(statiDesktop.clickable.background === 'none' && statiDesktop.clickable.shadow === 'none'
             && statiDesktop.clickable.badgeBackground === 'none'
-            && statiDesktop.clickable.transform === 'none',
+            && statiDesktop.clickable.transform === 'none'
+            && statiDesktop.clickable.labelCue.includes('VAI')
+            && statiDesktop.clickable.labelCueAnimation.includes('phaseReadyCue'),
         `La fase cliccabile deve restare una tacca leggera e non un rettangolo scuro: ${JSON.stringify(statiDesktop.clickable)}`);
         t.assert(statiDesktop.disabled.opacity < 0.6,
             `La fase disabilitata deve restare attenuata: ${JSON.stringify(statiDesktop.disabled)}`);

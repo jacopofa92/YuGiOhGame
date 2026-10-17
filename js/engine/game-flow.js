@@ -2748,6 +2748,7 @@ function updatePhaseIndicator() {
 
     document.querySelectorAll('.phase-step').forEach((step, index) => {
         const targetPhase = step.dataset.phase;
+        const phaseName = step.querySelector('.step-label')?.textContent?.trim() || targetPhase;
         const isFirstTurn = gameState.turn === 1;
         const isClickable = isPlayerTurn && (
             (gameState.phase === 'draw' && targetPhase === 'standby') ||
@@ -2764,6 +2765,10 @@ function updatePhaseIndicator() {
         step.classList.toggle('disabled', !isClickable && index > currentPhaseIndex);
         step.setAttribute('aria-current', index === currentPhaseIndex ? 'step' : 'false');
         step.setAttribute('aria-disabled', isClickable ? 'false' : 'true');
+        step.setAttribute('aria-label', index === currentPhaseIndex
+            ? `Fase attuale: ${phaseName}`
+            : (isClickable ? `Vai alla fase ${phaseName}` : `Fase ${phaseName}`));
+        step.title = isClickable ? `Vai alla fase ${phaseName}` : '';
         step.setAttribute('role', isClickable ? 'button' : 'listitem');
         step.tabIndex = isClickable ? 0 : -1;
         step.style.cursor = isClickable ? 'pointer' : 'default';
