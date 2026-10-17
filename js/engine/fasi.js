@@ -627,7 +627,11 @@ function changeTurn() {
     // del giocatore ha la sua battuta iconica in stile anime; quello del
     // bot resta "TURNO" + nome, split in due parole che si scontrano.
     if (isPlayerTurn) {
-        EventiDuello.emetti('annuncio-turno', 'È il mio turno!', '', `Turno ${gameState.turn}`);
+        // "TURNO" + nome di chi gioca, come per l'avversario (richiesta
+        // dell'utente al posto di "È il mio turno!"). DuelSession.player.name
+        // vale anche per un protagonista di Storia/Rivincite (es. Atem).
+        const nomeGiocatore = (window.DuelSession && window.DuelSession.player && window.DuelSession.player.name) || 'Giocatore';
+        EventiDuello.emetti('annuncio-turno', 'TURNO', nomeGiocatore, `Turno ${gameState.turn}`);
     } else {
         // Nome vero dell'avversario (es. "Seto Kaiba"), non più il generico
         // "BOT" — window.DuelSession lo risolve già correttamente per ogni
